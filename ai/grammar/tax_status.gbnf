@@ -1,0 +1,12 @@
+# CARDEX Tax Status GBNF Grammar
+# Forces LLM output to be exactly: {"tax_status": "...", "confidence": 0.XX}
+# No preamble, no explanation, no markdown. Just JSON.
+
+root ::= "{" ws "\"tax_status\"" ws ":" ws tax-status ws "," ws "\"confidence\"" ws ":" ws confidence ws "}"
+
+tax-status ::= "\"DEDUCTIBLE\"" | "\"REBU\"" | "\"REQUIRES_HUMAN_AUDIT\""
+
+confidence ::= "0." digit digit
+digit ::= [0-9]
+
+ws ::= [ \t\n]*

@@ -1,0 +1,116 @@
+# CARDEX — Cursor Development Rules
+# This file governs ALL code generation in this project.
+# Violations of these rules produce DEFECTIVE code. No exceptions.
+
+## IDENTITY
+# CARDEX: Pan-European B2B vehicle arbitrage platform.
+# Bare-metal, event-driven, legally compliant, fail-closed by default.
+
+## ARCHITECTURE INVARIANTS (NEVER VIOLATE)
+
+1. FAIL-CLOSED ALWAYS: Unknown state → block, quarantine, or reject. Never silently pass.
+2. ZERO CLOUD DEPENDENCY: All inference, storage, and compute runs on Hetzner bare-metal. No AWS, GCP, Azure calls.
+3. NUMA-AWARE: Every process pins to explicit CPU cores. Use taskset/numactl. Never let OS scheduler decide.
+4. EVENT-DRIVEN VIA REDIS STREAMS: No direct function calls between phases. All inter-phase communication goes through Redis Streams with Consumer Groups.
+5. DETERMINISTIC AI: LLM outputs constrained by GBNF grammar. If confidence < 0.95, output REQUIRES_HUMAN_AUDIT. Never trust raw LLM output.
+6. ZERO-PII IN ANALYTICS: ClickHouse never receives PII (names, emails, phones, VAT IDs). All PII stays in PostgreSQL encrypted via Vault DEK.
+7. CRYPTO-SHREDDING RGPD: Deleting a Vault DEK renders all entity PII unrecoverable. This is the GDPR deletion mechanism.
+8. ZERO-CUSTODY PSD2: CARDEX never holds buyer/seller funds. Stripe Connect split payments only. No EMI license needed.
+9. ANTI-MICA CREDITS: Compute Credits have 90-day TTL, are non-transferable, non-refundable. They are NOT a store of value.
+10. LEGAL PURITY: No scraping. All data from B2B licensed webhooks or EU Data Act delegated edge fleets. V4 illegal methods are PERMANENTLY PURGED.
+
+## TECHNOLOGY STACK (MANDATORY)
+
+| Layer | Technology | Version | Notes |
+|-------|-----------|---------|-------|
+| OS | Ubuntu 24.04 LTS | Kernel 6.8+ | ZFS root, XFS data |
+| OLTP | PostgreSQL 16 | Latest stable | ACID, RLS, Vault DEK |
+| OLAP | ClickHouse | Latest stable | ReplacingMergeTree, LowCardinality |
+| Cache/Streams | Redis 7.2+ | With RedisBloom | Streams, Consumer Groups, Lua scripts |
+| Gateway | Go 1.22+ | net/http + quic-go | HMAC-SHA256 validation |
+| Pipeline | Go 1.22+ | | Bloom, H3, FX buffer |
+| Forensics | Go 1.22+ | | Aho-Corasick, VIES client |
+| Alpha Engine | Go 1.22+ | | NLC calc, HMAC quotes, Lua mutex |
+| Legal Hub | Go 1.22+ | | B2B API clients with circuit breaker |
+| AI Worker | Python 3.12 | llama-cpp-python | Qwen2.5-Coder-7B Q5_K_M, GBNF |
+| OCR | Python 3.12 | RapidOCR ONNX | OMP_NUM_THREADS=2 |
+| Terminal WASM | Rust 1.78+ | wasm-bindgen | OrderBook sort in Web Worker |
+| Edge Client | Rust 1.78+ | Tauri 2.x | Ghost WebViews, Ed25519 signing |
+| Containers | Docker Compose | Dev only | Prod = bare-metal systemd |
+
+## CODING STANDARDS
+
+### Go
+- Use `context.Context` as first parameter in every function that does I/O.
+- All Redis operations via `github.com/redis/go-redis/v9`.
+- All PostgreSQL operations via `github.com/jackc/pgx/v5/pgxpool`.
+- Error handling: NEVER ignore errors. Wrap with `fmt.Errorf("phase X: %w", err)`.
+- Structured logging: `log/slog` with JSON handler. Fields: `phase`, `stream`, `vehicle_ulid`, `latency_ms`.
+- No global state. Pass dependencies via struct injection.
+- Tests: table-driven. Minimum 80% coverage on business logic.
+- Linting: `golangci-lint` with `errcheck`, `govet`, `staticcheck`, `gosec`.
+
+### Python
+- Type hints mandatory on all function signatures.
+- No `print()`. Use `logging` with JSON formatter.
+- AI worker: single-threaded per core. OMP_NUM_THREADS matches allocated cores.
+- No pip install without `--break-system-packages` in containers.
+
+### Rust
+- `#[deny(unsafe_code)]` unless explicitly justified with comment.
+- WASM: `wasm-bindgen` for JS interop. No `wasm-pack` (too heavy).
+- Tauri: `WindowBuilder` with `visible(false)` for ghost WebViews.
+
+### SQL
+- PostgreSQL: All tables have `WITH (fillfactor = 70)` for HOT updates.
+- PostgreSQL: ULIDs as TEXT PRIMARY KEY (monotonic, sortable).
+- PostgreSQL: CHECK constraints enforce domain invariants at DB level.
+- ClickHouse: `LowCardinality()` on all enum-like String columns.
+- ClickHouse: `ReplacingMergeTree` for vehicle inventory (dedup by version).
+- Redis: All Lua scripts are atomic. No multi-step Redis transactions outside Lua.
+
+## REDIS STREAM TOPOLOGY
+
+```
+stream:ingestion_raw      → cg_pipeline      → Phase 4 (HFT Pipeline)
+stream:db_write           → cg_forensics     → Phase 5 (Tax Hunter)
+stream:l3_pending         → cg_qwen_workers  → Phase 2 (AI Worker)
+stream:visual_audit       → cg_ocr_workers   → Phase 5 (OCR)
+stream:market_ready       → cg_alpha         → Phase 6 (Alpha Engine)
+stream:market_pricing     → cg_alpha         → Phase 6 (SSE fan-out)
+stream:legal_audit_pending→ cg_gov           → Phase 7 (Legal Hub)
+stream:operator_events    → cg_karma         → Phase 8 (Karma Engine)
+```
+
+## PHASE EXECUTION ORDER FOR DEVELOPMENT
+
+Build and test in this exact order. Each phase depends on the previous.
+
+1. `scripts/init-pg.sql` + `scripts/init-ch.sql` + `scripts/init-redis.sh` → Verify schemas
+2. `gateway/` → HTTPS webhook receiver + HMAC validation
+3. `pipeline/` → Bloom dedup + H3 sharding + FX buffer
+4. `forensics/` → Aho-Corasick tax scan + VIES client
+5. `ai/` → Qwen2.5 worker with GBNF grammar
+6. `alpha/` → NLC calculator + HMAC quotes + Lua mutex
+7. `legal/` → IDEAUTO/CARFAX clients with circuit breaker
+8. `terminal/` → Rust WASM OrderBook + Virtual Scroller
+9. `edge/` → Tauri desktop client
+10. `monitoring/` → Prometheus + Grafana + AlertManager
+
+## FILE REFERENCE
+
+- `SPEC.md` — Full 2,840-line canonical specification. READ THIS for any architectural question.
+- `.cursor/prompts/phase-NN-*.md` — Phase-specific implementation guides. READ the relevant one before coding each phase.
+- `scripts/` — Executable SQL and shell scripts for bootstrapping.
+
+## WHAT CURSOR MUST NEVER DO
+
+- Generate code that calls external cloud AI APIs (OpenAI, Anthropic, etc.)
+- Generate scraping code (no HTTP GET to vehicle portals)
+- Skip error handling or use `_ = err`
+- Create global mutable state
+- Use `float64` for money (use `decimal` or integer cents)
+- Generate code without structured logging
+- Ignore the fail-closed principle
+- Place PII in ClickHouse tables
+- Use `time.Sleep()` for synchronization (use channels or Redis streams)

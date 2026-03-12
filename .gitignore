@@ -1,0 +1,10 @@
+﻿**/node_modules/
+**/.next/
+bin/
+*.exe
+.env
+.env.*
+*.log
+.vscode/
+.cursor/
+.claude/

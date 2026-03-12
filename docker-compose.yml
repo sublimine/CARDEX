@@ -1,0 +1,148 @@
+# =============================================================================
+# CARDEX Docker Compose — Development Environment
+# Replicates the bare-metal topology for local development.
+# Production runs on systemd units, NOT Docker.
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 16 (Nodo 01 equivalent)
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-bookworm
+    container_name: cardex-pg
+    environment:
+      POSTGRES_DB: cardex
+      POSTGRES_USER: cardex
+      POSTGRES_PASSWORD: cardex_dev_only
+      POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./scripts/init-pg.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    command: >
+      postgres
+        -c shared_buffers=512MB
+        -c effective_cache_size=1GB
+        -c work_mem=64MB
+        -c maintenance_work_mem=256MB
+        -c wal_level=logical
+        -c max_replication_slots=4
+        -c max_wal_senders=4
+        -c log_statement=mod
+        -c log_min_duration_statement=100
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cardex"]
+      interval: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 2G
+
+  # ---------------------------------------------------------------------------
+  # ClickHouse (Nodo 01/05 equivalent)
+  # ---------------------------------------------------------------------------
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: cardex-ch
+    ports:
+      - "8123:8123"   # HTTP
+      - "9000:9000"   # Native
+    volumes:
+      - ch_data:/var/lib/clickhouse
+      - ./scripts/init-ch.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    environment:
+      CLICKHOUSE_DB: cardex
+      CLICKHOUSE_USER: cardex
+      CLICKHOUSE_PASSWORD: cardex_dev_only
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      interval: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 2G
+
+  # ---------------------------------------------------------------------------
+  # Redis 7.2 + RedisBloom (Nodo 02 equivalent)
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis/redis-stack-server:latest
+    container_name: cardex-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: >
+      redis-server
+        --maxmemory 2gb
+        --maxmemory-policy noeviction
+        --protected-mode no
+        --appendonly yes
+        --appendfsync everysec
+        --save 3600 1
+        --save 300 100
+        --loadmodule /opt/redis-stack/lib/redisbloom.so
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+
+  # ---------------------------------------------------------------------------
+  # Redis Bootstrap (runs init script after Redis is healthy)
+  # ---------------------------------------------------------------------------
+  redis-init:
+    image: redis/redis-stack-server:latest
+    container_name: cardex-redis-init
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./scripts/init-redis.sh:/init-redis.sh:ro
+    entrypoint: ["bash", "/init-redis.sh"]
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+
+  # ---------------------------------------------------------------------------
+  # Prometheus (Monitoring — G-06 fix)
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: cardex-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=30d'
+
+  # ---------------------------------------------------------------------------
+  # Grafana
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:latest
+    container_name: cardex-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: cardex_dev_only
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+volumes:
+  pg_data:
+  ch_data:
+  redis_data:
+  grafana_data:
