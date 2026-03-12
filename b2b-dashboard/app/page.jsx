@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useRef } from "react";
 
@@ -8,13 +8,8 @@ export default function Dashboard() {
   const wsRef = useRef(null);
 
   useEffect(() => {
-    // 1. Verificación JWT existente (opcional: redirigir a /login si no hay token)
     const token = typeof window !== "undefined" ? localStorage.getItem("cardex_token") : null;
-    if (!token) {
-      // En producción: router.push('/login');
-    }
 
-    // 2. Carga Histórica Institucional desde PostgreSQL
     const fetchHistoricalData = async () => {
       const res = await fetch("/api/assets");
       if (res.ok) {
@@ -24,7 +19,6 @@ export default function Dashboard() {
     };
     fetchHistoricalData();
 
-    // 3. Inicialización del WebSocket para streaming en tiempo real
     const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8084/ws";
     wsRef.current = new WebSocket(wsUrl);
 
@@ -84,11 +78,13 @@ export default function Dashboard() {
         }}
       >
         <thead>
-          <tr style={{ borderBottom: "1px solid #333", color: "#888" }}>
-            <th style={{ padding: "10px" }}>VIN</th>
+          <tr style={{ borderBottom: "1px solid #333", color: "#888", fontSize: "11px" }}>
+            <th style={{ padding: "10px", width: "80px" }}>VISUAL</th>
+            <th style={{ padding: "10px" }}>VEHÍCULO (ASSET)</th>
+            <th style={{ padding: "10px" }}>VIN / ID</th>
             <th style={{ padding: "10px" }}>NET LANDED COST</th>
-            <th style={{ padding: "10px" }}>LEGAL STATUS</th>
-            <th style={{ padding: "10px" }}>QUOTE ID (SHA-256)</th>
+            <th style={{ padding: "10px" }}>STATUS LEGAL</th>
+            <th style={{ padding: "10px", textAlign: "right" }}>PAYLOAD_ID</th>
           </tr>
         </thead>
         <tbody>
@@ -97,29 +93,47 @@ export default function Dashboard() {
               key={opp.quote_id || idx}
               style={{
                 borderBottom: "1px solid #222",
-                backgroundColor:
-                  idx === 0 ? "rgba(0, 255, 204, 0.05)" : "transparent",
+                backgroundColor: idx === 0 ? "rgba(0, 255, 204, 0.05)" : "transparent",
                 transition: "background-color 0.5s",
               }}
             >
-              <td style={{ padding: "10px", fontWeight: "bold" }}>{opp.vin}</td>
-              <td style={{ padding: "10px", color: "#00ffcc" }}>
-                {opp.nlc ? `${opp.nlc} EUR` : "CALCULATING..."}
+              <td style={{ padding: "10px" }}>
+                <img 
+                  src={opp.image_url || "https://via.placeholder.com/150x100/111111/444444?text=NO+IMAGE"} 
+                  alt={opp.title || "Vehículo sin imagen"} 
+                  style={{ width: "80px", height: "50px", objectFit: "cover", borderRadius: "4px", border: "1px solid #333" }}
+                  onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/150x100/111111/444444?text=ERROR" }}
+                />
+              </td>
+              <td style={{ padding: "10px", fontWeight: "bold", color: "#eee" }}>
+                {opp.title || "MODELO DESCONOCIDO"}
+                <div style={{ fontSize: "10px", color: "#666", marginTop: "4px" }}>
+                  <a href={opp.source_url} target="_blank" rel="noreferrer" style={{ color: "#00ffcc", textDecoration: "none" }}>[ VER ORIGEN ]</a>
+                </div>
+              </td>
+              <td style={{ padding: "10px", fontFamily: "monospace", fontSize: "12px", color: "#999" }}>
+                {opp.vin}
+              </td>
+              <td style={{ padding: "10px", color: "#00ffcc", fontWeight: "bold" }}>
+                {opp.nlc && opp.nlc > 0 ? new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(opp.nlc) : "CALCULATING..."}
               </td>
               <td
                 style={{
                   padding: "10px",
-                  color:
-                    opp.legal_status === "VAT_DEDUCTIBLE" ? "#00ffcc" : "#ffaa00",
+                  fontSize: "11px",
+                  fontWeight: "bold",
+                  color: opp.legal_status === "VAT_DEDUCTIBLE" ? "#00ffcc" : "#ffaa00",
                 }}
               >
-                {opp.legal_status || "ANALYZING..."}
+                {opp.legal_status || "PENDING_NLP"}
               </td>
               <td
                 style={{
                   padding: "10px",
-                  fontSize: "12px",
-                  color: "#666",
+                  fontSize: "10px",
+                  color: "#444",
+                  fontFamily: "monospace",
+                  textAlign: "right"
                 }}
               >
                 {opp.quote_id}
@@ -129,14 +143,15 @@ export default function Dashboard() {
           {opportunities.length === 0 && (
             <tr>
               <td
-                colSpan="4"
+                colSpan="6"
                 style={{
-                  padding: "20px",
+                  padding: "40px",
                   textAlign: "center",
-                  color: "#666",
+                  color: "#444",
+                  fontFamily: "monospace"
                 }}
               >
-                ESPERANDO TRANSMISIÓN HFT...
+                [ ] ESPERANDO TRANSMISIÓN HFT DESDE DARK POOL...
               </td>
             </tr>
           )}
