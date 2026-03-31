@@ -1,0 +1,13 @@
+go 1.23
+
+use (
+	./services/gateway
+	./services/pipeline
+	./services/forensics
+	./services/alpha
+	./services/legal
+	./services/api
+	./services/scheduler
+	./internal/shared
+	./e2e
+)

@@ -1,0 +1,27 @@
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: '**.autoscout24.**' },
+      { protocol: 'https', hostname: '**.mobile.de' },
+      { protocol: 'https', hostname: '**.leboncoin.fr' },
+      { protocol: 'https', hostname: '**.marktplaats.nl' },
+      { protocol: 'https', hostname: '**.coches.net' },
+      { protocol: 'https', hostname: 'cdn.cardex.eu' },
+    ],
+  },
+  experimental: {
+    // Server Actions enabled by default in Next.js 14
+    serverComponentsExternalPackages: ['meilisearch'],
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/:path*`,
+      },
+    ]
+  },
+}
+
+module.exports = nextConfig
