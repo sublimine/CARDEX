@@ -413,17 +413,24 @@ func (d *Deps) VINHistory(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// ── 1. Fetch cached events from PostgreSQL ─────────────────────────────
+	// vin_history_cache schema: event_type, event_date, data JSONB, source, confidence.
+	// We extract the commonly needed sub-fields from the JSONB data column.
 	rows, err := d.DB.Query(ctx, `
-		SELECT event_type, event_date::text, mileage_km, country, source_platform,
-		       price_eur, description, confidence_score
+		SELECT
+			event_type,
+			event_date::text,
+			(data->>'mileage_km')::int,
+			data->>'country',
+			source,
+			(data->>'price_eur')::float8,
+			data->>'description',
+			confidence::float4
 		FROM vin_history_cache
 		WHERE vin = $1
 		ORDER BY event_date ASC
 	`, vin)
 
-	// The schema uses (event_type, event_date, data, source, confidence) but
-	// the existing query maps to vinEvent fields. We read what we need.
-	// Fall back gracefully if the query fails.
+	// Fall back gracefully if the query fails — external enrichment still runs.
 	var pgEvents []vinEvent
 	if err != nil {
 		slog.Warn("pg vin_history_cache query failed", "vin", vin, "err", err)
