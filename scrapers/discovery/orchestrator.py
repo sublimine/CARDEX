@@ -102,67 +102,81 @@ class DiscoveryOrchestrator:
         log.info("discovery: starting country=%s", country)
 
         # All layers run concurrently and feed into a shared queue
-        queue: asyncio.Queue = asyncio.Queue(maxsize=5000)
+        # Bounded queue with backpressure — feeders block when consumer is slow
+        queue: asyncio.Queue[dict | None] = asyncio.Queue(maxsize=2000)
+        feeder_count = 0
 
-        async def feed_queue(gen):
+        async def feed_queue(gen) -> None:
+            nonlocal feeder_count
+            feeder_count += 1
             try:
                 async for item in gen:
                     await queue.put(item)
             except Exception as exc:
-                log.warning("discovery layer error: %s", exc)
+                log.warning("discovery layer error country=%s: %s", country, exc)
+            finally:
+                # Each finished feeder sends one sentinel
+                await queue.put(None)
 
         # Spawn all layers as background tasks
         h3_crawler = H3AdaptiveGridCrawler(self.rdb, session)
         osm_crawler = OSMOverpassCrawler(self.rdb, session)
         registry_cls = _REGISTRY_CRAWLERS.get(country)
 
-        tasks = [
-            asyncio.create_task(feed_queue(
-                self._gmaps_to_dealer(h3_crawler.crawl_country(country), country)
-            )),
-            asyncio.create_task(feed_queue(
-                osm_crawler.crawl_country(country)
-            )),
-        ]
+        asyncio.create_task(feed_queue(
+            self._gmaps_to_dealer(h3_crawler.crawl_country(country), country)
+        ))
+        asyncio.create_task(feed_queue(
+            osm_crawler.crawl_country(country)
+        ))
 
         if registry_cls:
             registry = registry_cls(self.rdb, session)
-            tasks.append(asyncio.create_task(feed_queue(registry.crawl())))
+            asyncio.create_task(feed_queue(registry.crawl()))
+        else:
+            feeder_count -= 1  # one less feeder; pre-decrement before tasks start
 
-        # Sentinel to signal when all feeders are done
-        async def wait_and_sentinel():
-            await asyncio.gather(*tasks)
-            await queue.put(None)
-
-        asyncio.create_task(wait_and_sentinel())
-
-        # Process queue
+        # Process queue until all feeders have sent their sentinel
         processed = 0
-        while True:
-            dealer = await queue.get()
-            if dealer is None:
+        sentinels_received = 0
+        # feeder_count was incremented inside feed_queue — wait for all to finish
+        expected_sentinels = (3 if registry_cls else 2)
+
+        while sentinels_received < expected_sentinels:
+            try:
+                dealer = await asyncio.wait_for(queue.get(), timeout=300.0)
+            except asyncio.TimeoutError:
+                log.warning("discovery: %s — queue timeout, stopping", country)
                 break
 
-            # Deduplicate
+            if dealer is None:
+                sentinels_received += 1
+                continue
+
+            # Deduplicate (atomic Redis SET NX)
             if await enricher.is_duplicate(dealer):
                 continue
 
-            # Enrich (geocode + website)
+            # Enrich: geocode + website discovery
             try:
                 dealer = await enricher.enrich(dealer)
             except Exception as exc:
-                log.debug("enrich failed: %s", exc)
+                log.debug("enrich failed for %s: %s", dealer.get("name"), exc)
+                # Upsert anyway — partial data is better than no data
 
             # Upsert to DB
             try:
                 await self._upsert_dealer(dealer)
             except Exception as exc:
-                log.warning("dealer upsert failed: %s", exc)
+                log.warning("dealer upsert failed name=%s: %s", dealer.get("name"), exc)
                 continue
 
-            # Publish to spider stream if website known
+            # Publish to spider stream only if website discovered
             if dealer.get("website"):
-                await self._publish_to_spider(dealer)
+                try:
+                    await self._publish_to_spider(dealer)
+                except Exception as exc:
+                    log.warning("spider publish failed: %s", exc)
 
             processed += 1
             if processed % 1000 == 0:
@@ -193,6 +207,9 @@ class DiscoveryOrchestrator:
             }
 
     async def _upsert_dealer(self, dealer: dict) -> None:
+        # Parameters: $1…$15 (place_id, name, country, lat, lng, address, city,
+        # postcode, website, phone, email, h3_res7, h3_res4, source, registry_id)
+        # discovery_sources initialized as ARRAY[$14] where $14 = source
         await self.pg.execute("""
             INSERT INTO dealers (
                 place_id, name, country, lat, lng, address, city, postcode,
@@ -200,25 +217,23 @@ class DiscoveryOrchestrator:
                 source, registry_id, discovery_sources,
                 spider_status, created_at, updated_at
             ) VALUES (
-                $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,
+                $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,
+                $14,$15,
                 ARRAY[$14]::text[], 'PENDING', now(), now()
             )
-            ON CONFLICT (
-                COALESCE(place_id, ''),
-                COALESCE(registry_id, ''),
-                name, country
-            ) DO UPDATE SET
-                website        = COALESCE(EXCLUDED.website, dealers.website),
-                phone          = COALESCE(EXCLUDED.phone, dealers.phone),
-                lat            = COALESCE(EXCLUDED.lat, dealers.lat),
-                lng            = COALESCE(EXCLUDED.lng, dealers.lng),
-                h3_res7        = COALESCE(EXCLUDED.h3_res7, dealers.h3_res7),
-                h3_res4        = COALESCE(EXCLUDED.h3_res4, dealers.h3_res4),
-                discovery_sources = array_append(
-                    dealers.discovery_sources,
-                    EXCLUDED.source
+            ON CONFLICT ON CONSTRAINT dealers_unique
+            DO UPDATE SET
+                website           = COALESCE(EXCLUDED.website, dealers.website),
+                phone             = COALESCE(EXCLUDED.phone, dealers.phone),
+                lat               = COALESCE(EXCLUDED.lat, dealers.lat),
+                lng               = COALESCE(EXCLUDED.lng, dealers.lng),
+                h3_res7           = COALESCE(EXCLUDED.h3_res7, dealers.h3_res7),
+                h3_res4           = COALESCE(EXCLUDED.h3_res4, dealers.h3_res4),
+                discovery_sources = (
+                    SELECT array_agg(DISTINCT s)
+                    FROM unnest(dealers.discovery_sources || ARRAY[EXCLUDED.source]) s
                 ),
-                updated_at     = now()
+                updated_at        = now()
         """,
             dealer.get("place_id"),
             dealer.get("name"),

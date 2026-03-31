@@ -66,10 +66,17 @@ class DealerEnricher:
         return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
     async def is_duplicate(self, dealer: dict) -> bool:
+        """
+        Returns True if this dealer was already processed.
+        Redis SET NX returns True if the key was newly set (new dealer),
+        or None/False if the key already existed (duplicate).
+        """
         fp = self.dealer_fingerprint(dealer)
         key = f"dealer:seen:{fp}"
-        added = await self.rdb.set(key, "1", ex=90 * 86400, nx=True)
-        return not added  # if nx=True and added=None → already existed
+        newly_set = await self.rdb.set(key, "1", ex=90 * 86400, nx=True)
+        # newly_set is True  → key just created → NOT a duplicate
+        # newly_set is None  → key already existed → IS a duplicate
+        return newly_set is not True
 
     async def enrich(self, dealer: dict) -> dict:
         """Fill missing lat/lng, website. Returns enriched dealer dict."""
@@ -91,9 +98,10 @@ class DealerEnricher:
                 dealer["website"] = website
 
         # 3. Compute H3 index at res-7 for geospatial queries
-        if dealer.get("lat") and dealer.get("lng"):
+        # Use explicit not-None check so lat=0.0 / lng=0.0 (valid coords) works
+        if dealer.get("lat") is not None and dealer.get("lng") is not None:
             try:
-                import h3
+                import h3  # noqa: PLC0415 — lazy import to avoid hard dep if h3 missing
                 dealer["h3_res7"] = h3.latlng_to_cell(dealer["lat"], dealer["lng"], 7)
                 dealer["h3_res4"] = h3.latlng_to_cell(dealer["lat"], dealer["lng"], 4)
             except Exception:
