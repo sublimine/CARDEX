@@ -472,3 +472,58 @@ CREATE TABLE marketing_audits (
 CREATE INDEX idx_audits_entity ON marketing_audits (entity_ulid);
 
 COMMIT;
+
+-- =============================================================================
+-- DEALERS — Physical dealer registry (all discovery sources merged)
+-- Populated by: DiscoveryOrchestrator (H3 grid + OSM + government registries)
+-- Consumed by:  DealerWebSpider (fleet crawls dealer websites for inventory)
+-- =============================================================================
+-- (appended after COMMIT — run as separate migration if needed)
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS dealers (
+    id                BIGSERIAL PRIMARY KEY,
+    place_id          TEXT,
+    registry_id       TEXT,
+    osm_id            TEXT,
+    name              TEXT NOT NULL,
+    country           TEXT NOT NULL,
+    lat               DOUBLE PRECISION,
+    lng               DOUBLE PRECISION,
+    h3_res7           TEXT,
+    h3_res4           TEXT,
+    address           TEXT,
+    city              TEXT,
+    postcode          TEXT,
+    canton            TEXT,
+    website           TEXT,
+    phone             TEXT,
+    email             TEXT,
+    brand_affiliation TEXT[],
+    dealer_type       TEXT DEFAULT 'INDEPENDENT',
+    source            TEXT NOT NULL,
+    discovery_sources TEXT[] DEFAULT '{}',
+    spider_status     TEXT DEFAULT 'PENDING',
+    spider_last_run   TIMESTAMPTZ,
+    spider_dms        TEXT,
+    spider_listing_count INT DEFAULT 0,
+    google_rating     NUMERIC(2,1),
+    google_review_count INT,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE NULLS NOT DISTINCT (
+        COALESCE(place_id, ''),
+        COALESCE(registry_id, ''),
+        name,
+        country
+    )
+) WITH (fillfactor = 80);
+
+CREATE INDEX IF NOT EXISTS idx_dealers_country     ON dealers (country);
+CREATE INDEX IF NOT EXISTS idx_dealers_h3_res7     ON dealers (h3_res7);
+CREATE INDEX IF NOT EXISTS idx_dealers_h3_res4     ON dealers (h3_res4);
+CREATE INDEX IF NOT EXISTS idx_dealers_spider      ON dealers (spider_status, country);
+CREATE INDEX IF NOT EXISTS idx_dealers_website     ON dealers (website) WHERE website IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_dealers_place_id    ON dealers (place_id) WHERE place_id IS NOT NULL;
+
+COMMIT;
