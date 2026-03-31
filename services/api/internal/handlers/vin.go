@@ -542,10 +542,23 @@ func (d *Deps) VINHistory(w http.ResponseWriter, r *http.Request) {
 	summary := buildVINSummary(pgEvents)
 
 	// ── 7. Stolen status ───────────────────────────────────────────────────
+	// First check EUROPOL SIS-II stolen set in Redis (authoritative, free)
 	stolenStatus := "NOT_CHECKED"
-	for _, e := range pgEvents {
-		if e.EventType == "STOLEN_CHECK" && e.Description != nil {
-			stolenStatus = *e.Description
+	if isMember, err := d.Redis.SIsMember(r.Context(), "set:stolen_vins", vin).Result(); err == nil {
+		if isMember {
+			stolenStatus = "STOLEN"
+			addSource("europol_sis2")
+		} else {
+			stolenStatus = "NOT_STOLEN"
+			addSource("europol_sis2")
+		}
+	} else {
+		slog.Warn("vin: redis stolen check failed", "vin", vin, "error", err)
+		// Fall back to event-based check
+		for _, e := range pgEvents {
+			if e.EventType == "STOLEN_CHECK" && e.Description != nil {
+				stolenStatus = *e.Description
+			}
 		}
 	}
 
