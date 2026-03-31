@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -593,5 +592,3 @@ func (d *Deps) TradingCarCompare(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// Ensure context is used (avoid unused import if compiler strips it).
-var _ = context.Background
