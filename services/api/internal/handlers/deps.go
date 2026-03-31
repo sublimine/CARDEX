@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	clickhouse "github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/cardex/alpha/pkg/nlc"
 	meilisearch "github.com/meilisearch/meilisearch-go"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -13,10 +14,11 @@ import (
 
 // Deps holds shared dependencies injected into all handlers.
 type Deps struct {
-	DB    *pgxpool.Pool
-	Redis *redis.Client
-	CH    clickhouse.Conn
-	Meili *meilisearch.Index
+	DB       *pgxpool.Pool
+	Redis    *redis.Client
+	CH       clickhouse.Conn
+	Meili    *meilisearch.Index
+	NLCCalc  *nlc.Calculator
 }
 
 // writeJSON encodes v as JSON and writes it with the given status code.

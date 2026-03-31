@@ -8,3 +8,4 @@ bin/
 .vscode/
 .cursor/
 .claude/
+!.env.example

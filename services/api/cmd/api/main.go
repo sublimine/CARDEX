@@ -20,6 +20,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cardex/alpha/pkg/nlc"
+	"github.com/cardex/alpha/pkg/tax"
 	"github.com/cardex/api/internal/handlers"
 	"github.com/cardex/api/internal/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -45,11 +47,14 @@ func main() {
 	defer rdb.Close()
 
 	// ---- Dependencies -------------------------------------------------------
+	nlcCalc := nlc.New(rdb, &tax.SpainCalculator{}, &tax.FranceCalculator{}, &tax.NetherlandsCalculator{})
+
 	deps := &handlers.Deps{
-		DB:    pool,
-		Redis: rdb,
-		CH:    ch,
-		Meili: meili.Index("vehicles"),
+		DB:      pool,
+		Redis:   rdb,
+		CH:      ch,
+		Meili:   meili.Index("vehicles"),
+		NLCCalc: nlcCalc,
 	}
 
 	// ---- Router -------------------------------------------------------------
@@ -66,6 +71,7 @@ func main() {
 	mux.HandleFunc("GET /api/v1/marketplace/listing/{ulid}", deps.ListingDetail)
 	mux.HandleFunc("POST /api/v1/marketplace/alerts", middleware.Auth(deps.CreatePriceAlert))
 	mux.HandleFunc("GET /api/v1/marketplace/alerts", middleware.Auth(deps.ListPriceAlerts))
+	mux.HandleFunc("DELETE /api/v1/marketplace/alerts/{id}", middleware.Auth(deps.DeletePriceAlert))
 
 	// Analytics (public)
 	mux.HandleFunc("GET /api/v1/analytics/price-index", deps.PriceIndex)

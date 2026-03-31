@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import asyncio
 import csv
+import gzip
 import io
 import logging
 from typing import AsyncGenerator
@@ -79,7 +80,6 @@ class NLKVKCrawler:
 
     async def _crawl_bulk(self) -> AsyncGenerator[dict, None]:
         """Download and parse KVK bulk CSV (gzipped)."""
-        import gzip
         try:
             log.info("kvk: downloading bulk CSV from %s", _BULK_URL)
             async with self.session.get(

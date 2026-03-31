@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/cardex/alpha/pkg/nlc"
 	"github.com/cardex/api/internal/middleware"
 	"github.com/oklog/ulid/v2"
 	"github.com/redis/go-redis/v9"
@@ -506,9 +508,78 @@ func (d *Deps) TriggerMarketingAudit(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// NLCCalculation GET /api/v1/dealer/nlc/{ulid}
+// NLCCalculation GET /api/v1/dealer/nlc/{ulid}?target_country=ES
+// Returns full Net Landed Cost breakdown for a vehicle in the dealer's inventory.
 func (d *Deps) NLCCalculation(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusNotImplemented, map[string]string{"status": "coming_soon"})
+	if d.NLCCalc == nil {
+		writeError(w, http.StatusServiceUnavailable, "nlc_unavailable", "NLC engine not initialised")
+		return
+	}
+
+	inventoryULID := r.PathValue("ulid")
+	targetCountry := strings.ToUpper(r.URL.Query().Get("target_country"))
+
+	var make_, model, originCountry string
+	var year, co2GKM int
+	var priceEUR float64
+
+	err := d.DB.QueryRow(r.Context(), `
+		SELECT di.make, di.model, di.year,
+		       COALESCE(de.country_code, 'DE'),
+		       COALESCE((SELECT gross_physical_cost_eur FROM vehicles WHERE vin = di.vin LIMIT 1), di.price_eur, 0)
+		FROM dealer_inventory di
+		JOIN entities de ON di.dealer_ulid = de.entity_ulid
+		WHERE di.inventory_ulid = $1
+	`, inventoryULID).Scan(&make_, &model, &year, &originCountry, &priceEUR)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "not_found", "inventory item not found")
+		return
+	}
+
+	// Try to get CO2 from vehicles table if VIN matches
+	d.DB.QueryRow(r.Context(), `
+		SELECT COALESCE(co2_gkm, 0) FROM vehicles
+		WHERE make = $1 AND model = $2 AND year = $3
+		ORDER BY last_updated_at DESC LIMIT 1
+	`, make_, model, year).Scan(&co2GKM)
+
+	if targetCountry == "" {
+		targetCountry = originCountry
+	}
+
+	now := time.Now()
+	vehicleAgeYears := 0
+	if year > 0 {
+		vehicleAgeYears = now.Year() - year
+		if vehicleAgeYears < 0 {
+			vehicleAgeYears = 0
+		}
+	}
+
+	result, err := d.NLCCalc.Compute(r.Context(), nlc.NLCInput{
+		GrossPhysicalCostEUR: priceEUR,
+		OriginCountry:        originCountry,
+		TargetCountry:        targetCountry,
+		CO2GKM:               co2GKM,
+		VehicleAgeYears:      vehicleAgeYears,
+		VehicleAgeMonths:     vehicleAgeYears * 12,
+	})
+	if err != nil {
+		writeError(w, http.StatusUnprocessableEntity, "nlc_error", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"inventory_ulid":         inventoryULID,
+		"gross_physical_cost_eur": priceEUR,
+		"logistics_cost_eur":     result.LogisticsCostEUR,
+		"tax_amount_eur":         result.TaxAmountEUR,
+		"net_landed_cost_eur":    result.NetLandedCostEUR,
+		"origin_country":         originCountry,
+		"target_country":         targetCountry,
+		"co2_gkm":                co2GKM,
+		"vehicle_age_years":      vehicleAgeYears,
+	})
 }
 
 // SDIScore GET /api/v1/dealer/sdi/{ulid}
@@ -572,17 +643,4 @@ func (d *Deps) SDIScore(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// DealerRegister POST /api/v1/auth/register
-func (d *Deps) DealerRegister(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusNotImplemented, map[string]string{"status": "coming_soon"})
-}
-
-// DealerLogin POST /api/v1/auth/login
-func (d *Deps) DealerLogin(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusNotImplemented, map[string]string{"status": "coming_soon"})
-}
-
-// TokenRefresh POST /api/v1/auth/refresh
-func (d *Deps) TokenRefresh(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusNotImplemented, map[string]string{"status": "coming_soon"})
-}
+// DealerRegister, DealerLogin, TokenRefresh are implemented in auth.go
