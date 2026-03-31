@@ -269,3 +269,100 @@ GROUP BY week, make, model, origin_country;
 --   AND mileage > {current_mileage:UInt32} + 500
 -- GROUP BY vin
 -- HAVING historical_max > 0;
+
+-- =============================================================================
+-- TradingCar — Price Candles (OHLCV for car model+year+country "tickers")
+-- Computed nightly by scheduler from vehicle_inventory
+-- open = p10, high = p90, low = p5, close = median (same as TradingView OHLC)
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS cardex.price_candles (
+    period_start    Date,
+    period_type     LowCardinality(String),  -- 'W' (week), 'M' (month)
+    make            LowCardinality(String),
+    model           LowCardinality(String),
+    year            UInt16,
+    country         LowCardinality(FixedString(2)),
+    fuel_type       LowCardinality(String),
+    open_eur        Float64,
+    high_eur        Float64,
+    low_eur         Float64,
+    close_eur       Float64,
+    volume          UInt32,         -- listing count
+    avg_mileage_km  Float32,
+    avg_dom         Float32,        -- avg days on market = liquidity proxy
+    computed_at     DateTime DEFAULT now()
+) ENGINE = ReplacingMergeTree(computed_at)
+ORDER BY (period_start, period_type, make, model, year, country, fuel_type)
+PARTITION BY toYYYYMM(period_start)
+TTL period_start + INTERVAL 10 YEAR DELETE
+SETTINGS index_granularity = 8192;
+
+-- Ticker metadata (top 200 most liquid tickers pre-computed)
+CREATE TABLE IF NOT EXISTS cardex.ticker_stats (
+    ticker_id       String,   -- e.g. "BMW_3-Series_2020_DE_Gasoline"
+    make            LowCardinality(String),
+    model           LowCardinality(String),
+    year            UInt16,
+    country         LowCardinality(FixedString(2)),
+    fuel_type       LowCardinality(String),
+    last_price_eur  Float64,
+    change_1w_pct   Float32,
+    change_1m_pct   Float32,
+    change_3m_pct   Float32,
+    volume_30d      UInt32,
+    avg_dom_30d     Float32,
+    liquidity_score Float32,
+    updated_at      DateTime DEFAULT now()
+) ENGINE = ReplacingMergeTree(updated_at)
+ORDER BY ticker_id
+SETTINGS index_granularity = 8192;
+
+-- =============================================================================
+-- Arbitrage Opportunities (computed hourly by arbitrage scanner)
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS cardex.arbitrage_opportunities (
+    opportunity_id  String,        -- UUID-like deterministic hash
+    scanned_at      DateTime DEFAULT now(),
+    opportunity_type LowCardinality(String),  -- PRICE_DIFF|BPM_EXPORT|EV_SUBSIDY|SEASONAL|DISTRESSED|CLASSIC
+    make            LowCardinality(String),
+    model           LowCardinality(String),
+    year            UInt16,
+    fuel_type       LowCardinality(String),
+    origin_country  LowCardinality(FixedString(2)),
+    dest_country    LowCardinality(FixedString(2)),
+    origin_median_eur Float64,
+    dest_median_eur   Float64,
+    nlc_estimate_eur  Float64,     -- logistics + tax
+    gross_margin_eur  Float64,     -- dest_median - origin_median - nlc
+    margin_pct        Float32,     -- gross_margin / origin_median * 100
+    confidence_score  Float32,     -- 0-1, based on sample size + recency
+    sample_size_origin UInt32,     -- listings used for origin median
+    sample_size_dest   UInt32,
+    co2_gkm           UInt16,      -- relevant for BPM/IEDMT calculation
+    bpm_refund_eur    Float64,     -- NL BPM refund estimate (0 if not applicable)
+    iedmt_eur         Float64,     -- ES IEDMT estimate (0 if not applicable)
+    malus_eur         Float64,     -- FR Malus estimate (0 if not applicable)
+    example_listing_url String,    -- one representative listing URL
+    status            LowCardinality(String) DEFAULT 'ACTIVE'  -- ACTIVE|EXPIRED|BOOKED
+) ENGINE = ReplacingMergeTree(scanned_at)
+ORDER BY (opportunity_id)
+PARTITION BY toYYYYMM(scanned_at)
+TTL scanned_at + INTERVAL 90 DAY DELETE
+SETTINGS index_granularity = 8192;
+
+-- Route performance tracking (for learning which routes work)
+CREATE TABLE IF NOT EXISTS cardex.arbitrage_route_stats (
+    route_key       String,        -- "DE_ES_BMW_3-Series_Gasoline"
+    origin_country  LowCardinality(FixedString(2)),
+    dest_country    LowCardinality(FixedString(2)),
+    make            LowCardinality(String),
+    model_family    LowCardinality(String),  -- "3 Series" → "3 Series" (group variants)
+    fuel_type       LowCardinality(String),
+    avg_margin_eur  Float64,
+    avg_margin_pct  Float32,
+    opportunity_count UInt32,
+    avg_confidence  Float32,
+    last_updated    DateTime DEFAULT now()
+) ENGINE = ReplacingMergeTree(last_updated)
+ORDER BY route_key
+SETTINGS index_granularity = 8192;

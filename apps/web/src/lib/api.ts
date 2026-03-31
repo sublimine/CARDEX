@@ -117,6 +117,74 @@ export interface VINReport {
   disclaimer: string
 }
 
+// VIN History v2 — enriched with NHTSA, Euro NCAP, forensic mileage
+
+export interface VINSpec {
+  make: string
+  model: string
+  year: number
+  body_type: string
+  fuel_type: string
+  engine_displacement_l: number
+  engine_cylinders: number
+  engine_kw: number
+  transmission: string
+  country_of_manufacture: string
+}
+
+export interface VINRecall {
+  campaign: string
+  component: string
+  summary: string
+  remedy: string
+  date: string
+}
+
+export interface VINSafety {
+  ncap_stars: number
+  ncap_adult_pct: number
+  ncap_child_pct: number
+  ncap_pedestrian_pct: number
+  ncap_safety_assist_pct: number
+  ncap_test_year: number
+  recall_count: number
+  recalls: VINRecall[]
+}
+
+export interface VINHistory {
+  events: VINEvent[]
+  event_count: number
+  mileage_ok: boolean
+  mileage_warning: string
+  forensic_max_km: number
+  forensic_sources: string[]
+  first_seen: string
+  last_seen: string
+}
+
+export interface VINReportV2 {
+  vin: string
+  spec: VINSpec | null
+  safety: VINSafety
+  history: VINHistory
+  summary: {
+    first_seen_date?: string
+    last_seen_date?: string
+    ownership_changes: number
+    accident_records: number
+    import_records: number
+    times_listed: number
+    min_mileage_km?: number
+    max_mileage_km?: number
+    countries_seen_in: string[]
+    price_history_eur: number[]
+  }
+  stolen_status: string
+  data_sources: string[]
+  report_generated_at: string
+  disclaimer: string
+}
+
 export interface InventoryItem {
   inventory_ulid: string
   vin?: string
@@ -193,7 +261,7 @@ export function getHeatmap(params: { make?: string; country?: string; resolution
 // ── VIN History ──────────────────────────────────────────────────────────────
 
 export function getVINReport(vin: string) {
-  return apiFetch<VINReport>(`/api/v1/vin/${vin.toUpperCase()}`, {
+  return apiFetch<VINReportV2>(`/api/v1/vin/${vin.toUpperCase()}`, {
     next: { revalidate: 86400 },
   })
 }
