@@ -35,19 +35,21 @@ var _privKey = loadPrivateKey() // loaded once at startup
 // issueToken generates a signed JWT for the given subject (user/dealer ULID).
 // Claims:
 //
-//	sub   — user ULID
-//	role  — "DEALER" | "USER"
-//	tier  — subscription tier (FREE / PRO / …)
-//	iat   — issued at (Unix)
-//	exp   — expiry (Unix, 24 h)
-func issueToken(sub, role, tier string) (string, error) {
+//	sub    — user ULID
+//	entity — entity ULID (dealer org, empty for non-dealer users)
+//	role   — "DEALER" | "USER"
+//	tier   — subscription tier (FREE / PRO / …)
+//	iat    — issued at (Unix)
+//	exp    — expiry (Unix, 24 h)
+func issueToken(sub, entityULID, role, tier string) (string, error) {
 	now := time.Now()
 	claims := jwt.MapClaims{
-		"sub":  sub,
-		"role": role,
-		"tier": tier,
-		"iat":  now.Unix(),
-		"exp":  now.Add(24 * time.Hour).Unix(),
+		"sub":    sub,
+		"entity": entityULID,
+		"role":   role,
+		"tier":   tier,
+		"iat":    now.Unix(),
+		"exp":    now.Add(24 * time.Hour).Unix(),
 	}
 
 	if _privKey != nil {
@@ -149,7 +151,7 @@ func (d *Deps) DealerRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, err := issueToken(userULID, "DEALER", "FREE")
+	accessToken, err := issueToken(userULID, entityULID, "DEALER", "FREE")
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "token_error", "failed to issue token")
 		return
@@ -210,7 +212,7 @@ func (d *Deps) DealerLogin(w http.ResponseWriter, r *http.Request) {
 		role = "DEALER"
 	}
 
-	accessToken, err := issueToken(userULID, role, subscriptionTier)
+	accessToken, err := issueToken(userULID, entityULID, role, subscriptionTier)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "token_error", "failed to issue token")
 		return
@@ -267,7 +269,7 @@ func (d *Deps) TokenRefresh(w http.ResponseWriter, r *http.Request) {
 		role = "DEALER"
 	}
 
-	accessToken, err := issueToken(userULID, role, subscriptionTier)
+	accessToken, err := issueToken(userULID, entityULID, role, subscriptionTier)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "token_error", "failed to issue token")
 		return

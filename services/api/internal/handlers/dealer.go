@@ -13,11 +13,15 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// ──────────────────────────────────────────────────────────────────────────────
+// INVENTORY
+// ──────────────────────────────────────────────────────────────────────────────
+
 // InventoryList GET /api/v1/dealer/inventory
 func (d *Deps) InventoryList(w http.ResponseWriter, r *http.Request) {
-	dealerULID := middleware.GetDealerULID(r.Context())
-	if dealerULID == "" {
-		writeError(w, http.StatusUnauthorized, "unauthorized", "dealer context missing")
+	entityULID := middleware.GetEntityULID(r.Context())
+	if entityULID == "" {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "dealer entity context missing")
 		return
 	}
 
@@ -29,23 +33,23 @@ func (d *Deps) InventoryList(w http.ResponseWriter, r *http.Request) {
 		perPage = 200
 	}
 
-	args := []any{dealerULID}
+	args := []any{entityULID}
 	filter := ""
 	if status != "" {
-		filter = "AND listing_status = $2"
+		filter = "AND status = $2"
 		args = append(args, status)
 	}
 	args = append(args, perPage, (page-1)*perPage)
-	offsetIdx := len(args) - 1
-	limitIdx := len(args) - 2
+	limitIdx := len(args) - 1
+	offsetIdx := len(args)
 
 	rows, err := d.DB.Query(r.Context(),
-		"SELECT inventory_ulid, vin, make, model, variant, year, mileage_km, "+
-			"fuel_type, transmission, color, price_eur, listing_status, "+
-			"photo_urls, platform_ids, marketing_score, created_at, updated_at "+
+		"SELECT item_ulid, vin, make, model, variant, year, mileage_km, "+
+			"fuel_type, transmission, color, asking_price_eur, status, "+
+			"photo_urls, marketing_score, created_at, updated_at "+
 			"FROM dealer_inventory "+
-			"WHERE dealer_ulid = $1 "+filter+
-			" ORDER BY created_at DESC LIMIT $"+strconv.Itoa(limitIdx+1)+" OFFSET $"+strconv.Itoa(offsetIdx+1),
+			"WHERE entity_ulid = $1 "+filter+
+			" ORDER BY created_at DESC LIMIT $"+strconv.Itoa(limitIdx)+" OFFSET $"+strconv.Itoa(offsetIdx),
 		args...,
 	)
 	if err != nil {
@@ -55,41 +59,39 @@ func (d *Deps) InventoryList(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 
 	type item struct {
-		ULID         string            `json:"inventory_ulid"`
-		VIN          *string           `json:"vin,omitempty"`
-		Make         string            `json:"make"`
-		Model        string            `json:"model"`
-		Variant      *string           `json:"variant,omitempty"`
-		Year         int               `json:"year"`
-		MileageKM    int               `json:"mileage_km"`
-		FuelType     *string           `json:"fuel_type,omitempty"`
-		Transmission *string           `json:"transmission,omitempty"`
-		Color        *string           `json:"color,omitempty"`
-		PriceEUR     float64           `json:"price_eur"`
-		Status       string            `json:"listing_status"`
-		PhotoURLs    []string          `json:"photo_urls"`
-		PlatformIDs  map[string]string `json:"platform_ids"`
-		MarketScore  *int              `json:"marketing_score,omitempty"`
-		CreatedAt    time.Time         `json:"created_at"`
-		UpdatedAt    time.Time         `json:"updated_at"`
+		ULID         string   `json:"item_ulid"`
+		VIN          *string  `json:"vin,omitempty"`
+		Make         string   `json:"make"`
+		Model        string   `json:"model"`
+		Variant      *string  `json:"variant,omitempty"`
+		Year         int      `json:"year"`
+		MileageKM    int      `json:"mileage_km"`
+		FuelType     *string  `json:"fuel_type,omitempty"`
+		Transmission *string  `json:"transmission,omitempty"`
+		Color        *string  `json:"color,omitempty"`
+		PriceEUR     float64  `json:"asking_price_eur"`
+		Status       string   `json:"status"`
+		PhotoURLs    []string `json:"photo_urls"`
+		MarketScore  *float64 `json:"marketing_score,omitempty"`
+		CreatedAt    string   `json:"created_at"`
+		UpdatedAt    string   `json:"updated_at"`
 	}
 
 	var items []item
 	for rows.Next() {
 		var it item
-		var platformIDsJSON []byte
+		var createdAt, updatedAt time.Time
 		if err := rows.Scan(
 			&it.ULID, &it.VIN, &it.Make, &it.Model, &it.Variant,
 			&it.Year, &it.MileageKM, &it.FuelType, &it.Transmission,
 			&it.Color, &it.PriceEUR, &it.Status,
-			&it.PhotoURLs, &platformIDsJSON, &it.MarketScore,
-			&it.CreatedAt, &it.UpdatedAt,
+			&it.PhotoURLs, &it.MarketScore,
+			&createdAt, &updatedAt,
 		); err != nil {
 			continue
 		}
-		if platformIDsJSON != nil {
-			json.Unmarshal(platformIDsJSON, &it.PlatformIDs)
-		}
+		it.CreatedAt = createdAt.Format(time.RFC3339)
+		it.UpdatedAt = updatedAt.Format(time.RFC3339)
 		items = append(items, it)
 	}
 	if items == nil {
@@ -100,7 +102,11 @@ func (d *Deps) InventoryList(w http.ResponseWriter, r *http.Request) {
 
 // InventoryCreate POST /api/v1/dealer/inventory
 func (d *Deps) InventoryCreate(w http.ResponseWriter, r *http.Request) {
-	dealerULID := middleware.GetDealerULID(r.Context())
+	entityULID := middleware.GetEntityULID(r.Context())
+	if entityULID == "" {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "dealer entity context missing")
+		return
+	}
 
 	var body struct {
 		VIN          *string  `json:"vin"`
@@ -112,47 +118,48 @@ func (d *Deps) InventoryCreate(w http.ResponseWriter, r *http.Request) {
 		FuelType     *string  `json:"fuel_type"`
 		Transmission *string  `json:"transmission"`
 		Color        *string  `json:"color"`
-		PriceEUR     float64  `json:"price_eur"`
+		PriceEUR     float64  `json:"asking_price_eur"`
 		PhotoURLs    []string `json:"photo_urls"`
+		Description  *string  `json:"description"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_body", err.Error())
 		return
 	}
-	if body.Make == "" || body.Model == "" || body.Year == 0 {
-		writeError(w, http.StatusBadRequest, "missing_fields", "make, model, year are required")
+	if body.Make == "" || body.Model == "" || body.Year == 0 || body.PriceEUR <= 0 {
+		writeError(w, http.StatusBadRequest, "missing_fields", "make, model, year, asking_price_eur are required")
 		return
 	}
 
-	inventoryULID := ulid.Make().String()
+	itemULID := ulid.Make().String()
 	_, err := d.DB.Exec(r.Context(), `
 		INSERT INTO dealer_inventory (
-			inventory_ulid, dealer_ulid, vin, make, model, variant,
+			item_ulid, entity_ulid, vin, make, model, variant,
 			year, mileage_km, fuel_type, transmission, color,
-			price_eur, photo_urls, listing_status
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'DRAFT')
+			asking_price_eur, photo_urls, description, status
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'AVAILABLE')
 	`,
-		inventoryULID, dealerULID, body.VIN, body.Make, body.Model, body.Variant,
+		itemULID, entityULID, body.VIN, body.Make, body.Model, body.Variant,
 		body.Year, body.MileageKM, body.FuelType, body.Transmission, body.Color,
-		body.PriceEUR, body.PhotoURLs,
+		body.PriceEUR, body.PhotoURLs, body.Description,
 	)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "db_error", err.Error())
 		return
 	}
-	writeJSON(w, http.StatusCreated, map[string]string{"inventory_ulid": inventoryULID})
+	writeJSON(w, http.StatusCreated, map[string]string{"item_ulid": itemULID})
 }
 
 // InventoryUpdate PUT /api/v1/dealer/inventory/{ulid}
 func (d *Deps) InventoryUpdate(w http.ResponseWriter, r *http.Request) {
-	dealerULID := middleware.GetDealerULID(r.Context())
-	inventoryULID := r.PathValue("ulid")
+	entityULID := middleware.GetEntityULID(r.Context())
+	itemULID := r.PathValue("ulid")
 
 	var body struct {
-		PriceEUR      *float64 `json:"price_eur"`
-		MileageKM     *int     `json:"mileage_km"`
-		ListingStatus *string  `json:"listing_status"`
-		PhotoURLs     []string `json:"photo_urls"`
+		PriceEUR  *float64 `json:"asking_price_eur"`
+		MileageKM *int     `json:"mileage_km"`
+		Status    *string  `json:"status"`
+		PhotoURLs []string `json:"photo_urls"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_body", err.Error())
@@ -161,13 +168,13 @@ func (d *Deps) InventoryUpdate(w http.ResponseWriter, r *http.Request) {
 
 	tag, err := d.DB.Exec(r.Context(), `
 		UPDATE dealer_inventory SET
-			price_eur      = COALESCE($3, price_eur),
-			mileage_km     = COALESCE($4, mileage_km),
-			listing_status = COALESCE($5, listing_status),
-			photo_urls     = COALESCE($6, photo_urls),
-			updated_at     = NOW()
-		WHERE inventory_ulid = $1 AND dealer_ulid = $2
-	`, inventoryULID, dealerULID, body.PriceEUR, body.MileageKM, body.ListingStatus, body.PhotoURLs)
+			asking_price_eur = COALESCE($3, asking_price_eur),
+			mileage_km       = COALESCE($4, mileage_km),
+			status           = COALESCE($5, status),
+			photo_urls       = COALESCE($6, photo_urls),
+			updated_at       = NOW()
+		WHERE item_ulid = $1 AND entity_ulid = $2
+	`, itemULID, entityULID, body.PriceEUR, body.MileageKM, body.Status, body.PhotoURLs)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "db_error", err.Error())
 		return
@@ -181,17 +188,18 @@ func (d *Deps) InventoryUpdate(w http.ResponseWriter, r *http.Request) {
 
 // InventoryDelete DELETE /api/v1/dealer/inventory/{ulid}
 func (d *Deps) InventoryDelete(w http.ResponseWriter, r *http.Request) {
-	dealerULID := middleware.GetDealerULID(r.Context())
-	inventoryULID := r.PathValue("ulid")
+	entityULID := middleware.GetEntityULID(r.Context())
+	itemULID := r.PathValue("ulid")
 	d.DB.Exec(r.Context(),
-		"UPDATE dealer_inventory SET listing_status = 'REMOVED', updated_at = NOW() WHERE inventory_ulid = $1 AND dealer_ulid = $2",
-		inventoryULID, dealerULID,
+		"UPDATE dealer_inventory SET status = 'DELISTED', updated_at = NOW() WHERE item_ulid = $1 AND entity_ulid = $2",
+		itemULID, entityULID,
 	)
-	writeJSON(w, http.StatusOK, map[string]string{"status": "removed"})
+	writeJSON(w, http.StatusOK, map[string]string{"status": "delisted"})
 }
 
 // InventoryImportURL POST /api/v1/dealer/inventory/import-url
 func (d *Deps) InventoryImportURL(w http.ResponseWriter, r *http.Request) {
+	entityULID := middleware.GetEntityULID(r.Context())
 	var body struct {
 		URL string `json:"url"`
 	}
@@ -203,7 +211,7 @@ func (d *Deps) InventoryImportURL(w http.ResponseWriter, r *http.Request) {
 		Stream: "stream:import_url_jobs",
 		Values: map[string]any{
 			"url":          body.URL,
-			"dealer_ulid":  middleware.GetDealerULID(r.Context()),
+			"entity_ulid":  entityULID,
 			"requested_at": time.Now().UTC().Format(time.RFC3339),
 		},
 	})
@@ -213,16 +221,24 @@ func (d *Deps) InventoryImportURL(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// MULTIPOSTING
+// ──────────────────────────────────────────────────────────────────────────────
+
 // PublishJob POST /api/v1/dealer/publish
 func (d *Deps) PublishJob(w http.ResponseWriter, r *http.Request) {
-	dealerULID := middleware.GetDealerULID(r.Context())
+	entityULID := middleware.GetEntityULID(r.Context())
 
 	var body struct {
-		InventoryULID string   `json:"inventory_ulid"`
-		Platforms     []string `json:"platforms"`
+		ItemULID  string   `json:"item_ulid"`
+		Platforms []string `json:"platforms"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_body", err.Error())
+		return
+	}
+	if body.ItemULID == "" || len(body.Platforms) == 0 {
+		writeError(w, http.StatusBadRequest, "missing_fields", "item_ulid and platforms are required")
 		return
 	}
 
@@ -230,17 +246,17 @@ func (d *Deps) PublishJob(w http.ResponseWriter, r *http.Request) {
 	for _, platform := range body.Platforms {
 		rowULID := ulid.Make().String()
 		d.DB.Exec(r.Context(), `
-			INSERT INTO publish_jobs (job_ulid, inventory_ulid, dealer_ulid, platform, status)
+			INSERT INTO publish_jobs (job_ulid, item_ulid, entity_ulid, platform, status)
 			VALUES ($1, $2, $3, $4, 'PENDING')
-		`, rowULID, body.InventoryULID, dealerULID, platform)
+		`, rowULID, body.ItemULID, entityULID, platform)
 		d.Redis.XAdd(r.Context(), &redis.XAddArgs{
 			Stream: "stream:publish_jobs",
 			Values: map[string]any{
-				"job_ulid":       jobULID,
-				"row_ulid":       rowULID,
-				"inventory_ulid": body.InventoryULID,
-				"dealer_ulid":    dealerULID,
-				"platform":       platform,
+				"job_ulid":    jobULID,
+				"row_ulid":    rowULID,
+				"item_ulid":   body.ItemULID,
+				"entity_ulid": entityULID,
+				"platform":    platform,
 			},
 		})
 	}
@@ -251,7 +267,7 @@ func (d *Deps) PublishJob(w http.ResponseWriter, r *http.Request) {
 func (d *Deps) PublishJobStatus(w http.ResponseWriter, r *http.Request) {
 	jobULID := r.PathValue("job_id")
 	rows, err := d.DB.Query(r.Context(),
-		"SELECT platform, status, external_id, error_message, updated_at FROM publish_jobs WHERE job_ulid = $1",
+		"SELECT platform, status, external_id, error_message, created_at FROM publish_jobs WHERE job_ulid = $1",
 		jobULID,
 	)
 	if err != nil {
@@ -265,14 +281,14 @@ func (d *Deps) PublishJobStatus(w http.ResponseWriter, r *http.Request) {
 		Status     string  `json:"status"`
 		ExternalID *string `json:"external_id,omitempty"`
 		Error      *string `json:"error,omitempty"`
-		UpdatedAt  string  `json:"updated_at"`
+		CreatedAt  string  `json:"created_at"`
 	}
 	var statuses []jobStatus
 	for rows.Next() {
 		var s jobStatus
 		var ts time.Time
 		rows.Scan(&s.Platform, &s.Status, &s.ExternalID, &s.Error, &ts)
-		s.UpdatedAt = ts.Format(time.RFC3339)
+		s.CreatedAt = ts.Format(time.RFC3339)
 		statuses = append(statuses, s)
 	}
 	if statuses == nil {
@@ -281,12 +297,16 @@ func (d *Deps) PublishJobStatus(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"job_ulid": jobULID, "platforms": statuses})
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// LEADS / CRM
+// ──────────────────────────────────────────────────────────────────────────────
+
 // LeadsList GET /api/v1/dealer/leads
 func (d *Deps) LeadsList(w http.ResponseWriter, r *http.Request) {
-	dealerULID := middleware.GetDealerULID(r.Context())
+	entityULID := middleware.GetEntityULID(r.Context())
 	status := r.URL.Query().Get("status")
 
-	args := []any{dealerULID}
+	args := []any{entityULID}
 	filter := ""
 	if status != "" {
 		filter = "AND status = $2"
@@ -294,8 +314,8 @@ func (d *Deps) LeadsList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := d.DB.Query(r.Context(),
-		"SELECT lead_ulid, inventory_ulid, contact_name, contact_email, message, status, created_at "+
-			"FROM leads WHERE dealer_ulid = $1 "+filter+" ORDER BY created_at DESC LIMIT 200",
+		"SELECT lead_ulid, item_ulid, contact_name, contact_email, message, status, created_at "+
+			"FROM leads WHERE entity_ulid = $1 "+filter+" ORDER BY created_at DESC LIMIT 200",
 		args...,
 	)
 	if err != nil {
@@ -305,19 +325,19 @@ func (d *Deps) LeadsList(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 
 	type lead struct {
-		ULID          string  `json:"lead_ulid"`
-		InventoryULID *string `json:"inventory_ulid,omitempty"`
-		Name          string  `json:"contact_name"`
-		Email         string  `json:"contact_email"`
-		Message       *string `json:"message,omitempty"`
-		Status        string  `json:"status"`
-		CreatedAt     string  `json:"created_at"`
+		ULID      string  `json:"lead_ulid"`
+		ItemULID  *string `json:"item_ulid,omitempty"`
+		Name      *string `json:"contact_name,omitempty"`
+		Email     *string `json:"contact_email,omitempty"`
+		Message   *string `json:"message,omitempty"`
+		Status    string  `json:"status"`
+		CreatedAt string  `json:"created_at"`
 	}
 	var leads []lead
 	for rows.Next() {
 		var l lead
 		var ts time.Time
-		rows.Scan(&l.ULID, &l.InventoryULID, &l.Name, &l.Email, &l.Message, &l.Status, &ts)
+		rows.Scan(&l.ULID, &l.ItemULID, &l.Name, &l.Email, &l.Message, &l.Status, &ts)
 		l.CreatedAt = ts.Format(time.RFC3339)
 		leads = append(leads, l)
 	}
@@ -330,31 +350,32 @@ func (d *Deps) LeadsList(w http.ResponseWriter, r *http.Request) {
 // LeadCreate POST /api/v1/dealer/leads (public — buyer contacts dealer)
 func (d *Deps) LeadCreate(w http.ResponseWriter, r *http.Request) {
 	var body struct {
-		DealerULID    string  `json:"dealer_ulid"`
-		InventoryULID *string `json:"inventory_ulid"`
-		Name          string  `json:"contact_name"`
-		Email         string  `json:"contact_email"`
-		Phone         *string `json:"contact_phone"`
-		Message       *string `json:"message"`
-		Channel       string  `json:"channel"`
+		EntityULID string  `json:"entity_ulid"`
+		ItemULID   *string `json:"item_ulid"`
+		VehicleULID *string `json:"vehicle_ulid"`
+		Name       string  `json:"contact_name"`
+		Email      string  `json:"contact_email"`
+		Phone      *string `json:"contact_phone"`
+		Message    *string `json:"message"`
+		Platform   string  `json:"source_platform"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_body", err.Error())
 		return
 	}
-	if body.DealerULID == "" || body.Name == "" || body.Email == "" {
-		writeError(w, http.StatusBadRequest, "missing_fields", "dealer_ulid, contact_name, contact_email required")
+	if body.EntityULID == "" {
+		writeError(w, http.StatusBadRequest, "missing_fields", "entity_ulid is required")
 		return
 	}
-	if body.Channel == "" {
-		body.Channel = "CARDEX_WEB"
+	if body.Platform == "" {
+		body.Platform = "CARDEX_WEB"
 	}
 
 	leadULID := ulid.Make().String()
 	_, err := d.DB.Exec(r.Context(), `
-		INSERT INTO leads (lead_ulid, dealer_ulid, inventory_ulid, contact_name, contact_email, contact_phone, message, channel, status)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'NEW')
-	`, leadULID, body.DealerULID, body.InventoryULID, body.Name, body.Email, body.Phone, body.Message, body.Channel)
+		INSERT INTO leads (lead_ulid, entity_ulid, item_ulid, vehicle_ulid, contact_name, contact_email, contact_phone, message, source_platform, status)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'NEW')
+	`, leadULID, body.EntityULID, body.ItemULID, body.VehicleULID, body.Name, body.Email, body.Phone, body.Message, body.Platform)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "db_error", err.Error())
 		return
@@ -363,8 +384,8 @@ func (d *Deps) LeadCreate(w http.ResponseWriter, r *http.Request) {
 		Stream: "stream:lead_events",
 		Values: map[string]any{
 			"lead_ulid":   leadULID,
-			"dealer_ulid": body.DealerULID,
-			"channel":     body.Channel,
+			"entity_ulid": body.EntityULID,
+			"platform":    body.Platform,
 		},
 	})
 	writeJSON(w, http.StatusCreated, map[string]string{"lead_ulid": leadULID})
@@ -372,7 +393,7 @@ func (d *Deps) LeadCreate(w http.ResponseWriter, r *http.Request) {
 
 // LeadStatusUpdate PUT /api/v1/dealer/leads/{id}/status
 func (d *Deps) LeadStatusUpdate(w http.ResponseWriter, r *http.Request) {
-	dealerULID := middleware.GetDealerULID(r.Context())
+	entityULID := middleware.GetEntityULID(r.Context())
 	leadULID := r.PathValue("id")
 
 	var body struct {
@@ -383,16 +404,15 @@ func (d *Deps) LeadStatusUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	valid := map[string]bool{
-		"NEW": true, "CONTACTED": true, "VISIT_SCHEDULED": true,
-		"NEGOTIATING": true, "SOLD": true, "LOST": true,
+		"NEW": true, "CONTACTED": true, "NEGOTIATING": true, "SOLD": true, "LOST": true,
 	}
 	if !valid[body.Status] {
-		writeError(w, http.StatusBadRequest, "invalid_status", "invalid status value")
+		writeError(w, http.StatusBadRequest, "invalid_status", "valid values: NEW, CONTACTED, NEGOTIATING, SOLD, LOST")
 		return
 	}
 	tag, err := d.DB.Exec(r.Context(),
-		"UPDATE leads SET status = $1, updated_at = NOW() WHERE lead_ulid = $2 AND dealer_ulid = $3",
-		body.Status, leadULID, dealerULID,
+		"UPDATE leads SET status = $1, updated_at = NOW() WHERE lead_ulid = $2 AND entity_ulid = $3",
+		body.Status, leadULID, entityULID,
 	)
 	if err != nil || tag.RowsAffected() == 0 {
 		writeError(w, http.StatusNotFound, "not_found", "lead not found")
@@ -401,19 +421,24 @@ func (d *Deps) LeadStatusUpdate(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": body.Status})
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// PRICING INTELLIGENCE & ANALYTICS
+// ──────────────────────────────────────────────────────────────────────────────
+
 // PricingIntelligence GET /api/v1/dealer/pricing/{ulid}
 func (d *Deps) PricingIntelligence(w http.ResponseWriter, r *http.Request) {
-	inventoryULID := r.PathValue("ulid")
+	itemULID := r.PathValue("ulid")
+	entityULID := middleware.GetEntityULID(r.Context())
 
 	var make_, model, country string
 	var year, mileage int
 	var priceEUR float64
 	err := d.DB.QueryRow(r.Context(), `
-		SELECT di.make, di.model, di.year, di.mileage_km, di.price_eur, de.country
+		SELECT di.make, di.model, di.year, di.mileage_km, di.asking_price_eur, e.country_code
 		FROM dealer_inventory di
-		JOIN dealers de ON di.dealer_ulid = de.dealer_ulid
-		WHERE di.inventory_ulid = $1
-	`, inventoryULID).Scan(&make_, &model, &year, &mileage, &priceEUR, &country)
+		JOIN entities e ON di.entity_ulid = e.entity_ulid
+		WHERE di.item_ulid = $1 AND di.entity_ulid = $2
+	`, itemULID, entityULID).Scan(&make_, &model, &year, &mileage, &priceEUR, &country)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "not_found", "inventory item not found")
 		return
@@ -448,59 +473,64 @@ func (d *Deps) PricingIntelligence(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"inventory_ulid":  inventoryULID,
-		"your_price_eur":  priceEUR,
-		"market_p25":      p25,
-		"market_median":   median,
-		"market_p75":      p75,
-		"avg_dom_days":    avgDOM,
-		"market_sample":   sampleSize,
+		"item_ulid":      itemULID,
+		"your_price_eur": priceEUR,
+		"market_p25":     p25,
+		"market_median":  median,
+		"market_p75":     p75,
+		"avg_dom_days":   avgDOM,
+		"market_sample":  sampleSize,
 		"market_position": marketPosition,
-		"country":         country,
+		"country":        country,
 	})
 }
 
 // MarketingAudit GET /api/v1/dealer/audit
 func (d *Deps) MarketingAudit(w http.ResponseWriter, r *http.Request) {
-	dealerULID := middleware.GetDealerULID(r.Context())
+	entityULID := middleware.GetEntityULID(r.Context())
 
 	var auditULID string
-	var overallScore int
-	var photoScore, descScore, pricingScore, responseScore *int
-	var recommendations *string
+	var overallScore, photoScore, descScore, priceScore float64
+	var recommendationsJSON *string
 	var ts time.Time
 
 	err := d.DB.QueryRow(r.Context(), `
 		SELECT audit_ulid, overall_score, photo_score, description_score,
-		       pricing_score, response_time_score, recommendations, created_at
+		       price_score, recommendations, generated_at
 		FROM marketing_audits
-		WHERE dealer_ulid = $1 ORDER BY created_at DESC LIMIT 1
-	`, dealerULID).Scan(
+		WHERE entity_ulid = $1 ORDER BY generated_at DESC LIMIT 1
+	`, entityULID).Scan(
 		&auditULID, &overallScore, &photoScore, &descScore,
-		&pricingScore, &responseScore, &recommendations, &ts,
+		&priceScore, &recommendationsJSON, &ts,
 	)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "no_audit", "no audit available — trigger one via POST /audit/trigger")
 		return
 	}
+
+	// recommendations is JSONB; decode to string slice for API consumers
+	var recs []string
+	if recommendationsJSON != nil {
+		json.Unmarshal([]byte(*recommendationsJSON), &recs)
+	}
+
 	writeJSON(w, http.StatusOK, map[string]any{
-		"audit_ulid":         auditULID,
-		"overall_score":      overallScore,
-		"photo_score":        photoScore,
-		"description_score":  descScore,
-		"pricing_score":      pricingScore,
-		"response_time_score": responseScore,
-		"recommendations":    recommendations,
-		"created_at":         ts.Format(time.RFC3339),
+		"audit_ulid":        auditULID,
+		"overall_score":     int(overallScore * 100), // store 0-1, expose 0-100
+		"photo_score":       int(photoScore * 100),
+		"description_score": int(descScore * 100),
+		"pricing_score":     int(priceScore * 100),
+		"recommendations":   recs,
+		"created_at":        ts.Format(time.RFC3339),
 	})
 }
 
 // TriggerMarketingAudit POST /api/v1/dealer/audit/trigger
 func (d *Deps) TriggerMarketingAudit(w http.ResponseWriter, r *http.Request) {
-	dealerULID := middleware.GetDealerULID(r.Context())
+	entityULID := middleware.GetEntityULID(r.Context())
 	d.Redis.XAdd(r.Context(), &redis.XAddArgs{
 		Stream: "stream:audit_jobs",
-		Values: map[string]any{"dealer_ulid": dealerULID},
+		Values: map[string]any{"entity_ulid": entityULID},
 	})
 	writeJSON(w, http.StatusAccepted, map[string]string{
 		"status":  "queued",
@@ -508,15 +538,19 @@ func (d *Deps) TriggerMarketingAudit(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// NLC (Net Landed Cost)
+// ──────────────────────────────────────────────────────────────────────────────
+
 // NLCCalculation GET /api/v1/dealer/nlc/{ulid}?target_country=ES
-// Returns full Net Landed Cost breakdown for a vehicle in the dealer's inventory.
 func (d *Deps) NLCCalculation(w http.ResponseWriter, r *http.Request) {
 	if d.NLCCalc == nil {
 		writeError(w, http.StatusServiceUnavailable, "nlc_unavailable", "NLC engine not initialised")
 		return
 	}
 
-	inventoryULID := r.PathValue("ulid")
+	itemULID := r.PathValue("ulid")
+	entityULID := middleware.GetEntityULID(r.Context())
 	targetCountry := strings.ToUpper(r.URL.Query().Get("target_country"))
 
 	var make_, model, originCountry string
@@ -525,18 +559,18 @@ func (d *Deps) NLCCalculation(w http.ResponseWriter, r *http.Request) {
 
 	err := d.DB.QueryRow(r.Context(), `
 		SELECT di.make, di.model, di.year,
-		       COALESCE(de.country_code, 'DE'),
-		       COALESCE((SELECT gross_physical_cost_eur FROM vehicles WHERE vin = di.vin LIMIT 1), di.price_eur, 0)
+		       COALESCE(e.country_code, 'DE'),
+		       COALESCE((SELECT gross_physical_cost_eur FROM vehicles WHERE vin = di.vin LIMIT 1), di.asking_price_eur, 0)
 		FROM dealer_inventory di
-		JOIN entities de ON di.dealer_ulid = de.entity_ulid
-		WHERE di.inventory_ulid = $1
-	`, inventoryULID).Scan(&make_, &model, &year, &originCountry, &priceEUR)
+		JOIN entities e ON di.entity_ulid = e.entity_ulid
+		WHERE di.item_ulid = $1 AND di.entity_ulid = $2
+	`, itemULID, entityULID).Scan(&make_, &model, &year, &originCountry, &priceEUR)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "not_found", "inventory item not found")
 		return
 	}
 
-	// Try to get CO2 from vehicles table if VIN matches
+	// Best-effort CO2 lookup from historical vehicles data
 	d.DB.QueryRow(r.Context(), `
 		SELECT COALESCE(co2_gkm, 0) FROM vehicles
 		WHERE make = $1 AND model = $2 AND year = $3
@@ -570,17 +604,21 @@ func (d *Deps) NLCCalculation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"inventory_ulid":         inventoryULID,
+		"item_ulid":               itemULID,
 		"gross_physical_cost_eur": priceEUR,
-		"logistics_cost_eur":     result.LogisticsCostEUR,
-		"tax_amount_eur":         result.TaxAmountEUR,
-		"net_landed_cost_eur":    result.NetLandedCostEUR,
-		"origin_country":         originCountry,
-		"target_country":         targetCountry,
-		"co2_gkm":                co2GKM,
-		"vehicle_age_years":      vehicleAgeYears,
+		"logistics_cost_eur":      result.LogisticsCostEUR,
+		"tax_amount_eur":          result.TaxAmountEUR,
+		"net_landed_cost_eur":     result.NetLandedCostEUR,
+		"origin_country":          originCountry,
+		"target_country":          targetCountry,
+		"co2_gkm":                 co2GKM,
+		"vehicle_age_years":       vehicleAgeYears,
 	})
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SDI Score
+// ──────────────────────────────────────────────────────────────────────────────
 
 // SDIScore GET /api/v1/dealer/sdi/{ulid}
 func (d *Deps) SDIScore(w http.ResponseWriter, r *http.Request) {

@@ -5,9 +5,11 @@ RUN apk add --no-cache git gcc musl-dev
 
 WORKDIR /build
 
+# Copy workspace and all required modules
 COPY go.work* ./
 COPY internal/shared ./internal/shared
-COPY services/api ./services/api
+COPY services/alpha  ./services/alpha
+COPY services/api    ./services/api
 
 WORKDIR /build/services/api
 

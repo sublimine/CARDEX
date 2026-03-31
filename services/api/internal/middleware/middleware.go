@@ -20,6 +20,7 @@ const (
 	keyRequestID  contextKey = "request_id"
 	keyDealerID   contextKey = "dealer_id"
 	keyDealerULID contextKey = "dealer_ulid"
+	keyEntityULID contextKey = "entity_ulid"
 )
 
 // RequestID adds a unique request ID to every request.
@@ -107,7 +108,9 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 			sub, _ := claims["sub"].(string)
+			entity, _ := claims["entity"].(string)
 			ctx := context.WithValue(r.Context(), keyDealerULID, sub)
+			ctx = context.WithValue(ctx, keyEntityULID, entity)
 			next(w, r.WithContext(ctx))
 			return
 		}
@@ -136,14 +139,23 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
+		entity, _ := claims["entity"].(string)
 		ctx := context.WithValue(r.Context(), keyDealerULID, sub)
+		ctx = context.WithValue(ctx, keyEntityULID, entity)
 		next(w, r.WithContext(ctx))
 	}
 }
 
-// GetDealerULID retrieves the authenticated dealer's ULID from context.
+// GetDealerULID retrieves the authenticated user's ULID (JWT sub) from context.
 func GetDealerULID(ctx context.Context) string {
 	v, _ := ctx.Value(keyDealerULID).(string)
+	return v
+}
+
+// GetEntityULID retrieves the authenticated entity (dealer org) ULID from context.
+// This is the correct key to use for all dealer_inventory / leads / publish_jobs queries.
+func GetEntityULID(ctx context.Context) string {
+	v, _ := ctx.Value(keyEntityULID).(string)
 	return v
 }
 
