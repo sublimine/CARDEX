@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -108,17 +109,17 @@ func (d *Deps) ArbitrageOpportunities(w http.ResponseWriter, r *http.Request) {
 
 	// Validate sort column against allowlist
 	allowedSorts := map[string]string{
-		"margin_eur":  "gross_margin_eur",
-		"margin_pct":  "margin_pct",
-		"confidence":  "confidence_score",
-		"scanned_at":  "scanned_at",
+		"margin_eur": "gross_margin_eur",
+		"margin_pct": "margin_pct",
+		"confidence": "confidence_score",
+		"scanned_at": "scanned_at",
 	}
 	sortCol, ok := allowedSorts[sortBy]
 	if !ok {
 		sortCol = "gross_margin_eur"
 	}
 
-	// Build cache key from canonical params
+	// Build deterministic cache key from all params
 	cacheKey := fmt.Sprintf("arbitrage:opps:%x", sha256.Sum256([]byte(
 		strings.Join([]string{oppType, origin, dest, make_, minMarginStr, minConfStr, sortBy, limitStr}, "|"),
 	)))
@@ -137,10 +138,9 @@ func (d *Deps) ArbitrageOpportunities(w http.ResponseWriter, r *http.Request) {
 	where = append(where, "status = 'ACTIVE'")
 	where = append(where, "scanned_at > now() - INTERVAL 48 HOUR")
 	where = append(where, "confidence_score >= ?")
-	args = append(args, minConf)
+	args = append(args, float32(minConf))
 
 	if oppType != "" {
-		// comma-separated types
 		types := strings.Split(oppType, ",")
 		var typeFilters []string
 		for _, t := range types {
@@ -222,8 +222,6 @@ func (d *Deps) ArbitrageOpportunities(w http.ResponseWriter, r *http.Request) {
 			"sort":           sortCol,
 		},
 	}
-
-	// Write response and cache it
 	writeJSONCached(r.Context(), w, d.Redis, cacheKey, 5*time.Minute, http.StatusOK, resp)
 }
 
@@ -285,7 +283,8 @@ func (d *Deps) ArbitrageNLCBreakdown(w http.ResponseWriter, r *http.Request) {
 	dest := strings.ToUpper(strings.TrimSpace(r.PathValue("dest")))
 
 	if ticker == "" || len(origin) != 2 || len(dest) != 2 {
-		writeError(w, http.StatusBadRequest, "invalid_params", "ticker, origin, and dest are required; origin/dest must be 2-char country codes")
+		writeError(w, http.StatusBadRequest, "invalid_params",
+			"ticker, origin, and dest are required; origin/dest must be 2-char country codes")
 		return
 	}
 	if !isAlpha(origin) || !isAlpha(dest) {
@@ -293,11 +292,12 @@ func (d *Deps) ArbitrageNLCBreakdown(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parse ticker: make_model_year_fuel — model may contain hyphens
-	// Format: BMW_3-Series_2020_Gasoline → parts[0]=make, parts[last]=fuel, parts[last-1]=year, rest=model
+	// Parse ticker: MAKE_MODEL_YEAR_FUEL — model may contain hyphens and underscores
+	// Convention: last segment = fuel, second-to-last = year (4-digit), rest = make_model
 	parts := strings.Split(ticker, "_")
 	if len(parts) < 4 {
-		writeError(w, http.StatusBadRequest, "invalid_ticker", "ticker must be in format MAKE_MODEL_YEAR_FUEL (e.g. BMW_3-Series_2020_Gasoline)")
+		writeError(w, http.StatusBadRequest, "invalid_ticker",
+			"ticker must be in format MAKE_MODEL_YEAR_FUEL (e.g. BMW_3-Series_2020_Gasoline)")
 		return
 	}
 	make_ := parts[0]
@@ -311,38 +311,35 @@ func (d *Deps) ArbitrageNLCBreakdown(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Look up price index medians for origin and dest
+	// Fetch price medians for origin and dest from ClickHouse price index
 	type priceRow struct {
 		MedianEUR float64
 		Volume    uint32
-		CO2GKM    uint16
 	}
-
 	fetchMedian := func(country string) (priceRow, error) {
 		row := d.CH.QueryRow(r.Context(),
 			"SELECT median_eur, volume"+
 				" FROM cardex.price_index"+
 				" WHERE make = ? AND model = ? AND year = ? AND country = ?"+
 				" ORDER BY index_date DESC LIMIT 1",
-			make_, model, year, country,
+			make_, model, uint16(year), country,
 		)
 		var pr priceRow
-		if err := row.Scan(&pr.MedianEUR, &pr.Volume); err != nil {
-			return pr, fmt.Errorf("no price data for %s %s %d in %s", make_, model, year, country)
+		if scanErr := row.Scan(&pr.MedianEUR, &pr.Volume); scanErr != nil {
+			return pr, fmt.Errorf("no price index data for %s %s %d in %s", make_, model, year, country)
 		}
 		return pr, nil
 	}
 
-	// Also look up CO2 from inventory
+	// Fetch best available CO2 value from inventory
 	fetchCO2 := func() int {
 		var co2 uint16
-		row := d.CH.QueryRow(r.Context(),
+		_ = d.CH.QueryRow(r.Context(),
 			"SELECT co2_gkm FROM cardex.vehicle_inventory"+
 				" WHERE make = ? AND model = ? AND year = ? AND co2_gkm > 0"+
 				" ORDER BY last_updated_at DESC LIMIT 1",
-			make_, model, year,
-		)
-		row.Scan(&co2)
+			make_, model, uint16(year),
+		).Scan(&co2)
 		return int(co2)
 	}
 
@@ -383,12 +380,9 @@ func (d *Deps) ArbitrageNLCBreakdown(w http.ResponseWriter, r *http.Request) {
 		marginPct = grossMargin / originRow.MedianEUR * 100
 	}
 
-	// Determine tax type and rate
 	taxType, taxRatePct := taxTypeForRoute(dest, co2)
 
-	recommendation := marginRecommendation(marginPct)
-
-	resp := nlcBreakdownResponse{
+	writeJSON(w, http.StatusOK, nlcBreakdownResponse{
 		Ticker:          ticker,
 		Origin:          origin,
 		Dest:            dest,
@@ -396,7 +390,7 @@ func (d *Deps) ArbitrageNLCBreakdown(w http.ResponseWriter, r *http.Request) {
 		DestMedianEUR:   destRow.MedianEUR,
 		NLCBreakdown: nlcBreakdown{
 			LogisticsEUR: nlcResult.LogisticsCostEUR,
-			OriginTaxEUR: 0, // origin country rarely charges on export
+			OriginTaxEUR: 0, // origin countries do not charge export tax in these routes
 			DestTaxEUR:   nlcResult.TaxAmountEUR,
 			TotalNLCEUR:  totalNLC,
 			TaxType:      taxType,
@@ -405,18 +399,16 @@ func (d *Deps) ArbitrageNLCBreakdown(w http.ResponseWriter, r *http.Request) {
 		},
 		GrossMarginEUR: grossMargin,
 		MarginPct:      marginPct,
-		Recommendation: recommendation,
-	}
-	writeJSON(w, http.StatusOK, resp)
+		Recommendation: marginRecommendation(marginPct),
+	})
 
-	_ = fuelType // parsed but not used in NLC — kept for future fuel-type-aware NLC
-	_ = model
+	_ = fuelType // parsed for completeness; future NLC versions will use fuel type
 }
 
 // ── ArbitrageBookOpportunity ──────────────────────────────────────────────────
 
 // ArbitrageBookOpportunity handles POST /api/v1/arbitrage/book/{opportunity_id}
-// JWT required. Marks opportunity as BOOKED and stores in Redis portfolio.
+// JWT required. Marks opportunity as BOOKED and records it in the entity's Redis portfolio.
 func (d *Deps) ArbitrageBookOpportunity(w http.ResponseWriter, r *http.Request) {
 	entityULID := middleware.GetEntityULID(r.Context())
 	if entityULID == "" {
@@ -429,7 +421,7 @@ func (d *Deps) ArbitrageBookOpportunity(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusBadRequest, "missing_id", "opportunity_id is required")
 		return
 	}
-	// Validate: opportunity_id should be hex/alphanumeric only (deterministic hash)
+	// Validate: opportunity_id must be a safe identifier (hex chars and hyphens only)
 	for _, c := range opportunityID {
 		if !((c >= 'a' && c <= 'f') || (c >= '0' && c <= '9') || c == '-') {
 			writeError(w, http.StatusBadRequest, "invalid_id", "invalid opportunity_id format")
@@ -437,35 +429,32 @@ func (d *Deps) ArbitrageBookOpportunity(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	// Verify the opportunity exists and is still ACTIVE before booking
+	// Verify the opportunity exists and is still ACTIVE
+	var existingID string
 	row := d.CH.QueryRow(r.Context(),
-		"SELECT opportunity_id, status FROM cardex.arbitrage_opportunities"+
+		"SELECT opportunity_id FROM cardex.arbitrage_opportunities"+
 			" WHERE opportunity_id = ? AND status = 'ACTIVE'"+
 			" ORDER BY scanned_at DESC LIMIT 1",
 		opportunityID,
 	)
-	var existingID, existingStatus string
-	if err := row.Scan(&existingID, &existingStatus); err != nil {
+	if err := row.Scan(&existingID); err != nil {
 		writeError(w, http.StatusNotFound, "not_found", "opportunity not found or no longer active")
 		return
 	}
 
-	// INSERT new row with status=BOOKED into ClickHouse (ReplacingMergeTree will pick latest)
-	err := d.CH.Exec(r.Context(),
-		"INSERT INTO cardex.arbitrage_opportunities (opportunity_id, status, scanned_at)"+
-			" VALUES (?, 'BOOKED', now())",
+	// INSERT new row with status=BOOKED — ReplacingMergeTree(scanned_at) will keep this latest version
+	if err := d.CH.Exec(r.Context(),
+		"INSERT INTO cardex.arbitrage_opportunities (opportunity_id, status, scanned_at) VALUES (?, 'BOOKED', now())",
 		opportunityID,
-	)
-	if err != nil {
+	); err != nil {
 		writeError(w, http.StatusInternalServerError, "ch_error", "failed to book opportunity: "+err.Error())
 		return
 	}
 
-	// Store in Redis sorted set keyed by entity: score = Unix timestamp, member = opportunity_id
+	// Record in Redis sorted set (score = Unix timestamp) for fast portfolio retrieval
 	portfolioKey := "arbitrage:booked:" + entityULID
-	score := float64(time.Now().Unix())
 	d.Redis.ZAdd(r.Context(), portfolioKey, redis.Z{
-		Score:  score,
+		Score:  float64(time.Now().Unix()),
 		Member: opportunityID,
 	})
 	d.Redis.Expire(r.Context(), portfolioKey, 30*24*time.Hour)
@@ -481,7 +470,7 @@ func (d *Deps) ArbitrageBookOpportunity(w http.ResponseWriter, r *http.Request) 
 // ── ArbitrageBookedList ───────────────────────────────────────────────────────
 
 // ArbitrageBookedList handles GET /api/v1/arbitrage/booked
-// JWT required. Returns booked opportunities for authenticated entity.
+// JWT required. Returns all booked opportunities for the authenticated entity.
 func (d *Deps) ArbitrageBookedList(w http.ResponseWriter, r *http.Request) {
 	entityULID := middleware.GetEntityULID(r.Context())
 	if entityULID == "" {
@@ -491,7 +480,7 @@ func (d *Deps) ArbitrageBookedList(w http.ResponseWriter, r *http.Request) {
 
 	portfolioKey := "arbitrage:booked:" + entityULID
 
-	// Retrieve all booked opportunity IDs from sorted set (newest first)
+	// Retrieve opportunity IDs from Redis sorted set (newest first)
 	ids, err := d.Redis.ZRevRange(r.Context(), portfolioKey, 0, -1).Result()
 	if err != nil || len(ids) == 0 {
 		writeJSON(w, http.StatusOK, map[string]any{
@@ -502,8 +491,7 @@ func (d *Deps) ArbitrageBookedList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fetch full details from ClickHouse for each booked ID
-	// Build IN clause with positional placeholders
+	// Build IN clause for ClickHouse query
 	placeholders := make([]string, len(ids))
 	args := make([]any, len(ids))
 	for i, id := range ids {
@@ -554,15 +542,11 @@ func (d *Deps) ArbitrageBookedList(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Internal helpers ──────────────────────────────────────────────────────────
 
-// writeJSONCached encodes resp as JSON, writes it to w, and stores it in Redis.
+// writeJSONCached marshals resp, stores in Redis with the given TTL, and writes to w.
 func writeJSONCached(ctx context.Context, w http.ResponseWriter, rdb *redis.Client, key string, ttl time.Duration, status int, resp any) {
-	import_encoding_json_marshal := func() ([]byte, error) {
-		// inline to avoid import collision
-		return marshalJSON(resp)
-	}
-	b, err := import_encoding_json_marshal()
+	b, err := json.Marshal(resp)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "json_error", err.Error())
 		return
@@ -574,7 +558,7 @@ func writeJSONCached(ctx context.Context, w http.ResponseWriter, rdb *redis.Clie
 	w.Write(b)
 }
 
-// taxTypeForRoute returns the destination tax type name and applicable rate for display.
+// taxTypeForRoute returns the destination registration tax type and rate for display.
 func taxTypeForRoute(dest string, co2 int) (string, float64) {
 	switch dest {
 	case "ES":
@@ -590,12 +574,12 @@ func taxTypeForRoute(dest string, co2 int) (string, float64) {
 		}
 	case "FR":
 		if co2 > 117 {
-			return "Malus", 0 // variable — amount computed by calculator
+			return "Malus", 0 // variable amount — computed by NLC calculator
 		}
 		return "None", 0
 	case "NL":
 		if co2 > 0 {
-			return "RestBPM", 0 // variable — amount computed by calculator
+			return "RestBPM", 0 // variable amount — computed by NLC calculator
 		}
 		return "None", 0
 	default:
@@ -603,7 +587,7 @@ func taxTypeForRoute(dest string, co2 int) (string, float64) {
 	}
 }
 
-// marginRecommendation returns a qualitative assessment based on margin percentage.
+// marginRecommendation returns a qualitative rating based on the gross margin percentage.
 func marginRecommendation(marginPct float64) string {
 	switch {
 	case marginPct >= 15:
@@ -617,27 +601,33 @@ func marginRecommendation(marginPct float64) string {
 	}
 }
 
-// isAlpha returns true if all runes in s are ASCII letters.
+// isAlpha returns true if every rune in s is an ASCII letter and s is non-empty.
 func isAlpha(s string) bool {
+	if s == "" {
+		return false
+	}
 	for _, c := range s {
 		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
 			return false
 		}
 	}
-	return len(s) > 0
+	return true
 }
 
 // isAlphaUnderscore returns true if s contains only ASCII letters, digits, or underscores.
 func isAlphaUnderscore(s string) bool {
+	if s == "" {
+		return false
+	}
 	for _, c := range s {
 		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_') {
 			return false
 		}
 	}
-	return len(s) > 0
+	return true
 }
 
-// parseFloat parses a float64 from a string, returning def on error.
+// parseFloat parses a float64 from a string, returning def on failure.
 func parseFloat(s string, def float64) float64 {
 	if s == "" {
 		return def

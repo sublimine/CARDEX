@@ -527,3 +527,258 @@ CREATE INDEX IF NOT EXISTS idx_dealers_website     ON dealers (website) WHERE we
 CREATE INDEX IF NOT EXISTS idx_dealers_place_id    ON dealers (place_id) WHERE place_id IS NOT NULL;
 
 COMMIT;
+
+-- =============================================================================
+-- CRM SYSTEM — Full DealCar.io-level dealer CRM
+-- =============================================================================
+BEGIN;
+
+-- CRM Contacts (customer database — separated from anonymous leads)
+CREATE TABLE crm_contacts (
+    contact_ulid      TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL REFERENCES entities(entity_ulid) ON DELETE CASCADE,
+    full_name         TEXT NOT NULL,
+    email             TEXT,
+    phone             TEXT,
+    phone_alt         TEXT,
+    address_line1     TEXT,
+    address_city      TEXT,
+    address_country   CHAR(2),
+    postal_code       TEXT,
+    birth_year        INT,
+    id_number         TEXT,  -- DNI/NIE/passport — encrypted
+    preferred_contact TEXT CHECK (preferred_contact IN ('EMAIL','PHONE','WHATSAPP','SMS')),
+    language          CHAR(2) DEFAULT 'ES',
+    tags              TEXT[] DEFAULT '{}',
+    notes             TEXT,
+    source            TEXT,  -- how they came to us
+    gdpr_consent      BOOLEAN DEFAULT FALSE,
+    gdpr_consent_at   TIMESTAMPTZ,
+    lifetime_value_eur NUMERIC(12,2) DEFAULT 0,
+    total_purchases   INT DEFAULT 0,
+    total_inquiries   INT DEFAULT 0,
+    last_contact_at   TIMESTAMPTZ,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ DEFAULT NOW(),
+    vault_dek_id      TEXT NOT NULL  -- for PII encryption
+) WITH (fillfactor = 80);
+
+CREATE INDEX idx_crm_contacts_entity ON crm_contacts(entity_ulid);
+CREATE INDEX idx_crm_contacts_email ON crm_contacts(email) WHERE email IS NOT NULL;
+CREATE INDEX idx_crm_contacts_phone ON crm_contacts(phone) WHERE phone IS NOT NULL;
+CREATE INDEX idx_crm_contacts_tags ON crm_contacts USING GIN(tags);
+
+-- CRM Vehicles (full lifecycle inventory management — extends dealer_inventory)
+CREATE TABLE crm_vehicles (
+    crm_vehicle_ulid  TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL REFERENCES entities(entity_ulid) ON DELETE CASCADE,
+    item_ulid         TEXT REFERENCES dealer_inventory(item_ulid),  -- link to main inventory
+    vin               TEXT,
+    make              TEXT NOT NULL,
+    model             TEXT NOT NULL,
+    variant           TEXT,
+    year              INT NOT NULL,
+    mileage_km        INT,
+    fuel_type         TEXT,
+    transmission      TEXT,
+    color_exterior    TEXT,
+    color_interior    TEXT,
+    power_kw          INT,
+    co2_gkm           INT,
+    doors             INT,
+    body_type         TEXT,
+    registration_date DATE,
+    first_registration_country CHAR(2),
+    service_book      BOOLEAN DEFAULT FALSE,
+    keys_count        INT DEFAULT 2,
+
+    -- Lifecycle status (richer than dealer_inventory.status)
+    lifecycle_status  TEXT NOT NULL DEFAULT 'SOURCING' CHECK (lifecycle_status IN (
+        'SOURCING',        -- being acquired/negotiated
+        'PURCHASED',       -- we own it, not yet reconditioned
+        'RECONDITIONING',  -- at workshop
+        'READY',           -- ready for sale
+        'LISTED',          -- actively advertised
+        'RESERVED',        -- deposit taken
+        'SOLD',            -- completed sale
+        'RETURNED',        -- post-sale return
+        'ARCHIVED'         -- removed, not for sale
+    )),
+
+    -- Financial tracking (the core of DealCar.io's value)
+    purchase_price_eur     NUMERIC(12,2),
+    purchase_date          DATE,
+    purchase_from          TEXT,  -- auction / private / dealer / trade-in
+    purchase_channel       TEXT,  -- BCA / Manheim / Autorola / private / trade
+
+    recon_cost_eur         NUMERIC(12,2) DEFAULT 0,  -- workshop costs
+    transport_cost_eur     NUMERIC(12,2) DEFAULT 0,
+    homologation_cost_eur  NUMERIC(12,2) DEFAULT 0,  -- ITV/TUV/CT
+    marketing_cost_eur     NUMERIC(12,2) DEFAULT 0,
+    financing_cost_eur     NUMERIC(12,2) DEFAULT 0,  -- floor plan interest
+    other_cost_eur         NUMERIC(12,2) DEFAULT 0,
+
+    asking_price_eur       NUMERIC(12,2),
+    floor_price_eur        NUMERIC(12,2),  -- minimum acceptable
+    target_margin_pct      NUMERIC(5,2) DEFAULT 15.0,
+
+    -- Sale tracking
+    sale_price_eur         NUMERIC(12,2),
+    sale_date              DATE,
+    sale_contact_ulid      TEXT REFERENCES crm_contacts(contact_ulid),
+    payment_method         TEXT,  -- CASH / FINANCING / TRADE_IN_PLUS_CASH
+    financing_bank         TEXT,
+
+    -- Days in stock
+    stock_entry_date       DATE DEFAULT CURRENT_DATE,
+
+    -- Condition & photos
+    condition_grade        TEXT CHECK (condition_grade IN ('A','B','C','D')),  -- A=excellent, D=rough
+    photos                 TEXT[],
+    main_photo_url         TEXT,
+
+    -- Platform publishing
+    published_platforms    TEXT[] DEFAULT '{}',
+    meili_indexed          BOOLEAN DEFAULT FALSE,
+
+    notes                  TEXT,
+    created_at             TIMESTAMPTZ DEFAULT NOW(),
+    updated_at             TIMESTAMPTZ DEFAULT NOW()
+) WITH (fillfactor = 80);
+
+CREATE INDEX idx_crm_vehicles_entity ON crm_vehicles(entity_ulid);
+CREATE INDEX idx_crm_vehicles_lifecycle ON crm_vehicles(entity_ulid, lifecycle_status);
+CREATE INDEX idx_crm_vehicles_vin ON crm_vehicles(vin) WHERE vin IS NOT NULL;
+CREATE INDEX idx_crm_vehicles_make_model ON crm_vehicles(entity_ulid, make, model);
+
+-- Reconditioning jobs (workshop tracking)
+CREATE TABLE crm_recon_jobs (
+    job_ulid          TEXT PRIMARY KEY,
+    crm_vehicle_ulid  TEXT NOT NULL REFERENCES crm_vehicles(crm_vehicle_ulid) ON DELETE CASCADE,
+    entity_ulid       TEXT NOT NULL,
+    job_type          TEXT NOT NULL,  -- MECHANICAL / BODYWORK / DETAILING / ELECTRICAL / ITV / TIRES / OTHER
+    description       TEXT NOT NULL,
+    supplier_name     TEXT,
+    cost_estimate_eur NUMERIC(10,2),
+    cost_actual_eur   NUMERIC(10,2),
+    status            TEXT DEFAULT 'PENDING' CHECK (status IN ('PENDING','IN_PROGRESS','DONE','CANCELLED')),
+    started_at        DATE,
+    completed_at      DATE,
+    invoice_url       TEXT,
+    created_at        TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX idx_recon_jobs_vehicle ON crm_recon_jobs(crm_vehicle_ulid);
+
+-- CRM Pipeline (sales pipeline stages — like Kanban)
+CREATE TABLE crm_pipeline_stages (
+    stage_ulid        TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL REFERENCES entities(entity_ulid) ON DELETE CASCADE,
+    name              TEXT NOT NULL,
+    color             TEXT DEFAULT '#15b570',
+    position          INT NOT NULL,
+    auto_action       TEXT,  -- e.g. 'SEND_EMAIL_TEMPLATE_1'
+    is_won            BOOLEAN DEFAULT FALSE,
+    is_lost           BOOLEAN DEFAULT FALSE
+);
+
+-- Pipeline deals (each deal = contact x vehicle x stage)
+CREATE TABLE crm_deals (
+    deal_ulid         TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL REFERENCES entities(entity_ulid) ON DELETE CASCADE,
+    contact_ulid      TEXT NOT NULL REFERENCES crm_contacts(contact_ulid),
+    crm_vehicle_ulid  TEXT REFERENCES crm_vehicles(crm_vehicle_ulid),
+    stage_ulid        TEXT NOT NULL REFERENCES crm_pipeline_stages(stage_ulid),
+    title             TEXT NOT NULL,
+    status            TEXT DEFAULT 'OPEN' CHECK (status IN ('OPEN','WON','LOST','ON_HOLD')),
+    deal_value_eur    NUMERIC(12,2),
+    probability_pct   INT DEFAULT 50,
+    expected_close    DATE,
+    lost_reason       TEXT,
+    assigned_to       TEXT REFERENCES users(user_ulid),
+    notes             TEXT,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX idx_crm_deals_entity ON crm_deals(entity_ulid);
+CREATE INDEX idx_crm_deals_contact ON crm_deals(contact_ulid);
+CREATE INDEX idx_crm_deals_stage ON crm_deals(stage_ulid);
+CREATE INDEX idx_crm_deals_status ON crm_deals(entity_ulid, status);
+
+-- Communications log (email/call/WhatsApp/SMS/visit)
+CREATE TABLE crm_communications (
+    comm_ulid         TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL,
+    contact_ulid      TEXT REFERENCES crm_contacts(contact_ulid),
+    deal_ulid         TEXT REFERENCES crm_deals(deal_ulid),
+    crm_vehicle_ulid  TEXT REFERENCES crm_vehicles(crm_vehicle_ulid),
+    channel           TEXT NOT NULL CHECK (channel IN ('EMAIL','PHONE','WHATSAPP','SMS','VISIT','VIDEO_CALL','NOTE')),
+    direction         TEXT CHECK (direction IN ('INBOUND','OUTBOUND')),
+    subject           TEXT,
+    body              TEXT,
+    outcome           TEXT,  -- 'interested', 'not_interested', 'callback', 'offer_made', etc.
+    duration_sec      INT,   -- for calls
+    created_by        TEXT REFERENCES users(user_ulid),
+    created_at        TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX idx_crm_comm_contact ON crm_communications(contact_ulid);
+CREATE INDEX idx_crm_comm_deal ON crm_communications(deal_ulid);
+CREATE INDEX idx_crm_comm_entity ON crm_communications(entity_ulid, created_at DESC);
+
+-- Documents (contracts, invoices, registration docs)
+CREATE TABLE crm_documents (
+    doc_ulid          TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL,
+    crm_vehicle_ulid  TEXT REFERENCES crm_vehicles(crm_vehicle_ulid),
+    contact_ulid      TEXT REFERENCES crm_contacts(contact_ulid),
+    deal_ulid         TEXT REFERENCES crm_deals(deal_ulid),
+    doc_type          TEXT NOT NULL CHECK (doc_type IN (
+        'PURCHASE_CONTRACT','SALE_CONTRACT','INVOICE','TRADE_IN_RECEIPT',
+        'REGISTRATION_CERT','SERVICE_HISTORY','INSURANCE','FINANCING_CONTRACT',
+        'INSPECTION_REPORT','PHOTO_REPORT','OTHER'
+    )),
+    filename          TEXT NOT NULL,
+    storage_url       TEXT NOT NULL,  -- S3/GCS/MinIO URL
+    file_size_bytes   INT,
+    uploaded_by       TEXT REFERENCES users(user_ulid),
+    created_at        TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX idx_crm_docs_vehicle ON crm_documents(crm_vehicle_ulid);
+CREATE INDEX idx_crm_docs_deal ON crm_documents(deal_ulid);
+
+-- Financial transactions (per vehicle P&L)
+CREATE TABLE crm_transactions (
+    tx_ulid           TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL,
+    crm_vehicle_ulid  TEXT NOT NULL REFERENCES crm_vehicles(crm_vehicle_ulid),
+    tx_type           TEXT NOT NULL CHECK (tx_type IN (
+        'PURCHASE','RECON','TRANSPORT','HOMOLOGATION','MARKETING',
+        'FINANCING_COST','SALE_REVENUE','TRADE_IN_VALUE','TAX','OTHER_COST','OTHER_REVENUE'
+    )),
+    amount_eur        NUMERIC(12,2) NOT NULL,  -- negative = cost, positive = revenue
+    description       TEXT,
+    invoice_number    TEXT,
+    tx_date           DATE NOT NULL DEFAULT CURRENT_DATE,
+    created_at        TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX idx_crm_tx_vehicle ON crm_transactions(crm_vehicle_ulid);
+CREATE INDEX idx_crm_tx_entity_date ON crm_transactions(entity_ulid, tx_date DESC);
+
+-- KPI goals (monthly targets)
+CREATE TABLE crm_goals (
+    goal_ulid         TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL REFERENCES entities(entity_ulid) ON DELETE CASCADE,
+    period_month      CHAR(7) NOT NULL,  -- '2025-01'
+    target_units_sold INT DEFAULT 0,
+    target_revenue_eur NUMERIC(12,2) DEFAULT 0,
+    target_margin_pct NUMERIC(5,2) DEFAULT 0,
+    target_avg_dom    INT DEFAULT 30,
+    actual_units_sold INT DEFAULT 0,
+    actual_revenue_eur NUMERIC(12,2) DEFAULT 0,
+    actual_margin_pct  NUMERIC(5,2) DEFAULT 0,
+    actual_avg_dom     INT DEFAULT 0,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(entity_ulid, period_month)
+);
+
+COMMIT;
