@@ -10,10 +10,13 @@ package main
 
 import (
 	"context"
+	"encoding/xml"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -161,27 +164,87 @@ func (d *Deps) expireStaleListings(ctx context.Context) {
 	log.Printf("[job] expireStaleListings: marked %d listings as EXPIRED", count)
 }
 
-// refreshFXRates fetches EUR/CHF and EUR/GBP rates from ECB daily XML feed
-// and stores them in Redis for use by the pricing pipeline.
+// refreshFXRates fetches live EUR rates from the ECB daily XML feed
+// https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml
+// and writes them to:
+//   - Redis Hash "fx:rates"       → consumed by the API / frontend
+//   - Redis Hash "fx_buffer"      → consumed by the pipeline FX converter
+//
+// Both hashes use the format:   field = "CHF"  value = "0.94812"   (EUR→X rate)
+// The pipeline pkg/fx converts amount / rate to get EUR value.
+//
+// Falls back to last-known values if the ECB feed is unreachable.
 func (d *Deps) refreshFXRates(ctx context.Context) {
 	log.Println("[job] refreshFXRates: start")
-	// ECB publishes rates at ~16:00 CET daily.
-	// For now we store static approximate rates; a production implementation
-	// would parse https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml
-	// In dev environment we just set sensible defaults.
-	rates := map[string]interface{}{
-		"EUR_CHF": "0.94",
-		"EUR_GBP": "0.85",
-		"EUR_DKK": "7.46",
-		"EUR_SEK": "11.28",
-		"EUR_NOK": "11.72",
+
+	type ecbEnvelope struct {
+		Cube struct {
+			Cube struct {
+				Time  string `xml:"time,attr"`
+				Rates []struct {
+					Currency string `xml:"currency,attr"`
+					Rate     string `xml:"rate,attr"`
+				} `xml:"Cube"`
+			} `xml:"Cube"`
+		} `xml:"Cube"`
 	}
-	if err := d.rdb.HSet(ctx, "fx:rates", rates).Err(); err != nil {
-		log.Printf("[job] refreshFXRates: %v", err)
+
+	httpCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	req, _ := http.NewRequestWithContext(httpCtx, http.MethodGet,
+		"https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml", nil)
+	req.Header.Set("User-Agent", "CARDEX/1.0 FX-fetcher")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Printf("[job] refreshFXRates: ECB fetch failed (%v) — keeping last values", err)
 		return
 	}
-	d.rdb.Expire(ctx, "fx:rates", 8*time.Hour)
-	log.Println("[job] refreshFXRates: done")
+	defer resp.Body.Close()
+
+	var envelope ecbEnvelope
+	if err := xml.NewDecoder(resp.Body).Decode(&envelope); err != nil {
+		log.Printf("[job] refreshFXRates: XML decode failed (%v) — keeping last values", err)
+		return
+	}
+
+	rates := envelope.Cube.Cube.Rates
+	if len(rates) == 0 {
+		log.Println("[job] refreshFXRates: empty XML — keeping last values")
+		return
+	}
+
+	// Build both hash payloads in one pass.
+	// fx:rates   → "EUR_CHF": "0.9481"   (for display / legacy)
+	// fx_buffer  → "CHF": "0.9481"       (for pipeline ToEUR conversion)
+	displayRates := make(map[string]interface{}, len(rates)+1)
+	pipelineRates := make(map[string]interface{}, len(rates)+1)
+
+	displayRates["EUR_EUR"] = "1.0"
+	pipelineRates["EUR"] = "1.0"
+
+	for _, r := range rates {
+		cur := strings.ToUpper(strings.TrimSpace(r.Currency))
+		val := strings.TrimSpace(r.Rate)
+		if cur == "" || val == "" {
+			continue
+		}
+		displayRates["EUR_"+cur] = val
+		pipelineRates[cur] = val
+	}
+
+	pipe := d.rdb.Pipeline()
+	pipe.HSet(ctx, "fx:rates", displayRates)
+	pipe.Expire(ctx, "fx:rates", 8*time.Hour)
+	pipe.HSet(ctx, "fx_buffer", pipelineRates)
+	pipe.Expire(ctx, "fx_buffer", 8*time.Hour)
+	if _, err := pipe.Exec(ctx); err != nil {
+		log.Printf("[job] refreshFXRates: redis write failed: %v", err)
+		return
+	}
+
+	log.Printf("[job] refreshFXRates: stored %d currencies (date: %s)", len(rates), envelope.Cube.Cube.Time)
 }
 
 // dispatchScrapeJobs publishes scrape-job messages to stream:scrape_dispatch
