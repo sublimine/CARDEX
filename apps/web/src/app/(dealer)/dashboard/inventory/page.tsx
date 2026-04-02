@@ -21,7 +21,7 @@ interface Vehicle {
   asking_price_eur?: number
   mileage_km?: number
   vin?: string
-  status: string
+  lifecycle_status: string
   fuel_type?: string
   transmission?: string
   color?: string
@@ -29,19 +29,27 @@ interface Vehicle {
 }
 
 const STATUS_BADGE: Record<string, string> = {
-  IN_STOCK:     'bg-brand-500/20 text-brand-400',
-  SOLD:         'bg-surface-hover text-surface-muted',
-  RESERVED:     'bg-yellow-500/20 text-yellow-400',
-  IN_RECON:     'bg-orange-500/20 text-orange-400',
-  AVAILABLE:    'bg-emerald-500/20 text-emerald-400',
+  SOURCING:       'bg-blue-500/20 text-blue-400',
+  PURCHASED:      'bg-sky-500/20 text-sky-400',
+  RECONDITIONING: 'bg-orange-500/20 text-orange-400',
+  READY:          'bg-emerald-500/20 text-emerald-400',
+  LISTED:         'bg-brand-500/20 text-brand-400',
+  RESERVED:       'bg-yellow-500/20 text-yellow-400',
+  SOLD:           'bg-surface-hover text-surface-muted',
+  RETURNED:       'bg-red-500/20 text-red-400',
+  ARCHIVED:       'bg-surface-hover text-surface-muted',
 }
 
 const STATUS_LABEL: Record<string, string> = {
-  IN_STOCK:  'En stock',
-  SOLD:      'Vendido',
-  RESERVED:  'Reservado',
-  IN_RECON:  'En taller',
-  AVAILABLE: 'Disponible',
+  SOURCING:       'Adquisición',
+  PURCHASED:      'Comprado',
+  RECONDITIONING: 'En taller',
+  READY:          'Listo',
+  LISTED:         'Publicado',
+  RESERVED:       'Reservado',
+  SOLD:           'Vendido',
+  RETURNED:       'Devuelto',
+  ARCHIVED:       'Archivado',
 }
 
 export default function InventoryPage() {
@@ -58,7 +66,7 @@ export default function InventoryPage() {
   const fetchVehicles = useCallback(async (pageNum = 1, reset = false) => {
     const params = new URLSearchParams({
       limit: String(LIMIT),
-      offset: String((pageNum - 1) * LIMIT),
+      page: String(pageNum),
     })
     if (statusFilter) params.set('status', statusFilter)
     if (search.length >= 2) params.set('search', search)
@@ -137,11 +145,14 @@ export default function InventoryPage() {
           className="rounded-xl border border-surface-border bg-surface-card px-4 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none"
         >
           <option value="">Todos los estados</option>
-          <option value="IN_STOCK">En stock</option>
-          <option value="AVAILABLE">Disponible</option>
+          <option value="SOURCING">Adquisición</option>
+          <option value="PURCHASED">Comprado</option>
+          <option value="RECONDITIONING">En taller</option>
+          <option value="READY">Listo</option>
+          <option value="LISTED">Publicado</option>
           <option value="RESERVED">Reservado</option>
-          <option value="IN_RECON">En taller</option>
           <option value="SOLD">Vendido</option>
+          <option value="RETURNED">Devuelto</option>
         </select>
         <button
           onClick={() => { setLoading(true); fetchVehicles(1, true) }}
@@ -209,8 +220,8 @@ export default function InventoryPage() {
                     {v.mileage_km != null ? `${v.mileage_km.toLocaleString('es-ES')} km` : '—'}
                   </td>
                   <td className="px-4 py-3 text-center hidden md:table-cell">
-                    <span className={`inline-block rounded-md px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[v.status] ?? 'bg-surface-hover text-surface-muted'}`}>
-                      {STATUS_LABEL[v.status] ?? v.status}
+                    <span className={`inline-block rounded-md px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[v.lifecycle_status] ?? 'bg-surface-hover text-surface-muted'}`}>
+                      {STATUS_LABEL[v.lifecycle_status] ?? v.lifecycle_status}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-surface-muted hidden lg:table-cell">
