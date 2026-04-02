@@ -147,6 +147,13 @@ func main() {
 	mux.HandleFunc("GET /api/v1/dealer/crm/goals/{period}", middleware.Auth(deps.CRMGoalGet))
 	mux.HandleFunc("PUT /api/v1/dealer/crm/goals/{period}", middleware.Auth(deps.CRMGoalSet))
 
+	// Notifications (JWT required)
+	mux.HandleFunc("GET /api/v1/dealer/notifications", middleware.Auth(deps.NotificationList))
+	mux.HandleFunc("GET /api/v1/dealer/notifications/unread-count", middleware.Auth(deps.NotificationUnreadCount))
+	mux.HandleFunc("POST /api/v1/dealer/notifications/read-all", middleware.Auth(deps.NotificationMarkAllRead))
+	mux.HandleFunc("PATCH /api/v1/dealer/notifications/{ulid}/read", middleware.Auth(deps.NotificationMarkRead))
+	mux.HandleFunc("DELETE /api/v1/dealer/notifications/{ulid}", middleware.Auth(deps.NotificationDelete))
+
 	// ---- Server -------------------------------------------------------------
 	port := envOrDefault("PORT", "8080")
 	srv := &http.Server{

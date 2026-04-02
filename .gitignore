@@ -9,3 +9,7 @@ bin/
 .cursor/
 .claude/
 !.env.example
+
+# JWT keys (generated locally by 'make gen-keys')
+secrets/
+*.pem

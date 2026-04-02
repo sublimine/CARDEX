@@ -183,13 +183,20 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://cardex:cardex_dev_only@postgres:5432/cardex
-      REDIS_URL: redis://redis:6379
-      CLICKHOUSE_DSN: clickhouse://cardex:cardex_dev_only@clickhouse:9000/cardex
+      REDIS_ADDR: redis:6379
+      CLICKHOUSE_ADDR: clickhouse:9000
+      CLICKHOUSE_DB: cardex
+      CLICKHOUSE_USER: cardex
+      CLICKHOUSE_PASSWORD: cardex_dev_only
       MEILI_URL: http://meilisearch:7700
       MEILI_MASTER_KEY: cardex_meili_dev_only
       JWT_RS256_PRIVATE_KEY_FILE: /run/secrets/jwt_private_key
+      JWT_DEV_SECRET: cardex_dev_jwt_secret_only
       LOG_LEVEL: info
       PORT: "8080"
+      CORS_ORIGINS: "http://localhost:3001,http://localhost:3000"
+    volumes:
+      - ./secrets/jwt_private.pem:/run/secrets/jwt_private_key:ro
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------

@@ -781,4 +781,34 @@ CREATE TABLE crm_goals (
     UNIQUE(entity_ulid, period_month)
 );
 
+-- =============================================================================
+-- NOTIFICATIONS (In-app notification centre — per user or per entity)
+-- =============================================================================
+CREATE TABLE notifications (
+    notification_ulid  TEXT PRIMARY KEY,
+    entity_ulid        TEXT REFERENCES entities(entity_ulid) ON DELETE CASCADE,
+    user_ulid          TEXT REFERENCES users(user_ulid) ON DELETE CASCADE,
+    type               TEXT NOT NULL CHECK (type IN (
+        'PRICE_ALERT',
+        'ARBITRAGE',
+        'VIN_RESULT',
+        'DEAL_UPDATE',
+        'RECON_DONE',
+        'GOAL_REACHED',
+        'NEW_LEAD',
+        'INVENTORY_LOW',
+        'SYSTEM'
+    )),
+    title              TEXT NOT NULL,
+    body               TEXT NOT NULL,
+    action_url         TEXT,
+    data               JSONB DEFAULT '{}',
+    read_at            TIMESTAMPTZ,
+    created_at         TIMESTAMPTZ DEFAULT NOW()
+) WITH (fillfactor = 80);
+
+CREATE INDEX idx_notifications_entity  ON notifications (entity_ulid, created_at DESC) WHERE read_at IS NULL;
+CREATE INDEX idx_notifications_user    ON notifications (user_ulid,   created_at DESC) WHERE read_at IS NULL;
+CREATE INDEX idx_notifications_all     ON notifications (entity_ulid, created_at DESC);
+
 COMMIT;
