@@ -111,6 +111,7 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 			entity, _ := claims["entity"].(string)
 			ctx := context.WithValue(r.Context(), keyDealerULID, sub)
 			ctx = context.WithValue(ctx, keyEntityULID, entity)
+			ctx = storeClaims(ctx, claims)
 			next(w, r.WithContext(ctx))
 			return
 		}
@@ -142,6 +143,7 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 		entity, _ := claims["entity"].(string)
 		ctx := context.WithValue(r.Context(), keyDealerULID, sub)
 		ctx = context.WithValue(ctx, keyEntityULID, entity)
+		ctx = storeClaims(ctx, claims)
 		next(w, r.WithContext(ctx))
 	}
 }

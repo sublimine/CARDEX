@@ -7,6 +7,87 @@ import { Car, Users, BarChart2, Megaphone, TrendingUp, AlertCircle, Loader2 } fr
 
 const API = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/$/, '')
 
+// ── MDS Types ───────────────────────────────────────────────────────────────
+interface MdsEntry {
+  make: string
+  model: string
+  country: string
+  mds_days: number
+}
+
+function MdsDemandBadge({ mds }: { mds: number }) {
+  if (mds <= 20) return (
+    <span className="rounded-md bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-400">ALTA</span>
+  )
+  if (mds <= 45) return (
+    <span className="rounded-md bg-yellow-500/20 px-2 py-0.5 text-xs font-semibold text-yellow-400">MEDIA</span>
+  )
+  return (
+    <span className="rounded-md bg-red-500/20 px-2 py-0.5 text-xs font-semibold text-red-400">BAJA</span>
+  )
+}
+
+function MdsWidget() {
+  const [mdsData, setMdsData] = useState<MdsEntry[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch(`${API}/api/v1/analytics/mds`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return
+        const entries: MdsEntry[] = data.entries ?? data.results ?? data ?? []
+        // sort by mds_days ascending (lowest = highest demand), take top 5
+        const sorted = [...entries].sort((a, b) => a.mds_days - b.mds_days).slice(0, 5)
+        setMdsData(sorted)
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  return (
+    <div className="rounded-xl border border-surface-border bg-surface-card p-5">
+      <h2 className="mb-4 text-base font-semibold text-white">
+        📊 Demanda del Mercado — Días de Stock
+      </h2>
+      {loading ? (
+        <div className="flex justify-center py-6">
+          <Loader2 size={22} className="animate-spin text-brand-400" />
+        </div>
+      ) : mdsData.length === 0 ? (
+        <p className="py-4 text-center text-sm text-surface-muted">No hay datos de mercado disponibles.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-surface-border text-left">
+                <th className="pb-2 text-xs font-medium uppercase tracking-wider text-surface-muted">Marca</th>
+                <th className="pb-2 text-xs font-medium uppercase tracking-wider text-surface-muted">Modelo</th>
+                <th className="pb-2 text-xs font-medium uppercase tracking-wider text-surface-muted hidden sm:table-cell">País</th>
+                <th className="pb-2 text-right text-xs font-medium uppercase tracking-wider text-surface-muted">MDS días</th>
+                <th className="pb-2 text-right text-xs font-medium uppercase tracking-wider text-surface-muted">Demanda</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-surface-border">
+              {mdsData.map((entry, i) => (
+                <tr key={i} className="hover:bg-surface-hover transition-colors">
+                  <td className="py-2.5 font-medium text-white">{entry.make}</td>
+                  <td className="py-2.5 text-surface-muted">{entry.model}</td>
+                  <td className="py-2.5 text-surface-muted hidden sm:table-cell">{entry.country}</td>
+                  <td className="py-2.5 text-right font-mono font-bold text-white">{entry.mds_days}</td>
+                  <td className="py-2.5 text-right">
+                    <MdsDemandBadge mds={entry.mds_days} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function authHeader(): Record<string, string> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('cardex_token') : null
   return token ? { Authorization: `Bearer ${token}` } : {}
@@ -110,6 +191,11 @@ export default function DealerDashboard() {
             </div>
           </Link>
         ))}
+      </div>
+
+      {/* Market Days' Supply widget */}
+      <div className="mb-8">
+        <MdsWidget />
       </div>
 
       {/* Quick actions */}

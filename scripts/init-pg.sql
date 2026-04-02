@@ -813,4 +813,27 @@ CREATE INDEX idx_notifications_entity  ON notifications (entity_ulid, created_at
 CREATE INDEX idx_notifications_user    ON notifications (user_ulid,   created_at DESC) WHERE read_at IS NULL;
 CREATE INDEX idx_notifications_all     ON notifications (entity_ulid, created_at DESC);
 
+-- =============================================================================
+-- USER ROLES (RBAC — sub-roles dentro de una entidad)
+-- =============================================================================
+CREATE TABLE user_roles (
+    entity_ulid  TEXT NOT NULL REFERENCES entities(entity_ulid) ON DELETE CASCADE,
+    user_ulid    TEXT NOT NULL REFERENCES users(user_ulid) ON DELETE CASCADE,
+    role         TEXT NOT NULL DEFAULT 'SELLER' CHECK (role IN ('OWNER','MANAGER','SELLER','MECHANIC','VIEWER')),
+    granted_by   TEXT REFERENCES users(user_ulid),
+    created_at   TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY (entity_ulid, user_ulid)
+);
+CREATE INDEX idx_user_roles_entity ON user_roles (entity_ulid);
+
+-- =============================================================================
+-- GROUP MANAGEMENT (Grupos de concesionarios — dealer groups)
+-- =============================================================================
+ALTER TABLE entities ADD COLUMN IF NOT EXISTS parent_entity_ulid TEXT REFERENCES entities(entity_ulid);
+ALTER TABLE entities ADD COLUMN IF NOT EXISTS group_name TEXT;
+CREATE INDEX idx_entities_parent ON entities (parent_entity_ulid) WHERE parent_entity_ulid IS NOT NULL;
+
+-- Admin flag en users
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;
+
 COMMIT;

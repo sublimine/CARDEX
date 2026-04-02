@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Plus, Search, Car, MoreHorizontal, Loader2, RefreshCw, AlertCircle } from 'lucide-react'
+import { Plus, Search, Car, MoreHorizontal, Loader2, RefreshCw, AlertCircle, BarChart2 } from 'lucide-react'
 
 const API = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/$/, '')
 
@@ -52,6 +52,15 @@ const STATUS_LABEL: Record<string, string> = {
   ARCHIVED:       'Archivado',
 }
 
+// ── Turn-time badge ──────────────────────────────────────────────────────────
+function TurnTimeBadge({ days }: { days: number }) {
+  if (days <= 20)
+    return <span className="rounded-md bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-400">~{days}d ↑</span>
+  if (days <= 45)
+    return <span className="rounded-md bg-yellow-500/20 px-2 py-0.5 text-xs font-semibold text-yellow-400">~{days}d</span>
+  return <span className="rounded-md bg-red-500/20 px-2 py-0.5 text-xs font-semibold text-red-400">~{days}d ↓</span>
+}
+
 export default function InventoryPage() {
   const router = useRouter()
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
@@ -61,6 +70,8 @@ export default function InventoryPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
+  const [turnTimes, setTurnTimes] = useState<Record<string, number | null>>({})
+  const [analyzingMarket, setAnalyzingMarket] = useState(false)
   const LIMIT = 30
 
   const fetchVehicles = useCallback(async (pageNum = 1, reset = false) => {
@@ -107,6 +118,35 @@ export default function InventoryPage() {
     fetchVehicles(next, false)
   }
 
+  async function analyzeMarket() {
+    if (vehicles.length === 0) return
+    setAnalyzingMarket(true)
+    const results: Record<string, number | null> = {}
+    await Promise.allSettled(
+      vehicles.map(async v => {
+        const params = new URLSearchParams()
+        if (v.make) params.set('make', v.make)
+        if (v.model) params.set('model', v.model)
+        if (v.year) params.set('year', String(v.year))
+        if (v.asking_price_eur) params.set('price_eur', String(v.asking_price_eur))
+        // country not available in vehicle object, skip it
+        try {
+          const res = await fetch(`${API}/api/v1/analytics/turn-time?${params}`)
+          if (res.ok) {
+            const data = await res.json()
+            results[v.crm_vehicle_ulid] = data.predicted_turn_days ?? null
+          } else {
+            results[v.crm_vehicle_ulid] = null
+          }
+        } catch {
+          results[v.crm_vehicle_ulid] = null
+        }
+      })
+    )
+    setTurnTimes(prev => ({ ...prev, ...results }))
+    setAnalyzingMarket(false)
+  }
+
   const filteredDisplay = vehicles // filtering already happens server-side
 
   return (
@@ -119,12 +159,26 @@ export default function InventoryPage() {
             {loading ? 'Cargando…' : `${vehicles.length}${hasMore ? '+' : ''} vehículos`}
           </p>
         </div>
-        <Link
-          href="/dashboard/inventory/new"
-          className="flex shrink-0 items-center gap-2 rounded-xl bg-brand-500 px-5 py-2.5 font-medium text-white hover:bg-brand-600 transition-colors"
-        >
-          <Plus size={16} /> Añadir
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={analyzeMarket}
+            disabled={analyzingMarket || vehicles.length === 0}
+            className="flex shrink-0 items-center gap-2 rounded-xl border border-surface-border px-4 py-2.5 text-sm font-medium text-surface-muted hover:border-brand-500/50 hover:text-white transition-colors disabled:opacity-50"
+          >
+            {analyzingMarket ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <BarChart2 size={14} />
+            )}
+            Analizar mercado
+          </button>
+          <Link
+            href="/dashboard/inventory/new"
+            className="flex shrink-0 items-center gap-2 rounded-xl bg-brand-500 px-5 py-2.5 font-medium text-white hover:bg-brand-600 transition-colors"
+          >
+            <Plus size={16} /> Añadir
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -187,6 +241,7 @@ export default function InventoryPage() {
                 <th className="px-4 py-3 text-right font-medium text-surface-muted hidden sm:table-cell">Km</th>
                 <th className="px-4 py-3 text-center font-medium text-surface-muted hidden md:table-cell">Estado</th>
                 <th className="px-4 py-3 text-right font-medium text-surface-muted hidden lg:table-cell">Precio compra</th>
+                <th className="px-4 py-3 text-center font-medium text-surface-muted hidden lg:table-cell">Turn-time</th>
                 <th className="px-4 py-3 text-left font-medium text-surface-muted hidden xl:table-cell">VIN</th>
                 <th className="px-4 py-3" />
               </tr>
@@ -227,6 +282,15 @@ export default function InventoryPage() {
                   <td className="px-4 py-3 text-right font-mono text-surface-muted hidden lg:table-cell">
                     {v.purchase_price_eur != null ? `€${v.purchase_price_eur.toLocaleString('es-ES')}` : '—'}
                   </td>
+                  <td className="px-4 py-3 text-center hidden lg:table-cell">
+                    {analyzingMarket ? (
+                      <Loader2 size={12} className="mx-auto animate-spin text-surface-muted" />
+                    ) : turnTimes[v.crm_vehicle_ulid] != null ? (
+                      <TurnTimeBadge days={turnTimes[v.crm_vehicle_ulid]!} />
+                    ) : (
+                      <span className="text-xs text-surface-muted">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 hidden xl:table-cell">
                     <span className="font-mono text-xs text-surface-muted">{v.vin ?? '—'}</span>
                   </td>
@@ -242,7 +306,7 @@ export default function InventoryPage() {
               ))}
               {!loading && filteredDisplay.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-16 text-center">
+                  <td colSpan={8} className="px-4 py-16 text-center">
                     <Car size={32} className="mx-auto mb-3 text-surface-muted" strokeWidth={1.2} />
                     <p className="text-surface-muted">
                       {search || statusFilter ? 'No se encontraron vehículos con ese filtro.' : 'Tu inventario está vacío.'}

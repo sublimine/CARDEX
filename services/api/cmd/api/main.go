@@ -159,6 +159,24 @@ func main() {
 	mux.Handle("PATCH /api/v1/dealer/notifications/{ulid}/read", rl.Authenticated(middleware.Auth(deps.NotificationMarkRead)))
 	mux.Handle("DELETE /api/v1/dealer/notifications/{ulid}", rl.Authenticated(middleware.Auth(deps.NotificationDelete)))
 
+	// ── Intelligence & Analytics avanzado ─────────────────────────────────────────
+	mux.Handle("GET /api/v1/analytics/mds", rl.Public(http.HandlerFunc(deps.MarketDaysSupply)))
+	mux.Handle("GET /api/v1/analytics/turn-time", rl.Public(http.HandlerFunc(deps.TurnTimePrediction)))
+	mux.Handle("GET /api/v1/ext/market-check", rl.Strict(http.HandlerFunc(deps.MarketCheck)))
+
+	// ── Optimal Pricing ───────────────────────────────────────────────────────────
+	mux.Handle("GET /api/v1/dealer/pricing/{ulid}/optimal", rl.Authenticated(middleware.Auth(deps.OptimalPrice)))
+
+	// ── AI Assist ─────────────────────────────────────────────────────────────────
+	mux.Handle("POST /api/v1/dealer/inventory/generate-description", rl.Authenticated(middleware.Auth(deps.GenerateDescription)))
+
+	// ── Admin Panel ───────────────────────────────────────────────────────────────
+	mux.Handle("GET /api/v1/admin/stats", rl.Authenticated(middleware.Auth(middleware.RequireAdmin(deps.AdminStats))))
+	mux.Handle("GET /api/v1/admin/entities", rl.Authenticated(middleware.Auth(middleware.RequireAdmin(deps.AdminEntityList))))
+	mux.Handle("PATCH /api/v1/admin/entities/{ulid}", rl.Authenticated(middleware.Auth(middleware.RequireAdmin(deps.AdminEntityUpdate))))
+	mux.Handle("GET /api/v1/admin/users", rl.Authenticated(middleware.Auth(middleware.RequireAdmin(deps.AdminUserList))))
+	mux.Handle("GET /api/v1/admin/scrapers", rl.Authenticated(middleware.Auth(middleware.RequireAdmin(deps.AdminScraperStatus))))
+
 	// ---- Server -------------------------------------------------------------
 	port := envOrDefault("PORT", "8080")
 	srv := &http.Server{
