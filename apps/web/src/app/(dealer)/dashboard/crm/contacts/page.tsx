@@ -204,7 +204,7 @@ function ExpandedRow({ contactUlid }: ExpandedRowProps) {
       try {
         const token = localStorage.getItem('cardex_token') ?? ''
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/dealer/crm/contacts/${contactUlid}/detail`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/dealer/crm/contacts/${contactUlid}`,
           { headers: { Authorization: `Bearer ${token}` } }
         )
         if (!res.ok) throw new Error(`Error ${res.status}`)

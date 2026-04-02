@@ -309,12 +309,13 @@ function AddReconJobForm({ vehicleUlid, onAdded, onCancel }: AddReconJobFormProp
     setError(null)
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/dealer/crm/vehicles/${vehicleUlid}/recon-jobs`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/dealer/crm/recon`,
         {
           method: 'POST',
           headers: authHeaders(),
           body: JSON.stringify({
             ...form,
+            crm_vehicle_ulid: vehicleUlid,
             cost_estimate_eur: parseFloat(form.cost_estimate_eur) || 0,
           }),
         }

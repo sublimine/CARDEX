@@ -349,7 +349,7 @@ export default function ArbitragePage() {
   // Auth (read token from localStorage)
   const [authToken, setAuthToken] = useState<string | null>(null)
   useEffect(() => {
-    setAuthToken(localStorage.getItem('cardex_access_token'))
+    setAuthToken(localStorage.getItem('cardex_token'))
   }, [])
 
   // Booked state
