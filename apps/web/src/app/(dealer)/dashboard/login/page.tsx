@@ -61,7 +61,12 @@ export default function DealerLoginPage() {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-white">Password</label>
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="text-sm font-medium text-white">Password</label>
+              <Link href="/dashboard/forgot-password" className="text-xs text-brand-400 hover:underline">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
             <input
               type="password"
               required

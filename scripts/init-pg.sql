@@ -294,7 +294,9 @@ CREATE TABLE users (
     is_dealer         BOOLEAN DEFAULT FALSE,
     entity_ulid       TEXT REFERENCES entities(entity_ulid),
     email_verified    BOOLEAN DEFAULT FALSE,
+    email_verified_at TIMESTAMPTZ,
     created_at        TIMESTAMPTZ DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ DEFAULT NOW(),
     last_login_at     TIMESTAMPTZ,
     vault_dek_id      TEXT NOT NULL
 ) WITH (fillfactor = 80);

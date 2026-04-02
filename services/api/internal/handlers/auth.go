@@ -157,6 +157,9 @@ func (d *Deps) DealerRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Send verification email asynchronously
+	d.sendVerificationEmail(userULID, body.Email, body.LegalName)
+
 	writeJSON(w, http.StatusCreated, map[string]any{
 		"user_ulid":    userULID,
 		"entity_ulid":  entityULID,
