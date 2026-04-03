@@ -278,13 +278,13 @@ type nhtsaRecallsResponse struct {
 	} `json:"results"`
 }
 
-func fetchNHTSARecalls(ctx context.Context, make, model string, year int) ([]recallEntry, error) {
-	if make == "" || model == "" || year == 0 {
+func fetchNHTSARecalls(ctx context.Context, vehicleMake, model string, year int) ([]recallEntry, error) {
+	if vehicleMake == "" || model == "" || year == 0 {
 		return nil, fmt.Errorf("nhtsa_recalls: missing make/model/year")
 	}
 	url := fmt.Sprintf(
 		"https://api.nhtsa.gov/recalls/recallsByVehicle?make=%s&model=%s&modelYear=%d",
-		strings.ReplaceAll(make, " ", "%20"),
+		strings.ReplaceAll(vehicleMake, " ", "%20"),
 		strings.ReplaceAll(model, " ", "%20"),
 		year,
 	)

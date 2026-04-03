@@ -25,6 +25,13 @@ import (
 	"time"
 )
 
+// ── Shared types ──────────────────────────────────────────────────────────────
+
+type monthlyAvg struct {
+	Month    string
+	AvgPrice float64
+}
+
 // ── VIN Valuation ──────────────────────────────────────────────────────────────
 
 type vinValuationResponse struct {
@@ -297,11 +304,6 @@ func (d *Deps) ResidualValue(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// ── 1. Fetch monthly average prices (past 24 months) ─────────────────────
-	type monthlyAvg struct {
-		Month    string
-		AvgPrice float64
-	}
-
 	chQuery := `
 		SELECT
 			formatDateTime(toStartOfMonth(scraped_at), '%Y-%m') AS month,

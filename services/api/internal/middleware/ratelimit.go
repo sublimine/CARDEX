@@ -16,7 +16,6 @@ package middleware
 //   Strict  endpoints: 20  req / 60s  per IP  (auth, register)
 
 import (
-	"context"
 	"fmt"
 	"net"
 	"net/http"

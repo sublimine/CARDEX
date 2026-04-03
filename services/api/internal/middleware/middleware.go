@@ -23,6 +23,19 @@ const (
 	keyEntityULID contextKey = "entity_ulid"
 )
 
+// Recover catches panics (e.g. nil ClickHouse/MeiliSearch) and returns 503.
+func Recover(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if rec := recover(); rec != nil {
+				slog.Error("handler panic", "path", r.URL.Path, "panic", rec)
+				http.Error(w, `{"error":"internal_error","message":"Service temporarily unavailable"}`, http.StatusServiceUnavailable)
+			}
+		}()
+		next.ServeHTTP(w, r)
+	})
+}
+
 // RequestID adds a unique request ID to every request.
 func RequestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -101,12 +114,12 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 		}
 		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 
-		// Dev mode: accept any token with sub claim
+		// Dev mode: accept any structurally-valid token (signature not checked).
 		if pubKeyBytes == nil {
 			claims := jwt.MapClaims{}
 			parser := jwt.NewParser()
-			tok, _, err := parser.ParseUnverified(tokenStr, claims)
-			if err != nil || !tok.Valid {
+			_, _, err := parser.ParseUnverified(tokenStr, claims)
+			if err != nil {
 				http.Error(w, `{"error":"invalid_token"}`, http.StatusUnauthorized)
 				return
 			}

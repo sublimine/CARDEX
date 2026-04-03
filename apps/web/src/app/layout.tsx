@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 import { Navbar } from '@/components/ui/Navbar'
 import { Toaster } from '@/components/ui/Toaster'
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+// System font used when Google Fonts is unavailable (offline/dev environment)
+const inter = { variable: '--font-inter', className: 'font-sans' }
 
 export const metadata: Metadata = {
   title: {

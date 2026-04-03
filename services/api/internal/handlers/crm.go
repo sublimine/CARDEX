@@ -1541,13 +1541,3 @@ func (d *Deps) CRMGoalSet(w http.ResponseWriter, r *http.Request) {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-// itoa converts int to string for SQL placeholder building ($1, $2, ...).
-func itoa(n int) string {
-	if n == 0 { return "0" }
-	digits := []byte{}
-	for n > 0 {
-		digits = append([]byte{byte('0' + n%10)}, digits...)
-		n /= 10
-	}
-	return string(digits)
-}

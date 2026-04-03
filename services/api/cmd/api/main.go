@@ -49,11 +49,17 @@ func main() {
 	// ---- Dependencies -------------------------------------------------------
 	nlcCalc := nlc.New(rdb, &tax.SpainCalculator{}, &tax.FranceCalculator{}, &tax.NetherlandsCalculator{})
 
+	var meiliIndex meilisearch.IndexManager
+	if meili != nil {
+		idx := meili.Index("vehicles")
+		meiliIndex = idx
+	}
+
 	deps := &handlers.Deps{
 		DB:      pool,
 		Redis:   rdb,
 		CH:      ch,
-		Meili:   meili.Index("vehicles"),
+		Meili:   meiliIndex,
 		NLCCalc: nlcCalc,
 	}
 
@@ -197,7 +203,7 @@ func main() {
 	port := envOrDefault("PORT", "8080")
 	srv := &http.Server{
 		Addr:         ":" + port,
-		Handler:      middleware.CORS(middleware.RequestID(middleware.Logger(mux))),
+		Handler:      middleware.CORS(middleware.Recover(middleware.RequestID(middleware.Logger(mux)))),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  60 * time.Second,
@@ -260,21 +266,27 @@ func mustClickHouse() clickhouse.Conn {
 		},
 	})
 	if err != nil {
-		slog.Error("api: clickhouse connect", "error", err)
-		os.Exit(1)
+		slog.Warn("api: clickhouse unavailable — analytics endpoints will return 503", "error", err)
+		return nil
 	}
 	if err := conn.Ping(context.Background()); err != nil {
-		slog.Error("api: clickhouse ping", "error", err)
-		os.Exit(1)
+		slog.Warn("api: clickhouse ping failed — analytics endpoints will return 503", "error", err)
+		return nil
 	}
 	slog.Info("api: clickhouse connected")
 	return conn
 }
 
-func mustMeili() *meilisearch.Client {
+func mustMeili() meilisearch.ServiceManager {
 	url := envOrDefault("MEILI_URL", "http://localhost:7700")
 	key := envOrDefault("MEILI_MASTER_KEY", "")
-	return meilisearch.New(url, meilisearch.WithAPIKey(key))
+	client := meilisearch.New(url, meilisearch.WithAPIKey(key))
+	if _, err := client.Health(); err != nil {
+		slog.Warn("api: meilisearch unavailable — search endpoints will return 503", "error", err)
+		return nil
+	}
+	slog.Info("api: meilisearch connected")
+	return client
 }
 
 func envOrDefault(key, fallback string) string {

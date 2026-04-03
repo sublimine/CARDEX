@@ -1,13 +1,15 @@
-go 1.23
+go 1.24.1
+
+toolchain go1.24.7
 
 use (
-	./services/gateway
-	./services/pipeline
-	./services/forensics
-	./services/alpha
-	./services/legal
-	./services/api
-	./services/scheduler
-	./internal/shared
 	./e2e
+	./internal/shared
+	./services/alpha
+	./services/api
+	./services/forensics
+	./services/gateway
+	./services/legal
+	./services/pipeline
+	./services/scheduler
 )
