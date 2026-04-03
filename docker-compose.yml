@@ -305,6 +305,8 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost:8080
       NEXT_PUBLIC_MEILI_URL: http://localhost:7700
       NEXT_PUBLIC_MEILI_SEARCH_KEY: ""   # public search-only key set at runtime
+      WATCHPACK_POLLING: "true"           # required on Windows/Docker for file watching
+      CHOKIDAR_USEPOLLING: "true"
     volumes:
       - ./apps/web:/app
       - /app/node_modules
