@@ -37,10 +37,12 @@ from typing import AsyncIterator, AsyncGenerator
 import redis.asyncio as aioredis
 import structlog
 
+from .captcha_solver import CaptchaSolver
 from .gateway_client import GatewayClient
 from .http_client import HTTPClient
 from .models import RawListing
 from .playwright_client import PlaywrightClient
+from .proxy_manager import ProxyManager
 
 log = structlog.get_logger()
 
@@ -106,13 +108,24 @@ class BaseScraper(ABC):
             hmac_secret=hmac_secret,
             redis_client=self._redis,
         )
-        self.http = HTTPClient(self.domain)
+        self.proxy_manager = ProxyManager(self._redis)
+        self.captcha_solver = CaptchaSolver()
+        self.http = HTTPClient(
+            self.domain,
+            proxy_manager=self.proxy_manager,
+            country=self.country,
+        )
         self.playwright: PlaywrightClient | None = (
-            PlaywrightClient(headless=os.environ.get("PLAYWRIGHT_HEADLESS", "true").lower() != "false")
+            PlaywrightClient(
+                headless=os.environ.get("PLAYWRIGHT_HEADLESS", "true").lower() != "false",
+                proxy_manager=self.proxy_manager,
+                country=self.country,
+            )
             if self.use_playwright
             else None
         )
         self.log = structlog.get_logger(scraper=self.platform, country=self.country)
+        self._ban_counts: dict[str, int] = {}  # shard_key → consecutive ban count
 
     # -------------------------------------------------------------------------
     # Cursor management — granular per (make, year) shard
@@ -189,26 +202,53 @@ class BaseScraper(ABC):
         """
         Default crawl: iterates ALL makes × ALL years, calling crawl_shard() each time.
         Override this only if the platform doesn't support make/year filtering.
+
+        Ban handling:
+        - If a shard gets banned (exception containing "ban", "403", "blocked"):
+          increment ban counter. After 3 consecutive bans on the same shard,
+          pause the shard for 1 hour and continue with the next.
         """
+        import time
+
         for make in ALL_MAKES:
             for year in reversed(YEARS):  # newest first
                 if await self.is_shard_done(make, year):
                     self.log.debug("scraper.shard_skip", make=make, year=year)
                     continue
+
+                shard_key = f"{make}:{year}"
                 try:
                     count = 0
                     async for listing in self.crawl_shard(make, year):
                         count += 1
+                        self._ban_counts[shard_key] = 0  # reset on success
                         yield listing
-                    if count > 0:
-                        await self.mark_shard_done(make, year)
-                        self.log.info("scraper.shard_complete", make=make, year=year, count=count)
-                    # count == 0 means make/year combo not available — mark done anyway
-                    else:
-                        await self.mark_shard_done(make, year)
+                    await self.mark_shard_done(make, year)
+                    self.log.info("scraper.shard_complete", make=make, year=year, count=count)
+
                 except Exception as e:
-                    self.log.error("scraper.shard_error", make=make, year=year, error=str(e))
-                    # Don't mark done — retry on next run
+                    err_str = str(e).lower()
+                    is_ban = any(kw in err_str for kw in ("ban", "403", "blocked", "access denied", "captcha"))
+                    self._ban_counts[shard_key] = self._ban_counts.get(shard_key, 0) + 1
+                    consecutive = self._ban_counts[shard_key]
+
+                    if is_ban and consecutive >= 3:
+                        self.log.warning(
+                            "scraper.shard_ban_pause",
+                            make=make, year=year, consecutive=consecutive,
+                        )
+                        # Park shard for 1 hour by writing a temp cursor
+                        await self._redis.set(
+                            f"scraper:ban_pause:{self.platform}:{self.country}:{shard_key}",
+                            int(time.time()),
+                            ex=3600,
+                        )
+                        self._ban_counts[shard_key] = 0
+                    else:
+                        self.log.error(
+                            "scraper.shard_error",
+                            make=make, year=year, error=str(e), consecutive=consecutive,
+                        )
 
     # -------------------------------------------------------------------------
     # Main run loop
@@ -228,7 +268,13 @@ class BaseScraper(ABC):
             entered.append(cm)
 
         try:
+            # Load proxy pool and rate limits from Redis
+            await self.proxy_manager.load()
             await self.http.rate_limiter.load_from_redis(self._redis)
+            if self.proxy_manager.available():
+                self.log.info("scraper.proxies_loaded", count=len(self.proxy_manager._proxies))
+            else:
+                self.log.warning("scraper.no_proxies", msg="Running without proxy rotation — risk of IP ban")
 
             async for listing in self.crawl():
                 total += 1
