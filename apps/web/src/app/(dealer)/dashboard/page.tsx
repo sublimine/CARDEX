@@ -3,27 +3,32 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Car, Users, BarChart2, Megaphone, TrendingUp, AlertCircle, Loader2 } from 'lucide-react'
+import {
+  Car, Users, BarChart2, TrendingUp, AlertCircle, Loader2,
+  Plus, BarChart, Activity, Megaphone,
+} from 'lucide-react'
 
 const API = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/$/, '')
 
-// ── MDS Types ───────────────────────────────────────────────────────────────
+// ── MDS Types ─────────────────────────────────────────────────────────────────
+
 interface MdsEntry {
   make: string
   model: string
   country: string
   mds_days: number
+  demand_rating: string
 }
 
-function MdsDemandBadge({ mds }: { mds: number }) {
-  if (mds <= 20) return (
-    <span className="rounded-md bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-400">ALTA</span>
+function DemandBadge({ rating }: { rating: string }) {
+  if (rating === 'HIGH') return (
+    <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-400">ALTA</span>
   )
-  if (mds <= 45) return (
-    <span className="rounded-md bg-yellow-500/20 px-2 py-0.5 text-xs font-semibold text-yellow-400">MEDIA</span>
+  if (rating === 'MEDIUM') return (
+    <span className="rounded-md bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-400">MEDIA</span>
   )
   return (
-    <span className="rounded-md bg-red-500/20 px-2 py-0.5 text-xs font-semibold text-red-400">BAJA</span>
+    <span className="rounded-md bg-red-500/15 px-2 py-0.5 text-xs font-semibold text-red-400">BAJA</span>
   )
 }
 
@@ -36,8 +41,7 @@ function MdsWidget() {
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (!data) return
-        const entries: MdsEntry[] = data.entries ?? data.results ?? data ?? []
-        // sort by mds_days ascending (lowest = highest demand), take top 5
+        const entries: MdsEntry[] = data.results ?? []
         const sorted = [...entries].sort((a, b) => a.mds_days - b.mds_days).slice(0, 5)
         setMdsData(sorted)
       })
@@ -46,13 +50,20 @@ function MdsWidget() {
   }, [])
 
   return (
-    <div className="rounded-xl border border-surface-border bg-surface-card p-5">
-      <h2 className="mb-4 text-base font-semibold text-white">
-        📊 Demanda del Mercado — Días de Stock
-      </h2>
+    <div className="rounded-xl border border-surface-border bg-surface-card p-6">
+      <div className="mb-5 flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-white">Market Days&apos; Supply</h2>
+          <p className="mt-0.5 text-xs text-surface-muted">Días de stock por modelo · Top demanda</p>
+        </div>
+        <Link href="/analytics" className="text-xs text-brand-400 hover:text-brand-300 transition-colors">
+          Ver análisis completo →
+        </Link>
+      </div>
+
       {loading ? (
         <div className="flex justify-center py-6">
-          <Loader2 size={22} className="animate-spin text-brand-400" />
+          <Loader2 size={20} className="animate-spin text-brand-400" />
         </div>
       ) : mdsData.length === 0 ? (
         <p className="py-4 text-center text-sm text-surface-muted">No hay datos de mercado disponibles.</p>
@@ -61,22 +72,23 @@ function MdsWidget() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-surface-border text-left">
-                <th className="pb-2 text-xs font-medium uppercase tracking-wider text-surface-muted">Marca</th>
-                <th className="pb-2 text-xs font-medium uppercase tracking-wider text-surface-muted">Modelo</th>
-                <th className="pb-2 text-xs font-medium uppercase tracking-wider text-surface-muted hidden sm:table-cell">País</th>
-                <th className="pb-2 text-right text-xs font-medium uppercase tracking-wider text-surface-muted">MDS días</th>
-                <th className="pb-2 text-right text-xs font-medium uppercase tracking-wider text-surface-muted">Demanda</th>
+                <th className="pb-2.5 text-xs font-medium uppercase tracking-wider text-surface-muted">Marca · Modelo</th>
+                <th className="pb-2.5 text-xs font-medium uppercase tracking-wider text-surface-muted hidden sm:table-cell">País</th>
+                <th className="pb-2.5 text-right text-xs font-medium uppercase tracking-wider text-surface-muted">MDS (días)</th>
+                <th className="pb-2.5 text-right text-xs font-medium uppercase tracking-wider text-surface-muted">Demanda</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-surface-border">
+            <tbody className="divide-y divide-surface-border/60">
               {mdsData.map((entry, i) => (
-                <tr key={i} className="hover:bg-surface-hover transition-colors">
-                  <td className="py-2.5 font-medium text-white">{entry.make}</td>
-                  <td className="py-2.5 text-surface-muted">{entry.model}</td>
-                  <td className="py-2.5 text-surface-muted hidden sm:table-cell">{entry.country}</td>
-                  <td className="py-2.5 text-right font-mono font-bold text-white">{entry.mds_days}</td>
-                  <td className="py-2.5 text-right">
-                    <MdsDemandBadge mds={entry.mds_days} />
+                <tr key={i} className="hover:bg-surface-hover/50 transition-colors">
+                  <td className="py-3">
+                    <span className="font-medium text-white">{entry.make}</span>
+                    <span className="ml-1.5 text-surface-muted">{entry.model}</span>
+                  </td>
+                  <td className="py-3 text-surface-muted hidden sm:table-cell">{entry.country}</td>
+                  <td className="py-3 text-right font-mono font-bold text-white">{entry.mds_days}</td>
+                  <td className="py-3 text-right">
+                    <DemandBadge rating={entry.demand_rating} />
                   </td>
                 </tr>
               ))}
@@ -88,16 +100,22 @@ function MdsWidget() {
   )
 }
 
+// ── Auth helper ───────────────────────────────────────────────────────────────
+
 function authHeader(): Record<string, string> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('cardex_token') : null
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
+
+// ── Dashboard data ────────────────────────────────────────────────────────────
 
 interface DashboardData {
   inventory?: { total: number; by_status: Record<string, number> }
   pipeline?: { open_deals: number; pipeline_value_eur: number }
   mtd?: { units_sold: number; revenue_eur: number; avg_margin_pct: number; avg_dom: number }
 }
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function DealerDashboard() {
   const router = useRouter()
@@ -119,18 +137,25 @@ export default function DealerDashboard() {
 
   if (!token) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 text-center px-4">
-        <h1 className="text-3xl font-bold text-white">Portal Dealer</h1>
-        <p className="text-surface-muted max-w-md">
-          Gestiona tu inventario, publica en todas las plataformas, sigue tus leads y obtén inteligencia de precios con IA.
-        </p>
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 px-4 text-center">
+        <div className="mb-2">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-brand-500">Cardex Intelligence Platform</p>
+          <h1 className="text-3xl font-bold text-white">Portal del Concesionario</h1>
+          <p className="mt-3 max-w-md text-sm text-surface-muted">
+            Gestión de inventario, inteligencia de precios en tiempo real, seguimiento de leads y publicación multicanal.
+          </p>
+        </div>
         <div className="flex gap-3">
-          <Link href="/dashboard/login"
-            className="rounded-lg bg-brand-500 px-6 py-2.5 font-medium text-white hover:bg-brand-600 transition-colors">
+          <Link
+            href="/dashboard/login"
+            className="rounded-lg bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 transition-colors"
+          >
             Iniciar sesión
           </Link>
-          <Link href="/dashboard/register"
-            className="rounded-lg border border-surface-border px-6 py-2.5 font-medium text-surface-muted hover:text-white transition-colors">
+          <Link
+            href="/dashboard/register"
+            className="rounded-lg border border-surface-border px-6 py-2.5 text-sm font-medium text-surface-muted hover:text-white hover:border-surface-muted/50 transition-colors"
+          >
             Registrarse gratis
           </Link>
         </div>
@@ -140,7 +165,20 @@ export default function DealerDashboard() {
 
   return (
     <div className="mx-auto max-w-screen-xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold text-white">Dashboard</h1>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+          <p className="mt-0.5 text-sm text-surface-muted">
+            {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+        </div>
+        <Link
+          href="/dashboard/inventory/new"
+          className="flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 transition-colors"
+        >
+          <Plus size={15} /> Añadir vehículo
+        </Link>
+      </div>
 
       {/* KPI cards */}
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -151,13 +189,15 @@ export default function DealerDashboard() {
             format: (v: number) => String(v),
             icon: Car,
             href: '/dashboard/inventory',
+            sub: kpis?.inventory ? `${kpis.inventory.by_status?.LISTED ?? 0} publicados` : undefined,
           },
           {
-            label: 'Deals abiertos',
+            label: 'Deals activos',
             value: kpis?.pipeline?.open_deals,
             format: (v: number) => String(v),
             icon: Users,
             href: '/dashboard/crm',
+            sub: kpis?.pipeline ? `${new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(kpis.pipeline.pipeline_value_eur)} en pipeline` : undefined,
           },
           {
             label: 'Vendidos este mes',
@@ -165,28 +205,36 @@ export default function DealerDashboard() {
             format: (v: number) => String(v),
             icon: TrendingUp,
             href: '/dashboard/crm',
+            sub: kpis?.mtd ? `DOM medio: ${Math.round(kpis.mtd.avg_dom ?? 0)} días` : undefined,
           },
           {
-            label: 'Facturación este mes',
+            label: 'Facturación MTD',
             value: kpis?.mtd?.revenue_eur,
-            format: (v: number) => `€${v.toLocaleString('es-ES', { maximumFractionDigits: 0 })}`,
+            format: (v: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v),
             icon: BarChart2,
             href: '/dashboard/crm',
+            sub: kpis?.mtd ? `Margen medio: ${(kpis.mtd.avg_margin_pct ?? 0).toFixed(1)}%` : undefined,
           },
-        ].map(({ label, value, format, icon: Icon, href }) => (
-          <Link key={label} href={href}
-            className="flex items-center gap-4 rounded-xl border border-surface-border bg-surface-card p-5 hover:border-brand-500/50 transition-colors group">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-500/10 text-brand-400 group-hover:bg-brand-500/20">
-              <Icon size={20} />
+        ].map(({ label, value, format, icon: Icon, href, sub }) => (
+          <Link
+            key={label}
+            href={href}
+            className="group flex items-center gap-4 rounded-xl border border-surface-border bg-surface-card p-5 hover:border-brand-500/40 transition-all"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-500/10 text-brand-400 group-hover:bg-brand-500/20 transition-colors">
+              <Icon size={19} />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-surface-muted">{label}</p>
               {loading ? (
-                <Loader2 size={16} className="mt-1 animate-spin text-surface-muted" />
+                <Loader2 size={15} className="mt-1 animate-spin text-surface-muted" />
               ) : (
-                <p className="font-mono text-2xl font-bold text-white">
-                  {value != null ? format(value) : '—'}
-                </p>
+                <>
+                  <p className="font-mono text-2xl font-bold text-white">
+                    {value != null ? format(value) : '—'}
+                  </p>
+                  {sub && <p className="mt-0.5 truncate text-xs text-surface-muted">{sub}</p>}
+                </>
               )}
             </div>
           </Link>
@@ -199,17 +247,34 @@ export default function DealerDashboard() {
       </div>
 
       {/* Quick actions */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <QuickAction href="/dashboard/inventory/new" icon={Car}
-          title="Añadir vehículo" desc="Entrada manual o importar desde URL" />
-        <QuickAction href="/dashboard/audit" icon={Megaphone}
-          title="Multipublicación" desc="Publica en AutoScout24, mobile.de y más" />
-        <QuickAction href="/dashboard/audit" icon={AlertCircle}
-          title="Auditoría marketing" desc="Sugerencias de mejora con IA" />
+      <div className="mb-2">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-surface-muted">Acciones rápidas</h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <QuickAction
+            href="/dashboard/inventory/new"
+            icon={Plus}
+            title="Añadir vehículo"
+            desc="Entrada manual con generador de anuncios IA"
+          />
+          <QuickAction
+            href="/analytics"
+            icon={BarChart}
+            title="Análisis de mercado"
+            desc="Precios, demanda y arbitraje entre países"
+          />
+          <QuickAction
+            href="/dashboard/audit"
+            icon={Activity}
+            title="Auditoría de marketing"
+            desc="Puntuación de tus anuncios con recomendaciones IA"
+          />
+        </div>
       </div>
     </div>
   )
 }
+
+// ── Subcomponents ─────────────────────────────────────────────────────────────
 
 function QuickAction({ href, icon: Icon, title, desc }: {
   href: string
@@ -218,14 +283,16 @@ function QuickAction({ href, icon: Icon, title, desc }: {
   desc: string
 }) {
   return (
-    <Link href={href}
-      className="flex items-start gap-4 rounded-xl border border-surface-border bg-surface-card p-5 hover:border-brand-500/50 transition-colors group">
+    <Link
+      href={href}
+      className="group flex items-start gap-4 rounded-xl border border-surface-border bg-surface-card p-5 hover:border-brand-500/40 transition-all"
+    >
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-hover text-surface-muted group-hover:bg-brand-500/10 group-hover:text-brand-400 transition-colors">
-        <Icon size={18} />
+        <Icon size={17} />
       </div>
       <div>
         <p className="font-medium text-white">{title}</p>
-        <p className="mt-0.5 text-xs text-surface-muted">{desc}</p>
+        <p className="mt-0.5 text-xs leading-relaxed text-surface-muted">{desc}</p>
       </div>
     </Link>
   )

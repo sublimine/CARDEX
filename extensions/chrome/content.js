@@ -237,6 +237,23 @@
     return panel;
   }
 
+  // Safe HTML escape — prevents XSS when rendering API strings into innerHTML
+  function esc(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // Safe number formatter — validates numeric type before rendering
+  function fmt(n) {
+    const num = typeof n === 'number' ? n : parseFloat(n);
+    if (!isFinite(num)) return '—';
+    return `€${Math.round(num).toLocaleString('es-ES')}`;
+  }
+
   function updateOverlay(panel, data) {
     const body = document.getElementById('cardex-body');
     const status = document.getElementById('cardex-status');
@@ -244,7 +261,11 @@
     if (data.error) {
       status.textContent = 'Sin datos';
       status.className = 'cardex-status-error';
-      body.innerHTML = `<div class="cardex-error">⚠️ ${data.error}</div>`;
+      // Use textContent for error — never put API strings in innerHTML
+      const errDiv = document.createElement('div');
+      errDiv.className = 'cardex-error';
+      errDiv.textContent = '⚠ ' + data.error;
+      body.replaceChildren(errDiv);
       return;
     }
 
@@ -256,32 +277,50 @@
     status.textContent = data.cached ? 'Caché' : 'En vivo';
     status.className = 'cardex-status-live';
 
-    const position = data.market_position || 'FAIR';
-    const positionColor = { CHEAP: '#10b981', FAIR: '#f59e0b', EXPENSIVE: '#ef4444' }[position] || '#f59e0b';
-    const positionLabel = { CHEAP: '🟢 Precio bajo', FAIR: '🟡 Precio justo', EXPENSIVE: '🔴 Precio alto' }[position] || '';
+    // Validate and normalize numeric fields from API
+    const mdsRaw = typeof data.mds_days === 'number' ? data.mds_days : parseFloat(data.mds_days) || 0;
+    const turnRaw = typeof data.predicted_turn_days === 'number' ? data.predicted_turn_days : parseFloat(data.predicted_turn_days) || 0;
+    const medianRaw = typeof data.median_price_eur === 'number' ? data.median_price_eur : parseFloat(data.median_price_eur) || 0;
+    const p25Raw = typeof data.p25_price_eur === 'number' ? data.p25_price_eur : parseFloat(data.p25_price_eur) || 0;
+    const p75Raw = typeof data.p75_price_eur === 'number' ? data.p75_price_eur : parseFloat(data.p75_price_eur) || 0;
+    const deltaRaw = typeof data.price_delta_eur === 'number' ? data.price_delta_eur : parseFloat(data.price_delta_eur) || 0;
 
-    const mds = data.mds_days;
-    const mdsLabel = mds <= 20 ? `🔥 Alta (${mds}d)` : mds <= 45 ? `⚡ Media (${mds}d)` : `🧊 Baja (${mds}d)`;
-    const mdsColor = mds <= 20 ? '#10b981' : mds <= 45 ? '#f59e0b' : '#6b7280';
+    // Position — only accept known whitelist values, never raw API string
+    const POSITION_MAP = {
+      CHEAP:     { label: '▼ Precio bajo',  color: '#10b981' },
+      FAIR:      { label: '● Precio justo', color: '#f59e0b' },
+      EXPENSIVE: { label: '▲ Precio alto',  color: '#ef4444' },
+    };
+    const position = POSITION_MAP[data.market_position] ?? POSITION_MAP.FAIR;
 
-    const turn = data.predicted_turn_days;
-    const turnLabel = turn <= 20 ? `✅ ~${turn} días` : turn <= 45 ? `⏳ ~${turn} días` : `⚠️ ~${turn} días`;
-    const turnColor = turn <= 20 ? '#10b981' : turn <= 45 ? '#f59e0b' : '#ef4444';
+    const mdsColor = mdsRaw <= 20 ? '#10b981' : mdsRaw <= 45 ? '#f59e0b' : '#6b7280';
+    const mdsLabel = mdsRaw <= 20 ? `Alta (${mdsRaw}d)` : mdsRaw <= 45 ? `Media (${mdsRaw}d)` : `Baja (${mdsRaw}d)`;
 
-    const fmt = (n) => n ? `€${Math.round(n).toLocaleString('es-ES')}` : '—';
+    const turnColor = turnRaw <= 20 ? '#10b981' : turnRaw <= 45 ? '#f59e0b' : '#ef4444';
+    const turnLabel = `~${turnRaw} días`;
+
+    // esc() all API strings before interpolation into innerHTML
+    const cheapestCountry = data.cheapest_country ? esc(data.cheapest_country) : '?';
+    const arbitrageSection = data.arbitrage_flag ? `
+      <div class="cardex-divider"></div>
+      <div class="cardex-arbitrage">
+        <strong>Arbitraje detectado</strong><br>
+        En ${cheapestCountry}: ${fmt(medianRaw - deltaRaw)}<br>
+        <span class="cardex-arb-delta">-${fmt(deltaRaw)} vs este país</span>
+      </div>` : '';
 
     body.innerHTML = `
       <div class="cardex-row">
         <span class="cardex-label">Posición precio</span>
-        <span class="cardex-value" style="color:${positionColor}">${positionLabel}</span>
+        <span class="cardex-value" style="color:${position.color}">${position.label}</span>
       </div>
       <div class="cardex-row cardex-row-sub">
         <span class="cardex-label">Mediana mercado</span>
-        <span class="cardex-value">${fmt(data.median_price_eur)}</span>
+        <span class="cardex-value">${fmt(medianRaw)}</span>
       </div>
       <div class="cardex-row cardex-row-sub">
         <span class="cardex-label">Rango (P25–P75)</span>
-        <span class="cardex-value">${fmt(data.p25_price_eur)} – ${fmt(data.p75_price_eur)}</span>
+        <span class="cardex-value">${fmt(p25Raw)} – ${fmt(p75Raw)}</span>
       </div>
       <div class="cardex-divider"></div>
       <div class="cardex-row">
@@ -292,16 +331,9 @@
         <span class="cardex-label">Venta estimada</span>
         <span class="cardex-value" style="color:${turnColor}">${turnLabel}</span>
       </div>
-      ${data.arbitrage_flag ? `
-      <div class="cardex-divider"></div>
-      <div class="cardex-arbitrage">
-        ⚡ <strong>Arbitraje detectado</strong><br>
-        En ${data.cheapest_country || '?'}: ${fmt(data.median_price_eur - (data.price_delta_eur || 0))}<br>
-        <span class="cardex-arb-delta">-${fmt(data.price_delta_eur)} vs este país</span>
-      </div>
-      ` : ''}
+      ${arbitrageSection}
       <div class="cardex-footer">
-        <a href="https://cardex.eu/analytics" target="_blank">Ver análisis completo →</a>
+        <a href="https://cardex.eu/analytics" target="_blank" rel="noopener noreferrer">Ver análisis completo →</a>
       </div>
     `;
   }

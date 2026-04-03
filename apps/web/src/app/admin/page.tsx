@@ -25,8 +25,8 @@ interface AdminStats {
 interface AdminEntity {
   entity_ulid: string
   legal_name: string
-  country: string
-  tier: string
+  country_code: string
+  subscription_tier: string
   user_count: number
   created_at: string
 }
@@ -35,7 +35,7 @@ interface AdminUser {
   user_ulid: string
   email: string
   full_name: string
-  entity_name: string | null
+  entity_ulid: string
   is_dealer: boolean
   email_verified: boolean
   created_at: string
@@ -191,17 +191,17 @@ export default function AdminPage() {
   }, [tab])
 
   // ── Change tier ─────────────────────────────────────────────────────────────
-  async function changeTier(entityUlid: string, tier: string) {
+  async function changeTier(entityUlid: string, subscription_tier: string) {
     setChangingTier(entityUlid)
     try {
       const res = await fetch(`${API}/api/v1/admin/entities/${entityUlid}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', ...authHeader() },
-        body: JSON.stringify({ tier }),
+        body: JSON.stringify({ subscription_tier }),
       })
       if (!res.ok) throw new Error()
       setEntities(prev =>
-        prev.map(e => e.entity_ulid === entityUlid ? { ...e, tier } : e)
+        prev.map(e => e.entity_ulid === entityUlid ? { ...e, subscription_tier } : e)
       )
     } catch {
       // ignore
@@ -241,21 +241,29 @@ export default function AdminPage() {
       <header className="border-b border-surface-border bg-surface-card px-6 py-4">
         <div className="mx-auto flex max-w-screen-xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-xl font-bold text-brand-400">CARDEX</span>
-            <span className="text-surface-muted">/</span>
-            <span className="text-sm font-semibold text-white">Admin</span>
+            <span className="font-mono text-lg font-bold tracking-tight text-brand-400">CARDEX</span>
+            <span className="text-surface-border">|</span>
+            <span className="text-xs font-semibold uppercase tracking-widest text-surface-muted">Sistema · Admin</span>
           </div>
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="flex items-center gap-2 rounded-lg border border-surface-border px-4 py-1.5 text-sm text-surface-muted hover:text-white transition-colors"
-          >
-            <ChevronLeft size={14} /> Volver al dashboard
-          </button>
+          <div className="flex items-center gap-3">
+            <span className="hidden items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400 sm:flex">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Sistema operativo
+            </span>
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="flex items-center gap-2 rounded-lg border border-surface-border px-4 py-1.5 text-sm text-surface-muted hover:text-white transition-colors"
+            >
+              <ChevronLeft size={14} /> Dashboard
+            </button>
+          </div>
         </div>
       </header>
 
       <div className="mx-auto max-w-screen-xl px-4 py-8">
-        <h1 className="mb-6 text-2xl font-bold text-white">Panel de administración</h1>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-white">Panel de administración</h1>
+          <p className="mt-1 text-sm text-surface-muted">Gestión de entidades, usuarios y monitorización del sistema.</p>
+        </div>
 
         {/* Tabs */}
         <div className="mb-6 flex gap-1 border-b border-surface-border">
@@ -364,15 +372,15 @@ export default function AdminPage() {
                     {entities.map(entity => (
                       <tr key={entity.entity_ulid} className="hover:bg-surface-hover transition-colors">
                         <td className="px-4 py-3 font-medium text-white">{entity.legal_name}</td>
-                        <td className="px-4 py-3 text-surface-muted">{entity.country}</td>
+                        <td className="px-4 py-3 text-surface-muted">{entity.country_code}</td>
                         <td className="px-4 py-3">
                           <select
-                            value={entity.tier}
+                            value={entity.subscription_tier}
                             onChange={e => changeTier(entity.entity_ulid, e.target.value)}
                             disabled={changingTier === entity.entity_ulid}
                             className={`rounded-lg border px-2 py-1 text-xs font-semibold focus:outline-none cursor-pointer ${
-                              entity.tier === 'ENTERPRISE' ? 'border-brand-500/30 bg-brand-500/10 text-brand-400' :
-                              entity.tier === 'PRO' ? 'border-purple-500/30 bg-purple-500/10 text-purple-400' :
+                              entity.subscription_tier === 'ENTERPRISE' ? 'border-brand-500/30 bg-brand-500/10 text-brand-400' :
+                              entity.subscription_tier === 'PRO' ? 'border-purple-500/30 bg-purple-500/10 text-purple-400' :
                               'border-surface-border bg-surface-hover text-surface-muted'
                             }`}
                           >
@@ -458,7 +466,7 @@ export default function AdminPage() {
                       <tr key={user.user_ulid} className="hover:bg-surface-hover transition-colors">
                         <td className="px-4 py-3 font-mono text-xs text-white">{user.email}</td>
                         <td className="px-4 py-3 text-surface-muted hidden sm:table-cell">{user.full_name || '—'}</td>
-                        <td className="px-4 py-3 text-surface-muted hidden md:table-cell">{user.entity_name || '—'}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-surface-muted hidden md:table-cell">{user.entity_ulid || '—'}</td>
                         <td className="px-4 py-3 text-center">
                           <span className={`text-xs font-medium ${user.is_dealer ? 'text-brand-400' : 'text-surface-muted'}`}>
                             {user.is_dealer ? 'Sí' : 'No'}

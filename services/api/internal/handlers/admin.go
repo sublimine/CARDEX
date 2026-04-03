@@ -23,7 +23,7 @@ type adminStatsResponse struct {
 
 // AdminStats handles GET /api/v1/admin/stats
 func (d *Deps) AdminStats(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+	ctx := r.Context()
 	var (
 		mu   sync.Mutex
 		wg   sync.WaitGroup
@@ -131,7 +131,7 @@ type adminEntityListResponse struct {
 
 // AdminEntityList handles GET /api/v1/admin/entities
 func (d *Deps) AdminEntityList(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+	ctx := r.Context()
 	q := r.URL.Query()
 
 	limit, _ := strconv.Atoi(q.Get("limit"))
@@ -208,7 +208,7 @@ type adminEntityUpdateRequest struct {
 
 // AdminEntityUpdate handles PATCH /api/v1/admin/entities/{ulid}
 func (d *Deps) AdminEntityUpdate(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+	ctx := r.Context()
 	entityULID := r.PathValue("ulid")
 	if entityULID == "" {
 		writeError(w, http.StatusBadRequest, "missing_ulid", "entity ulid required")
@@ -273,7 +273,7 @@ type adminUserListResponse struct {
 
 // AdminUserList handles GET /api/v1/admin/users
 func (d *Deps) AdminUserList(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+	ctx := r.Context()
 	q := r.URL.Query()
 
 	limit, _ := strconv.Atoi(q.Get("limit"))
@@ -310,7 +310,7 @@ func (d *Deps) AdminUserList(w http.ResponseWriter, r *http.Request) {
 	dataArgs := append(args, limit, offset)
 	dataQuery := `
 SELECT user_ulid, email, COALESCE(full_name,''), COALESCE(entity_ulid,''),
-       COALESCE(is_dealer, false), COALESCE(email_verified, false), created_at
+       COALESCE(is_dealer, false), (email_verified_at IS NOT NULL), created_at
 FROM users` + whereSQL + `
 ORDER BY created_at DESC
 LIMIT $` + strconv.Itoa(argIdx) + ` OFFSET $` + strconv.Itoa(argIdx+1)
@@ -351,7 +351,7 @@ type scraperRow struct {
 
 // AdminScraperStatus handles GET /api/v1/admin/scrapers
 func (d *Deps) AdminScraperStatus(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+	ctx := r.Context()
 
 	query := `
 SELECT DISTINCT ON (platform)

@@ -31,7 +31,7 @@ type mdsRow struct {
 
 // MarketDaysSupply handles GET /api/v1/analytics/mds
 func (d *Deps) MarketDaysSupply(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+	ctx := r.Context()
 	q := r.URL.Query()
 	makeFilter := q.Get("make")
 	modelFilter := q.Get("model")
@@ -74,7 +74,7 @@ LIMIT 50`, baseWhere)
 	rows, err := d.CH.Query(ctx, query, args...)
 	if err != nil {
 		slog.Error("intelligence.mds: ch query", "error", err)
-		writeJSON(w, http.StatusOK, map[string]any{"results": []mdsRow{}})
+		writeError(w, http.StatusServiceUnavailable, "ch_unavailable", "analytics service temporarily unavailable")
 		return
 	}
 	defer rows.Close()
@@ -83,6 +83,7 @@ LIMIT 50`, baseWhere)
 	for rows.Next() {
 		var row mdsRow
 		if err := rows.Scan(&row.Make, &row.Model, &row.Country, &row.ActiveListings, &row.DailyAbsorption); err != nil {
+			slog.Warn("intelligence.mds: row scan", "error", err)
 			continue
 		}
 		absorption := math.Max(row.DailyAbsorption, 0.1)
@@ -119,7 +120,7 @@ type turnTimePredictionResponse struct {
 
 // TurnTimePrediction handles GET /api/v1/analytics/turn-time
 func (d *Deps) TurnTimePrediction(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+	ctx := r.Context()
 	q := r.URL.Query()
 	makeParam := q.Get("make")
 	modelParam := q.Get("model")
@@ -207,7 +208,7 @@ type marketCheckResponse struct {
 
 // MarketCheck handles GET /api/v1/ext/market-check
 func (d *Deps) MarketCheck(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+	ctx := r.Context()
 	q := r.URL.Query()
 	makeParam := q.Get("make")
 	modelParam := q.Get("model")
@@ -322,7 +323,6 @@ LIMIT 1`
 		}
 	}
 
-	_ = year // used in queries above
 	writeJSON(w, http.StatusOK, resp)
 }
 
@@ -352,7 +352,7 @@ type optimalPriceResponse struct {
 
 // OptimalPrice handles GET /api/v1/dealer/pricing/{ulid}/optimal
 func (d *Deps) OptimalPrice(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+	ctx := r.Context()
 	vehicleULID := r.PathValue("ulid")
 	entityULID := middleware.GetEntityULID(r.Context())
 
@@ -465,6 +465,7 @@ type generateDescriptionResponse struct {
 
 // GenerateDescription handles POST /api/v1/dealer/inventory/generate-description
 func (d *Deps) GenerateDescription(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	var req generateDescriptionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_body", "invalid JSON body")
@@ -491,7 +492,7 @@ func (d *Deps) GenerateDescription(w http.ResponseWriter, r *http.Request) {
 		req.Color, req.PowerKW, extras,
 	)
 
-	description := callAnthropicOrTemplate(prompt, req)
+	description := callAnthropicOrTemplate(ctx, prompt, req)
 
 	writeJSON(w, http.StatusOK, generateDescriptionResponse{
 		Description: description,
@@ -501,7 +502,7 @@ func (d *Deps) GenerateDescription(w http.ResponseWriter, r *http.Request) {
 }
 
 // callAnthropicOrTemplate calls the Anthropic API; on any failure returns a template description.
-func callAnthropicOrTemplate(prompt string, req generateDescriptionRequest) string {
+func callAnthropicOrTemplate(ctx context.Context, prompt string, req generateDescriptionRequest) string {
 	apiKey := os.Getenv("ANTHROPIC_API_KEY")
 	if apiKey == "" {
 		return buildTemplateDescription(req)
@@ -520,7 +521,7 @@ func callAnthropicOrTemplate(prompt string, req generateDescriptionRequest) stri
 	}
 
 	httpClient := &http.Client{Timeout: 30 * time.Second}
-	httpReq, err := http.NewRequestWithContext(context.Background(), http.MethodPost,
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		"https://api.anthropic.com/v1/messages", bytes.NewReader(bodyBytes))
 	if err != nil {
 		return buildTemplateDescription(req)
