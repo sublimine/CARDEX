@@ -164,6 +164,22 @@ func main() {
 	mux.Handle("GET /api/v1/analytics/turn-time", rl.Public(http.HandlerFunc(deps.TurnTimePrediction)))
 	mux.Handle("GET /api/v1/ext/market-check", rl.Strict(http.HandlerFunc(deps.MarketCheck)))
 
+	// ── VIN Valuation Engine (Gap 2) ──────────────────────────────────────────────
+	// Real-time market valuation using Cardex scrape data (vs DATgroup static DB)
+	mux.Handle("GET /api/v1/analytics/vin-valuation", rl.Authenticated(middleware.Auth(deps.VINValuation)))
+
+	// ── Residual Value Forecasting (Gap 3) ────────────────────────────────────────
+	// MDS-adjusted depreciation curves (Indicata competitor)
+	mux.Handle("GET /api/v1/analytics/residual", rl.Authenticated(middleware.Auth(deps.ResidualValue)))
+
+	// ── Multipublicación Real (Gap 4) ─────────────────────────────────────────────
+	mux.Handle("GET /api/v1/dealer/publishing", rl.Authenticated(middleware.Auth(deps.PublishingList)))
+	mux.Handle("POST /api/v1/dealer/publishing", rl.Authenticated(middleware.Auth(deps.PublishingCreate)))
+	mux.Handle("PATCH /api/v1/dealer/publishing/{pub_ulid}", rl.Authenticated(middleware.Auth(deps.PublishingUpdate)))
+	mux.Handle("DELETE /api/v1/dealer/publishing/{pub_ulid}", rl.Authenticated(middleware.Auth(deps.PublishingDelete)))
+	mux.Handle("GET /api/v1/dealer/publishing/feed/autoscout24.xml", rl.Authenticated(middleware.Auth(deps.PublishingFeedAS24)))
+	mux.Handle("GET /api/v1/dealer/publishing/export", rl.Authenticated(middleware.Auth(deps.PublishingExport)))
+
 	// ── Optimal Pricing ───────────────────────────────────────────────────────────
 	mux.Handle("GET /api/v1/dealer/pricing/{ulid}/optimal", rl.Authenticated(middleware.Auth(deps.OptimalPrice)))
 

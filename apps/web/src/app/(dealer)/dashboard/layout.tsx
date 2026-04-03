@@ -13,14 +13,16 @@ function authHeader(): Record<string, string> {
 
 // ── Nav items ──────────────────────────────────────────────────────────────────
 const NAV = [
-  { href: '/dashboard',            label: 'Inicio',      icon: '⊞' },
-  { href: '/dashboard/inventory',  label: 'Inventario',  icon: '🚗' },
-  { href: '/dashboard/crm',        label: 'CRM',         icon: '👥' },
-  { href: '/dashboard/leads',      label: 'Leads',       icon: '📥' },
-  { href: '/dashboard/pricing',    label: 'Precios',     icon: '📊' },
-  { href: '/dashboard/audit',      label: 'Auditoría',   icon: '🔍' },
-  { href: '/arbitrage',            label: 'Arbitraje',   icon: '⚡' },
-  { href: '/analytics/tradingcar', label: 'TradingCar',  icon: '📈' },
+  { href: '/dashboard',                label: 'Inicio',         icon: '⊞' },
+  { href: '/dashboard/inventory',      label: 'Inventario',     icon: '🚗' },
+  { href: '/dashboard/crm',            label: 'CRM',            icon: '👥' },
+  { href: '/dashboard/leads',          label: 'Leads',          icon: '📥' },
+  { href: '/dashboard/pricing',        label: 'Precios',        icon: '📊' },
+  { href: '/dashboard/publish',        label: 'Publicación',    icon: '📡' },
+  { href: '/dashboard/vin-valuation',  label: 'Valoración VIN', icon: '🔬' },
+  { href: '/dashboard/audit',          label: 'Auditoría',      icon: '🔍' },
+  { href: '/arbitrage',                label: 'Arbitraje',      icon: '⚡' },
+  { href: '/analytics/tradingcar',     label: 'TradingCar',     icon: '📈' },
 ]
 
 // ── Notification types → color ─────────────────────────────────────────────────

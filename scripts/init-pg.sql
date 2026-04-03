@@ -476,6 +476,43 @@ CREATE INDEX idx_audits_entity ON marketing_audits (entity_ulid);
 COMMIT;
 
 -- =============================================================================
+-- PUBLISHING LISTINGS (Multipublicación — platform status per CRM vehicle)
+-- =============================================================================
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS publishing_listings (
+    pub_ulid          TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL REFERENCES entities(entity_ulid) ON DELETE CASCADE,
+    crm_vehicle_ulid  TEXT NOT NULL REFERENCES crm_vehicles(crm_vehicle_ulid) ON DELETE CASCADE,
+    platform          TEXT NOT NULL CHECK (platform IN (
+                          'AUTOSCOUT24','WALLAPOP','COCHES_NET','MOBILE_DE',
+                          'MARKTPLAATS','LACENTRALE','MILANUNCIOS','MANUAL')),
+    status            TEXT NOT NULL DEFAULT 'DRAFT' CHECK (status IN (
+                          'DRAFT','PENDING','ACTIVE','PAUSED','EXPIRED','REJECTED')),
+    title             TEXT,
+    external_id       TEXT,
+    external_url      TEXT,
+    error_message     TEXT,
+    published_at      TIMESTAMPTZ,
+    expires_at        TIMESTAMPTZ,
+    last_synced_at    TIMESTAMPTZ,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(entity_ulid, crm_vehicle_ulid, platform)
+) WITH (fillfactor = 80);
+
+CREATE INDEX IF NOT EXISTS idx_publistings_entity   ON publishing_listings (entity_ulid);
+CREATE INDEX IF NOT EXISTS idx_publistings_vehicle  ON publishing_listings (crm_vehicle_ulid);
+CREATE INDEX IF NOT EXISTS idx_publistings_platform ON publishing_listings (platform, status);
+CREATE INDEX IF NOT EXISTS idx_publistings_status   ON publishing_listings (status) WHERE status IN ('PENDING','ACTIVE');
+
+ALTER TABLE publishing_listings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY publistings_isolation ON publishing_listings
+    USING (entity_ulid = current_setting('app.current_entity', true));
+
+COMMIT;
+
+-- =============================================================================
 -- DEALERS — Physical dealer registry (all discovery sources merged)
 -- Populated by: DiscoveryOrchestrator (H3 grid + OSM + government registries)
 -- Consumed by:  DealerWebSpider (fleet crawls dealer websites for inventory)
