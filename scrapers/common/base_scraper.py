@@ -37,12 +37,13 @@ from typing import AsyncIterator, AsyncGenerator
 import redis.asyncio as aioredis
 import structlog
 
-from .captcha_solver import CaptchaSolver
 from .gateway_client import GatewayClient
 from .http_client import HTTPClient
 from .models import RawListing
 from .playwright_client import PlaywrightClient
 from .proxy_manager import ProxyManager
+from .robots_checker import RobotsChecker
+from .sitemap_parser import SitemapParser
 
 log = structlog.get_logger()
 
@@ -90,11 +91,12 @@ class BaseScraper(ABC):
       - Rate limiting
     """
 
-    platform: str        # e.g. "autoscout24_de"
-    country: str         # ISO 3166-1 alpha-2
-    domain: str          # rate limiter domain key
+    platform: str           # e.g. "autoscout24_de"
+    country: str            # ISO 3166-1 alpha-2
+    domain: str             # rate limiter domain key
+    base_url: str = ""      # e.g. "https://www.autoscout24.es" — for robots+sitemap
+    listing_patterns: list[str] = []  # URL substrings identifying listing pages
     use_playwright: bool = False
-    # Platforms that support make-based filtering (nearly all do)
     supports_make_filter: bool = True
 
     def __init__(self) -> None:
@@ -109,7 +111,6 @@ class BaseScraper(ABC):
             redis_client=self._redis,
         )
         self.proxy_manager = ProxyManager(self._redis)
-        self.captcha_solver = CaptchaSolver()
         self.http = HTTPClient(
             self.domain,
             proxy_manager=self.proxy_manager,
@@ -124,6 +125,8 @@ class BaseScraper(ABC):
             if self.use_playwright
             else None
         )
+        self.robots = RobotsChecker(self.base_url, self.http) if self.base_url else None
+        self.sitemap = SitemapParser(self.http)
         self.log = structlog.get_logger(scraper=self.platform, country=self.country)
         self._ban_counts: dict[str, int] = {}  # shard_key → consecutive ban count
 
@@ -198,17 +201,51 @@ class BaseScraper(ABC):
         # unreachable but satisfies AsyncGenerator typing
         yield  # type: ignore
 
+    async def crawl_listing_url(self, url: str) -> "AsyncGenerator[RawListing, None]":
+        """
+        Parse a single listing URL and yield RawListing objects.
+        Default: not implemented — subclasses that support sitemap mode override this.
+        """
+        return
+        yield  # make it an async generator
+
     async def crawl(self) -> AsyncGenerator[RawListing, None]:
         """
-        Default crawl: iterates ALL makes × ALL years, calling crawl_shard() each time.
-        Override this only if the platform doesn't support make/year filtering.
+        Crawl strategy (in order):
+        1. Sitemap mode — if base_url and listing_patterns are set, parse sitemaps
+           for 100% URL coverage, then call crawl_listing_url() for each.
+        2. Make×year fallback — for portals without sitemaps or JSON APIs,
+           use the decomposed query strategy.
 
-        Ban handling:
-        - If a shard gets banned (exception containing "ban", "403", "blocked"):
-          increment ban counter. After 3 consecutive bans on the same shard,
-          pause the shard for 1 hour and continue with the next.
+        Subclasses can override crawl() entirely for custom strategies.
         """
         import time
+
+        # ── Strategy 1: Sitemap (100% coverage, cleanest) ─────────────────────
+        if self.base_url and self.listing_patterns:
+            known_sitemaps = self.robots.sitemaps if self.robots else []
+            count = 0
+            async for url in self.sitemap.listing_urls(
+                base_url=self.base_url,
+                listing_patterns=self.listing_patterns,
+                known_sitemaps=known_sitemaps,
+            ):
+                if self.robots and not self.robots.can_fetch(url.split(self.base_url)[-1]):
+                    continue
+                try:
+                    async for listing in self.crawl_listing_url(url):
+                        count += 1
+                        yield listing
+                except Exception as e:
+                    self.log.error("scraper.listing_error", url=url, error=str(e))
+
+            if count > 0:
+                self.log.info("scraper.sitemap_complete", count=count)
+                return
+            # If sitemap yielded 0 listings (crawl_listing_url not implemented),
+            # fall through to make×year strategy
+
+        # ── Strategy 2: Make×year decomposition (fallback) ────────────────────
 
         for make in ALL_MAKES:
             for year in reversed(YEARS):  # newest first
@@ -271,10 +308,17 @@ class BaseScraper(ABC):
             # Load proxy pool and rate limits from Redis
             await self.proxy_manager.load()
             await self.http.rate_limiter.load_from_redis(self._redis)
-            if self.proxy_manager.available():
-                self.log.info("scraper.proxies_loaded", count=len(self.proxy_manager._proxies))
-            else:
-                self.log.warning("scraper.no_proxies", msg="Running without proxy rotation — risk of IP ban")
+
+            # Load robots.txt — discover sitemaps + crawl-delay
+            if self.robots:
+                await self.robots.load()
+                if self.robots.crawl_delay:
+                    self.http.rate_limiter.rps = 1.0 / self.robots.crawl_delay
+                    self.log.info(
+                        "scraper.crawl_delay_applied",
+                        delay=self.robots.crawl_delay,
+                        sitemaps=len(self.robots.sitemaps),
+                    )
 
             async for listing in self.crawl():
                 total += 1
