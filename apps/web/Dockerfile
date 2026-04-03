@@ -1,11 +1,12 @@
 # Multi-stage Next.js Dockerfile
 FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # ── Deps ─────────────────────────────────────────────────────────────────────
 FROM base AS deps
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm ci --legacy-peer-deps
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 # ── Builder ───────────────────────────────────────────────────────────────────
 FROM base AS builder
@@ -14,7 +15,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+RUN pnpm run build
 
 # ── Production runner ─────────────────────────────────────────────────────────
 FROM base AS runner
@@ -40,4 +41,4 @@ WORKDIR /app
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 EXPOSE 3000
-CMD ["npm", "run", "dev"]
+CMD ["pnpm", "run", "dev"]
