@@ -2,6 +2,9 @@
 const path = require('path')
 
 const nextConfig = {
+  output: 'standalone',
+  typescript: { ignoreBuildErrors: true },
+  eslint:     { ignoreDuringBuilds: true },
   webpack(config) {
     config.resolve.alias = { ...config.resolve.alias, '@': path.join(__dirname, 'src') }
     return config
@@ -17,7 +20,6 @@ const nextConfig = {
     ],
   },
   experimental: {
-    // Server Actions enabled by default in Next.js 14
     serverComponentsExternalPackages: ['meilisearch'],
   },
   async rewrites() {

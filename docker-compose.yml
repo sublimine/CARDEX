@@ -295,7 +295,7 @@ services:
     build:
       context: apps/web
       dockerfile: Dockerfile
-      target: dev
+      target: runner
     container_name: cardex-web
     ports:
       - "3001:3000"
@@ -304,8 +304,11 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8080
       NEXT_PUBLIC_MEILI_URL: http://localhost:7700
-      NEXT_PUBLIC_MEILI_SEARCH_KEY: ""   # public search-only key set at runtime
+      NEXT_PUBLIC_MEILI_SEARCH_KEY: ""
       NEXT_TELEMETRY_DISABLED: "1"
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
