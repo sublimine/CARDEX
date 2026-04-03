@@ -10,246 +10,108 @@ function authHeader(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
-const eur = (v: number) =>
+const fmtEUR = (v: number) =>
   new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v)
 
 // ── Types ──────────────────────────────────────────────────────────────────────
+
+interface CRMVehicle {
+  crm_vehicle_ulid: string
+  make: string
+  model: string
+  year: number
+  mileage_km: number
+  asking_price_eur: number
+  lifecycle_status: string
+}
 
 interface PublishingListing {
   pub_ulid: string
   crm_vehicle_ulid: string
   platform: string
   status: string
-  external_id?: string
   external_url?: string
-  title?: string
   error_message?: string
   published_at?: string
-  expires_at?: string
-  created_at: string
+  last_synced_at?: string
   updated_at: string
-  make?: string
-  model?: string
-  year?: number
-  mileage_km?: number
-  asking_price_eur?: number
 }
 
-// ── Config ─────────────────────────────────────────────────────────────────────
+// ── Platform config ────────────────────────────────────────────────────────────
 
 const PLATFORMS = [
-  { id: 'AUTOSCOUT24',  label: 'AutoScout24',  color: '#3b82f6', textColor: 'text-blue-400',   bg: 'bg-blue-500/10',   export: 'autoscout24.xml', exportLabel: 'XML Feed' },
-  { id: 'WALLAPOP',     label: 'Wallapop',     color: '#ef4444', textColor: 'text-red-400',    bg: 'bg-red-500/10',    export: 'wallapop',        exportLabel: 'JSON' },
-  { id: 'COCHES_NET',   label: 'Coches.net',   color: '#f97316', textColor: 'text-orange-400', bg: 'bg-orange-500/10', export: 'coches_net',      exportLabel: 'CSV' },
-  { id: 'MOBILE_DE',    label: 'Mobile.de',    color: '#10b981', textColor: 'text-emerald-400',bg: 'bg-emerald-500/10',export: 'mobile_de',       exportLabel: 'XML' },
-  { id: 'MARKTPLAATS',  label: 'Marktplaats',  color: '#eab308', textColor: 'text-yellow-400', bg: 'bg-yellow-500/10', export: null,              exportLabel: '' },
-  { id: 'LACENTRALE',   label: 'La Centrale',  color: '#7c3aed', textColor: 'text-brand-400',  bg: 'bg-brand-500/10',  export: null,              exportLabel: '' },
-  { id: 'MILANUNCIOS',  label: 'Milanuncios',  color: '#14b8a6', textColor: 'text-teal-400',   bg: 'bg-teal-500/10',   export: 'milanuncios',     exportLabel: 'CSV' },
-  { id: 'MANUAL',       label: 'Manual',       color: '#6b7280', textColor: 'text-gray-400',   bg: 'bg-gray-500/10',   export: null,              exportLabel: '' },
-]
+  { id: 'AUTOSCOUT24', label: 'AutoScout24', reach: '4.2M', textColor: 'text-blue-400',    ring: 'ring-blue-500',    dot: 'bg-blue-400',    export: { url: '/api/v1/dealer/publishing/feed/autoscout24.xml', filename: 'autoscout24_feed.xml', label: 'XML Feed' } },
+  { id: 'WALLAPOP',    label: 'Wallapop',    reach: '2.8M', textColor: 'text-red-400',     ring: 'ring-red-500',     dot: 'bg-red-400',     export: { url: '/api/v1/dealer/publishing/export?format=wallapop', filename: 'wallapop.json', label: 'JSON' } },
+  { id: 'COCHES_NET',  label: 'Coches.net',  reach: '1.9M', textColor: 'text-orange-400',  ring: 'ring-orange-500',  dot: 'bg-orange-400',  export: { url: '/api/v1/dealer/publishing/export?format=coches_net', filename: 'coches_net.csv', label: 'CSV' } },
+  { id: 'MOBILE_DE',   label: 'Mobile.de',   reach: '3.1M', textColor: 'text-emerald-400', ring: 'ring-emerald-500', dot: 'bg-emerald-400', export: { url: '/api/v1/dealer/publishing/export?format=mobile_de', filename: 'mobile_de.xml', label: 'XML' } },
+  { id: 'MARKTPLAATS', label: 'Marktplaats', reach: '1.4M', textColor: 'text-yellow-400',  ring: 'ring-yellow-500',  dot: 'bg-yellow-400',  export: null },
+  { id: 'LACENTRALE',  label: 'La Centrale', reach: '1.1M', textColor: 'text-brand-400',   ring: 'ring-brand-500',   dot: 'bg-brand-400',   export: null },
+  { id: 'MILANUNCIOS', label: 'Milanuncios', reach: '0.8M', textColor: 'text-teal-400',    ring: 'ring-teal-500',    dot: 'bg-teal-400',    export: { url: '/api/v1/dealer/publishing/export?format=milanuncios', filename: 'milanuncios.csv', label: 'CSV' } },
+  { id: 'MANUAL',      label: 'Manual',      reach: '—',    textColor: 'text-gray-400',    ring: 'ring-gray-500',    dot: 'bg-gray-500',    export: null },
+] as const
 
-const STATUS_CFG: Record<string, { label: string; cls: string }> = {
-  DRAFT:    { label: 'Borrador',  cls: 'bg-gray-500/20 text-gray-400' },
-  PENDING:  { label: 'Pendiente', cls: 'bg-yellow-500/20 text-yellow-400' },
-  ACTIVE:   { label: 'Activo',    cls: 'bg-emerald-500/20 text-emerald-400' },
-  PAUSED:   { label: 'Pausado',   cls: 'bg-orange-500/20 text-orange-400' },
-  EXPIRED:  { label: 'Expirado',  cls: 'bg-red-500/20 text-red-400' },
-  REJECTED: { label: 'Rechazado', cls: 'bg-red-500/20 text-red-400' },
-}
+type PlatformId = typeof PLATFORMS[number]['id']
 
-// ── Download helper (authenticated) ───────────────────────────────────────────
+// Status visuals
+const STATUS = {
+  ACTIVE:   { dot: 'bg-emerald-400', label: 'Activo',    ring: 'ring-emerald-500/40' },
+  PENDING:  { dot: 'bg-yellow-400',  label: 'Pendiente', ring: 'ring-yellow-500/40' },
+  PAUSED:   { dot: 'bg-orange-400',  label: 'Pausado',   ring: 'ring-orange-500/40' },
+  DRAFT:    { dot: 'bg-gray-600',    label: 'Borrador',  ring: 'ring-gray-500/40' },
+  EXPIRED:  { dot: 'bg-red-500',     label: 'Expirado',  ring: 'ring-red-500/40' },
+  REJECTED: { dot: 'bg-red-500',     label: 'Rechazado', ring: 'ring-red-500/40' },
+} as const
+
+// ── Download helper ────────────────────────────────────────────────────────────
 
 async function downloadFile(url: string, filename: string) {
-  const res = await fetch(url, { headers: authHeader() })
+  const res = await fetch(`${API}${url}`, { headers: authHeader() })
   if (!res.ok) throw new Error(`Error ${res.status}`)
   const blob = await res.blob()
   const href = URL.createObjectURL(blob)
   const a = document.createElement('a')
-  a.href = href
-  a.download = filename
-  a.click()
+  a.href = href; a.download = filename; a.click()
   URL.revokeObjectURL(href)
 }
 
-// ── CreateModal ────────────────────────────────────────────────────────────────
+// ── Cell component — matrix cell for one vehicle × platform ───────────────────
 
-function CreateModal({
-  onClose,
-  onCreated,
+function MatrixCell({
+  vehicle,
+  platform,
+  listing,
+  onToggle,
+  busy,
 }: {
-  onClose: () => void
-  onCreated: () => void
+  vehicle: CRMVehicle
+  platform: typeof PLATFORMS[number]
+  listing?: PublishingListing
+  onToggle: (vehicle: CRMVehicle, platformId: PlatformId, listing?: PublishingListing) => void
+  busy: boolean
 }) {
-  const [vehicleULID, setVehicleULID] = useState('')
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
-  const [title, setTitle] = useState('')
-  const [expiresInDays, setExpiresInDays] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  function togglePlatform(id: string) {
-    setSelectedPlatforms(prev =>
-      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
-    )
-  }
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!vehicleULID.trim()) { setError('El ULID del vehículo es obligatorio'); return }
-    if (selectedPlatforms.length === 0) { setError('Selecciona al menos un portal'); return }
-
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch(`${API}/api/v1/dealer/publishing`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeader() },
-        body: JSON.stringify({
-          crm_vehicle_ulid: vehicleULID.trim(),
-          platforms: selectedPlatforms,
-          title: title.trim() || undefined,
-          expires_in_days: expiresInDays ? parseInt(expiresInDays) : undefined,
-        }),
-      })
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}))
-        throw new Error(d.message ?? `Error ${res.status}`)
-      }
-      onCreated()
-      onClose()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al crear publicación')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const s = listing ? STATUS[listing.status as keyof typeof STATUS] : null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-      <div className="w-full max-w-lg rounded-2xl border border-surface-border bg-surface shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-surface-border px-6 py-4">
-          <h2 className="text-base font-semibold text-white">Nueva publicación</h2>
-          <button
-            onClick={onClose}
-            className="text-surface-muted hover:text-white transition"
-            aria-label="Cerrar"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <form onSubmit={submit} className="space-y-5 p-6">
-          {/* Vehicle ULID */}
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-surface-muted">
-              ULID del vehículo CRM <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="text"
-              value={vehicleULID}
-              onChange={e => setVehicleULID(e.target.value)}
-              placeholder="01JFKQ..."
-              className="w-full rounded-lg border border-surface-border bg-surface-dark px-3 py-2 font-mono text-sm text-white placeholder-surface-muted focus:border-brand-500 focus:outline-none"
-            />
-          </div>
-
-          {/* Platform checkboxes */}
-          <div>
-            <label className="mb-2 block text-xs font-medium text-surface-muted">
-              Portales <span className="text-red-400">*</span>
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {PLATFORMS.map(p => (
-                <label
-                  key={p.id}
-                  className={`flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-sm transition ${
-                    selectedPlatforms.includes(p.id)
-                      ? 'border-brand-500/60 bg-brand-500/10 text-white'
-                      : 'border-surface-border text-surface-muted hover:border-surface-muted'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={selectedPlatforms.includes(p.id)}
-                    onChange={() => togglePlatform(p.id)}
-                  />
-                  <span className="h-4 w-4 flex-shrink-0 rounded-sm border border-current flex items-center justify-center">
-                    {selectedPlatforms.includes(p.id) && (
-                      <svg className="h-3 w-3 text-brand-400" fill="currentColor" viewBox="0 0 12 12">
-                        <path d="M10 3L5 8.5 2 5.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round"/>
-                      </svg>
-                    )}
-                  </span>
-                  {p.label}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Title (optional) */}
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-surface-muted">
-              Título personalizado <span className="text-surface-muted/60">(opcional)</span>
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              placeholder="BMW Serie 3 · 2020 · 80.000 km"
-              className="w-full rounded-lg border border-surface-border bg-surface-dark px-3 py-2 text-sm text-white placeholder-surface-muted focus:border-brand-500 focus:outline-none"
-            />
-          </div>
-
-          {/* Expires */}
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-surface-muted">
-              Caducidad (días) <span className="text-surface-muted/60">(opcional)</span>
-            </label>
-            <input
-              type="number"
-              value={expiresInDays}
-              onChange={e => setExpiresInDays(e.target.value)}
-              placeholder="30"
-              min="1"
-              max="365"
-              className="w-full rounded-lg border border-surface-border bg-surface-dark px-3 py-2 text-sm text-white placeholder-surface-muted focus:border-brand-500 focus:outline-none"
-            />
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
-              {error}
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-surface-border px-4 py-2 text-sm text-surface-muted hover:text-white transition"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 transition disabled:opacity-50"
-            >
-              {loading && (
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              )}
-              Crear publicación
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <button
+      onClick={() => onToggle(vehicle, platform.id, listing)}
+      disabled={busy}
+      title={listing
+        ? `${platform.label}: ${s?.label}${listing.error_message ? ' — ' + listing.error_message : ''}`
+        : `Publicar en ${platform.label}`}
+      className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-all duration-150 disabled:opacity-40 ${
+        listing
+          ? `border-transparent ${s?.ring} ring-1 bg-surface-hover hover:ring-2`
+          : 'border-surface-border/40 hover:border-surface-muted/60 hover:bg-surface-hover'
+      }`}
+    >
+      {busy ? (
+        <span className="h-3 w-3 animate-spin rounded-full border border-current border-t-transparent opacity-60" />
+      ) : listing ? (
+        <span className={`h-2.5 w-2.5 rounded-full ${s?.dot}`} />
+      ) : (
+        <span className="text-[10px] text-surface-muted/40">+</span>
+      )}
+    </button>
   )
 }
 
@@ -257,143 +119,287 @@ function CreateModal({
 
 export default function PublishPage() {
   const router = useRouter()
+  const [vehicles, setVehicles] = useState<CRMVehicle[]>([])
   const [listings, setListings] = useState<PublishingListing[]>([])
-  const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(true)
+  const [loadingVehicles, setLoadingVehicles] = useState(true)
+  const [loadingListings, setLoadingListings] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [platformFilter, setPlatformFilter] = useState('ALL')
-  const [statusFilter, setStatusFilter] = useState('ALL')
-  const [showModal, setShowModal] = useState(false)
-  const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [busyCells, setBusyCells] = useState<Set<string>>(new Set())
   const [downloadError, setDownloadError] = useState<string | null>(null)
+  const [feedUrlCopied, setFeedUrlCopied] = useState(false)
+  const [selectedPlatforms, setSelectedPlatforms] = useState<Set<PlatformId>>(new Set())
+  const [lifecycleFilter, setLifecycleFilter] = useState<string>('SELLABLE')
 
-  const fetchListings = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+  // ── Fetch CRM vehicles ──────────────────────────────────────────────────────
+  const fetchVehicles = useCallback(async () => {
+    setLoadingVehicles(true)
     try {
-      const params = new URLSearchParams({ limit: '100' })
-      if (platformFilter !== 'ALL') params.set('platform', platformFilter)
-      if (statusFilter !== 'ALL') params.set('status', statusFilter)
-
-      const res = await fetch(`${API}/api/v1/dealer/publishing?${params}`, {
-        headers: authHeader(),
-      })
+      const res = await fetch(`${API}/api/v1/dealer/crm/vehicles?limit=200`, { headers: authHeader() })
       if (res.status === 401) { router.push('/dashboard/login'); return }
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}))
-        throw new Error(d.message ?? `Error ${res.status}`)
-      }
+      if (!res.ok) throw new Error(`Error ${res.status}`)
+      const data = await res.json()
+      setVehicles(data.vehicles ?? [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error cargando vehículos')
+    } finally {
+      setLoadingVehicles(false)
+    }
+  }, [router])
+
+  // ── Fetch publications ──────────────────────────────────────────────────────
+  const fetchListings = useCallback(async () => {
+    setLoadingListings(true)
+    try {
+      const res = await fetch(`${API}/api/v1/dealer/publishing?limit=500`, { headers: authHeader() })
+      if (!res.ok) throw new Error(`Error ${res.status}`)
       const data = await res.json()
       setListings(data.listings ?? [])
-      setTotal(data.total ?? 0)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error cargando publicaciones')
-    } finally {
-      setLoading(false)
-    }
-  }, [router, platformFilter, statusFilter])
+    } catch { /* silent — matrix shows empty cells */ }
+    finally { setLoadingListings(false) }
+  }, [])
 
-  useEffect(() => { fetchListings() }, [fetchListings])
+  useEffect(() => { fetchVehicles(); fetchListings() }, [fetchVehicles, fetchListings])
 
-  // Count active listings per platform
-  const platformCounts = PLATFORMS.reduce((acc, p) => {
-    acc[p.id] = listings.filter(l => l.platform === p.id && l.status === 'ACTIVE').length
-    return acc
-  }, {} as Record<string, number>)
+  // ── Lookup helpers ──────────────────────────────────────────────────────────
 
-  async function toggleStatus(pub: PublishingListing) {
-    const newStatus = pub.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE'
-    setActionLoading(pub.pub_ulid)
-    // Optimistic update
-    setListings(prev => prev.map(l => l.pub_ulid === pub.pub_ulid ? { ...l, status: newStatus } : l))
-    try {
-      const res = await fetch(`${API}/api/v1/dealer/publishing/${pub.pub_ulid}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...authHeader() },
-        body: JSON.stringify({ status: newStatus }),
-      })
-      if (!res.ok) throw new Error(`Error ${res.status}`)
-    } catch {
-      // Rollback
-      setListings(prev => prev.map(l => l.pub_ulid === pub.pub_ulid ? { ...l, status: pub.status } : l))
-    } finally {
-      setActionLoading(null)
-    }
+  function getListing(vehicleULID: string, platformId: string) {
+    return listings.find(l => l.crm_vehicle_ulid === vehicleULID && l.platform === platformId)
   }
 
-  async function deleteListing(pub: PublishingListing) {
-    if (!confirm(`¿Eliminar publicación en ${pub.platform}?`)) return
-    setActionLoading(pub.pub_ulid)
-    setListings(prev => prev.filter(l => l.pub_ulid !== pub.pub_ulid))
-    try {
-      const res = await fetch(`${API}/api/v1/dealer/publishing/${pub.pub_ulid}`, {
-        method: 'DELETE',
-        headers: authHeader(),
-      })
-      if (!res.ok) throw new Error(`Error ${res.status}`)
-    } catch {
-      // Restore
-      setListings(prev => [...prev, pub])
-    } finally {
-      setActionLoading(null)
-    }
+  function cellKey(vehicleULID: string, platformId: string) {
+    return `${vehicleULID}:${platformId}`
   }
 
-  async function handleDownload(platform: typeof PLATFORMS[number]) {
-    setDownloadError(null)
+  // ── Toggle cell: publish or pause/activate ──────────────────────────────────
+
+  async function toggleCell(vehicle: CRMVehicle, platformId: PlatformId, existing?: PublishingListing) {
+    const key = cellKey(vehicle.crm_vehicle_ulid, platformId)
+    setBusyCells(prev => new Set(prev).add(key))
+
     try {
-      if (platform.id === 'AUTOSCOUT24') {
-        await downloadFile(
-          `${API}/api/v1/dealer/publishing/feed/autoscout24.xml`,
-          'autoscout24_feed.xml'
-        )
-      } else if (platform.export) {
-        await downloadFile(
-          `${API}/api/v1/dealer/publishing/export?format=${platform.export}`,
-          `${platform.export}_export.${platform.exportLabel === 'CSV' ? 'csv' : platform.exportLabel === 'JSON' ? 'json' : 'xml'}`
-        )
+      if (!existing) {
+        // Create new publication
+        const res = await fetch(`${API}/api/v1/dealer/publishing`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeader() },
+          body: JSON.stringify({ crm_vehicle_ulid: vehicle.crm_vehicle_ulid, platforms: [platformId] }),
+        })
+        if (!res.ok) throw new Error(`Error ${res.status}`)
+        await fetchListings()
+      } else {
+        // Toggle active ↔ paused
+        const newStatus = existing.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE'
+        // Optimistic
+        setListings(prev => prev.map(l => l.pub_ulid === existing.pub_ulid ? { ...l, status: newStatus } : l))
+        const res = await fetch(`${API}/api/v1/dealer/publishing/${existing.pub_ulid}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', ...authHeader() },
+          body: JSON.stringify({ status: newStatus }),
+        })
+        if (!res.ok) {
+          // Rollback
+          setListings(prev => prev.map(l => l.pub_ulid === existing.pub_ulid ? { ...l, status: existing.status } : l))
+        }
       }
-    } catch {
-      setDownloadError(`Error descargando feed de ${platform.label}`)
+    } catch { /* swallow */ }
+    finally {
+      setBusyCells(prev => { const s = new Set(prev); s.delete(key); return s })
     }
   }
 
-  const platformMeta = (id: string) => PLATFORMS.find(p => p.id === id)
+  // ── Bulk publish selected platforms for all vehicles ───────────────────────
+
+  async function bulkPublish() {
+    if (selectedPlatforms.size === 0) return
+    const platformIds = [...selectedPlatforms]
+    const toPublish = filteredVehicles.filter(v =>
+      platformIds.some(p => !getListing(v.crm_vehicle_ulid, p))
+    )
+    for (const vehicle of toPublish) {
+      const platforms = platformIds.filter(p => !getListing(vehicle.crm_vehicle_ulid, p))
+      if (platforms.length === 0) continue
+      await fetch(`${API}/api/v1/dealer/publishing`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeader() },
+        body: JSON.stringify({ crm_vehicle_ulid: vehicle.crm_vehicle_ulid, platforms }),
+      })
+    }
+    await fetchListings()
+    setSelectedPlatforms(new Set())
+  }
+
+  // ── Download handler ────────────────────────────────────────────────────────
+
+  async function handleDownload(p: typeof PLATFORMS[number]) {
+    if (!p.export) return
+    setDownloadError(null)
+    try { await downloadFile(p.export.url, p.export.filename) }
+    catch { setDownloadError(`Error descargando ${p.label}`) }
+  }
+
+  async function copyFeedURL() {
+    const url = `${API}/api/v1/dealer/publishing/feed/autoscout24.xml`
+    await navigator.clipboard.writeText(url)
+    setFeedUrlCopied(true)
+    setTimeout(() => setFeedUrlCopied(false), 1800)
+  }
+
+  // ── Stats ──────────────────────────────────────────────────────────────────
+
+  const totalActive = listings.filter(l => l.status === 'ACTIVE').length
+  const totalPending = listings.filter(l => l.status === 'PENDING').length
+  const totalDraft = listings.filter(l => l.status === 'DRAFT').length
+  const reachM = PLATFORMS.filter(p => listings.some(l => l.platform === p.id && l.status === 'ACTIVE'))
+    .reduce((acc, p) => acc + parseFloat(p.reach) || 0, 0)
+
+  // ── Filtered vehicles ─────────────────────────────────────────────────────
+
+  const filteredVehicles = vehicles.filter(v => {
+    if (lifecycleFilter === 'SELLABLE') return ['READY', 'LISTED', 'RECONDITIONING'].includes(v.lifecycle_status)
+    if (lifecycleFilter === 'ALL') return true
+    return v.lifecycle_status === lifecycleFilter
+  })
+
+  // ── Gap analysis ──────────────────────────────────────────────────────────
+
+  const unpublishedCount = filteredVehicles.filter(v =>
+    !listings.some(l => l.crm_vehicle_ulid === v.crm_vehicle_ulid && l.status === 'ACTIVE')
+  ).length
+
+  const loading = loadingVehicles || loadingListings
 
   return (
-    <div className="mx-auto max-w-screen-xl space-y-8">
+    <div className="mx-auto max-w-screen-2xl space-y-6">
 
       {/* ── Header ── */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Multipublicación</h1>
           <p className="mt-1 text-sm text-surface-muted">
-            Gestiona la presencia de tu flota en todos los portales desde un solo lugar
+            Publica tu flota en todos los portales europeos desde una sola pantalla
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Feed URL copy */}
+          <button
+            onClick={copyFeedURL}
+            className="flex items-center gap-2 rounded-lg border border-surface-border px-3 py-2 text-xs text-surface-muted hover:border-blue-500/50 hover:text-blue-400 transition"
+          >
+            {feedUrlCopied ? (
+              <>
+                <svg className="h-3.5 w-3.5 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+                <span className="text-emerald-400">URL copiada</span>
+              </>
+            ) : (
+              <>
+                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                </svg>
+                Copiar URL Feed AS24
+              </>
+            )}
+          </button>
           <button
             onClick={() => handleDownload(PLATFORMS[0])}
-            className="flex items-center gap-2 rounded-lg border border-surface-border px-4 py-2 text-sm text-surface-muted hover:border-blue-500/50 hover:text-blue-400 transition"
+            className="flex items-center gap-2 rounded-lg border border-blue-500/40 px-3 py-2 text-xs text-blue-400 hover:bg-blue-500/10 transition"
           >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
             </svg>
-            Feed AS24 XML
+            Descargar XML AS24
           </button>
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 transition"
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            Nueva publicación
-          </button>
+          {selectedPlatforms.size > 0 && (
+            <button
+              onClick={bulkPublish}
+              className="flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-xs font-semibold text-white hover:bg-brand-600 transition"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
+              </svg>
+              Publicar en {selectedPlatforms.size} portales
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Download error */}
+      {/* ── KPI bar ── */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { label: 'Anuncios activos',  value: totalActive,  color: 'text-emerald-400' },
+          { label: 'Pendientes',        value: totalPending, color: 'text-yellow-400' },
+          { label: 'Borradores',        value: totalDraft,   color: 'text-surface-muted' },
+          { label: 'Alcance estimado',  value: `${reachM.toFixed(1)}M`, color: 'text-brand-400', sub: 'visitas/mes' },
+        ].map(kpi => (
+          <div key={kpi.label} className="rounded-xl border border-surface-border bg-surface px-5 py-4">
+            <div className="text-xs text-surface-muted">{kpi.label}</div>
+            <div className={`mt-1 text-2xl font-bold ${kpi.color}`}>{kpi.value}</div>
+            {'sub' in kpi && <div className="text-xs text-surface-muted">{kpi.sub}</div>}
+          </div>
+        ))}
+      </div>
+
+      {/* ── Gap alert ── */}
+      {unpublishedCount > 0 && !loading && (
+        <div className="flex items-start gap-4 rounded-xl border border-yellow-500/30 bg-yellow-500/5 px-5 py-4">
+          <svg className="mt-0.5 h-5 w-5 shrink-0 text-yellow-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          </svg>
+          <div className="flex-1">
+            <div className="text-sm font-semibold text-yellow-400">
+              {unpublishedCount} vehículo{unpublishedCount !== 1 ? 's' : ''} sin ningún anuncio activo
+            </div>
+            <div className="mt-0.5 text-xs text-surface-muted">
+              Selecciona portales abajo y usa "Publicar en X portales" para rellenar los huecos de un golpe.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Platform quick-select + export bar ── */}
+      <div className="overflow-x-auto">
+        <div className="flex gap-2 pb-1" style={{ minWidth: 'max-content' }}>
+          {PLATFORMS.map(p => {
+            const activeCount = listings.filter(l => l.platform === p.id && l.status === 'ACTIVE').length
+            const sel = selectedPlatforms.has(p.id)
+            return (
+              <div
+                key={p.id}
+                className={`group flex flex-col gap-1.5 rounded-xl border px-3 py-3 transition cursor-pointer ${
+                  sel ? 'border-brand-500/60 bg-brand-500/10' : 'border-surface-border bg-surface hover:border-surface-muted/60'
+                }`}
+                style={{ minWidth: '120px' }}
+                onClick={() => setSelectedPlatforms(prev => {
+                  const n = new Set(prev)
+                  n.has(p.id) ? n.delete(p.id) : n.add(p.id)
+                  return n
+                })}
+              >
+                <div className="flex items-start justify-between">
+                  <span className={`text-xs font-semibold ${sel ? 'text-brand-400' : p.textColor}`}>{p.label}</span>
+                  {sel && (
+                    <svg className="h-3.5 w-3.5 text-brand-400 shrink-0 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                    </svg>
+                  )}
+                </div>
+                <div className="text-lg font-bold text-white">{activeCount}</div>
+                <div className="text-[10px] text-surface-muted leading-tight">{p.reach} vis/mes</div>
+                {p.export && (
+                  <button
+                    onClick={e => { e.stopPropagation(); handleDownload(p) }}
+                    className={`mt-1 rounded px-2 py-0.5 text-[10px] font-medium ${p.textColor} border border-current/30 hover:bg-current/10 transition`}
+                  >
+                    ↓ {p.export.label}
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
       {downloadError && (
         <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
           {downloadError}
@@ -401,202 +407,151 @@ export default function PublishPage() {
         </div>
       )}
 
-      {/* ── Platform grid ── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
-        {PLATFORMS.map(p => (
-          <div
-            key={p.id}
-            className={`rounded-xl border border-surface-border ${p.bg} p-3 transition hover:border-surface-muted/60`}
-          >
-            <div className={`mb-1 text-xs font-medium ${p.textColor}`}>{p.label}</div>
-            <div className="text-xl font-bold text-white">{platformCounts[p.id] ?? 0}</div>
-            <div className="mb-2 text-xs text-surface-muted">activos</div>
-            {p.export && (
-              <button
-                onClick={() => handleDownload(p)}
-                className={`w-full rounded-md border border-surface-border/60 px-2 py-1 text-xs ${p.textColor} hover:bg-surface-hover transition`}
-              >
-                ↓ {p.exportLabel}
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* ── Filters ── */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-surface-muted">Portal:</label>
-          <select
-            value={platformFilter}
-            onChange={e => setPlatformFilter(e.target.value)}
-            className="rounded-lg border border-surface-border bg-surface-dark px-3 py-1.5 text-sm text-white focus:border-brand-500 focus:outline-none"
-          >
-            <option value="ALL">Todos</option>
-            {PLATFORMS.map(p => (
-              <option key={p.id} value={p.id}>{p.label}</option>
-            ))}
-          </select>
-        </div>
+      {/* ── Filter + legend ── */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <label className="text-xs text-surface-muted">Estado:</label>
           <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            className="rounded-lg border border-surface-border bg-surface-dark px-3 py-1.5 text-sm text-white focus:border-brand-500 focus:outline-none"
+            value={lifecycleFilter}
+            onChange={e => setLifecycleFilter(e.target.value)}
+            className="rounded-lg border border-surface-border bg-surface-dark px-3 py-1.5 text-xs text-white focus:border-brand-500 focus:outline-none"
           >
+            <option value="SELLABLE">Vendibles (Ready + Listed + Recon)</option>
             <option value="ALL">Todos</option>
-            {Object.entries(STATUS_CFG).map(([k, v]) => (
-              <option key={k} value={k}>{v.label}</option>
-            ))}
+            <option value="READY">Ready</option>
+            <option value="LISTED">Listed</option>
+            <option value="RECONDITIONING">Reconditioning</option>
           </select>
         </div>
-        <div className="ml-auto text-xs text-surface-muted">
-          {loading ? 'Cargando…' : `${total} publicaciones`}
+        {/* Legend */}
+        <div className="flex flex-wrap items-center gap-3 text-xs text-surface-muted">
+          {Object.entries(STATUS).map(([k, v]) => (
+            <span key={k} className="flex items-center gap-1.5">
+              <span className={`h-2 w-2 rounded-full ${v.dot}`} /> {v.label}
+            </span>
+          ))}
+          <span className="flex items-center gap-1.5">
+            <span className="flex h-2 w-2 items-center justify-center rounded border border-surface-border/60 text-[8px] text-surface-muted/40">+</span>
+            Sin publicar
+          </span>
         </div>
       </div>
 
-      {/* ── Error ── */}
       {error && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
           {error}
-          <button onClick={fetchListings} className="ml-3 underline">Reintentar</button>
         </div>
       )}
 
-      {/* ── Loading skeleton ── */}
-      {loading && listings.length === 0 && (
+      {/* ── Publication matrix ── */}
+      {loading ? (
         <div className="space-y-2">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-16 animate-pulse rounded-xl bg-surface-hover" />
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-14 animate-pulse rounded-xl bg-surface-hover" />
           ))}
         </div>
-      )}
-
-      {/* ── Table ── */}
-      {!loading || listings.length > 0 ? (
-        <div className="overflow-hidden rounded-xl border border-surface-border">
-          <table className="w-full text-sm">
-            <thead className="border-b border-surface-border bg-surface">
+      ) : filteredVehicles.length === 0 ? (
+        <div className="rounded-xl border border-surface-border bg-surface py-16 text-center text-surface-muted">
+          <div className="mb-2 text-3xl">🚗</div>
+          <div className="text-sm">No hay vehículos con ese filtro.</div>
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-surface-border">
+          <table className="w-full text-sm" style={{ minWidth: '800px' }}>
+            <thead className="border-b border-surface-border bg-surface sticky top-0 z-10">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-surface-muted">Vehículo</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-surface-muted">Portal</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-surface-muted">Estado</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-surface-muted">Precio</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-surface-muted">URL externa</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-surface-muted">Acciones</th>
+                <th className="w-64 px-4 py-3 text-left text-xs font-medium text-surface-muted">Vehículo</th>
+                <th className="w-20 px-2 py-3 text-right text-xs font-medium text-surface-muted">Precio</th>
+                <th className="w-16 px-2 py-3 text-right text-xs font-medium text-surface-muted">Km</th>
+                {PLATFORMS.map(p => (
+                  <th key={p.id} className="w-10 px-1 py-3 text-center">
+                    <span className={`text-[10px] font-semibold ${selectedPlatforms.has(p.id) ? 'text-brand-400' : p.textColor}`}>
+                      {p.label.slice(0, 4)}
+                    </span>
+                  </th>
+                ))}
+                <th className="w-16 px-2 py-3 text-center text-xs font-medium text-surface-muted">Cobertura</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-surface-border">
-              {listings.map(pub => {
-                const pm = platformMeta(pub.platform)
-                const sc = STATUS_CFG[pub.status] ?? { label: pub.status, cls: 'bg-gray-500/20 text-gray-400' }
-                const vehicleLabel = [pub.make, pub.model, pub.year].filter(Boolean).join(' ')
-                const isLoading = actionLoading === pub.pub_ulid
+
+            <tbody className="divide-y divide-surface-border/50">
+              {filteredVehicles.map(vehicle => {
+                const vehicleListings = listings.filter(l => l.crm_vehicle_ulid === vehicle.crm_vehicle_ulid)
+                const activeCount = vehicleListings.filter(l => l.status === 'ACTIVE').length
+                const totalPortals = PLATFORMS.length
+
                 return (
-                  <tr key={pub.pub_ulid} className="hover:bg-surface-hover/40 transition">
+                  <tr key={vehicle.crm_vehicle_ulid} className="hover:bg-surface-hover/30 transition">
+                    {/* Vehicle name */}
                     <td className="px-4 py-3">
-                      <div className="font-medium text-white">{vehicleLabel || '—'}</div>
-                      {pub.mileage_km != null && pub.mileage_km > 0 && (
-                        <div className="text-xs text-surface-muted">
-                          {new Intl.NumberFormat('es-ES').format(pub.mileage_km)} km
+                      <div className="font-medium text-white leading-tight">
+                        {vehicle.make} {vehicle.model}{' '}
+                        <span className="text-surface-muted font-normal">{vehicle.year}</span>
+                      </div>
+                      <div className="text-[10px] font-mono text-surface-muted/60 truncate" title={vehicle.crm_vehicle_ulid}>
+                        {vehicle.crm_vehicle_ulid.slice(0, 16)}…
+                      </div>
+                    </td>
+
+                    {/* Price */}
+                    <td className="px-2 py-3 text-right font-mono text-xs text-white">
+                      {vehicle.asking_price_eur > 0 ? fmtEUR(vehicle.asking_price_eur) : '—'}
+                    </td>
+
+                    {/* Mileage */}
+                    <td className="px-2 py-3 text-right text-xs text-surface-muted">
+                      {vehicle.mileage_km > 0 ? `${Math.round(vehicle.mileage_km / 1000)}k` : '—'}
+                    </td>
+
+                    {/* Platform cells */}
+                    {PLATFORMS.map(platform => {
+                      const listing = getListing(vehicle.crm_vehicle_ulid, platform.id)
+                      const key = cellKey(vehicle.crm_vehicle_ulid, platform.id)
+                      return (
+                        <td key={platform.id} className="px-1 py-3 text-center">
+                          <MatrixCell
+                            vehicle={vehicle}
+                            platform={platform}
+                            listing={listing}
+                            onToggle={toggleCell}
+                            busy={busyCells.has(key)}
+                          />
+                        </td>
+                      )
+                    })}
+
+                    {/* Coverage bar */}
+                    <td className="px-2 py-3">
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="h-1.5 w-12 overflow-hidden rounded-full bg-surface-hover">
+                          <div
+                            className={`h-full rounded-full transition-all ${activeCount > 0 ? 'bg-emerald-400' : 'bg-surface-hover'}`}
+                            style={{ width: `${(activeCount / totalPortals) * 100}%` }}
+                          />
                         </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${pm?.bg ?? 'bg-gray-500/10'} ${pm?.textColor ?? 'text-gray-400'}`}>
-                        {pm?.label ?? pub.platform}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${sc.cls}`}>
-                        {sc.label}
-                      </span>
-                      {pub.error_message && (
-                        <div className="mt-1 text-xs text-red-400 line-clamp-1" title={pub.error_message}>
-                          ⚠ {pub.error_message}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-white">
-                      {pub.asking_price_eur ? eur(pub.asking_price_eur) : '—'}
-                    </td>
-                    <td className="px-4 py-3">
-                      {pub.external_url ? (
-                        <a
-                          href={pub.external_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`text-xs underline ${pm?.textColor ?? 'text-brand-400'} hover:opacity-80 transition`}
-                        >
-                          Ver anuncio →
-                        </a>
-                      ) : (
-                        <span className="text-xs text-surface-muted">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-2">
-                        {/* Toggle active/paused — only for ACTIVE/PAUSED/DRAFT/PENDING */}
-                        {['ACTIVE', 'PAUSED', 'DRAFT', 'PENDING'].includes(pub.status) && (
-                          <button
-                            onClick={() => toggleStatus(pub)}
-                            disabled={isLoading}
-                            className={`rounded-md px-3 py-1 text-xs font-medium transition disabled:opacity-50 ${
-                              pub.status === 'ACTIVE'
-                                ? 'border border-orange-500/40 text-orange-400 hover:bg-orange-500/10'
-                                : 'border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10'
-                            }`}
-                          >
-                            {isLoading
-                              ? <span className="h-3 w-3 inline-block animate-spin rounded-full border border-current border-t-transparent" />
-                              : pub.status === 'ACTIVE' ? 'Pausar' : 'Activar'
-                            }
-                          </button>
-                        )}
-                        {/* Delete */}
-                        <button
-                          onClick={() => deleteListing(pub)}
-                          disabled={isLoading}
-                          className="rounded-md border border-surface-border px-2 py-1 text-xs text-surface-muted hover:border-red-500/50 hover:text-red-400 transition disabled:opacity-50"
-                          aria-label="Eliminar"
-                        >
-                          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
+                        <span className="text-[10px] text-surface-muted tabular-nums">
+                          {activeCount}/{totalPortals}
+                        </span>
                       </div>
                     </td>
                   </tr>
                 )
               })}
-
-              {!loading && listings.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-16 text-center text-surface-muted">
-                    <div className="mb-2 text-3xl">📡</div>
-                    <div className="text-sm">No hay publicaciones aún.</div>
-                    <button
-                      onClick={() => setShowModal(true)}
-                      className="mt-3 text-sm text-brand-400 underline hover:text-brand-300"
-                    >
-                      Crear primera publicación →
-                    </button>
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
-      ) : null}
-
-      {/* ── Modal ── */}
-      {showModal && (
-        <CreateModal
-          onClose={() => setShowModal(false)}
-          onCreated={fetchListings}
-        />
       )}
+
+      {/* ── Legend footer ── */}
+      <div className="rounded-xl border border-surface-border/50 bg-surface/50 px-5 py-4">
+        <div className="text-xs font-semibold text-surface-muted mb-2">Cómo usar la matriz</div>
+        <div className="grid gap-2 text-xs text-surface-muted sm:grid-cols-3">
+          <div>• <strong className="text-white">Clic en una celda vacía</strong> → publica el vehículo en ese portal (estado: Borrador)</div>
+          <div>• <strong className="text-white">Clic en celda verde</strong> → pausa el anuncio</div>
+          <div>• <strong className="text-white">Selecciona portales</strong> arriba + "Publicar en X portales" para publicación masiva</div>
+        </div>
+      </div>
+
     </div>
   )
 }
