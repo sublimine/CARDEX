@@ -5,11 +5,11 @@ RUN apk add --no-cache git gcc musl-dev
 
 WORKDIR /build
 
-COPY go.work* ./
 COPY services/gateway ./services/gateway
 
 WORKDIR /build/services/gateway
 
+ENV GOWORK=off
 RUN go build -ldflags="-s -w" -o /app/server ./cmd/gateway/...
 
 # ── Runner ────────────────────────────────────────────────────────────────────

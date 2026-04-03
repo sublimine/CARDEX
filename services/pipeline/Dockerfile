@@ -5,13 +5,12 @@ RUN apk add --no-cache git gcc musl-dev
 
 WORKDIR /build
 
-# Copy go.work and workspace modules
-COPY go.work* ./
 COPY internal/shared ./internal/shared
 COPY services/pipeline ./services/pipeline
 
 WORKDIR /build/services/pipeline
 
+ENV GOWORK=off
 ARG CMD=pipeline
 RUN go build -ldflags="-s -w" -o /app/server ./cmd/${CMD}/...
 
