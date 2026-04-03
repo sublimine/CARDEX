@@ -1,0 +1,166 @@
+/* CARDEX Intelligence Overlay — Estilos del panel flotante */
+
+#cardex-overlay {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  width: 280px;
+  background: #0f1117;
+  border: 1px solid #2d2f3e;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(124, 58, 237, 0.2);
+  z-index: 2147483647;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 13px;
+  color: #e5e7eb;
+  overflow: hidden;
+  transition: opacity 0.2s ease;
+}
+
+#cardex-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 10px 12px;
+  background: linear-gradient(135deg, #1a1b2e 0%, #1e1f35 100%);
+  border-bottom: 1px solid #2d2f3e;
+  cursor: move;
+  user-select: none;
+}
+
+#cardex-logo {
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: #7c3aed;
+  text-transform: uppercase;
+}
+
+#cardex-status {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 99px;
+  background: rgba(124, 58, 237, 0.15);
+  color: #a78bfa;
+  font-weight: 500;
+}
+
+#cardex-status.cardex-status-live {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+}
+
+#cardex-status.cardex-status-error {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+}
+
+#cardex-close {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 2px;
+  transition: color 0.15s;
+}
+
+#cardex-close:hover {
+  color: #e5e7eb;
+}
+
+#cardex-body {
+  padding: 12px 14px 8px;
+}
+
+.cardex-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+}
+
+.cardex-row-sub .cardex-label {
+  color: #6b7280;
+  font-size: 11px;
+  padding-left: 10px;
+}
+
+.cardex-row-sub .cardex-value {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.cardex-label {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.cardex-value {
+  font-weight: 600;
+  font-size: 12px;
+  text-align: right;
+}
+
+.cardex-divider {
+  height: 1px;
+  background: #2d2f3e;
+  margin: 8px 0;
+}
+
+.cardex-arbitrage {
+  background: rgba(124, 58, 237, 0.08);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #c4b5fd;
+  margin: 4px 0;
+}
+
+.cardex-arb-delta {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.cardex-footer {
+  padding-top: 8px;
+  border-top: 1px solid #1f2133;
+  margin-top: 6px;
+  text-align: center;
+}
+
+.cardex-footer a {
+  color: #7c3aed;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.cardex-footer a:hover {
+  color: #a78bfa;
+  text-decoration: underline;
+}
+
+.cardex-error {
+  color: #f87171;
+  font-size: 11px;
+  padding: 8px 0;
+  text-align: center;
+}
+
+.cardex-skeleton {
+  height: 14px;
+  background: linear-gradient(90deg, #1f2133 25%, #2d2f3e 50%, #1f2133 75%);
+  background-size: 200% 100%;
+  animation: cardex-shimmer 1.4s infinite;
+  border-radius: 4px;
+  margin: 8px 0;
+}
+
+@keyframes cardex-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}

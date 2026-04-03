@@ -17,15 +17,21 @@ echo "=== CARDEX Redis Bootstrap ==="
 # 1. STREAMS + CONSUMER GROUPS
 # ---------------------------------------------------------------------------
 declare -A STREAMS=(
+    # Core pipeline
     ["stream:ingestion_raw"]="cg_pipeline"
     ["stream:db_write"]="cg_forensics"
     ["stream:classified"]="cg_alpha"
-    ["stream:l3_pending"]="cg_qwen_workers"
-    ["stream:visual_audit"]="cg_ocr_workers"
-    ["stream:market_ready"]="cg_alpha"
-    ["stream:market_pricing"]="cg_alpha"
-    ["stream:legal_audit_pending"]="cg_gov"
     ["stream:forensic_updates"]="cg_forensics"
+    # Marketplace / search sync
+    ["stream:meili_sync"]="cg_meili_indexer"     # vehicle upserts → MeiliSearch
+    ["stream:publish_jobs"]="cg_multipost"        # dealer multiposting jobs
+    ["stream:lead_events"]="cg_crm"              # inbound leads → CRM handlers
+    ["stream:google_maps_raw"]="cg_pipeline"     # Google Maps dealer discovery raw
+    # Analytics
+    ["stream:price_events"]="cg_price_index"     # price changes → ClickHouse price_history
+    ["stream:demand_signals"]="cg_analytics"     # search/view events → ClickHouse demand_signals
+    # Legacy (retained for compatibility)
+    ["stream:legal_audit_pending"]="cg_gov"
     ["stream:operator_events"]="cg_karma"
 )
 
@@ -38,13 +44,24 @@ for stream in "${!STREAMS[@]}"; do
 done
 
 # ---------------------------------------------------------------------------
-# 2. BLOOM FILTER (Vehicle Deduplication — Phase 4)
+# 2. BLOOM FILTERS
 # ---------------------------------------------------------------------------
-# Capacity: 50M entries, False Positive rate: 0.01% (0.0001)
-# Memory: ~60MB
+
+# Vehicle identity dedup (by VIN/fingerprint) — 50M cap, ~60MB
 $R BF.RESERVE bloom:vehicles 0.0001 50000000 NONSCALING 2>/dev/null || \
     echo "  [SKIP] bloom:vehicles already exists"
-echo "  [OK] bloom:vehicles (50M capacity, 0.01% FP)"
+echo "  [OK] bloom:vehicles (50M capacity, 0.01% FP, ~60MB)"
+
+# Listing URL dedup — prevents re-scraping identical URLs, 100M cap, ~120MB
+# Key: SHA256(url) — written by scrapers before POSTing to gateway
+$R BF.RESERVE bloom:listing_urls 0.0001 100000000 NONSCALING 2>/dev/null || \
+    echo "  [SKIP] bloom:listing_urls already exists"
+echo "  [OK] bloom:listing_urls (100M capacity, 0.01% FP, ~120MB)"
+
+# Dealer discovery dedup (Google Maps place_id) — 5M cap, ~6MB
+$R BF.RESERVE bloom:dealer_place_ids 0.001 5000000 NONSCALING 2>/dev/null || \
+    echo "  [SKIP] bloom:dealer_place_ids already exists"
+echo "  [OK] bloom:dealer_place_ids (5M capacity, 0.1% FP, ~6MB)"
 
 # ---------------------------------------------------------------------------
 # 3. FX BUFFER (Banker's Buffer — Phase 4)
@@ -161,13 +178,45 @@ return 1  -- ALLOWED
 echo "  [OK] Lua: rate_limiter ($RATE_LIMIT_SHA)"
 
 # ---------------------------------------------------------------------------
-# 6. CONFIGURATION VERIFICATION
+# 6. SORTED SETS — Leaderboards / Rankings
+# ---------------------------------------------------------------------------
+
+# Top models by demand (search count last 7d) — refreshed by scheduler
+# Used by homepage "Most searched" widget
+$R ZADD demand:top_models:placeholder 0 "placeholder" > /dev/null
+echo "  [OK] demand:top_models (placeholder, scheduler populates nightly)"
+
+# ---------------------------------------------------------------------------
+# 7. HASH — Scraper Rate Limit Config (per domain)
+# Scrapers read this at startup; scheduler can update without restart
+# ---------------------------------------------------------------------------
+$R HSET scraper:rate_limits \
+    autoscout24.es  "0.3" \
+    autoscout24.de  "0.3" \
+    autoscout24.fr  "0.3" \
+    autoscout24.nl  "0.3" \
+    autoscout24.be  "0.3" \
+    autoscout24.ch  "0.3" \
+    mobile.de       "0.2" \
+    leboncoin.fr    "0.2" \
+    lacentrale.fr   "0.3" \
+    coches.net      "0.3" \
+    milanuncios.com "0.2" \
+    wallapop.com    "0.2" \
+    marktplaats.nl  "0.2" \
+    2dehands.be     "0.2" \
+    > /dev/null
+echo "  [OK] scraper:rate_limits (14 domains configured)"
+
+# ---------------------------------------------------------------------------
+# 8. CONFIGURATION VERIFICATION
 # ---------------------------------------------------------------------------
 echo ""
 echo "=== Verification ==="
 echo "Streams:  $($R KEYS 'stream:*' | wc -l) created"
-echo "Bloom:    $($R BF.INFO bloom:vehicles Capacity 2>/dev/null | head -2)"
+echo "Blooms:   bloom:vehicles, bloom:listing_urls, bloom:dealer_place_ids"
 echo "FX keys:  $($R HLEN fx_buffer) currencies"
 echo "Lua:      3 scripts loaded"
+echo "Rate cfg: $($R HLEN scraper:rate_limits) domains"
 echo ""
 echo "=== CARDEX Redis Bootstrap Complete ==="

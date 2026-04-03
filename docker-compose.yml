@@ -6,7 +6,7 @@
 
 services:
   # ---------------------------------------------------------------------------
-  # PostgreSQL 16 (Nodo 01 equivalent)
+  # PostgreSQL 16 (OLTP — vehicles, dealers, leads, scrape_jobs, vin_history)
   # ---------------------------------------------------------------------------
   postgres:
     image: postgres:16-bookworm
@@ -43,7 +43,7 @@ services:
           memory: 2G
 
   # ---------------------------------------------------------------------------
-  # ClickHouse (Nodo 01/05 equivalent)
+  # ClickHouse (OLAP — price index, market depth, demand signals, analytics)
   # ---------------------------------------------------------------------------
   clickhouse:
     image: clickhouse/clickhouse-server:latest
@@ -69,7 +69,7 @@ services:
           memory: 2G
 
   # ---------------------------------------------------------------------------
-  # Redis 7.2 + RedisBloom (Nodo 02 equivalent)
+  # Redis 7.2 + RedisBloom (Streams, Bloom filters, Lua scripts, FX buffer)
   # ---------------------------------------------------------------------------
   redis:
     image: redis/redis-stack-server:latest
@@ -99,7 +99,7 @@ services:
           memory: 2G
 
   # ---------------------------------------------------------------------------
-  # Redis Bootstrap (runs init script after Redis is healthy)
+  # Redis Bootstrap (runs init script once after Redis is healthy)
   # ---------------------------------------------------------------------------
   redis-init:
     image: redis/redis-stack-server:latest
@@ -115,7 +115,204 @@ services:
       REDIS_PORT: "6379"
 
   # ---------------------------------------------------------------------------
-  # Prometheus (Monitoring — G-06 fix)
+  # MeiliSearch 1.x (Full-text + faceted search <50ms)
+  # Indexes: vehicles (make, model, year, price, mileage, country, fuel, tx)
+  # ---------------------------------------------------------------------------
+  meilisearch:
+    image: getmeili/meilisearch:latest
+    container_name: cardex-meili
+    ports:
+      - "7700:7700"
+    volumes:
+      - meili_data:/meili_data
+    environment:
+      MEILI_MASTER_KEY: cardex_meili_dev_only
+      MEILI_ENV: development
+      MEILI_DB_PATH: /meili_data
+      MEILI_LOG_LEVEL: INFO
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1G
+
+  # ---------------------------------------------------------------------------
+  # CARDEX Pipeline (ingest → dedup → normalize → PostgreSQL + stream:meili_sync)
+  # ---------------------------------------------------------------------------
+  pipeline:
+    build:
+      context: .
+      dockerfile: services/pipeline/Dockerfile
+    container_name: cardex-pipeline
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      redis-init:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgres://cardex:cardex_dev_only@postgres:5432/cardex
+      REDIS_URL: redis://redis:6379
+      GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
+      LOG_LEVEL: info
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # CARDEX API (REST: marketplace search, analytics, VIN history, dealer SaaS)
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    container_name: cardex-api
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://cardex:cardex_dev_only@postgres:5432/cardex
+      REDIS_ADDR: redis:6379
+      CLICKHOUSE_ADDR: clickhouse:9000
+      CLICKHOUSE_DB: cardex
+      CLICKHOUSE_USER: cardex
+      CLICKHOUSE_PASSWORD: cardex_dev_only
+      MEILI_URL: http://meilisearch:7700
+      MEILI_MASTER_KEY: cardex_meili_dev_only
+      JWT_RS256_PRIVATE_KEY_FILE: /run/secrets/jwt_private_key
+      JWT_DEV_SECRET: cardex_dev_jwt_secret_only
+      LOG_LEVEL: info
+      PORT: "8080"
+      CORS_ORIGINS: "http://localhost:3001,http://localhost:3000"
+    volumes:
+      - ./secrets/jwt_private.pem:/run/secrets/jwt_private_key:ro
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # CARDEX Scheduler (nightly price index, FX refresh, scrape orchestration)
+  # ---------------------------------------------------------------------------
+  scheduler:
+    build:
+      context: .
+      dockerfile: services/scheduler/Dockerfile
+    container_name: cardex-scheduler
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://cardex:cardex_dev_only@postgres:5432/cardex
+      REDIS_URL: redis://redis:6379
+      CLICKHOUSE_DSN: clickhouse://cardex:cardex_dev_only@clickhouse:9000/cardex
+      LOG_LEVEL: info
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # MeiliSearch Sync Worker (stream:meili_sync consumer → MeiliSearch indexer)
+  # Part of pipeline service; runs as separate process for independent scaling
+  # ---------------------------------------------------------------------------
+  meili-sync:
+    build:
+      context: .
+      dockerfile: services/pipeline/Dockerfile
+      args:
+        CMD: meili-sync
+    container_name: cardex-meili-sync
+    depends_on:
+      redis:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      REDIS_URL: redis://redis:6379
+      MEILI_URL: http://meilisearch:7700
+      MEILI_MASTER_KEY: cardex_meili_dev_only
+      DATABASE_URL: postgres://cardex:cardex_dev_only@postgres:5432/cardex
+      LOG_LEVEL: info
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Scrapers (Python httpx + Playwright — one container, env controls which)
+  # In dev: runs autoscout24_de only. In prod: one container per scraper.
+  # ---------------------------------------------------------------------------
+  scraper:
+    build:
+      context: scrapers
+      dockerfile: Dockerfile
+    container_name: cardex-scraper-dev
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      GATEWAY_URL: http://gateway:8090
+      GATEWAY_HMAC_SECRET: dev_scraper_hmac_secret_change_in_prod
+      REDIS_URL: redis://redis:6379
+      SCRAPER_TARGET: autoscout24_de
+      LOG_LEVEL: info
+      PLAYWRIGHT_HEADLESS: "true"
+    restart: "no"   # don't auto-restart in dev; run manually
+
+  # ---------------------------------------------------------------------------
+  # CARDEX Gateway (B2B webhook receiver + scraper ingest endpoint, HMAC auth)
+  # ---------------------------------------------------------------------------
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    container_name: cardex-gateway
+    ports:
+      - "8090:8090"
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      REDIS_URL: redis://redis:6379
+      GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
+      PORT: "8090"
+      LOG_LEVEL: info
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Next.js Web App (marketplace + analytics + history + dealer SaaS)
+  # ---------------------------------------------------------------------------
+  web:
+    build:
+      context: apps/web
+      dockerfile: Dockerfile
+      target: dev
+    container_name: cardex-web
+    ports:
+      - "3001:3000"
+    depends_on:
+      - api
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+      NEXT_PUBLIC_MEILI_URL: http://localhost:7700
+      NEXT_PUBLIC_MEILI_SEARCH_KEY: ""   # public search-only key set at runtime
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+      - /app/.next
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Prometheus (metrics scraping)
   # ---------------------------------------------------------------------------
   prometheus:
     image: prom/prometheus:latest
@@ -129,7 +326,7 @@ services:
       - '--storage.tsdb.retention.time=30d'
 
   # ---------------------------------------------------------------------------
-  # Grafana
+  # Grafana (dashboards: pipeline throughput, scraper coverage, price index lag)
   # ---------------------------------------------------------------------------
   grafana:
     image: grafana/grafana:latest
@@ -140,9 +337,13 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: cardex_dev_only
     volumes:
       - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - clickhouse
 
 volumes:
   pg_data:
   ch_data:
   redis_data:
+  meili_data:
   grafana_data:

@@ -74,7 +74,7 @@ CREATE TABLE vehicles (
     vin               TEXT,
     source_id         TEXT NOT NULL,
     source_platform   TEXT NOT NULL,
-    ingestion_channel TEXT NOT NULL CHECK (ingestion_channel IN ('B2B_WEBHOOK','EDGE_FLEET','MANUAL')),
+    ingestion_channel TEXT NOT NULL CHECK (ingestion_channel IN ('B2B_WEBHOOK','EDGE_FLEET','MANUAL','SCRAPER','GOOGLE_MAPS')),
 
     -- Raw data
     make              TEXT,
@@ -138,7 +138,17 @@ CREATE TABLE vehicles (
 
     -- OCR
     extracted_vin     TEXT,
-    ocr_confidence    NUMERIC(3,2) CHECK (ocr_confidence BETWEEN 0 AND 1)
+    ocr_confidence    NUMERIC(3,2) CHECK (ocr_confidence BETWEEN 0 AND 1),
+
+    -- Marketplace / Scraper fields
+    source_url        TEXT,
+    source_country    CHAR(2),
+    photo_urls        TEXT[],
+    listing_status    TEXT DEFAULT 'ACTIVE' CHECK (listing_status IN ('ACTIVE','SOLD','EXPIRED','REMOVED')),
+    meili_indexed_at  TIMESTAMPTZ,
+    price_drop_count  INT DEFAULT 0,
+    last_price_eur    NUMERIC(12,2),
+    re_listed         BOOLEAN DEFAULT FALSE
 ) WITH (fillfactor = 70);
 
 CREATE INDEX idx_vehicles_fingerprint ON vehicles (fingerprint_sha256);
@@ -151,6 +161,10 @@ CREATE INDEX idx_vehicles_nlc ON vehicles (net_landed_cost_eur) WHERE lifecycle_
 CREATE INDEX idx_vehicles_score ON vehicles (cardex_score DESC) WHERE lifecycle_status = 'MARKET_READY';
 CREATE INDEX idx_vehicles_make_model ON vehicles (make, model);
 CREATE INDEX idx_vehicles_tax ON vehicles (tax_status) WHERE tax_status IN ('REQUIRES_HUMAN_AUDIT','PENDING_VIES_OPTIMISTIC');
+CREATE INDEX idx_vehicles_source_url ON vehicles (source_url) WHERE source_url IS NOT NULL;
+CREATE INDEX idx_vehicles_source_country ON vehicles (source_country);
+CREATE INDEX idx_vehicles_listing_status ON vehicles (listing_status);
+CREATE INDEX idx_vehicles_meili ON vehicles (meili_indexed_at) WHERE meili_indexed_at IS NULL;
 
 -- =============================================================================
 -- RESERVATIONS (Purchase Mutex)
@@ -267,5 +281,596 @@ CREATE POLICY entity_isolation_reservations ON reservations
     USING (buyer_entity_ulid = current_setting('app.current_entity', true));
 
 -- Vehicles are globally visible (marketplace), but RLS can restrict by subscription tier if needed.
+
+-- =============================================================================
+-- USERS (Public marketplace registered users)
+-- =============================================================================
+CREATE TABLE users (
+    user_ulid         TEXT PRIMARY KEY,
+    email             TEXT UNIQUE NOT NULL,
+    password_hash     TEXT,
+    full_name         TEXT,
+    country_code      CHAR(2),
+    is_dealer         BOOLEAN DEFAULT FALSE,
+    entity_ulid       TEXT REFERENCES entities(entity_ulid),
+    email_verified    BOOLEAN DEFAULT FALSE,
+    email_verified_at TIMESTAMPTZ,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ DEFAULT NOW(),
+    last_login_at     TIMESTAMPTZ,
+    vault_dek_id      TEXT NOT NULL
+) WITH (fillfactor = 80);
+
+CREATE INDEX idx_users_email ON users (email);
+CREATE INDEX idx_users_entity ON users (entity_ulid) WHERE entity_ulid IS NOT NULL;
+
+-- =============================================================================
+-- PRICE ALERTS (Saved searches with notifications)
+-- =============================================================================
+CREATE TABLE price_alerts (
+    alert_ulid        TEXT PRIMARY KEY,
+    user_ulid         TEXT NOT NULL REFERENCES users(user_ulid),
+    criteria          JSONB NOT NULL,
+    target_price_eur  NUMERIC(12,2),
+    channel           TEXT DEFAULT 'EMAIL' CHECK (channel IN ('EMAIL','PUSH','BOTH')),
+    active            BOOLEAN DEFAULT TRUE,
+    last_fired_at     TIMESTAMPTZ,
+    fire_count        INT DEFAULT 0,
+    created_at        TIMESTAMPTZ DEFAULT NOW()
+) WITH (fillfactor = 80);
+
+CREATE INDEX idx_alerts_user ON price_alerts (user_ulid);
+CREATE INDEX idx_alerts_active ON price_alerts (active) WHERE active = TRUE;
+CREATE INDEX idx_alerts_criteria ON price_alerts USING GIN (criteria jsonb_path_ops);
+
+-- =============================================================================
+-- DEALER INVENTORY (Dealer's own stock, independent of scraped listings)
+-- =============================================================================
+CREATE TABLE dealer_inventory (
+    item_ulid         TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL REFERENCES entities(entity_ulid),
+    vin               TEXT,
+    make              TEXT NOT NULL,
+    model             TEXT NOT NULL,
+    variant           TEXT,
+    year              INT NOT NULL CHECK (year BETWEEN 1980 AND 2030),
+    mileage_km        INT NOT NULL CHECK (mileage_km >= 0),
+    fuel_type         TEXT,
+    transmission      TEXT,
+    color             TEXT,
+    power_kw          INT,
+    co2_gkm           INT,
+    doors             INT,
+    asking_price_eur  NUMERIC(12,2) NOT NULL CHECK (asking_price_eur > 0),
+    cost_price_eur    NUMERIC(12,2),
+    status            TEXT DEFAULT 'AVAILABLE' CHECK (status IN ('AVAILABLE','RESERVED','SOLD','DELISTED')),
+    description       TEXT,
+    photo_urls        TEXT[],
+    features          JSONB,
+    marketing_score   NUMERIC(3,2),
+    days_in_stock     INT DEFAULT 0,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ DEFAULT NOW()
+) WITH (fillfactor = 80);
+
+CREATE INDEX idx_dealerinv_entity ON dealer_inventory (entity_ulid);
+CREATE INDEX idx_dealerinv_status ON dealer_inventory (status);
+CREATE INDEX idx_dealerinv_vin ON dealer_inventory (vin) WHERE vin IS NOT NULL;
+
+ALTER TABLE dealer_inventory ENABLE ROW LEVEL SECURITY;
+CREATE POLICY dealer_inv_isolation ON dealer_inventory
+    USING (entity_ulid = current_setting('app.current_entity', true));
+
+-- =============================================================================
+-- PUBLISH JOBS (Multiposting to external platforms)
+-- =============================================================================
+CREATE TABLE publish_jobs (
+    job_ulid          TEXT PRIMARY KEY,
+    item_ulid         TEXT NOT NULL REFERENCES dealer_inventory(item_ulid),
+    entity_ulid       TEXT NOT NULL REFERENCES entities(entity_ulid),
+    platform          TEXT NOT NULL,
+    status            TEXT DEFAULT 'PENDING' CHECK (status IN ('PENDING','PUBLISHED','FAILED','REMOVED','UPDATING')),
+    external_id       TEXT,
+    external_url      TEXT,
+    published_at      TIMESTAMPTZ,
+    last_synced_at    TIMESTAMPTZ,
+    error_message     TEXT,
+    retry_count       INT DEFAULT 0,
+    created_at        TIMESTAMPTZ DEFAULT NOW()
+) WITH (fillfactor = 80);
+
+CREATE INDEX idx_publishjobs_item ON publish_jobs (item_ulid);
+CREATE INDEX idx_publishjobs_entity ON publish_jobs (entity_ulid);
+CREATE INDEX idx_publishjobs_status ON publish_jobs (status) WHERE status IN ('PENDING','FAILED');
+
+-- =============================================================================
+-- LEADS (CRM — inbound contacts from marketplace or direct)
+-- =============================================================================
+CREATE TABLE leads (
+    lead_ulid         TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL REFERENCES entities(entity_ulid),
+    item_ulid         TEXT REFERENCES dealer_inventory(item_ulid),
+    vehicle_ulid      TEXT REFERENCES vehicles(vehicle_ulid),
+    contact_name      TEXT,
+    contact_email     TEXT,
+    contact_phone     TEXT,
+    message           TEXT,
+    source_platform   TEXT,
+    utm_source        TEXT,
+    status            TEXT DEFAULT 'NEW' CHECK (status IN ('NEW','CONTACTED','NEGOTIATING','SOLD','LOST')),
+    notes             TEXT,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ DEFAULT NOW()
+) WITH (fillfactor = 80);
+
+CREATE INDEX idx_leads_entity ON leads (entity_ulid);
+CREATE INDEX idx_leads_status ON leads (status);
+CREATE INDEX idx_leads_item ON leads (item_ulid) WHERE item_ulid IS NOT NULL;
+
+ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
+CREATE POLICY leads_isolation ON leads
+    USING (entity_ulid = current_setting('app.current_entity', true));
+
+-- =============================================================================
+-- SCRAPE JOBS (Tracking per-platform scraper runs)
+-- =============================================================================
+CREATE TABLE scrape_jobs (
+    job_ulid          TEXT PRIMARY KEY,
+    platform          TEXT NOT NULL,
+    country           CHAR(2) NOT NULL,
+    status            TEXT DEFAULT 'PENDING' CHECK (status IN ('PENDING','RUNNING','COMPLETED','FAILED','ABORTED')),
+    listings_found    INT DEFAULT 0,
+    listings_new      INT DEFAULT 0,
+    listings_updated  INT DEFAULT 0,
+    listings_sold     INT DEFAULT 0,
+    bytes_fetched     BIGINT DEFAULT 0,
+    requests_made     INT DEFAULT 0,
+    started_at        TIMESTAMPTZ,
+    completed_at      TIMESTAMPTZ,
+    duration_ms       INT,
+    error_message     TEXT,
+    created_at        TIMESTAMPTZ DEFAULT NOW()
+) WITH (fillfactor = 80);
+
+CREATE INDEX idx_scrapejobs_platform ON scrape_jobs (platform, country);
+CREATE INDEX idx_scrapejobs_status ON scrape_jobs (status) WHERE status IN ('RUNNING','PENDING');
+
+-- =============================================================================
+-- VIN HISTORY CACHE (Denormalized for fast single-VIN lookups)
+-- =============================================================================
+CREATE TABLE vin_history_cache (
+    id                BIGSERIAL PRIMARY KEY,
+    vin               TEXT NOT NULL,
+    event_type        TEXT NOT NULL CHECK (event_type IN
+                      ('MILEAGE','ACCIDENT','OWNERSHIP','IMPORT','STOLEN_CHECK',
+                       'LISTING','PRICE_CHANGE','MOT','DAMAGE')),
+    event_date        DATE,
+    data              JSONB NOT NULL,
+    source            TEXT NOT NULL,
+    confidence        NUMERIC(3,2) DEFAULT 1.0,
+    created_at        TIMESTAMPTZ DEFAULT NOW()
+) WITH (fillfactor = 90);
+
+CREATE INDEX idx_vinhistory_vin ON vin_history_cache (vin, event_date DESC);
+CREATE INDEX idx_vinhistory_type ON vin_history_cache (vin, event_type);
+
+-- =============================================================================
+-- DEALER MARKETING AUDIT (AI-generated improvement reports)
+-- =============================================================================
+CREATE TABLE marketing_audits (
+    audit_ulid        TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL REFERENCES entities(entity_ulid),
+    overall_score     NUMERIC(3,2),
+    photo_score       NUMERIC(3,2),
+    description_score NUMERIC(3,2),
+    price_score       NUMERIC(3,2),
+    platform_coverage_score NUMERIC(3,2),
+    issues            JSONB,
+    recommendations   JSONB,
+    estimated_revenue_loss_eur NUMERIC(10,2),
+    generated_at      TIMESTAMPTZ DEFAULT NOW()
+) WITH (fillfactor = 80);
+
+CREATE INDEX idx_audits_entity ON marketing_audits (entity_ulid);
+
+COMMIT;
+
+-- =============================================================================
+-- PUBLISHING LISTINGS (Multipublicación — platform status per CRM vehicle)
+-- =============================================================================
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS publishing_listings (
+    pub_ulid          TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL REFERENCES entities(entity_ulid) ON DELETE CASCADE,
+    crm_vehicle_ulid  TEXT NOT NULL REFERENCES crm_vehicles(crm_vehicle_ulid) ON DELETE CASCADE,
+    platform          TEXT NOT NULL CHECK (platform IN (
+                          'AUTOSCOUT24','WALLAPOP','COCHES_NET','MOBILE_DE',
+                          'MARKTPLAATS','LACENTRALE','MILANUNCIOS','MANUAL')),
+    status            TEXT NOT NULL DEFAULT 'DRAFT' CHECK (status IN (
+                          'DRAFT','PENDING','ACTIVE','PAUSED','EXPIRED','REJECTED')),
+    title             TEXT,
+    external_id       TEXT,
+    external_url      TEXT,
+    error_message     TEXT,
+    published_at      TIMESTAMPTZ,
+    expires_at        TIMESTAMPTZ,
+    last_synced_at    TIMESTAMPTZ,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(entity_ulid, crm_vehicle_ulid, platform)
+) WITH (fillfactor = 80);
+
+CREATE INDEX IF NOT EXISTS idx_publistings_entity   ON publishing_listings (entity_ulid);
+CREATE INDEX IF NOT EXISTS idx_publistings_vehicle  ON publishing_listings (crm_vehicle_ulid);
+CREATE INDEX IF NOT EXISTS idx_publistings_platform ON publishing_listings (platform, status);
+CREATE INDEX IF NOT EXISTS idx_publistings_status   ON publishing_listings (status) WHERE status IN ('PENDING','ACTIVE');
+
+ALTER TABLE publishing_listings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY publistings_isolation ON publishing_listings
+    USING (entity_ulid = current_setting('app.current_entity', true));
+
+COMMIT;
+
+-- =============================================================================
+-- DEALERS — Physical dealer registry (all discovery sources merged)
+-- Populated by: DiscoveryOrchestrator (H3 grid + OSM + government registries)
+-- Consumed by:  DealerWebSpider (fleet crawls dealer websites for inventory)
+-- =============================================================================
+-- (appended after COMMIT — run as separate migration if needed)
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS dealers (
+    id                BIGSERIAL PRIMARY KEY,
+    place_id          TEXT,
+    registry_id       TEXT,
+    osm_id            TEXT,
+    name              TEXT NOT NULL,
+    country           TEXT NOT NULL,
+    lat               DOUBLE PRECISION,
+    lng               DOUBLE PRECISION,
+    h3_res7           TEXT,
+    h3_res4           TEXT,
+    address           TEXT,
+    city              TEXT,
+    postcode          TEXT,
+    canton            TEXT,
+    website           TEXT,
+    phone             TEXT,
+    email             TEXT,
+    brand_affiliation TEXT[],
+    dealer_type       TEXT DEFAULT 'INDEPENDENT',
+    source            TEXT NOT NULL,
+    discovery_sources TEXT[] DEFAULT '{}',
+    spider_status     TEXT DEFAULT 'PENDING',
+    spider_last_run   TIMESTAMPTZ,
+    spider_dms        TEXT,
+    spider_listing_count INT DEFAULT 0,
+    google_rating     NUMERIC(2,1),
+    google_review_count INT,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE NULLS NOT DISTINCT (
+        COALESCE(place_id, ''),
+        COALESCE(registry_id, ''),
+        name,
+        country
+    )
+) WITH (fillfactor = 80);
+
+CREATE INDEX IF NOT EXISTS idx_dealers_country     ON dealers (country);
+CREATE INDEX IF NOT EXISTS idx_dealers_h3_res7     ON dealers (h3_res7);
+CREATE INDEX IF NOT EXISTS idx_dealers_h3_res4     ON dealers (h3_res4);
+CREATE INDEX IF NOT EXISTS idx_dealers_spider      ON dealers (spider_status, country);
+CREATE INDEX IF NOT EXISTS idx_dealers_website     ON dealers (website) WHERE website IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_dealers_place_id    ON dealers (place_id) WHERE place_id IS NOT NULL;
+
+COMMIT;
+
+-- =============================================================================
+-- CRM SYSTEM — Full DealCar.io-level dealer CRM
+-- =============================================================================
+BEGIN;
+
+-- CRM Contacts (customer database — separated from anonymous leads)
+CREATE TABLE crm_contacts (
+    contact_ulid      TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL REFERENCES entities(entity_ulid) ON DELETE CASCADE,
+    full_name         TEXT NOT NULL,
+    email             TEXT,
+    phone             TEXT,
+    phone_alt         TEXT,
+    address_line1     TEXT,
+    address_city      TEXT,
+    address_country   CHAR(2),
+    postal_code       TEXT,
+    birth_year        INT,
+    id_number         TEXT,  -- DNI/NIE/passport — encrypted
+    preferred_contact TEXT CHECK (preferred_contact IN ('EMAIL','PHONE','WHATSAPP','SMS')),
+    language          CHAR(2) DEFAULT 'ES',
+    tags              TEXT[] DEFAULT '{}',
+    notes             TEXT,
+    source            TEXT,  -- how they came to us
+    gdpr_consent      BOOLEAN DEFAULT FALSE,
+    gdpr_consent_at   TIMESTAMPTZ,
+    lifetime_value_eur NUMERIC(12,2) DEFAULT 0,
+    total_purchases   INT DEFAULT 0,
+    total_inquiries   INT DEFAULT 0,
+    last_contact_at   TIMESTAMPTZ,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ DEFAULT NOW(),
+    vault_dek_id      TEXT NOT NULL  -- for PII encryption
+) WITH (fillfactor = 80);
+
+CREATE INDEX idx_crm_contacts_entity ON crm_contacts(entity_ulid);
+CREATE INDEX idx_crm_contacts_email ON crm_contacts(email) WHERE email IS NOT NULL;
+CREATE INDEX idx_crm_contacts_phone ON crm_contacts(phone) WHERE phone IS NOT NULL;
+CREATE INDEX idx_crm_contacts_tags ON crm_contacts USING GIN(tags);
+
+-- CRM Vehicles (full lifecycle inventory management — extends dealer_inventory)
+CREATE TABLE crm_vehicles (
+    crm_vehicle_ulid  TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL REFERENCES entities(entity_ulid) ON DELETE CASCADE,
+    item_ulid         TEXT REFERENCES dealer_inventory(item_ulid),  -- link to main inventory
+    vin               TEXT,
+    make              TEXT NOT NULL,
+    model             TEXT NOT NULL,
+    variant           TEXT,
+    year              INT NOT NULL,
+    mileage_km        INT,
+    fuel_type         TEXT,
+    transmission      TEXT,
+    color_exterior    TEXT,
+    color_interior    TEXT,
+    power_kw          INT,
+    co2_gkm           INT,
+    doors             INT,
+    body_type         TEXT,
+    registration_date DATE,
+    first_registration_country CHAR(2),
+    service_book      BOOLEAN DEFAULT FALSE,
+    keys_count        INT DEFAULT 2,
+
+    -- Lifecycle status (richer than dealer_inventory.status)
+    lifecycle_status  TEXT NOT NULL DEFAULT 'SOURCING' CHECK (lifecycle_status IN (
+        'SOURCING',        -- being acquired/negotiated
+        'PURCHASED',       -- we own it, not yet reconditioned
+        'RECONDITIONING',  -- at workshop
+        'READY',           -- ready for sale
+        'LISTED',          -- actively advertised
+        'RESERVED',        -- deposit taken
+        'SOLD',            -- completed sale
+        'RETURNED',        -- post-sale return
+        'ARCHIVED'         -- removed, not for sale
+    )),
+
+    -- Financial tracking (the core of DealCar.io's value)
+    purchase_price_eur     NUMERIC(12,2),
+    purchase_date          DATE,
+    purchase_from          TEXT,  -- auction / private / dealer / trade-in
+    purchase_channel       TEXT,  -- BCA / Manheim / Autorola / private / trade
+
+    recon_cost_eur         NUMERIC(12,2) DEFAULT 0,  -- workshop costs
+    transport_cost_eur     NUMERIC(12,2) DEFAULT 0,
+    homologation_cost_eur  NUMERIC(12,2) DEFAULT 0,  -- ITV/TUV/CT
+    marketing_cost_eur     NUMERIC(12,2) DEFAULT 0,
+    financing_cost_eur     NUMERIC(12,2) DEFAULT 0,  -- floor plan interest
+    other_cost_eur         NUMERIC(12,2) DEFAULT 0,
+
+    asking_price_eur       NUMERIC(12,2),
+    floor_price_eur        NUMERIC(12,2),  -- minimum acceptable
+    target_margin_pct      NUMERIC(5,2) DEFAULT 15.0,
+
+    -- Sale tracking
+    sale_price_eur         NUMERIC(12,2),
+    sale_date              DATE,
+    sale_contact_ulid      TEXT REFERENCES crm_contacts(contact_ulid),
+    payment_method         TEXT,  -- CASH / FINANCING / TRADE_IN_PLUS_CASH
+    financing_bank         TEXT,
+
+    -- Days in stock
+    stock_entry_date       DATE DEFAULT CURRENT_DATE,
+
+    -- Condition & photos
+    condition_grade        TEXT CHECK (condition_grade IN ('A','B','C','D')),  -- A=excellent, D=rough
+    photos                 TEXT[],
+    main_photo_url         TEXT,
+
+    -- Platform publishing
+    published_platforms    TEXT[] DEFAULT '{}',
+    meili_indexed          BOOLEAN DEFAULT FALSE,
+
+    notes                  TEXT,
+    created_at             TIMESTAMPTZ DEFAULT NOW(),
+    updated_at             TIMESTAMPTZ DEFAULT NOW()
+) WITH (fillfactor = 80);
+
+CREATE INDEX idx_crm_vehicles_entity ON crm_vehicles(entity_ulid);
+CREATE INDEX idx_crm_vehicles_lifecycle ON crm_vehicles(entity_ulid, lifecycle_status);
+CREATE INDEX idx_crm_vehicles_vin ON crm_vehicles(vin) WHERE vin IS NOT NULL;
+CREATE INDEX idx_crm_vehicles_make_model ON crm_vehicles(entity_ulid, make, model);
+
+-- Reconditioning jobs (workshop tracking)
+CREATE TABLE crm_recon_jobs (
+    job_ulid          TEXT PRIMARY KEY,
+    crm_vehicle_ulid  TEXT NOT NULL REFERENCES crm_vehicles(crm_vehicle_ulid) ON DELETE CASCADE,
+    entity_ulid       TEXT NOT NULL,
+    job_type          TEXT NOT NULL,  -- MECHANICAL / BODYWORK / DETAILING / ELECTRICAL / ITV / TIRES / OTHER
+    description       TEXT NOT NULL,
+    supplier_name     TEXT,
+    cost_estimate_eur NUMERIC(10,2),
+    cost_actual_eur   NUMERIC(10,2),
+    status            TEXT DEFAULT 'PENDING' CHECK (status IN ('PENDING','IN_PROGRESS','DONE','CANCELLED')),
+    started_at        DATE,
+    completed_at      DATE,
+    invoice_url       TEXT,
+    created_at        TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX idx_recon_jobs_vehicle ON crm_recon_jobs(crm_vehicle_ulid);
+
+-- CRM Pipeline (sales pipeline stages — like Kanban)
+CREATE TABLE crm_pipeline_stages (
+    stage_ulid        TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL REFERENCES entities(entity_ulid) ON DELETE CASCADE,
+    name              TEXT NOT NULL,
+    color             TEXT DEFAULT '#15b570',
+    position          INT NOT NULL,
+    auto_action       TEXT,  -- e.g. 'SEND_EMAIL_TEMPLATE_1'
+    is_won            BOOLEAN DEFAULT FALSE,
+    is_lost           BOOLEAN DEFAULT FALSE
+);
+
+-- Pipeline deals (each deal = contact x vehicle x stage)
+CREATE TABLE crm_deals (
+    deal_ulid         TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL REFERENCES entities(entity_ulid) ON DELETE CASCADE,
+    contact_ulid      TEXT NOT NULL REFERENCES crm_contacts(contact_ulid),
+    crm_vehicle_ulid  TEXT REFERENCES crm_vehicles(crm_vehicle_ulid),
+    stage_ulid        TEXT NOT NULL REFERENCES crm_pipeline_stages(stage_ulid),
+    title             TEXT NOT NULL,
+    status            TEXT DEFAULT 'OPEN' CHECK (status IN ('OPEN','WON','LOST','ON_HOLD')),
+    deal_value_eur    NUMERIC(12,2),
+    probability_pct   INT DEFAULT 50,
+    expected_close    DATE,
+    lost_reason       TEXT,
+    assigned_to       TEXT REFERENCES users(user_ulid),
+    notes             TEXT,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX idx_crm_deals_entity ON crm_deals(entity_ulid);
+CREATE INDEX idx_crm_deals_contact ON crm_deals(contact_ulid);
+CREATE INDEX idx_crm_deals_stage ON crm_deals(stage_ulid);
+CREATE INDEX idx_crm_deals_status ON crm_deals(entity_ulid, status);
+
+-- Communications log (email/call/WhatsApp/SMS/visit)
+CREATE TABLE crm_communications (
+    comm_ulid         TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL,
+    contact_ulid      TEXT REFERENCES crm_contacts(contact_ulid),
+    deal_ulid         TEXT REFERENCES crm_deals(deal_ulid),
+    crm_vehicle_ulid  TEXT REFERENCES crm_vehicles(crm_vehicle_ulid),
+    channel           TEXT NOT NULL CHECK (channel IN ('EMAIL','PHONE','WHATSAPP','SMS','VISIT','VIDEO_CALL','NOTE')),
+    direction         TEXT CHECK (direction IN ('INBOUND','OUTBOUND')),
+    subject           TEXT,
+    body              TEXT,
+    outcome           TEXT,  -- 'interested', 'not_interested', 'callback', 'offer_made', etc.
+    duration_sec      INT,   -- for calls
+    created_by        TEXT REFERENCES users(user_ulid),
+    created_at        TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX idx_crm_comm_contact ON crm_communications(contact_ulid);
+CREATE INDEX idx_crm_comm_deal ON crm_communications(deal_ulid);
+CREATE INDEX idx_crm_comm_entity ON crm_communications(entity_ulid, created_at DESC);
+
+-- Documents (contracts, invoices, registration docs)
+CREATE TABLE crm_documents (
+    doc_ulid          TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL,
+    crm_vehicle_ulid  TEXT REFERENCES crm_vehicles(crm_vehicle_ulid),
+    contact_ulid      TEXT REFERENCES crm_contacts(contact_ulid),
+    deal_ulid         TEXT REFERENCES crm_deals(deal_ulid),
+    doc_type          TEXT NOT NULL CHECK (doc_type IN (
+        'PURCHASE_CONTRACT','SALE_CONTRACT','INVOICE','TRADE_IN_RECEIPT',
+        'REGISTRATION_CERT','SERVICE_HISTORY','INSURANCE','FINANCING_CONTRACT',
+        'INSPECTION_REPORT','PHOTO_REPORT','OTHER'
+    )),
+    filename          TEXT NOT NULL,
+    storage_url       TEXT NOT NULL,  -- S3/GCS/MinIO URL
+    file_size_bytes   INT,
+    uploaded_by       TEXT REFERENCES users(user_ulid),
+    created_at        TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX idx_crm_docs_vehicle ON crm_documents(crm_vehicle_ulid);
+CREATE INDEX idx_crm_docs_deal ON crm_documents(deal_ulid);
+
+-- Financial transactions (per vehicle P&L)
+CREATE TABLE crm_transactions (
+    tx_ulid           TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL,
+    crm_vehicle_ulid  TEXT NOT NULL REFERENCES crm_vehicles(crm_vehicle_ulid),
+    tx_type           TEXT NOT NULL CHECK (tx_type IN (
+        'PURCHASE','RECON','TRANSPORT','HOMOLOGATION','MARKETING',
+        'FINANCING_COST','SALE_REVENUE','TRADE_IN_VALUE','TAX','OTHER_COST','OTHER_REVENUE'
+    )),
+    amount_eur        NUMERIC(12,2) NOT NULL,  -- negative = cost, positive = revenue
+    description       TEXT,
+    invoice_number    TEXT,
+    tx_date           DATE NOT NULL DEFAULT CURRENT_DATE,
+    created_at        TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX idx_crm_tx_vehicle ON crm_transactions(crm_vehicle_ulid);
+CREATE INDEX idx_crm_tx_entity_date ON crm_transactions(entity_ulid, tx_date DESC);
+
+-- KPI goals (monthly targets)
+CREATE TABLE crm_goals (
+    goal_ulid         TEXT PRIMARY KEY,
+    entity_ulid       TEXT NOT NULL REFERENCES entities(entity_ulid) ON DELETE CASCADE,
+    period_month      CHAR(7) NOT NULL,  -- '2025-01'
+    target_units_sold INT DEFAULT 0,
+    target_revenue_eur NUMERIC(12,2) DEFAULT 0,
+    target_margin_pct NUMERIC(5,2) DEFAULT 0,
+    target_avg_dom    INT DEFAULT 30,
+    actual_units_sold INT DEFAULT 0,
+    actual_revenue_eur NUMERIC(12,2) DEFAULT 0,
+    actual_margin_pct  NUMERIC(5,2) DEFAULT 0,
+    actual_avg_dom     INT DEFAULT 0,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(entity_ulid, period_month)
+);
+
+-- =============================================================================
+-- NOTIFICATIONS (In-app notification centre — per user or per entity)
+-- =============================================================================
+CREATE TABLE notifications (
+    notification_ulid  TEXT PRIMARY KEY,
+    entity_ulid        TEXT REFERENCES entities(entity_ulid) ON DELETE CASCADE,
+    user_ulid          TEXT REFERENCES users(user_ulid) ON DELETE CASCADE,
+    type               TEXT NOT NULL CHECK (type IN (
+        'PRICE_ALERT',
+        'ARBITRAGE',
+        'VIN_RESULT',
+        'DEAL_UPDATE',
+        'RECON_DONE',
+        'GOAL_REACHED',
+        'NEW_LEAD',
+        'INVENTORY_LOW',
+        'SYSTEM'
+    )),
+    title              TEXT NOT NULL,
+    body               TEXT NOT NULL,
+    action_url         TEXT,
+    data               JSONB DEFAULT '{}',
+    read_at            TIMESTAMPTZ,
+    created_at         TIMESTAMPTZ DEFAULT NOW()
+) WITH (fillfactor = 80);
+
+CREATE INDEX idx_notifications_entity  ON notifications (entity_ulid, created_at DESC) WHERE read_at IS NULL;
+CREATE INDEX idx_notifications_user    ON notifications (user_ulid,   created_at DESC) WHERE read_at IS NULL;
+CREATE INDEX idx_notifications_all     ON notifications (entity_ulid, created_at DESC);
+
+-- =============================================================================
+-- USER ROLES (RBAC — sub-roles dentro de una entidad)
+-- =============================================================================
+CREATE TABLE user_roles (
+    entity_ulid  TEXT NOT NULL REFERENCES entities(entity_ulid) ON DELETE CASCADE,
+    user_ulid    TEXT NOT NULL REFERENCES users(user_ulid) ON DELETE CASCADE,
+    role         TEXT NOT NULL DEFAULT 'SELLER' CHECK (role IN ('OWNER','MANAGER','SELLER','MECHANIC','VIEWER')),
+    granted_by   TEXT REFERENCES users(user_ulid),
+    created_at   TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY (entity_ulid, user_ulid)
+);
+CREATE INDEX idx_user_roles_entity ON user_roles (entity_ulid);
+
+-- =============================================================================
+-- GROUP MANAGEMENT (Grupos de concesionarios — dealer groups)
+-- =============================================================================
+ALTER TABLE entities ADD COLUMN IF NOT EXISTS parent_entity_ulid TEXT REFERENCES entities(entity_ulid);
+ALTER TABLE entities ADD COLUMN IF NOT EXISTS group_name TEXT;
+CREATE INDEX idx_entities_parent ON entities (parent_entity_ulid) WHERE parent_entity_ulid IS NOT NULL;
+
+-- Admin flag en users
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;
 
 COMMIT;

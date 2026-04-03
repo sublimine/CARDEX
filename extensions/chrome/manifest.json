@@ -1,0 +1,102 @@
+{
+  "manifest_version": 3,
+  "name": "CARDEX Intelligence",
+  "version": "1.0.0",
+  "minimum_chrome_version": "103",
+  "description": "Overlay de inteligencia de mercado CARDEX sobre AutoScout24, mobile.de, Wallapop, LeBonCoin y más. Precio justo, tiempo de venta y oportunidades de arbitraje en tiempo real.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://*.autoscout24.com/*",
+    "https://*.autoscout24.es/*",
+    "https://*.autoscout24.de/*",
+    "https://*.autoscout24.fr/*",
+    "https://*.autoscout24.nl/*",
+    "https://*.autoscout24.be/*",
+    "https://*.autoscout24.ch/*",
+    "https://www.mobile.de/*",
+    "https://m.mobile.de/*",
+    "https://www.wallapop.com/*",
+    "https://www.leboncoin.fr/*",
+    "https://www.coches.net/*",
+    "https://www.coches.com/*",
+    "https://www.milanuncios.com/*",
+    "https://www.autocasion.com/*",
+    "https://www.motor.es/*",
+    "https://www.marktplaats.nl/*",
+    "https://www.gaspedaal.nl/*",
+    "https://www.autotrack.nl/*",
+    "https://www.lacentrale.fr/*",
+    "https://www.largus.fr/*",
+    "https://www.tweedehands.be/*",
+    "https://www.gocar.be/*",
+    "https://www.comparis.ch/*",
+    "https://www.tutti.ch/*",
+    "https://www.automobile.fr/*",
+    "https://www.pkw.de/*",
+    "https://www.kleinanzeigen.de/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src https: http://localhost:* http://127.0.0.1:*;"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.autoscout24.com/annonce/*",
+        "https://*.autoscout24.com/anzeige/*",
+        "https://*.autoscout24.com/listing/*",
+        "https://*.autoscout24.com/annonces/*",
+        "https://*.autoscout24.es/ocasion/*",
+        "https://*.autoscout24.de/angebote/*",
+        "https://*.autoscout24.fr/*",
+        "https://*.autoscout24.nl/*",
+        "https://*.autoscout24.be/*",
+        "https://*.autoscout24.ch/*",
+        "https://www.mobile.de/auto/*",
+        "https://www.mobile.de/fahrzeug/*",
+        "https://www.wallapop.com/item/*",
+        "https://www.leboncoin.fr/ad/*",
+        "https://www.coches.net/coches/*",
+        "https://www.coches.net/coches-segunda-mano/*",
+        "https://www.marktplaats.nl/v/*",
+        "https://www.lacentrale.fr/auto-occasion*",
+        "https://www.milanuncios.com/coches-de-segunda-mano/*",
+        "https://www.autocasion.com/*",
+        "https://www.gaspedaal.nl/*",
+        "https://www.comparis.ch/*"
+      ],
+      "js": ["content.js"],
+      "css": ["overlay.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "CARDEX Intelligence"
+  },
+  "options_page": "settings.html",
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*.png", "overlay.css"],
+      "matches": [
+        "https://*.autoscout24.com/*",
+        "https://*.autoscout24.es/*",
+        "https://*.autoscout24.de/*",
+        "https://*.autoscout24.fr/*",
+        "https://*.autoscout24.nl/*",
+        "https://*.autoscout24.be/*",
+        "https://*.autoscout24.ch/*",
+        "https://www.mobile.de/*",
+        "https://www.wallapop.com/*",
+        "https://www.leboncoin.fr/*",
+        "https://www.coches.net/*",
+        "https://www.marktplaats.nl/*",
+        "https://www.lacentrale.fr/*",
+        "https://www.gaspedaal.nl/*",
+        "https://www.comparis.ch/*"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-surface: #0d1117;
+  --color-card: #161b22;
+  --color-border: #21262d;
+  --color-accent: #15b570;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-surface); }
+::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #484f58; }
+
+/* Focus ring */
+*:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+/* TradingView chart container */
+.tv-chart-container { width: 100%; height: 100%; }
+
+/* MapLibre overrides */
+.maplibregl-ctrl-attrib { display: none !important; }

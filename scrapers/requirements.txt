@@ -1,0 +1,9 @@
+httpx[http2]==0.27.2
+playwright==1.44.0
+redis==5.0.7
+tenacity==8.3.0
+pydantic==2.7.4
+python-ulid==2.7.0
+h3==3.7.7
+structlog==24.2.0
+python-dotenv==1.0.1
