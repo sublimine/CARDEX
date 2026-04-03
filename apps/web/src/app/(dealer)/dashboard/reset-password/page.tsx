@@ -22,6 +22,13 @@ function ResetPasswordForm() {
     if (!token) setError('Enlace inválido. Solicita un nuevo enlace de recuperación.')
   }, [token])
 
+  // Auto-redirect after successful reset — cleanup prevents memory leak if user navigates away
+  useEffect(() => {
+    if (!success) return
+    const timer = setTimeout(() => router.push('/dashboard/login'), 3000)
+    return () => clearTimeout(timer)
+  }, [success, router])
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (password !== confirm) {
@@ -41,13 +48,12 @@ function ResetPasswordForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, password }),
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
       if (!res.ok) {
         setError(data.message ?? 'Error al restablecer la contraseña.')
         return
       }
       setSuccess(true)
-      setTimeout(() => router.push('/dashboard/login'), 3000)
     } catch {
       setError('Error de red. Inténtalo de nuevo.')
     } finally {
@@ -126,21 +132,29 @@ function ResetPasswordForm() {
           />
         </div>
 
-        {/* Password strength indicator */}
+        {/* Password strength indicator — thresholds: 10 (min), 12, 14, 16 (strong) */}
         {password && (
-          <div className="flex gap-1">
-            {[1,2,3,4].map(i => (
-              <div
-                key={i}
-                className={`h-1 flex-1 rounded-full transition-colors ${
-                  password.length >= i * 4
-                    ? password.length >= 16 ? 'bg-emerald-500'
-                      : password.length >= 12 ? 'bg-yellow-500'
-                      : 'bg-red-500'
-                    : 'bg-surface-border'
-                }`}
-              />
-            ))}
+          <div className="space-y-1">
+            <div className="flex gap-1">
+              {[10, 12, 14, 16].map(threshold => (
+                <div
+                  key={threshold}
+                  className={`h-1 flex-1 rounded-full transition-colors ${
+                    password.length >= threshold
+                      ? password.length >= 16 ? 'bg-emerald-500'
+                        : password.length >= 14 ? 'bg-yellow-500'
+                        : 'bg-red-500'
+                      : 'bg-surface-border'
+                  }`}
+                />
+              ))}
+            </div>
+            <p className="text-[10px] text-surface-muted">
+              {password.length < 10 ? `Mínimo 10 caracteres (faltan ${10 - password.length})`
+                : password.length < 14 ? 'Contraseña aceptable'
+                : password.length < 16 ? 'Contraseña buena'
+                : 'Contraseña fuerte'}
+            </p>
           </div>
         )}
 

@@ -24,8 +24,8 @@ export default function ForgotPasswordPage() {
         body: JSON.stringify({ email }),
       })
       if (!res.ok) {
-        const data = await res.json()
-        setError(data.message ?? 'Error enviando el email. Inténtalo de nuevo.')
+        // Generic message regardless of reason — prevents user enumeration
+        setError('No se pudo procesar la solicitud. Inténtalo de nuevo en unos minutos.')
         return
       }
       setSent(true)

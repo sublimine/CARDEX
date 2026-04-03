@@ -68,6 +68,7 @@ export default function NotificationsPage() {
   const router = useRouter()
   const [notifs, setNotifs] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [filter, setFilter] = useState('')
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
@@ -103,32 +104,54 @@ export default function NotificationsPage() {
   }, [filter, fetchNotifs])
 
   const markRead = async (ulid: string) => {
-    await fetch(`${API}/api/v1/dealer/notifications/${ulid}/read`, {
-      method: 'PATCH',
-      headers: authHeader(),
-    })
+    // Optimistic update
     setNotifs(prev => prev.map(n =>
       n.notification_ulid === ulid ? { ...n, read_at: new Date().toISOString() } : n
     ))
+    const res = await fetch(`${API}/api/v1/dealer/notifications/${ulid}/read`, {
+      method: 'PATCH',
+      headers: authHeader(),
+    }).catch(() => null)
+    if (!res?.ok) {
+      // Rollback on failure
+      setNotifs(prev => prev.map(n =>
+        n.notification_ulid === ulid ? { ...n, read_at: undefined } : n
+      ))
+    }
   }
 
   const deleteNotif = async (ulid: string, e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    await fetch(`${API}/api/v1/dealer/notifications/${ulid}`, {
+    // Optimistic remove
+    const snapshot = notifs.find(n => n.notification_ulid === ulid)
+    setNotifs(prev => prev.filter(n => n.notification_ulid !== ulid))
+    const res = await fetch(`${API}/api/v1/dealer/notifications/${ulid}`, {
       method: 'DELETE',
       headers: authHeader(),
-    })
-    setNotifs(prev => prev.filter(n => n.notification_ulid !== ulid))
+    }).catch(() => null)
+    if (!res?.ok && snapshot) {
+      // Rollback on failure
+      setNotifs(prev => [...prev, snapshot].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      ))
+    }
   }
 
   const markAllRead = async () => {
     setMarkingAll(true)
-    await fetch(`${API}/api/v1/dealer/notifications/read-all`, {
+    const now = new Date().toISOString()
+    const snapshot = notifs
+    // Optimistic update
+    setNotifs(prev => prev.map(n => ({ ...n, read_at: n.read_at ?? now })))
+    const res = await fetch(`${API}/api/v1/dealer/notifications/read-all`, {
       method: 'POST',
       headers: authHeader(),
-    })
-    setNotifs(prev => prev.map(n => ({ ...n, read_at: n.read_at ?? new Date().toISOString() })))
+    }).catch(() => null)
+    if (!res?.ok) {
+      // Rollback on failure
+      setNotifs(snapshot)
+    }
     setMarkingAll(false)
   }
 
@@ -137,10 +160,12 @@ export default function NotificationsPage() {
     if (n.action_url) router.push(n.action_url)
   }
 
-  const loadMore = () => {
+  const loadMore = async () => {
     const next = page + 1
     setPage(next)
-    fetchNotifs(next, false)
+    setLoadingMore(true)
+    await fetchNotifs(next, false)
+    setLoadingMore(false)
   }
 
   const unreadCount = notifs.filter(n => !n.read_at).length
@@ -245,9 +270,10 @@ export default function NotificationsPage() {
           {hasMore && (
             <button
               onClick={loadMore}
-              className="mt-2 w-full rounded-xl border border-surface-border py-3 text-sm text-surface-muted hover:border-brand-500/50 hover:text-white transition-colors"
+              disabled={loadingMore}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-surface-border py-3 text-sm text-surface-muted hover:border-brand-500/50 hover:text-white transition-colors disabled:opacity-50"
             >
-              Cargar más
+              {loadingMore ? <><Loader2 size={14} className="animate-spin" /> Cargando…</> : 'Cargar más'}
             </button>
           )}
         </div>

@@ -86,23 +86,28 @@ export default function AdminPage() {
   // Stats
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
+  const [statsError, setStatsError] = useState<string | null>(null)
 
   // Entities
   const [entities, setEntities] = useState<AdminEntity[]>([])
   const [entitiesTotal, setEntitiesTotal] = useState(0)
   const [entitiesPage, setEntitiesPage] = useState(0)
   const [entitiesLoading, setEntitiesLoading] = useState(false)
+  const [entitiesError, setEntitiesError] = useState<string | null>(null)
   const [changingTier, setChangingTier] = useState<string | null>(null)
+  const [tierError, setTierError] = useState<string | null>(null)
 
   // Users
   const [users, setUsers] = useState<AdminUser[]>([])
   const [usersTotal, setUsersTotal] = useState(0)
   const [usersPage, setUsersPage] = useState(0)
   const [usersLoading, setUsersLoading] = useState(false)
+  const [usersError, setUsersError] = useState<string | null>(null)
 
   // Scrapers
   const [scrapers, setScrapers] = useState<ScraperStatus[]>([])
   const [scrapersLoading, setScrapersLoading] = useState(false)
+  const [scrapersError, setScrapersError] = useState<string | null>(null)
 
   const LIMIT = 50
 
@@ -115,13 +120,14 @@ export default function AdminPage() {
   // ── Fetch Stats ────────────────────────────────────────────────────────────
   const fetchStats = useCallback(async () => {
     setStatsLoading(true)
+    setStatsError(null)
     try {
       const res = await fetch(`${API}/api/v1/admin/stats`, { headers: authHeader() })
       if (res.status === 403) { setAccessDenied(true); return }
-      if (!res.ok) throw new Error()
+      if (!res.ok) throw new Error(`Error ${res.status}`)
       setStats(await res.json())
-    } catch {
-      // ignore
+    } catch (err) {
+      setStatsError(err instanceof Error ? err.message : 'Error al cargar estadísticas')
     } finally {
       setStatsLoading(false)
     }
@@ -130,17 +136,18 @@ export default function AdminPage() {
   // ── Fetch Entities ─────────────────────────────────────────────────────────
   const fetchEntities = useCallback(async (page = 0) => {
     setEntitiesLoading(true)
+    setEntitiesError(null)
     try {
       const res = await fetch(`${API}/api/v1/admin/entities?limit=${LIMIT}&offset=${page * LIMIT}`, {
         headers: authHeader(),
       })
       if (res.status === 403) { setAccessDenied(true); return }
-      if (!res.ok) throw new Error()
+      if (!res.ok) throw new Error(`Error ${res.status}`)
       const data = await res.json()
       setEntities(data.entities ?? data.items ?? [])
       setEntitiesTotal(data.total ?? 0)
-    } catch {
-      // ignore
+    } catch (err) {
+      setEntitiesError(err instanceof Error ? err.message : 'Error al cargar entidades')
     } finally {
       setEntitiesLoading(false)
     }
@@ -149,17 +156,18 @@ export default function AdminPage() {
   // ── Fetch Users ─────────────────────────────────────────────────────────────
   const fetchUsers = useCallback(async (page = 0) => {
     setUsersLoading(true)
+    setUsersError(null)
     try {
       const res = await fetch(`${API}/api/v1/admin/users?limit=${LIMIT}&offset=${page * LIMIT}`, {
         headers: authHeader(),
       })
       if (res.status === 403) { setAccessDenied(true); return }
-      if (!res.ok) throw new Error()
+      if (!res.ok) throw new Error(`Error ${res.status}`)
       const data = await res.json()
       setUsers(data.users ?? data.items ?? [])
       setUsersTotal(data.total ?? 0)
-    } catch {
-      // ignore
+    } catch (err) {
+      setUsersError(err instanceof Error ? err.message : 'Error al cargar usuarios')
     } finally {
       setUsersLoading(false)
     }
@@ -168,14 +176,15 @@ export default function AdminPage() {
   // ── Fetch Scrapers ──────────────────────────────────────────────────────────
   const fetchScrapers = useCallback(async () => {
     setScrapersLoading(true)
+    setScrapersError(null)
     try {
       const res = await fetch(`${API}/api/v1/admin/scrapers`, { headers: authHeader() })
       if (res.status === 403) { setAccessDenied(true); return }
-      if (!res.ok) throw new Error()
+      if (!res.ok) throw new Error(`Error ${res.status}`)
       const data = await res.json()
       setScrapers(data.scrapers ?? data.items ?? data ?? [])
-    } catch {
-      // ignore
+    } catch (err) {
+      setScrapersError(err instanceof Error ? err.message : 'Error al cargar scrapers')
     } finally {
       setScrapersLoading(false)
     }
@@ -193,18 +202,24 @@ export default function AdminPage() {
   // ── Change tier ─────────────────────────────────────────────────────────────
   async function changeTier(entityUlid: string, subscription_tier: string) {
     setChangingTier(entityUlid)
+    setTierError(null)
+    // Store previous tier for rollback
+    const prev_tier = entities.find(e => e.entity_ulid === entityUlid)?.subscription_tier
+    // Optimistic update
+    setEntities(prev => prev.map(e => e.entity_ulid === entityUlid ? { ...e, subscription_tier } : e))
     try {
       const res = await fetch(`${API}/api/v1/admin/entities/${entityUlid}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', ...authHeader() },
         body: JSON.stringify({ subscription_tier }),
       })
-      if (!res.ok) throw new Error()
-      setEntities(prev =>
-        prev.map(e => e.entity_ulid === entityUlid ? { ...e, subscription_tier } : e)
-      )
-    } catch {
-      // ignore
+      if (!res.ok) throw new Error(`Error ${res.status}`)
+    } catch (err) {
+      // Rollback to previous tier
+      if (prev_tier) {
+        setEntities(prev => prev.map(e => e.entity_ulid === entityUlid ? { ...e, subscription_tier: prev_tier } : e))
+      }
+      setTierError('No se pudo actualizar el tier. Inténtalo de nuevo.')
     } finally {
       setChangingTier(null)
     }
@@ -285,6 +300,11 @@ export default function AdminPage() {
         {/* ── STATS TAB ── */}
         {tab === 'stats' && (
           <div>
+            {statsError && (
+              <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                {statsError} — <button onClick={fetchStats} className="underline hover:no-underline">Reintentar</button>
+              </div>
+            )}
             {statsLoading ? (
               <div className="flex justify-center py-16">
                 <Loader2 size={28} className="animate-spin text-brand-400" />
@@ -342,6 +362,16 @@ export default function AdminPage() {
         {/* ── ENTITIES TAB ── */}
         {tab === 'entities' && (
           <div>
+            {entitiesError && (
+              <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                {entitiesError} — <button onClick={() => fetchEntities(entitiesPage)} className="underline hover:no-underline">Reintentar</button>
+              </div>
+            )}
+            {tierError && (
+              <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
+                {tierError}
+              </div>
+            )}
             <div className="mb-4 flex items-center justify-between">
               <p className="text-sm text-surface-muted">{entitiesTotal} entidades en total</p>
               <button
@@ -434,6 +464,11 @@ export default function AdminPage() {
         {/* ── USERS TAB ── */}
         {tab === 'users' && (
           <div>
+            {usersError && (
+              <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                {usersError} — <button onClick={() => fetchUsers(usersPage)} className="underline hover:no-underline">Reintentar</button>
+              </div>
+            )}
             <div className="mb-4 flex items-center justify-between">
               <p className="text-sm text-surface-muted">{usersTotal} usuarios en total</p>
               <button
@@ -520,6 +555,11 @@ export default function AdminPage() {
         {/* ── SCRAPERS TAB ── */}
         {tab === 'scrapers' && (
           <div>
+            {scrapersError && (
+              <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                {scrapersError} — <button onClick={fetchScrapers} className="underline hover:no-underline">Reintentar</button>
+              </div>
+            )}
             <div className="mb-4 flex items-center justify-between">
               <p className="text-sm text-surface-muted">Estado de los scrapers del sistema</p>
               <button
