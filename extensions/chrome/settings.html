@@ -123,6 +123,12 @@
       font-family: 'SF Mono', 'Fira Code', monospace;
       font-size: 11px;
     }
+    .field-error {
+      display: none;
+      font-size: 11px;
+      color: #ef4444;
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
@@ -140,7 +146,8 @@
       <div class="field">
         <label for="api-url">URL del servidor CARDEX</label>
         <input type="url" id="api-url" placeholder="http://localhost:8080" />
-        <div class="field-hint">Dirección de tu instancia CARDEX. En local: <code>http://localhost:8080</code></div>
+        <div id="url-error" class="field-error"></div>
+        <div class="field-hint">Local: <code>http://localhost:8080</code> · Producción: <code>https://api.cardex.eu</code> (HTTPS requerido)</div>
       </div>
     </div>
 
