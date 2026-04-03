@@ -5,14 +5,15 @@ RUN apk add --no-cache git gcc musl-dev
 
 WORKDIR /build
 
-# Copy workspace and all required modules
-COPY go.work* ./
+# Copy only the modules needed by the api service.
+# GOWORK=off makes go use the replace directives in services/api/go.mod directly.
 COPY internal/shared ./internal/shared
 COPY services/alpha  ./services/alpha
 COPY services/api    ./services/api
 
 WORKDIR /build/services/api
 
+ENV GOWORK=off
 RUN go build -ldflags="-s -w" -o /app/server ./cmd/api/...
 
 # ── Runner ────────────────────────────────────────────────────────────────────
