@@ -199,7 +199,9 @@ func main() {
 	slog.Info("api: shutting down")
 	shutCtx, shutCancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer shutCancel()
-	srv.Shutdown(shutCtx)
+	if err := srv.Shutdown(shutCtx); err != nil {
+		slog.Error("api: shutdown error", "error", err)
+	}
 	slog.Info("api: stopped")
 }
 

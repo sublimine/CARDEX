@@ -29,8 +29,11 @@ func RequestID(next http.Handler) http.Handler {
 		id := r.Header.Get("X-Request-ID")
 		if id == "" {
 			b := make([]byte, 8)
-			rand.Read(b)
-			id = hex.EncodeToString(b)
+			if _, err := rand.Read(b); err == nil {
+				id = hex.EncodeToString(b)
+			} else {
+				id = "xxxxxxxxxxxxxxxx" // fallback — non-fatal
+			}
 		}
 		ctx := context.WithValue(r.Context(), keyRequestID, id)
 		w.Header().Set("X-Request-ID", id)

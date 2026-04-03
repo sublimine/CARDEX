@@ -16,6 +16,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"html"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/smtp"
@@ -75,7 +77,10 @@ func truncate(s string, n int) string {
 
 func secureToken(n int) string {
 	b := make([]byte, n)
-	rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		// crypto/rand failure is fatal — system entropy source is broken
+		panic("crypto/rand.Read failed: " + err.Error())
+	}
 	return hex.EncodeToString(b)
 }
 
@@ -85,7 +90,7 @@ func (d *Deps) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		Email string `json:"email"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_body", err.Error())
+		writeError(w, http.StatusBadRequest, "invalid_body", "invalid request body")
 		return
 	}
 	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
@@ -111,7 +116,10 @@ func (d *Deps) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		}
 
 		token := secureToken(32)
-		d.Redis.Set(ctx, "pwd_reset:"+token, userULID, time.Hour)
+		if err := d.Redis.Set(ctx, "pwd_reset:"+token, userULID, time.Hour).Err(); err != nil {
+			slog.Error("forgot-password: redis set failed", "error", err)
+			return
+		}
 
 		appURL := envOrDefault("APP_URL", "http://localhost:3001")
 		resetURL := appURL + "/dashboard/reset-password?token=" + token
@@ -127,7 +135,7 @@ func (d *Deps) ResetPassword(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_body", err.Error())
+		writeError(w, http.StatusBadRequest, "invalid_body", "invalid request body")
 		return
 	}
 	if req.Token == "" || req.Password == "" {
@@ -179,7 +187,7 @@ func (d *Deps) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, err := d.DB.Exec(ctx,
-		"UPDATE users SET email_verified=TRUE, email_verified_at=NOW(), updated_at=NOW() WHERE user_ulid=$1",
+		"UPDATE users SET email_verified_at=NOW(), updated_at=NOW() WHERE user_ulid=$1",
 		userULID); err != nil {
 		writeError(w, http.StatusInternalServerError, "db_error", err.Error())
 		return
@@ -198,7 +206,10 @@ func (d *Deps) sendVerificationEmail(userULID, email, fullName string) {
 		defer cancel()
 
 		token := secureToken(32)
-		d.Redis.Set(ctx, "email_verify:"+token, userULID, 72*time.Hour)
+		if err := d.Redis.Set(ctx, "email_verify:"+token, userULID, 72*time.Hour).Err(); err != nil {
+			slog.Error("send-verification-email: redis set failed", "error", err)
+			return
+		}
 
 		appURL := envOrDefault("APP_URL", "http://localhost:3001")
 		verifyURL := appURL + "/api/v1/auth/verify-email?token=" + token
@@ -208,31 +219,35 @@ func (d *Deps) sendVerificationEmail(userULID, email, fullName string) {
 
 // ── HTML email templates ───────────────────────────────────────────────────────
 
-func passwordResetEmailHTML(name, url string) string {
+func passwordResetEmailHTML(name, resetURL string) string {
+	safeName := html.EscapeString(name)
+	safeURL := html.EscapeString(resetURL)
 	return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="font-family:sans-serif;background:#0f0f0f;color:#e5e7eb;padding:40px">
 <div style="max-width:520px;margin:0 auto;background:#1a1a1a;border-radius:12px;padding:40px;border:1px solid #2d2d2d">
   <div style="margin-bottom:32px"><span style="background:#7c3aed;color:white;padding:6px 14px;border-radius:8px;font-weight:700;font-size:14px">CARDEX</span></div>
   <h1 style="color:white;font-size:22px;margin:0 0 16px">Restablecer contraseña</h1>
-  <p style="color:#9ca3af;line-height:1.6">Hola <strong style="color:white">` + name + `</strong>,<br><br>Hemos recibido una solicitud para restablecer tu contraseña. El enlace expira en <strong style="color:white">1 hora</strong>.</p>
+  <p style="color:#9ca3af;line-height:1.6">Hola <strong style="color:white">` + safeName + `</strong>,<br><br>Hemos recibido una solicitud para restablecer tu contraseña. El enlace expira en <strong style="color:white">1 hora</strong>.</p>
   <div style="text-align:center;margin:32px 0">
-    <a href="` + url + `" style="background:#7c3aed;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block">Restablecer contraseña →</a>
+    <a href="` + safeURL + `" style="background:#7c3aed;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block">Restablecer contraseña →</a>
   </div>
-  <p style="color:#6b7280;font-size:13px">Si no solicitaste este cambio, ignora este email.<br>Enlace directo: <a href="` + url + `" style="color:#7c3aed">` + url + `</a></p>
+  <p style="color:#6b7280;font-size:13px">Si no solicitaste este cambio, ignora este email.<br>Enlace directo: <a href="` + safeURL + `" style="color:#7c3aed">` + safeURL + `</a></p>
   <hr style="border:none;border-top:1px solid #2d2d2d;margin:24px 0">
   <p style="color:#4b5563;font-size:12px;text-align:center">© CARDEX · Pan-European Used Car Intelligence</p>
 </div></body></html>`
 }
 
-func emailVerifyHTML(name, url string) string {
+func emailVerifyHTML(name, verifyURL string) string {
+	safeName := html.EscapeString(name)
+	safeURL := html.EscapeString(verifyURL)
 	return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="font-family:sans-serif;background:#0f0f0f;color:#e5e7eb;padding:40px">
 <div style="max-width:520px;margin:0 auto;background:#1a1a1a;border-radius:12px;padding:40px;border:1px solid #2d2d2d">
   <div style="margin-bottom:32px"><span style="background:#7c3aed;color:white;padding:6px 14px;border-radius:8px;font-weight:700;font-size:14px">CARDEX</span></div>
   <h1 style="color:white;font-size:22px;margin:0 0 16px">Verifica tu cuenta</h1>
-  <p style="color:#9ca3af;line-height:1.6">Hola <strong style="color:white">` + name + `</strong>,<br><br>Gracias por registrarte en CARDEX. Haz clic abajo para verificar tu email.</p>
+  <p style="color:#9ca3af;line-height:1.6">Hola <strong style="color:white">` + safeName + `</strong>,<br><br>Gracias por registrarte en CARDEX. Haz clic abajo para verificar tu email.</p>
   <div style="text-align:center;margin:32px 0">
-    <a href="` + url + `" style="background:#7c3aed;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block">Verificar email →</a>
+    <a href="` + safeURL + `" style="background:#7c3aed;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block">Verificar email →</a>
   </div>
   <p style="color:#6b7280;font-size:13px">El enlace expira en 72 horas.</p>
   <hr style="border:none;border-top:1px solid #2d2d2d;margin:24px 0">

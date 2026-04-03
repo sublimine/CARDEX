@@ -37,7 +37,9 @@ func (d *Deps) AdminStats(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		defer wg.Done()
 		var count int
-		_ = d.DB.QueryRow(ctx, `SELECT COUNT(*) FROM entities WHERE active = true`).Scan(&count)
+		if err := d.DB.QueryRow(ctx, `SELECT COUNT(*) FROM entities WHERE active = true`).Scan(&count); err != nil {
+			slog.Warn("admin.stats: total_entities scan", "error", err)
+		}
 		mu.Lock()
 		resp.TotalEntities = count
 		mu.Unlock()
@@ -47,7 +49,9 @@ func (d *Deps) AdminStats(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		defer wg.Done()
 		var count int
-		_ = d.DB.QueryRow(ctx, `SELECT COUNT(*) FROM users`).Scan(&count)
+		if err := d.DB.QueryRow(ctx, `SELECT COUNT(*) FROM users`).Scan(&count); err != nil {
+			slog.Warn("admin.stats: total_users scan", "error", err)
+		}
 		mu.Lock()
 		resp.TotalUsers = count
 		mu.Unlock()
@@ -70,7 +74,9 @@ func (d *Deps) AdminStats(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		defer wg.Done()
 		var count int
-		_ = d.DB.QueryRow(ctx, `SELECT COUNT(*) FROM scrape_jobs WHERE created_at >= CURRENT_DATE`).Scan(&count)
+		if err := d.DB.QueryRow(ctx, `SELECT COUNT(*) FROM scrape_jobs WHERE created_at >= CURRENT_DATE`).Scan(&count); err != nil {
+			slog.Warn("admin.stats: scrape_jobs_today scan", "error", err)
+		}
 		mu.Lock()
 		resp.ScrapeJobsToday = count
 		mu.Unlock()
@@ -80,7 +86,9 @@ func (d *Deps) AdminStats(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		defer wg.Done()
 		var count int
-		_ = d.DB.QueryRow(ctx, `SELECT COUNT(*) FROM notifications WHERE created_at >= NOW() - INTERVAL '24 hours'`).Scan(&count)
+		if err := d.DB.QueryRow(ctx, `SELECT COUNT(*) FROM notifications WHERE created_at >= NOW() - INTERVAL '24 hours'`).Scan(&count); err != nil {
+			slog.Warn("admin.stats: notifications_24h scan", "error", err)
+		}
 		mu.Lock()
 		resp.NotificationsSent24h = count
 		mu.Unlock()
@@ -179,7 +187,7 @@ LIMIT $` + strconv.Itoa(argIdx) + ` OFFSET $` + strconv.Itoa(argIdx+1)
 	rows, err := d.DB.Query(ctx, dataQuery, dataArgs...)
 	if err != nil {
 		slog.Error("admin.entity-list: query", "error", err)
-		writeJSON(w, http.StatusOK, adminEntityListResponse{Entities: []adminEntityRow{}, Total: 0})
+		writeError(w, http.StatusServiceUnavailable, "db_unavailable", "database temporarily unavailable")
 		return
 	}
 	defer rows.Close()
@@ -189,6 +197,7 @@ LIMIT $` + strconv.Itoa(argIdx) + ` OFFSET $` + strconv.Itoa(argIdx+1)
 		var row adminEntityRow
 		if err := rows.Scan(&row.EntityULID, &row.LegalName, &row.CountryCode,
 			&row.SubscriptionTier, &row.CreatedAt, &row.UserCount); err != nil {
+			slog.Warn("admin.entity-list: row scan", "error", err)
 			continue
 		}
 		entities = append(entities, row)
@@ -318,7 +327,7 @@ LIMIT $` + strconv.Itoa(argIdx) + ` OFFSET $` + strconv.Itoa(argIdx+1)
 	rows, err := d.DB.Query(ctx, dataQuery, dataArgs...)
 	if err != nil {
 		slog.Error("admin.user-list: query", "error", err)
-		writeJSON(w, http.StatusOK, adminUserListResponse{Users: []adminUserRow{}, Total: 0})
+		writeError(w, http.StatusServiceUnavailable, "db_unavailable", "database temporarily unavailable")
 		return
 	}
 	defer rows.Close()
@@ -328,6 +337,7 @@ LIMIT $` + strconv.Itoa(argIdx) + ` OFFSET $` + strconv.Itoa(argIdx+1)
 		var row adminUserRow
 		if err := rows.Scan(&row.UserULID, &row.Email, &row.FullName, &row.EntityULID,
 			&row.IsDealer, &row.EmailVerified, &row.CreatedAt); err != nil {
+			slog.Warn("admin.user-list: row scan", "error", err)
 			continue
 		}
 		users = append(users, row)
@@ -366,7 +376,7 @@ ORDER BY platform, started_at DESC`
 	rows, err := d.DB.Query(ctx, query)
 	if err != nil {
 		slog.Error("admin.scrapers: query", "error", err)
-		writeJSON(w, http.StatusOK, map[string]any{"scrapers": []scraperRow{}})
+		writeError(w, http.StatusServiceUnavailable, "db_unavailable", "database temporarily unavailable")
 		return
 	}
 	defer rows.Close()
@@ -377,6 +387,7 @@ ORDER BY platform, started_at DESC`
 		var row scraperRow
 		if err := rows.Scan(&row.Platform, &row.Status, &row.RecordsFetched,
 			&row.StartedAt, &row.CompletedAt); err != nil {
+			slog.Warn("admin.scrapers: row scan", "error", err)
 			continue
 		}
 		if row.CompletedAt != nil {
