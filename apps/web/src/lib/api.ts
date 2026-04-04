@@ -3,7 +3,12 @@
  * Used from both Server Components (SSR) and Client Components (SWR).
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'
+// SSR (server-side): use internal Docker hostname so container-to-container works.
+// Browser (client-side): use the public URL accessible from the user's machine.
+const API_BASE =
+  typeof window === 'undefined'
+    ? (process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080')
+    : (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080')
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {

@@ -291,6 +291,37 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
+  # Demo seed: inserts 30 sample vehicles into PostgreSQL on first boot.
+  # ---------------------------------------------------------------------------
+  pg-seed:
+    image: postgres:16-alpine
+    container_name: cardex-pg-seed
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./scripts/seed-demo.sql:/seed-demo.sql:ro
+    environment:
+      PGPASSWORD: cardex_dev_only
+    entrypoint: >
+      sh -c "psql -h postgres -U cardex -d cardex -f /seed-demo.sql && echo 'Seed done'"
+    restart: "no"
+
+  # ---------------------------------------------------------------------------
+  # Demo seed: creates MeiliSearch index settings + 30 sample vehicle docs.
+  # ---------------------------------------------------------------------------
+  meili-seed:
+    image: alpine/curl:latest
+    container_name: cardex-meili-seed
+    depends_on:
+      meilisearch:
+        condition: service_healthy
+    volumes:
+      - ./scripts/init-meili.sh:/init-meili.sh:ro
+    entrypoint: ["sh", "/init-meili.sh"]
+    restart: "no"
+
+  # ---------------------------------------------------------------------------
   # Next.js Web App (marketplace + analytics + history + dealer SaaS)
   # ---------------------------------------------------------------------------
   web:
@@ -303,10 +334,19 @@ services:
       - "3001:3000"
     depends_on:
       - api
+      - meilisearch
     environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+      NEXT_TELEMETRY_DISABLED: "1"
+      # API_URL: internal Docker hostname for SSR fetches (server → api container)
+      API_URL: http://api:8080
+      # NEXT_PUBLIC_*: inlined at build time, used by the browser
       NEXT_PUBLIC_API_URL: http://localhost:8080
       NEXT_PUBLIC_MEILI_URL: http://localhost:7700
-      NEXT_PUBLIC_MEILI_SEARCH_KEY: ""   # public search-only key set at runtime
+      # In dev, use the master key directly. In prod, generate a search-only key.
+      NEXT_PUBLIC_MEILI_SEARCH_KEY: cardex_meili_dev_only
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
