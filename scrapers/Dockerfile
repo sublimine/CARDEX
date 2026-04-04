@@ -1,6 +1,6 @@
 FROM python:3.12-slim-bookworm
 
-WORKDIR /app
+WORKDIR /app/scrapers
 
 # System deps for Playwright
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -15,6 +15,8 @@ COPY . .
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
+
+WORKDIR /app/scrapers
 
 # Default: single scraper via SCRAPER_TARGET.
 # Override CMD in docker-compose for multi-scraper mode with run_all.

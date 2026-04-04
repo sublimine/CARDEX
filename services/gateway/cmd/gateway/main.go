@@ -62,7 +62,11 @@ func init() {
 }
 
 func handleB2BWebhook(w http.ResponseWriter, r *http.Request) {
+	// Accept partner ID from B2B webhooks (X-Partner-ID) or scrapers (X-Scraper-Source)
 	partnerID := r.Header.Get("X-Partner-ID")
+	if partnerID == "" {
+		partnerID = r.Header.Get("X-Scraper-Source")
+	}
 	if partnerID == "" {
 		http.Error(w, `{"error": "missing partner ID"}`, http.StatusBadRequest)
 		return
@@ -82,11 +86,26 @@ func handleB2BWebhook(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error": "unauthorized"}`, http.StatusUnauthorized)
 		return
 	}
-	mac := hmac.New(sha256.New, b2bHmacSecret)
-	mac.Write(body)
-	expectedMAC := hex.EncodeToString(mac.Sum(nil))
 
-	if !hmac.Equal([]byte(signature), []byte(expectedMAC)) {
+	// Scrapers sign "timestamp.body", B2B webhooks sign just "body".
+	// Try timestamp-prefixed first (if header present), then plain body.
+	verified := false
+	if ts := r.Header.Get("X-Cardex-Timestamp"); ts != "" {
+		mac := hmac.New(sha256.New, b2bHmacSecret)
+		mac.Write([]byte(ts + "."))
+		mac.Write(body)
+		if hmac.Equal([]byte(signature), []byte(hex.EncodeToString(mac.Sum(nil)))) {
+			verified = true
+		}
+	}
+	if !verified {
+		mac := hmac.New(sha256.New, b2bHmacSecret)
+		mac.Write(body)
+		if hmac.Equal([]byte(signature), []byte(hex.EncodeToString(mac.Sum(nil)))) {
+			verified = true
+		}
+	}
+	if !verified {
 		log.Printf("[SECURITY DROP] HMAC Inválido para Partner: %s", partnerID)
 		http.Error(w, `{"error": "unauthorized"}`, http.StatusUnauthorized)
 		return
