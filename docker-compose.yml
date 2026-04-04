@@ -279,7 +279,7 @@ services:
       dockerfile: services/gateway/Dockerfile
     container_name: cardex-gateway
     ports:
-      - "8090:8090"
+      - "8090:8080"
     depends_on:
       redis:
         condition: service_healthy

@@ -71,7 +71,7 @@ func main() {
 	slog.Info("meili-sync: stopped")
 }
 
-func ensureIndex(client *meilisearch.Client) error {
+func ensureIndex(client meilisearch.ServiceManager) error {
 	// Create index if it doesn't exist
 	task, err := client.CreateIndex(&meilisearch.IndexConfig{
 		Uid:        meiliIndex,
@@ -117,7 +117,7 @@ func ensureIndex(client *meilisearch.Client) error {
 	return nil
 }
 
-func runSyncLoop(ctx context.Context, rdb *redis.Client, index *meilisearch.Index) {
+func runSyncLoop(ctx context.Context, rdb *redis.Client, index meilisearch.IndexManager) {
 	var batch []map[string]interface{}
 	ticker := time.NewTicker(flushInterval)
 	defer ticker.Stop()
