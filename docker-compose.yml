@@ -250,25 +250,111 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
-  # Scrapers (Python httpx + Playwright — one container, env controls which)
-  # In dev: runs autoscout24_de only. In prod: one container per scraper.
+  # Scrapers — one container per territory, each runs all portals in parallel.
+  # Uses run_all.py with SCRAPER_TARGETS (comma-separated).
+  # Loops every CYCLE_WAIT_SECONDS (default 3600s = 1h).
   # ---------------------------------------------------------------------------
-  scraper:
-    build:
-      context: scrapers
-      dockerfile: Dockerfile
-    container_name: cardex-scraper-dev
+  scraper-de:
+    build: { context: scrapers, dockerfile: Dockerfile }
+    container_name: cardex-scraper-de
     depends_on:
-      redis:
-        condition: service_healthy
+      redis: { condition: service_healthy }
+      gateway: { condition: service_started }
     environment:
-      GATEWAY_URL: http://gateway:8090
-      GATEWAY_HMAC_SECRET: dev_scraper_hmac_secret_change_in_prod
+      GATEWAY_URL: http://gateway:8080
+      GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
       REDIS_URL: redis://redis:6379
-      SCRAPER_TARGET: autoscout24_de
+      SCRAPER_TARGETS: autoscout24_de,mobile_de,kleinanzeigen_de,heycar_de,pkw_de
+      CYCLE_WAIT_SECONDS: "3600"
       LOG_LEVEL: info
       PLAYWRIGHT_HEADLESS: "true"
-    restart: "no"   # don't auto-restart in dev; run manually
+    command: ["-m", "run_all"]
+    restart: unless-stopped
+
+  scraper-es:
+    build: { context: scrapers, dockerfile: Dockerfile }
+    container_name: cardex-scraper-es
+    depends_on:
+      redis: { condition: service_healthy }
+      gateway: { condition: service_started }
+    environment:
+      GATEWAY_URL: http://gateway:8080
+      GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
+      REDIS_URL: redis://redis:6379
+      SCRAPER_TARGETS: autoscout24_es,coches_net,wallapop,milanuncios,autocasion
+      CYCLE_WAIT_SECONDS: "3600"
+      LOG_LEVEL: info
+      PLAYWRIGHT_HEADLESS: "true"
+    command: ["-m", "run_all"]
+    restart: unless-stopped
+
+  scraper-fr:
+    build: { context: scrapers, dockerfile: Dockerfile }
+    container_name: cardex-scraper-fr
+    depends_on:
+      redis: { condition: service_healthy }
+      gateway: { condition: service_started }
+    environment:
+      GATEWAY_URL: http://gateway:8080
+      GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
+      REDIS_URL: redis://redis:6379
+      SCRAPER_TARGETS: autoscout24_fr,leboncoin,lacentrale,paruvendu
+      CYCLE_WAIT_SECONDS: "3600"
+      LOG_LEVEL: info
+      PLAYWRIGHT_HEADLESS: "true"
+    command: ["-m", "run_all"]
+    restart: unless-stopped
+
+  scraper-nl:
+    build: { context: scrapers, dockerfile: Dockerfile }
+    container_name: cardex-scraper-nl
+    depends_on:
+      redis: { condition: service_healthy }
+      gateway: { condition: service_started }
+    environment:
+      GATEWAY_URL: http://gateway:8080
+      GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
+      REDIS_URL: redis://redis:6379
+      SCRAPER_TARGETS: autoscout24_nl,marktplaats,autotrack,gaspedaal
+      CYCLE_WAIT_SECONDS: "3600"
+      LOG_LEVEL: info
+      PLAYWRIGHT_HEADLESS: "true"
+    command: ["-m", "run_all"]
+    restart: unless-stopped
+
+  scraper-be:
+    build: { context: scrapers, dockerfile: Dockerfile }
+    container_name: cardex-scraper-be
+    depends_on:
+      redis: { condition: service_healthy }
+      gateway: { condition: service_started }
+    environment:
+      GATEWAY_URL: http://gateway:8080
+      GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
+      REDIS_URL: redis://redis:6379
+      SCRAPER_TARGETS: autoscout24_be,2dehands,gocar
+      CYCLE_WAIT_SECONDS: "3600"
+      LOG_LEVEL: info
+      PLAYWRIGHT_HEADLESS: "true"
+    command: ["-m", "run_all"]
+    restart: unless-stopped
+
+  scraper-ch:
+    build: { context: scrapers, dockerfile: Dockerfile }
+    container_name: cardex-scraper-ch
+    depends_on:
+      redis: { condition: service_healthy }
+      gateway: { condition: service_started }
+    environment:
+      GATEWAY_URL: http://gateway:8080
+      GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
+      REDIS_URL: redis://redis:6379
+      SCRAPER_TARGETS: autoscout24_ch,comparis,tutti
+      CYCLE_WAIT_SECONDS: "3600"
+      LOG_LEVEL: info
+      PLAYWRIGHT_HEADLESS: "true"
+    command: ["-m", "run_all"]
+    restart: unless-stopped
 
   # ---------------------------------------------------------------------------
   # CARDEX Gateway (B2B webhook receiver + scraper ingest endpoint, HMAC auth)
@@ -291,6 +377,37 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
+  # Demo seed: inserts 30 sample vehicles into PostgreSQL on first boot.
+  # ---------------------------------------------------------------------------
+  pg-seed:
+    image: postgres:16-alpine
+    container_name: cardex-pg-seed
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./scripts/seed-demo.sql:/seed-demo.sql:ro
+    environment:
+      PGPASSWORD: cardex_dev_only
+    entrypoint: >
+      sh -c "psql -h postgres -U cardex -d cardex -f /seed-demo.sql && echo 'Seed done'"
+    restart: "no"
+
+  # ---------------------------------------------------------------------------
+  # Demo seed: creates MeiliSearch index settings + 30 sample vehicle docs.
+  # ---------------------------------------------------------------------------
+  meili-seed:
+    image: alpine/curl:latest
+    container_name: cardex-meili-seed
+    depends_on:
+      meilisearch:
+        condition: service_healthy
+    volumes:
+      - ./scripts/init-meili.sh:/init-meili.sh:ro
+    entrypoint: ["sh", "/init-meili.sh"]
+    restart: "no"
+
+  # ---------------------------------------------------------------------------
   # Next.js Web App (marketplace + analytics + history + dealer SaaS)
   # ---------------------------------------------------------------------------
   web:
@@ -303,14 +420,18 @@ services:
       - "3001:3000"
     depends_on:
       - api
+      - meilisearch
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8080
-      NEXT_PUBLIC_MEILI_URL: http://localhost:7700
-      NEXT_PUBLIC_MEILI_SEARCH_KEY: ""
-      NEXT_TELEMETRY_DISABLED: "1"
       NODE_ENV: production
       PORT: "3000"
       HOSTNAME: "0.0.0.0"
+      NEXT_TELEMETRY_DISABLED: "1"
+      # API_URL: internal Docker hostname for SSR fetches (server → api container)
+      API_URL: http://api:8080
+      # NEXT_PUBLIC_*: inlined at build time, used by the browser
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+      NEXT_PUBLIC_MEILI_URL: http://localhost:7700
+      NEXT_PUBLIC_MEILI_SEARCH_KEY: cardex_meili_dev_only
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------

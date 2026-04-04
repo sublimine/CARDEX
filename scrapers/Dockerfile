@@ -16,5 +16,7 @@ COPY . .
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 
-# SCRAPER_TARGET env var selects which scraper to run (e.g. autoscout24_de)
-ENTRYPOINT ["python", "-m", "run_scraper"]
+# Default: single scraper via SCRAPER_TARGET.
+# Override CMD in docker-compose for multi-scraper mode with run_all.
+ENTRYPOINT ["python"]
+CMD ["-m", "run_scraper"]

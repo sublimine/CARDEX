@@ -23,10 +23,13 @@ const nextConfig = {
     serverComponentsExternalPackages: ['meilisearch'],
   },
   async rewrites() {
+    // API_URL is the internal Docker hostname (server-side proxy).
+    // Falls back to NEXT_PUBLIC_API_URL for local development without Docker.
+    const apiDest = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/:path*`,
+        destination: `${apiDest}/api/:path*`,
       },
     ]
   },
