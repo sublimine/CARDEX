@@ -4,6 +4,7 @@ import { searchListings } from '@/lib/api'
 import { SearchBar } from '@/components/search/SearchBar'
 import { ListingCard } from '@/components/search/ListingCard'
 import { FilterSidebar } from '@/components/search/FilterSidebar'
+import { SortSelect } from '@/components/search/SortSelect'
 
 export const metadata: Metadata = {
   title: 'Search Used Cars — All Europe',
@@ -102,37 +103,6 @@ export default async function SearchPage({ searchParams: sp }: PageProps) {
         </div>
       </div>
     </div>
-  )
-}
-
-function SortSelect({ current }: { current?: string }) {
-  const options = [
-    { value: '', label: 'Relevance' },
-    { value: 'price_eur:asc', label: 'Price: Low → High' },
-    { value: 'price_eur:desc', label: 'Price: High → Low' },
-    { value: 'mileage_km:asc', label: 'Mileage: Lowest' },
-    { value: 'year:desc', label: 'Year: Newest' },
-  ]
-  return (
-    <form>
-      <select
-        name="sort"
-        defaultValue={current ?? ''}
-        onChange={e => {
-          const form = e.target.form!
-          // Submit form on change
-          const params = new URLSearchParams(window.location.search)
-          if (e.target.value) params.set('sort', e.target.value)
-          else params.delete('sort')
-          window.location.search = params.toString()
-        }}
-        className="rounded-md border border-surface-border bg-surface-card px-3 py-1.5 text-sm text-white focus:border-brand-500 focus:outline-none"
-      >
-        {options.map(o => (
-          <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-      </select>
-    </form>
   )
 }
 
