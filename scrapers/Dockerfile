@@ -16,5 +16,6 @@ COPY . .
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 
-# SCRAPER_TARGET env var selects which scraper to run (e.g. autoscout24_de)
+# Default: single scraper via SCRAPER_TARGET.
+# Multi-scraper mode: set CMD to ["python", "-m", "run_all"] and use SCRAPER_TARGETS.
 ENTRYPOINT ["python", "-m", "run_scraper"]
