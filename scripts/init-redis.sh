@@ -1,10 +1,10 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # =============================================================================
 # CARDEX Redis 7.2+ Initialization
 # Execute on: Nodo 02 (NUMA node 0, cores 0-15)
 # Requires: redis-cli, RedisBloom module loaded
 # =============================================================================
-set -euo pipefail
+set -eu
 
 REDIS_CLI="redis-cli"
 REDIS_HOST="${REDIS_HOST:-127.0.0.1}"
@@ -16,32 +16,30 @@ echo "=== CARDEX Redis Bootstrap ==="
 # ---------------------------------------------------------------------------
 # 1. STREAMS + CONSUMER GROUPS
 # ---------------------------------------------------------------------------
-declare -A STREAMS=(
-    # Core pipeline
-    ["stream:ingestion_raw"]="cg_pipeline"
-    ["stream:db_write"]="cg_forensics"
-    ["stream:classified"]="cg_alpha"
-    ["stream:forensic_updates"]="cg_forensics"
-    # Marketplace / search sync
-    ["stream:meili_sync"]="cg_meili_indexer"     # vehicle upserts → MeiliSearch
-    ["stream:publish_jobs"]="cg_multipost"        # dealer multiposting jobs
-    ["stream:lead_events"]="cg_crm"              # inbound leads → CRM handlers
-    ["stream:google_maps_raw"]="cg_pipeline"     # Google Maps dealer discovery raw
-    # Analytics
-    ["stream:price_events"]="cg_price_index"     # price changes → ClickHouse price_history
-    ["stream:demand_signals"]="cg_analytics"     # search/view events → ClickHouse demand_signals
-    # Legacy (retained for compatibility)
-    ["stream:legal_audit_pending"]="cg_gov"
-    ["stream:operator_events"]="cg_karma"
-)
-
-for stream in "${!STREAMS[@]}"; do
-    cg="${STREAMS[$stream]}"
-    # Create stream with initial entry if it doesn't exist, then create consumer group
+create_stream_group() {
+    stream="$1"
+    cg="$2"
     $R XGROUP CREATE "$stream" "$cg" 0 MKSTREAM 2>/dev/null || \
         echo "  [SKIP] $stream/$cg already exists"
     echo "  [OK] $stream → $cg"
-done
+}
+
+# Core pipeline
+create_stream_group "stream:ingestion_raw" "cg_pipeline"
+create_stream_group "stream:db_write" "cg_forensics"
+create_stream_group "stream:classified" "cg_alpha"
+create_stream_group "stream:forensic_updates" "cg_forensics"
+# Marketplace / search sync
+create_stream_group "stream:meili_sync" "cg_meili_indexer"
+create_stream_group "stream:publish_jobs" "cg_multipost"
+create_stream_group "stream:lead_events" "cg_crm"
+create_stream_group "stream:google_maps_raw" "cg_pipeline"
+# Analytics
+create_stream_group "stream:price_events" "cg_price_index"
+create_stream_group "stream:demand_signals" "cg_analytics"
+# Legacy (retained for compatibility)
+create_stream_group "stream:legal_audit_pending" "cg_gov"
+create_stream_group "stream:operator_events" "cg_karma"
 
 # ---------------------------------------------------------------------------
 # 2. BLOOM FILTERS
@@ -53,7 +51,6 @@ $R BF.RESERVE bloom:vehicles 0.0001 50000000 NONSCALING 2>/dev/null || \
 echo "  [OK] bloom:vehicles (50M capacity, 0.01% FP, ~60MB)"
 
 # Listing URL dedup — prevents re-scraping identical URLs, 100M cap, ~120MB
-# Key: SHA256(url) — written by scrapers before POSTing to gateway
 $R BF.RESERVE bloom:listing_urls 0.0001 100000000 NONSCALING 2>/dev/null || \
     echo "  [SKIP] bloom:listing_urls already exists"
 echo "  [OK] bloom:listing_urls (100M capacity, 0.01% FP, ~120MB)"
@@ -108,7 +105,6 @@ echo "  [OK] logistics:worst_case (12 countries)"
 # ---------------------------------------------------------------------------
 
 # 5a. HMAC Quote Mutex (Phase 6)
-# Atomic: verify quote_id, lock vehicle, return result
 QUOTE_MUTEX_SHA=$($R SCRIPT LOAD '
 local key = KEYS[1]
 local expected_quote = ARGV[1]
@@ -120,17 +116,17 @@ if current == false then
     return redis.error_reply("VEHICLE_NOT_FOUND")
 end
 if current ~= expected_quote then
-    return -2  -- PRICE_MISMATCH
+    return -2
 end
 
 local lock_key = "lock:" .. KEYS[1]
 local locked = redis.call("SET", lock_key, buyer_id, "NX", "EX", lock_ttl)
 if locked == false then
-    return -1  -- ALREADY_LOCKED
+    return -1
 end
 
 redis.call("HSET", key, "locked_by", buyer_id)
-return 1  -- SUCCESS
+return 1
 ')
 echo "  [OK] Lua: quote_mutex ($QUOTE_MUTEX_SHA)"
 
@@ -144,7 +140,7 @@ if remaining == nil then
     return redis.error_reply("NO_CREDITS")
 end
 if remaining < cost then
-    return -1  -- INSUFFICIENT_CREDITS
+    return -1
 end
 
 local ttl = redis.call("TTL", key)
@@ -168,12 +164,12 @@ local elapsed = now - last_refill
 local new_tokens = math.min(max_tokens, tokens + (elapsed * refill_rate))
 
 if new_tokens < 1 then
-    return 0  -- RATE_LIMITED
+    return 0
 end
 
 redis.call("HMSET", key, "tokens", new_tokens - 1, "last_refill", now)
 redis.call("EXPIRE", key, 3600)
-return 1  -- ALLOWED
+return 1
 ')
 echo "  [OK] Lua: rate_limiter ($RATE_LIMIT_SHA)"
 
@@ -181,14 +177,11 @@ echo "  [OK] Lua: rate_limiter ($RATE_LIMIT_SHA)"
 # 6. SORTED SETS — Leaderboards / Rankings
 # ---------------------------------------------------------------------------
 
-# Top models by demand (search count last 7d) — refreshed by scheduler
-# Used by homepage "Most searched" widget
 $R ZADD demand:top_models:placeholder 0 "placeholder" > /dev/null
 echo "  [OK] demand:top_models (placeholder, scheduler populates nightly)"
 
 # ---------------------------------------------------------------------------
 # 7. HASH — Scraper Rate Limit Config (per domain)
-# Scrapers read this at startup; scheduler can update without restart
 # ---------------------------------------------------------------------------
 $R HSET scraper:rate_limits \
     autoscout24.es  "0.3" \

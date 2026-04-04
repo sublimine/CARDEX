@@ -109,7 +109,7 @@ services:
         condition: service_healthy
     volumes:
       - ./scripts/init-redis.sh:/init-redis.sh:ro
-    entrypoint: ["bash", "/init-redis.sh"]
+    entrypoint: ["sh", "/init-redis.sh"]
     environment:
       REDIS_HOST: redis
       REDIS_PORT: "6379"
@@ -157,7 +157,7 @@ services:
         condition: service_completed_successfully
     environment:
       DATABASE_URL: postgres://cardex:cardex_dev_only@postgres:5432/cardex
-      REDIS_URL: redis://redis:6379
+      REDIS_ADDR: redis:6379
       GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
       LOG_LEVEL: info
     restart: unless-stopped
@@ -216,8 +216,10 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://cardex:cardex_dev_only@postgres:5432/cardex
-      REDIS_URL: redis://redis:6379
-      CLICKHOUSE_DSN: clickhouse://cardex:cardex_dev_only@clickhouse:9000/cardex
+      REDIS_ADDR: redis:6379
+      CLICKHOUSE_ADDR: clickhouse:9000
+      CLICKHOUSE_USER: cardex
+      CLICKHOUSE_PASSWORD: cardex_dev_only
       LOG_LEVEL: info
     restart: unless-stopped
 
@@ -240,7 +242,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      REDIS_URL: redis://redis:6379
+      REDIS_ADDR: redis:6379
       MEILI_URL: http://meilisearch:7700
       MEILI_MASTER_KEY: cardex_meili_dev_only
       DATABASE_URL: postgres://cardex:cardex_dev_only@postgres:5432/cardex
@@ -282,8 +284,8 @@ services:
       redis:
         condition: service_healthy
     environment:
-      REDIS_URL: redis://redis:6379
-      GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
+      REDIS_ADDR: redis:6379
+      HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
       PORT: "8090"
       LOG_LEVEL: info
     restart: unless-stopped
