@@ -2,9 +2,15 @@
 Entry point for the dealer_spider package.
 
 Usage:
-    python -m dealer_spider discover   — run the Discovery Orchestrator
-    python -m dealer_spider spider     — run the Dealer Web Spider
-    python -m dealer_spider all        — run discover then spider
+    python -m dealer_spider discover              — run ALL discovery probes
+    python -m dealer_spider discover --probe OSM  — run only the OSM probe
+    python -m dealer_spider discover --probe OEM --probe INSEE  — run specific probes
+    python -m dealer_spider discover --country DE --country FR  — specific countries
+    python -m dealer_spider spider                — run the Dealer Web Spider
+    python -m dealer_spider all                   — run discover then spider
+
+Available probes: OSM, INSEE (FR only), ZEFIX (CH only), COMMON_CRAWL,
+                  GOOGLE_MAPS (requires API key), OEM, PORTAL
 """
 from __future__ import annotations
 
@@ -35,9 +41,12 @@ def _configure_logging() -> None:
     )
 
 
-async def _run_discover() -> None:
+async def _run_discover(
+    countries: list[str] | None = None,
+    probes: list[str] | None = None,
+) -> None:
     from scrapers.dealer_spider.discovery import run as discover_run
-    await discover_run()
+    await discover_run(countries=countries, probe_filter=probes)
 
 
 async def _run_spider() -> None:
@@ -45,9 +54,12 @@ async def _run_spider() -> None:
     await spider_run()
 
 
-async def _run_all() -> None:
+async def _run_all(
+    countries: list[str] | None = None,
+    probes: list[str] | None = None,
+) -> None:
     log.info("dealer_spider.all", phase="discovery")
-    await _run_discover()
+    await _run_discover(countries=countries, probes=probes)
     log.info("dealer_spider.all", phase="spider")
     await _run_spider()
 
@@ -55,27 +67,53 @@ async def _run_all() -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="dealer_spider",
-        description="CARDEX Dealer Discovery & Spider",
+        description="CARDEX Dealer Discovery & Spider — Full-Spectrum Multi-Source",
     )
     parser.add_argument(
         "command",
         choices=["discover", "spider", "all"],
-        help="discover = find dealers via Google Places, "
+        help="discover = find dealers via all probes, "
              "spider = crawl dealer websites, "
              "all = discover then spider",
+    )
+    parser.add_argument(
+        "--probe",
+        action="append",
+        dest="probes",
+        metavar="NAME",
+        help="Run only specific probes (can be repeated). "
+             "Options: OSM, INSEE, ZEFIX, COMMON_CRAWL, GOOGLE_MAPS, OEM, PORTAL",
+    )
+    parser.add_argument(
+        "--country",
+        action="append",
+        dest="countries",
+        metavar="CC",
+        help="Run only for specific countries (can be repeated). "
+             "Options: DE, ES, FR, NL, BE, CH",
     )
     args = parser.parse_args()
 
     _configure_logging()
 
-    coro = {
-        "discover": _run_discover,
-        "spider": _run_spider,
-        "all": _run_all,
-    }[args.command]
+    if args.command == "discover":
+        coro = _run_discover(
+            countries=args.countries,
+            probes=args.probes,
+        )
+    elif args.command == "spider":
+        coro = _run_spider()
+    elif args.command == "all":
+        coro = _run_all(
+            countries=args.countries,
+            probes=args.probes,
+        )
+    else:
+        parser.print_help()
+        sys.exit(1)
 
     try:
-        asyncio.run(coro())
+        asyncio.run(coro)
     except KeyboardInterrupt:
         log.info("dealer_spider.interrupted")
         sys.exit(0)
