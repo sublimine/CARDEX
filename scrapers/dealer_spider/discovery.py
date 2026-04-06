@@ -1454,7 +1454,7 @@ async def _upsert_dealer(pg: asyncpg.Pool, record: DealerRecord) -> None:
             $16, ARRAY[$16]::text[], 'PENDING',
             NOW(), NOW()
         )
-        ON CONFLICT (COALESCE(place_id, ''), COALESCE(registry_id, ''), name, country)
+        ON CONFLICT (COALESCE(place_id, ''), COALESCE(registry_id, ''), COALESCE(osm_id, ''), name, country)
         DO UPDATE SET
             lat                = COALESCE(EXCLUDED.lat, dealers.lat),
             lng                = COALESCE(EXCLUDED.lng, dealers.lng),
