@@ -1499,42 +1499,55 @@ async def _upsert_dealer(pg: asyncpg.Pool, record: DealerRecord) -> None:
     )
 
 
+_STREAM_MISSING_URL = "stream:dealers_missing_url"
+_STREAM_SNIPER_QUEUE = "stream:dealers_sniper_queue"
+
+
 async def _publish_dealer(rdb: Any, record: DealerRecord) -> None:
-    """Publish a dealer to stream:dealer_discovered for spider consumption."""
+    """
+    Route dealer to the correct stream based on whether it has a website.
+
+    Has website  → stream:dealer_discovered (spider consumes immediately)
+    No website   → stream:dealers_missing_url (URL resolver consumes in real-time)
+    """
     dealer_id = record.place_id or record.registry_id or record.osm_id or _stable_id(record.name, record.country)
-    await rdb.xadd(
-        _STREAM_OUT,
-        {
-            "dealer_id": dealer_id,
-            "name": record.name,
-            "country": record.country,
-            "website": record.website or "",
-            "source": record.source,
-        },
-    )
+    payload = {
+        "dealer_id": dealer_id,
+        "name": record.name,
+        "country": record.country,
+        "city": record.city or "",
+        "postcode": record.postcode or "",
+        "source": record.source,
+    }
+
+    if record.website:
+        payload["website"] = record.website
+        await rdb.xadd(_STREAM_OUT, payload)
+    else:
+        # No website → route to URL resolver stream for real-time resolution
+        await rdb.xadd(_STREAM_MISSING_URL, payload)
 
 
-# ── URL Resolution Engine (DuckDuckGo/Bing) ────────────────────────────────
-# Takes dealers WITHOUT a website and resolves their URL via search engines.
-# This is NOT a probe — it runs AFTER all probes complete, as an enrichment
-# pass on the dealers table. Coste: 0€.
+# ── URL Resolution Engine (DuckDuckGo) — STREAM CONSUMER ────────────────────
+# Runs as an independent service consuming stream:dealers_missing_url in
+# real-time. Every dealer that Phase 1 discovers WITHOUT a website lands
+# here within milliseconds. No waiting. No batching. Pure event-driven.
 
 
 class URLResolver:
     """
-    Resolves dealer websites from business name + city via DuckDuckGo HTML.
+    Stream consumer: reads from stream:dealers_missing_url, resolves websites
+    via DuckDuckGo HTML scraping, routes results:
 
-    Strategy:
-      1. Query DuckDuckGo HTML: "{name} {city} {country_name} auto dealer site"
-      2. Parse first organic result that isn't a portal/directory
-      3. Validate: HEAD request to check domain is alive + looks automotive
-      4. Update dealers.website in PostgreSQL
+      Resolved   → UPDATE dealers.website + publish to stream:dealer_discovered
+      Unresolved → publish to stream:dealers_sniper_queue (Google Places last resort)
 
-    Excludes known portals (AutoScout24, mobile.de, etc.) from results to
-    avoid circular references. We want the dealer's OWN website.
+    Runs continuously alongside Phase 1. Zero idle time.
     """
 
     _DDG_URL = "https://html.duckduckgo.com/html/"
+    _CONSUMER_GROUP = "cg_url_resolver"
+    _CONSUMER_NAME = "resolver-1"
 
     _PORTAL_DOMAINS = frozenset({
         "autoscout24.", "mobile.de", "kleinanzeigen.de", "heycar.",
@@ -1572,33 +1585,23 @@ class URLResolver:
         self._rate = _TokenBucket(0.3)  # 1 req per 3.3s — polite to DDG
         self._resolved = 0
         self._failed = 0
+        self._stop = asyncio.Event()
 
-    async def resolve_missing_websites(
-        self, pg: asyncpg.Pool, rdb: Any
-    ) -> tuple[int, int]:
+    async def run(self, pg: asyncpg.Pool, rdb: Any) -> None:
         """
-        Query dealers with website IS NULL and spider_status = 'PENDING',
-        resolve their URLs via DuckDuckGo, update the database.
-
-        Returns (resolved_count, failed_count).
+        Main loop: consume stream:dealers_missing_url indefinitely.
+        Resolves URLs in real-time as Phase 1 discovers dealers.
         """
-        rows = await pg.fetch(
-            """
-            SELECT id, name, city, postcode, country, registry_id
-            FROM dealers
-            WHERE website IS NULL
-              AND spider_status = 'PENDING'
-              AND name IS NOT NULL AND name != ''
-            ORDER BY country, city NULLS LAST
-            LIMIT 10000
-            """
-        )
+        # Ensure consumer group exists
+        try:
+            await rdb.xgroup_create(
+                _STREAM_MISSING_URL, self._CONSUMER_GROUP, "0", mkstream=True
+            )
+        except Exception as exc:
+            if "BUSYGROUP" not in str(exc):
+                raise
 
-        if not rows:
-            log.info("url_resolver.no_dealers_without_website")
-            return (0, 0)
-
-        log.info("url_resolver.starting", dealers_to_resolve=len(rows))
+        log.info("url_resolver.started", stream=_STREAM_MISSING_URL)
 
         async with httpx.AsyncClient(
             timeout=15.0,
@@ -1611,63 +1614,96 @@ class URLResolver:
                 "Accept-Language": "en-US,en;q=0.9",
             },
         ) as client:
-            for idx, row in enumerate(rows):
-                dealer_id = row["id"]
-                name = row["name"]
-                city = row["city"] or ""
-                country = row["country"]
+            while not self._stop.is_set():
+                try:
+                    messages = await rdb.xreadgroup(
+                        groupname=self._CONSUMER_GROUP,
+                        consumername=self._CONSUMER_NAME,
+                        streams={_STREAM_MISSING_URL: ">"},
+                        count=5,
+                        block=2000,
+                    )
+                except Exception as exc:
+                    log.warning("url_resolver.read_error", error=str(exc))
+                    await asyncio.sleep(2)
+                    continue
 
-                website = await self._resolve_one(client, name, city, country)
+                if not messages:
+                    continue
 
-                if website:
-                    await pg.execute(
-                        """
-                        UPDATE dealers
-                        SET website = $1, updated_at = NOW()
-                        WHERE id = $2 AND website IS NULL
-                        """,
-                        website,
-                        dealer_id,
-                    )
-                    # Also publish to spider stream
-                    await rdb.xadd(
-                        _STREAM_OUT,
-                        {
-                            "dealer_id": str(dealer_id),
-                            "name": name,
-                            "country": country,
-                            "website": website,
-                            "source": "URL_RESOLVER",
-                        },
-                    )
-                    self._resolved += 1
-                else:
-                    # Mark for Google Places sniper (if available)
-                    await pg.execute(
-                        """
-                        UPDATE dealers
-                        SET spider_status = 'URL_UNRESOLVED', updated_at = NOW()
-                        WHERE id = $1 AND website IS NULL
-                        """,
-                        dealer_id,
-                    )
-                    self._failed += 1
+                for stream_name, entries in messages:
+                    for msg_id, fields in entries:
+                        dealer_id = fields.get("dealer_id", "")
+                        name = fields.get("name", "")
+                        country = fields.get("country", "")
+                        city = fields.get("city", "")
 
-                if (idx + 1) % 100 == 0:
-                    log.info(
-                        "url_resolver.progress",
-                        done=idx + 1,
-                        total=len(rows),
-                        resolved=self._resolved,
-                        failed=self._failed,
-                    )
+                        if not name:
+                            await rdb.xack(_STREAM_MISSING_URL, self._CONSUMER_GROUP, msg_id)
+                            continue
+
+                        website = await self._resolve_one(client, name, city, country)
+
+                        if website:
+                            # Update DB
+                            await pg.execute(
+                                """
+                                UPDATE dealers SET website = $1, updated_at = NOW()
+                                WHERE name = $2 AND country = $3 AND website IS NULL
+                                """,
+                                website, name, country,
+                            )
+                            # Feed spider immediately
+                            await rdb.xadd(
+                                _STREAM_OUT,
+                                {
+                                    "dealer_id": dealer_id,
+                                    "name": name,
+                                    "country": country,
+                                    "website": website,
+                                    "source": "URL_RESOLVER",
+                                },
+                            )
+                            self._resolved += 1
+                        else:
+                            # Route to sniper queue
+                            await rdb.xadd(
+                                _STREAM_SNIPER_QUEUE,
+                                {
+                                    "dealer_id": dealer_id,
+                                    "name": name,
+                                    "country": country,
+                                    "city": city,
+                                    "source": "URL_RESOLVER_FAILED",
+                                },
+                            )
+                            await pg.execute(
+                                """
+                                UPDATE dealers SET spider_status = 'URL_UNRESOLVED', updated_at = NOW()
+                                WHERE name = $1 AND country = $2 AND website IS NULL
+                                """,
+                                name, country,
+                            )
+                            self._failed += 1
+
+                        await rdb.xack(_STREAM_MISSING_URL, self._CONSUMER_GROUP, msg_id)
+
+                        if (self._resolved + self._failed) % 50 == 0:
+                            log.info(
+                                "url_resolver.progress",
+                                resolved=self._resolved,
+                                failed=self._failed,
+                                total=self._resolved + self._failed,
+                            )
 
         log.info(
-            "url_resolver.complete",
+            "url_resolver.stopped",
             resolved=self._resolved,
             failed=self._failed,
         )
-        return (self._resolved, self._failed)
+
+    def stop(self) -> None:
+        self._stop.set()
 
     async def _resolve_one(
         self, client: httpx.AsyncClient, name: str, city: str, country: str
@@ -2119,6 +2155,16 @@ class DiscoveryOrchestrator:
         )
 
         try:
+            # ── Launch Phase 2 (URL Resolver) as parallel task ──────────
+            # Runs alongside Phase 1. Consumes stream:dealers_missing_url
+            # in real-time as Phase 1 discovers dealers without websites.
+            resolver = URLResolver()
+            resolver_task = asyncio.create_task(
+                resolver.run(self._pg, self._rdb),
+                name="url_resolver",
+            )
+            log.info("orchestrator.url_resolver_launched")
+
             # ── Phase 1: Discovery (free probes) ────────────────────────
             log.info("orchestrator.phase1_discovery")
 
@@ -2144,29 +2190,40 @@ class DiscoveryOrchestrator:
                     per_probe=country_stats,
                 )
 
-            if self._stop_event.is_set():
-                return grand_stats
-
-            # ── Phase 2: URL Resolution (free, DuckDuckGo) ─────────────
-            log.info("orchestrator.phase2_url_resolution")
-
-            resolver = URLResolver()
-            resolved, failed = await resolver.resolve_missing_websites(
-                self._pg, self._rdb
+            # ── Phase 1 done. Let resolver drain remaining messages. ────
+            log.info(
+                "orchestrator.phase1_complete_draining_resolver",
+                resolver_resolved=resolver._resolved,
+                resolver_failed=resolver._failed,
             )
+            # Give resolver 60s to drain the stream, then stop it
+            await asyncio.sleep(60)
+            resolver.stop()
+            try:
+                await asyncio.wait_for(resolver_task, timeout=30)
+            except (asyncio.TimeoutError, asyncio.CancelledError):
+                pass
 
             for cs in grand_stats.values():
-                cs["URL_RESOLVER_resolved"] = resolved
-                cs["URL_RESOLVER_failed"] = failed
+                cs["URL_RESOLVER_resolved"] = resolver._resolved
+                cs["URL_RESOLVER_failed"] = resolver._failed
 
-            if self._stop_event.is_set():
-                return grand_stats
+            log.info(
+                "orchestrator.url_resolver_final",
+                resolved=resolver._resolved,
+                failed=resolver._failed,
+            )
 
-            # ── Phase 3: Google Sniper (paid, last resort) ─────────────
-            if _GOOGLE_API_KEY and failed > 0:
+            # ── Phase 3: Google Sniper — reads stream:dealers_sniper_queue ─
+            # Only runs if API key is set. Processes dealers that URL resolver
+            # could not resolve. If no API key, they sit in the queue until
+            # the key is injected and sniper runs.
+            sniper_queue_len = await self._rdb.xlen(_STREAM_SNIPER_QUEUE)
+
+            if _GOOGLE_API_KEY and sniper_queue_len > 0:
                 log.info(
                     "orchestrator.phase3_google_sniper",
-                    unresolved_dealers=failed,
+                    queued_dealers=sniper_queue_len,
                 )
                 sniper = GooglePlacesSniperProbe()
                 sniped = await sniper.resolve_unresolved_dealers(
@@ -2174,23 +2231,25 @@ class DiscoveryOrchestrator:
                 )
                 for cs in grand_stats.values():
                     cs["GOOGLE_SNIPER"] = sniped
-            elif not _GOOGLE_API_KEY and failed > 0:
+            elif sniper_queue_len > 0:
                 log.info(
-                    "orchestrator.phase3_skipped",
-                    reason="no GOOGLE_MAPS_API_KEY",
-                    unresolved_dealers=failed,
-                    hint="Set GOOGLE_MAPS_API_KEY to resolve remaining dealers",
+                    "orchestrator.phase3_queued",
+                    queued_dealers=sniper_queue_len,
+                    hint="Set GOOGLE_MAPS_API_KEY and re-run to resolve these dealers",
                 )
             else:
-                log.info("orchestrator.phase3_skipped", reason="all dealers resolved")
+                log.info("orchestrator.phase3_skipped", reason="sniper queue empty")
 
         finally:
+            # Ensure resolver is stopped
+            resolver.stop()
+            if not resolver_task.done():
+                resolver_task.cancel()
             await self._teardown()
 
         # ── Summary ──────────────────────────────────────────────────
         total_all = sum(sum(cs.values()) for cs in grand_stats.values())
 
-        # Count dealers with/without websites
         try:
             async with asyncpg.create_pool(_DATABASE_URL, min_size=1, max_size=2) as pg:
                 row = await pg.fetchrow(
@@ -2198,7 +2257,8 @@ class DiscoveryOrchestrator:
                     SELECT
                         COUNT(*) as total,
                         COUNT(*) FILTER (WHERE website IS NOT NULL) as with_website,
-                        COUNT(*) FILTER (WHERE website IS NULL) as without_website
+                        COUNT(*) FILTER (WHERE website IS NULL) as without_website,
+                        COUNT(*) FILTER (WHERE spider_status = 'URL_UNRESOLVED') as sniper_queue
                     FROM dealers
                     """
                 )
@@ -2207,6 +2267,7 @@ class DiscoveryOrchestrator:
                     total_dealers=row["total"],
                     with_website=row["with_website"],
                     without_website=row["without_website"],
+                    sniper_queue=row["sniper_queue"],
                     coverage_pct=round(
                         row["with_website"] / max(row["total"], 1) * 100, 1
                     ),

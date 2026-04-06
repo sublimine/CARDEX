@@ -49,6 +49,27 @@ async def _run_discover(
     await discover_run(countries=countries, probe_filter=probes)
 
 
+async def _run_resolve() -> None:
+    """Run URL resolver as standalone stream consumer."""
+    import asyncpg
+    from redis.asyncio import from_url as redis_from_url
+    from scrapers.dealer_spider.discovery import URLResolver
+    import os
+
+    db_url = os.environ.get("DATABASE_URL", "postgresql://cardex:cardex@localhost:5432/cardex")
+    redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379")
+
+    pg = await asyncpg.create_pool(db_url, min_size=2, max_size=4)
+    rdb = redis_from_url(redis_url, decode_responses=True)
+
+    resolver = URLResolver()
+    try:
+        await resolver.run(pg, rdb)
+    finally:
+        await pg.close()
+        await rdb.aclose()
+
+
 async def _run_spider() -> None:
     from scrapers.dealer_spider.spider import run as spider_run
     await spider_run()
@@ -71,9 +92,10 @@ def main() -> None:
     )
     parser.add_argument(
         "command",
-        choices=["discover", "spider", "all"],
-        help="discover = find dealers via all probes, "
+        choices=["discover", "spider", "resolve", "all"],
+        help="discover = find dealers via all probes (includes resolver in parallel), "
              "spider = crawl dealer websites, "
+             "resolve = standalone URL resolver (stream consumer), "
              "all = discover then spider",
     )
     parser.add_argument(
@@ -101,6 +123,8 @@ def main() -> None:
             countries=args.countries,
             probes=args.probes,
         )
+    elif args.command == "resolve":
+        coro = _run_resolve()
     elif args.command == "spider":
         coro = _run_spider()
     elif args.command == "all":
