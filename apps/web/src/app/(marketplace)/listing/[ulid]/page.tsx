@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { ArrowLeft, Gauge, Fuel, Zap, Calendar, Palette, Hash, MapPin, ExternalLink } from 'lucide-react'
 import { getListing, getSDIScore } from '@/lib/api'
 import { formatPrice, formatMileage, COUNTRY_FLAG, COUNTRY_NAME, FUEL_LABEL, SDI_COLOR } from '@/lib/format'
+import { VehicleImage } from '@/components/ui/VehicleImage'
 
 interface PageProps {
   params: { ulid: string }
@@ -63,18 +64,17 @@ export default async function ListingDetailPage({ params }: PageProps) {
         <div className="space-y-6">
           {/* Main photo */}
           <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl bg-surface-card">
-            {photos.length > 0 ? (
-              <Image
-                src={photos[0]}
-                alt={`${listing.make} ${listing.model}`}
-                fill
-                className="object-cover"
-                priority
-                sizes="(max-width: 1024px) 100vw, 60vw"
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-6xl">🚗</div>
-            )}
+            <VehicleImage
+              vehicleUlid={listing.vehicle_ulid ?? params.ulid}
+              thumbAvailable={!!listing.thumbnail_url}
+              thumbUrl={listing.thumbnail_url}
+              alt={`${listing.make} ${listing.model}`}
+              sourceUrl={listing.source_url}
+              sourcePlatform={listing.source_platform}
+              make={listing.make}
+              model={listing.model}
+              className="h-full w-full"
+            />
           </div>
 
           {/* Photo strip */}

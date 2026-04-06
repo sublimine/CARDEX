@@ -186,6 +186,13 @@ func runSyncLoop(ctx context.Context, rdb *redis.Client, index meilisearch.Index
 				ackIDs = append(ackIDs, msg.ID)
 				continue
 			}
+			// Don't overwrite existing thumb_url with null/empty — thumbnails are generated async
+			if v, ok := doc["thumb_url"]; ok && (v == nil || v == "") {
+				delete(doc, "thumb_url")
+			}
+			if v, ok := doc["thumbnail_url"]; ok && (v == nil || v == "") {
+				delete(doc, "thumbnail_url")
+			}
 			batch = append(batch, doc)
 			ackIDs = append(ackIDs, msg.ID)
 

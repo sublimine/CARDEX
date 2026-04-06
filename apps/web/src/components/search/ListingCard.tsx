@@ -1,8 +1,8 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { MapPin, Gauge, Fuel, Zap } from 'lucide-react'
 import type { SearchHit } from '@/lib/api'
 import { formatPrice, formatMileage, COUNTRY_FLAG, FUEL_LABEL } from '@/lib/format'
+import { VehicleImage } from '@/components/ui/VehicleImage'
 import { clsx } from 'clsx'
 
 interface Props {
@@ -26,19 +26,17 @@ export function ListingCard({ hit, sdiLabel }: Props) {
     <article className="group relative flex flex-col overflow-hidden rounded-xl border border-surface-border bg-surface-card transition-all hover:border-brand-500/50 hover:shadow-lg hover:shadow-brand-500/5">
       {/* Thumbnail */}
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-surface-hover">
-        {hit.thumbnail_url ? (
-          <Image
-            src={hit.thumbnail_url}
-            alt={`${hit.make} ${hit.model}`}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-surface-muted">
-            <span className="text-4xl">🚗</span>
-          </div>
-        )}
+        <VehicleImage
+          vehicleUlid={hit.vehicle_ulid}
+          thumbAvailable={!!hit.thumbnail_url}
+          thumbUrl={hit.thumbnail_url}
+          alt={`${hit.make} ${hit.model}`}
+          sourceUrl={hit.source_url}
+          sourcePlatform={hit.source_platform}
+          make={hit.make}
+          model={hit.model}
+          className="h-full w-full transition-transform duration-300 group-hover:scale-105"
+        />
         {/* Country badge */}
         <span className="absolute right-2 top-2 rounded-md bg-black/60 px-2 py-0.5 text-xs backdrop-blur-sm">
           {flag} {hit.source_country}

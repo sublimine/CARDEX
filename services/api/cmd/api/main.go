@@ -199,6 +199,12 @@ func main() {
 	mux.Handle("GET /api/v1/admin/users", rl.Authenticated(middleware.Auth(middleware.RequireAdmin(deps.AdminUserList))))
 	mux.Handle("GET /api/v1/admin/scrapers", rl.Authenticated(middleware.Auth(middleware.RequireAdmin(deps.AdminScraperStatus))))
 
+	// ── Census Intelligence (public — coverage matrix, gaps, population) ─────
+	mux.Handle("GET /api/v1/census/coverage-matrix", rl.Public(http.HandlerFunc(deps.CoverageMatrix)))
+	mux.Handle("GET /api/v1/census/gaps", rl.Public(http.HandlerFunc(deps.CoverageGaps)))
+	mux.Handle("GET /api/v1/census/population-estimate", rl.Public(http.HandlerFunc(deps.PopulationEstimate)))
+	mux.Handle("GET /api/v1/census/coverage-heatmap", rl.Public(http.HandlerFunc(deps.CoverageHeatmap)))
+
 	// ---- Server -------------------------------------------------------------
 	port := envOrDefault("PORT", "8080")
 	srv := &http.Server{

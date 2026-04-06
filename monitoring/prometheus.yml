@@ -8,11 +8,12 @@ global:
 rule_files:
   - /etc/prometheus/rules/*.yml
 
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets:
-          - alertmanager:9093
+# alertmanager not deployed yet — uncomment when added to docker-compose
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
 
 scrape_configs:
   # Gateway (Phase 3)
@@ -41,17 +42,17 @@ scrape_configs:
     static_configs:
       - targets: ['legal:9091']
 
-  # Redis
-  - job_name: 'redis'
-    static_configs:
-      - targets: ['redis-exporter:9121']
+  # Redis — uncomment when redis-exporter is added to docker-compose
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']
 
-  # PostgreSQL
-  - job_name: 'postgres'
-    static_configs:
-      - targets: ['pg-exporter:9187']
+  # PostgreSQL — uncomment when pg-exporter is added to docker-compose
+  # - job_name: 'postgres'
+  #   static_configs:
+  #     - targets: ['pg-exporter:9187']
 
-  # ClickHouse
+  # ClickHouse (native Prometheus endpoint on port 9363)
   - job_name: 'clickhouse'
     static_configs:
       - targets: ['clickhouse:9363']

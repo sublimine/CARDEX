@@ -81,7 +81,7 @@ services:
     command: >
       redis-server
         --maxmemory 2gb
-        --maxmemory-policy noeviction
+        --maxmemory-policy volatile-lru
         --protected-mode no
         --appendonly yes
         --appendfsync everysec
@@ -224,6 +224,75 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
+  # CARDEX Census (fleet census ingestor + coverage matrix computation)
+  # ---------------------------------------------------------------------------
+  census:
+    build:
+      context: .
+      dockerfile: services/census/Dockerfile
+    container_name: cardex-census
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://cardex:cardex_dev_only@postgres:5432/cardex
+      REDIS_ADDR: redis:6379
+      CLICKHOUSE_ADDR: clickhouse:9000
+      CLICKHOUSE_USER: cardex
+      CLICKHOUSE_PASSWORD: cardex_dev_only
+      RDW_APP_TOKEN: ""
+      LOG_LEVEL: info
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # CARDEX Thumbnail Generator (legal search-engine thumbnails, BGH I ZR 69/08)
+  # ---------------------------------------------------------------------------
+  thumbgen:
+    build:
+      context: .
+      dockerfile: services/imgproxy/Dockerfile
+    container_name: cardex-thumbgen
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - thumbs:/data/thumbs
+    environment:
+      DATABASE_URL: postgres://cardex:cardex_dev_only@postgres:5432/cardex
+      REDIS_ADDR: redis:6379
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # CARDEX Frontier (intelligent crawl priority computation)
+  # ---------------------------------------------------------------------------
+  frontier:
+    build:
+      context: .
+      dockerfile: services/frontier/Dockerfile
+    container_name: cardex-frontier
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://cardex:cardex_dev_only@postgres:5432/cardex
+      REDIS_ADDR: redis:6379
+      CLICKHOUSE_ADDR: clickhouse:9000
+      CLICKHOUSE_USER: cardex
+      CLICKHOUSE_PASSWORD: cardex_dev_only
+      LOG_LEVEL: info
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
   # MeiliSearch Sync Worker (stream:meili_sync consumer → MeiliSearch indexer)
   # Part of pipeline service; runs as separate process for independent scaling
   # ---------------------------------------------------------------------------
@@ -259,10 +328,11 @@ services:
     container_name: cardex-scraper-de
     depends_on:
       redis: { condition: service_healthy }
-      gateway: { condition: service_started }
+      gateway: { condition: service_healthy }
     environment:
       GATEWAY_URL: http://gateway:8080
       GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
+      # Python redis client (aioredis) uses URL format; Go services use REDIS_ADDR (host:port)
       REDIS_URL: redis://redis:6379
       SCRAPER_TARGETS: autoscout24_de,mobile_de,kleinanzeigen_de,heycar_de,pkw_de
       CYCLE_WAIT_SECONDS: "3600"
@@ -276,7 +346,7 @@ services:
     container_name: cardex-scraper-es
     depends_on:
       redis: { condition: service_healthy }
-      gateway: { condition: service_started }
+      gateway: { condition: service_healthy }
     environment:
       GATEWAY_URL: http://gateway:8080
       GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
@@ -293,7 +363,7 @@ services:
     container_name: cardex-scraper-fr
     depends_on:
       redis: { condition: service_healthy }
-      gateway: { condition: service_started }
+      gateway: { condition: service_healthy }
     environment:
       GATEWAY_URL: http://gateway:8080
       GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
@@ -310,7 +380,7 @@ services:
     container_name: cardex-scraper-nl
     depends_on:
       redis: { condition: service_healthy }
-      gateway: { condition: service_started }
+      gateway: { condition: service_healthy }
     environment:
       GATEWAY_URL: http://gateway:8080
       GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
@@ -327,7 +397,7 @@ services:
     container_name: cardex-scraper-be
     depends_on:
       redis: { condition: service_healthy }
-      gateway: { condition: service_started }
+      gateway: { condition: service_healthy }
     environment:
       GATEWAY_URL: http://gateway:8080
       GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
@@ -344,7 +414,7 @@ services:
     container_name: cardex-scraper-ch
     depends_on:
       redis: { condition: service_healthy }
-      gateway: { condition: service_started }
+      gateway: { condition: service_healthy }
     environment:
       GATEWAY_URL: http://gateway:8080
       GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
@@ -372,8 +442,14 @@ services:
     environment:
       REDIS_ADDR: redis:6379
       HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
-      PORT: "8090"
+      # PORT stays 8080 inside the container; host maps 8090→8080
       LOG_LEVEL: info
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
@@ -470,3 +546,4 @@ volumes:
   redis_data:
   meili_data:
   grafana_data:
+  thumbs:

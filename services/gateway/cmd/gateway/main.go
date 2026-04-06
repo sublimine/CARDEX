@@ -197,7 +197,17 @@ func main() {
 
 	go listenQUIC()
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		w.Write([]byte(`{"ok":true}`))
+	})
+
 	http.HandleFunc("/v1/ingest", handleB2BWebhook)
-	log.Println("[HTTP] Institutional Webhook Gateway Activo (TCP:8080). Fail-Closed estricto implementado.")
-	http.ListenAndServe("0.0.0.0:8080", nil)
+	log.Printf("[HTTP] Institutional Webhook Gateway Activo (TCP:%s). Fail-Closed estricto implementado.", port)
+	http.ListenAndServe("0.0.0.0:"+port, nil)
 }

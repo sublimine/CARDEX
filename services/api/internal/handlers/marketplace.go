@@ -163,8 +163,8 @@ func (d *Deps) MarketplaceSearch(w http.ResponseWriter, r *http.Request) {
 		AttributesToRetrieve: []string{
 			"vehicle_ulid", "make", "model", "variant", "year",
 			"mileage_km", "price_eur", "fuel_type", "transmission",
-			"color", "source_country", "source_url", "thumbnail_url",
-			"h3_res4", "listing_status",
+			"color", "source_country", "source_platform", "source_url",
+			"thumbnail_url", "thumb_url", "h3_res4", "listing_status",
 		},
 	})
 	if err != nil {
@@ -193,28 +193,28 @@ func (d *Deps) ListingDetail(w http.ResponseWriter, r *http.Request) {
 	row := d.DB.QueryRow(r.Context(), `
 		SELECT
 			vehicle_ulid, make, model, variant, year, mileage_km,
-			color, fuel_type, transmission, body_type, co2_gkm, power_kw,
+			color, fuel_type, transmission, co2_gkm, power_kw,
 			price_raw, currency_raw, gross_physical_cost_eur,
 			source_url, source_country, source_platform,
-			photo_urls, thumbnail_url,
+			photo_urls, thumb_url,
 			listing_status, price_drop_count, last_price_eur,
-			seller_type, seller_name,
-			city, region, lat, lng, h3_index_res4, h3_index_res7,
+			seller_type,
+			lat, lng, h3_index_res4, h3_index_res7,
 			first_seen_at, last_updated_at
 		FROM vehicles
-		WHERE vehicle_ulid = $1 AND lifecycle_status != 'REJECTED'
+		WHERE vehicle_ulid = $1 AND lifecycle_status != 'FRAUD_BLOCKED'
 	`, ulid)
 
 	var v vehicleRow
 	err := row.Scan(
 		&v.ULID, &v.Make, &v.Model, &v.Variant, &v.Year, &v.MileageKM,
-		&v.Color, &v.FuelType, &v.Transmission, &v.BodyType, &v.CO2GKM, &v.PowerKW,
+		&v.Color, &v.FuelType, &v.Transmission, &v.CO2GKM, &v.PowerKW,
 		&v.PriceRaw, &v.CurrencyRaw, &v.PriceEUR,
 		&v.SourceURL, &v.SourceCountry, &v.SourcePlatform,
-		&v.PhotoURLs, &v.ThumbnailURL,
+		&v.PhotoURLs, &v.ThumbURL,
 		&v.ListingStatus, &v.PriceDropCount, &v.LastPriceEUR,
-		&v.SellerType, &v.SellerName,
-		&v.City, &v.Region, &v.Lat, &v.Lng, &v.H3Res4, &v.H3Res7,
+		&v.SellerType,
+		&v.Lat, &v.Lng, &v.H3Res4, &v.H3Res7,
 		&v.FirstSeenAt, &v.LastUpdatedAt,
 	)
 	if err != nil {
@@ -378,7 +378,6 @@ type vehicleRow struct {
 	Color          *string  `json:"color,omitempty"`
 	FuelType       *string  `json:"fuel_type,omitempty"`
 	Transmission   *string  `json:"transmission,omitempty"`
-	BodyType       *string  `json:"body_type,omitempty"`
 	CO2GKM         *int     `json:"co2_gkm,omitempty"`
 	PowerKW        *int     `json:"power_kw,omitempty"`
 	PriceRaw       *float64 `json:"price_raw,omitempty"`
@@ -388,14 +387,11 @@ type vehicleRow struct {
 	SourceCountry  *string  `json:"source_country"`
 	SourcePlatform *string  `json:"source_platform"`
 	PhotoURLs      []string `json:"photo_urls"`
-	ThumbnailURL   *string  `json:"thumbnail_url,omitempty"`
+	ThumbURL       *string  `json:"thumb_url,omitempty"`
 	ListingStatus  *string  `json:"listing_status"`
 	PriceDropCount *int     `json:"price_drop_count"`
 	LastPriceEUR   *float64 `json:"last_price_eur,omitempty"`
 	SellerType     *string  `json:"seller_type,omitempty"`
-	SellerName     *string  `json:"seller_name,omitempty"`
-	City           *string  `json:"city,omitempty"`
-	Region         *string  `json:"region,omitempty"`
 	Lat            *float64 `json:"lat,omitempty"`
 	Lng            *float64 `json:"lng,omitempty"`
 	H3Res4         *string  `json:"h3_res4,omitempty"`

@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -25,11 +26,14 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+var wg sync.WaitGroup
+
 const (
 	streamIngestionRaw = "stream:ingestion_raw"
 	streamDbWrite      = "stream:db_write"
 	streamMeiliSync    = "stream:meili_sync"
 	streamPriceEvents  = "stream:price_events"
+	streamThumbReqs    = "stream:thumb_requests"
 	consumerGroup      = "cg_pipeline"
 	consumerName       = "pipeline-1"
 	bloomKey           = "bloom:vehicles"
@@ -139,6 +143,16 @@ func main() {
 
 	slog.Info("pipeline: starting consumer loop")
 	runConsumerLoop(ctx, rdb, pool, bloomFilter, fxBuffer, idx)
+
+	slog.Info("pipeline: draining in-flight operations...")
+	done := make(chan struct{})
+	go func() { wg.Wait(); close(done) }()
+	select {
+	case <-done:
+		slog.Info("pipeline: drained successfully")
+	case <-time.After(30 * time.Second):
+		slog.Warn("pipeline: drain timeout, forcing shutdown")
+	}
 	slog.Info("pipeline: stopped")
 }
 
@@ -196,7 +210,11 @@ func runConsumerLoop(ctx context.Context, rdb *redis.Client, pool *pgxpool.Pool,
 		}
 
 		for _, msg := range streams[0].Messages {
-			processMessage(ctx, rdb, pool, b, fxBuf, idx, msg)
+			wg.Add(1)
+			func() {
+				defer wg.Done()
+				processMessage(ctx, rdb, pool, b, fxBuf, idx, msg)
+			}()
 		}
 	}
 }
@@ -275,6 +293,7 @@ func processMessage(ctx context.Context, rdb *redis.Client, pool *pgxpool.Pool, 
 	}
 
 	var returnedULID string
+	var thumbURL *string
 	err = pool.QueryRow(ctx, `
 		INSERT INTO vehicles (
 			vehicle_ulid, fingerprint_sha256, vin, source_id, source_platform, ingestion_channel,
@@ -305,30 +324,32 @@ func processMessage(ctx context.Context, rdb *redis.Client, pool *pgxpool.Pool, 
 				ELSE vehicles.price_drop_count
 			END,
 			last_price_eur            = EXCLUDED.gross_physical_cost_eur
-		RETURNING vehicle_ulid
+		RETURNING vehicle_ulid, thumb_url
 	`,
 		vehicleULID, fingerprint, nullStr(v.VIN), nullStr(coalesce(v.SourceID, v.SourceListingID)), source, channel,
 		nullStr(v.SourceURL), nullStr(v.SourceCountry), v.PhotoURLs, listingStatus,
 		v.Make, v.Model, nullStr(v.Variant), v.Year, v.MileageKM, nullStr(v.Color), nullStr(v.FuelType), nullStr(v.Transmission), v.CO2GKM, v.PowerKW,
 		v.PriceRaw, v.CurrencyRaw, priceEUR, nullFloat(v.Lat), nullFloat(v.Lng), nullStr(h3Res4), nullStr(h3Res7),
 		nullStr(v.Description), nullStr(v.SellerType), nullStr(v.SellerVATID),
-	).Scan(&returnedULID)
+	).Scan(&returnedULID, &thumbURL)
 	if err != nil {
 		slog.Error("pipeline: insert vehicles failed", "fingerprint", fingerprint, "error", err)
 		ackMessage(ctx, rdb, msg.ID)
 		return
 	}
 
-	// Publish to stream:db_write (forensics consumer)
-	rdb.XAdd(ctx, &redis.XAddArgs{
+	// Publish to stream:db_write (forensics consumer) — best-effort
+	if err := rdb.XAdd(ctx, &redis.XAddArgs{
 		Stream: streamDbWrite,
 		Values: map[string]interface{}{
 			"vehicle_ulid": returnedULID,
 			"fingerprint":  fingerprint,
 		},
-	})
+	}).Err(); err != nil {
+		slog.Error("pipeline: publish to stream:db_write failed", "vehicle_ulid", returnedULID, "error", err)
+	}
 
-	// Publish to stream:meili_sync (MeiliSearch indexer consumer)
+	// Publish to stream:meili_sync (MeiliSearch indexer consumer) — CRITICAL
 	meiliPayload, _ := json.Marshal(map[string]interface{}{
 		"vehicle_ulid":  returnedULID,
 		"make":          v.Make,
@@ -340,23 +361,28 @@ func processMessage(ctx context.Context, rdb *redis.Client, pool *pgxpool.Pool, 
 		"transmission":  v.Transmission,
 		"color":         v.Color,
 		"price_eur":     priceEUR,
-		"source_country": v.SourceCountry,
-		"source_url":    v.SourceURL,
+		"source_country":  v.SourceCountry,
+		"source_platform": source,
+		"source_url":      v.SourceURL,
 		"thumbnail_url": v.ThumbnailURL,
+		"thumb_url":     thumbURL,
 		"h3_res4":       h3Res4,
 		"listing_status": listingStatus,
 	})
-	rdb.XAdd(ctx, &redis.XAddArgs{
+	if err := rdb.XAdd(ctx, &redis.XAddArgs{
 		Stream: streamMeiliSync,
 		Values: map[string]interface{}{
 			"vehicle_ulid": returnedULID,
 			"payload":      string(meiliPayload),
 			"op":           "upsert",
 		},
-	})
+	}).Err(); err != nil {
+		slog.Error("pipeline: publish to stream:meili_sync failed", "vehicle_ulid", returnedULID, "error", err)
+		return // Do NOT ACK — message will be retried
+	}
 
-	// Publish to stream:price_events for ClickHouse price_history
-	rdb.XAdd(ctx, &redis.XAddArgs{
+	// Publish to stream:price_events for ClickHouse price_history — best-effort
+	if err := rdb.XAdd(ctx, &redis.XAddArgs{
 		Stream: streamPriceEvents,
 		Values: map[string]interface{}{
 			"vehicle_ulid":  returnedULID,
@@ -368,7 +394,22 @@ func processMessage(ctx context.Context, rdb *redis.Client, pool *pgxpool.Pool, 
 			"source_country": v.SourceCountry,
 			"source_platform": source,
 		},
-	})
+	}).Err(); err != nil {
+		slog.Error("pipeline: publish to stream:price_events failed", "vehicle_ulid", returnedULID, "error", err)
+	}
+
+	// Publish thumbnail generation request if vehicle has photos — best-effort
+	if len(v.PhotoURLs) > 0 {
+		if err := rdb.XAdd(ctx, &redis.XAddArgs{
+			Stream: streamThumbReqs,
+			Values: map[string]interface{}{
+				"vehicle_ulid": returnedULID,
+				"image_url":    v.PhotoURLs[0],
+			},
+		}).Err(); err != nil {
+			slog.Error("pipeline: publish to stream:thumb_requests failed", "vehicle_ulid", returnedULID, "error", err)
+		}
+	}
 
 	ackMessage(ctx, rdb, msg.ID)
 	slog.Info("pipeline: vehicle processed",

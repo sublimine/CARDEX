@@ -37,6 +37,7 @@ from typing import AsyncIterator, AsyncGenerator
 import redis.asyncio as aioredis
 import structlog
 
+from .frontier_client import FrontierClient
 from .gateway_client import GatewayClient
 from .http_client import HTTPClient
 from .models import RawListing
@@ -127,6 +128,7 @@ class BaseScraper(ABC):
         )
         self.robots = RobotsChecker(self.base_url, self.http) if self.base_url else None
         self.sitemap = SitemapParser(self.http)
+        self.frontier = FrontierClient(self._redis, self.platform, self.country)
         self.log = structlog.get_logger(scraper=self.platform, country=self.country)
         self._ban_counts: dict[str, int] = {}  # shard_key → consecutive ban count
 
@@ -245,47 +247,57 @@ class BaseScraper(ABC):
             # If sitemap yielded 0 listings (crawl_listing_url not implemented),
             # fall through to make×year strategy
 
-        # ── Strategy 2: Make×year decomposition (fallback) ────────────────────
+        # ── Strategy 2: Frontier-directed make×year decomposition ─────────────
+        # If the frontier service has published priorities, crawl high-priority
+        # shards first. Otherwise, fall back to blind ALL_MAKES × YEARS iteration.
 
-        for make in ALL_MAKES:
-            for year in reversed(YEARS):  # newest first
-                if await self.is_shard_done(make, year):
-                    self.log.debug("scraper.shard_skip", make=make, year=year)
-                    continue
+        ordered_shards = await self.frontier.get_ordered_shards()
+        if ordered_shards:
+            self.log.info("scraper.frontier_directed", shard_count=len(ordered_shards))
+            shard_iter = [(make, year) for make, year, _ in ordered_shards]
+        else:
+            self.log.info("scraper.fallback_blind_iteration")
+            shard_iter = [(make, year) for make in ALL_MAKES for year in reversed(YEARS)]
 
-                shard_key = f"{make}:{year}"
-                try:
-                    count = 0
-                    async for listing in self.crawl_shard(make, year):
-                        count += 1
-                        self._ban_counts[shard_key] = 0  # reset on success
-                        yield listing
-                    await self.mark_shard_done(make, year)
-                    self.log.info("scraper.shard_complete", make=make, year=year, count=count)
+        for make, year in shard_iter:
+            if await self.is_shard_done(make, year):
+                self.log.debug("scraper.shard_skip", make=make, year=year)
+                continue
 
-                except Exception as e:
-                    err_str = str(e).lower()
-                    is_ban = any(kw in err_str for kw in ("ban", "403", "blocked", "access denied", "captcha"))
-                    self._ban_counts[shard_key] = self._ban_counts.get(shard_key, 0) + 1
-                    consecutive = self._ban_counts[shard_key]
+            shard_key = f"{make}:{year}"
+            try:
+                count = 0
+                async for listing in self.crawl_shard(make, year):
+                    count += 1
+                    self._ban_counts[shard_key] = 0  # reset on success
+                    yield listing
+                await self.mark_shard_done(make, year)
+                await self.frontier.report_result(make, year, count)
+                self.log.info("scraper.shard_complete", make=make, year=year, count=count)
 
-                    if is_ban and consecutive >= 3:
-                        self.log.warning(
-                            "scraper.shard_ban_pause",
-                            make=make, year=year, consecutive=consecutive,
-                        )
-                        # Park shard for 1 hour by writing a temp cursor
-                        await self._redis.set(
-                            f"scraper:ban_pause:{self.platform}:{self.country}:{shard_key}",
-                            int(time.time()),
-                            ex=3600,
-                        )
-                        self._ban_counts[shard_key] = 0
-                    else:
-                        self.log.error(
-                            "scraper.shard_error",
-                            make=make, year=year, error=str(e), consecutive=consecutive,
-                        )
+            except Exception as e:
+                err_str = str(e).lower()
+                is_ban = any(kw in err_str for kw in ("ban", "403", "blocked", "access denied", "captcha"))
+                self._ban_counts[shard_key] = self._ban_counts.get(shard_key, 0) + 1
+                consecutive = self._ban_counts[shard_key]
+
+                if is_ban and consecutive >= 3:
+                    self.log.warning(
+                        "scraper.shard_ban_pause",
+                        make=make, year=year, consecutive=consecutive,
+                    )
+                    # Park shard for 1 hour by writing a temp cursor
+                    await self._redis.set(
+                        f"scraper:ban_pause:{self.platform}:{self.country}:{shard_key}",
+                        int(time.time()),
+                        ex=3600,
+                    )
+                    self._ban_counts[shard_key] = 0
+                else:
+                    self.log.error(
+                        "scraper.shard_error",
+                        make=make, year=year, error=str(e), consecutive=consecutive,
+                    )
 
     # -------------------------------------------------------------------------
     # Main run loop

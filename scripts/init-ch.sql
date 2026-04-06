@@ -366,3 +366,45 @@ CREATE TABLE IF NOT EXISTS cardex.arbitrage_route_stats (
 ) ENGINE = ReplacingMergeTree(last_updated)
 ORDER BY route_key
 SETTINGS index_granularity = 8192;
+
+-- =============================================================================
+-- CENSUS: Coverage snapshots (time series from census service)
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS cardex.coverage_snapshots (
+    snapshot_date     Date,
+    country           LowCardinality(FixedString(2)),
+    make              LowCardinality(String),
+    year              UInt16,
+    fuel_type         LowCardinality(String),
+    fleet_count       UInt64,
+    expected_for_sale UInt32,
+    observed_count    UInt32,
+    coverage          Float32,
+    economic_value_eur Float64,
+    median_price_eur   Float64
+) ENGINE = ReplacingMergeTree(snapshot_date)
+ORDER BY (snapshot_date, country, make, year, fuel_type)
+PARTITION BY toYYYYMM(snapshot_date)
+TTL snapshot_date + INTERVAL 3 YEAR DELETE
+SETTINGS index_granularity = 8192;
+
+-- =============================================================================
+-- CENSUS: Crawl efficiency tracking (frontier learning)
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS cardex.crawl_efficiency (
+    crawl_date        Date,
+    platform          LowCardinality(String),
+    country           LowCardinality(FixedString(2)),
+    make              LowCardinality(String),
+    year              UInt16,
+    listings_found    UInt32,
+    listings_new      UInt32,
+    efficiency_pct    Float32,
+    priority_score    Float32,
+    duration_ms       UInt32,
+    computed_at       DateTime DEFAULT now()
+) ENGINE = MergeTree()
+ORDER BY (crawl_date, platform, country, make, year)
+PARTITION BY toYYYYMM(crawl_date)
+TTL crawl_date + INTERVAL 1 YEAR DELETE
+SETTINGS index_granularity = 8192;

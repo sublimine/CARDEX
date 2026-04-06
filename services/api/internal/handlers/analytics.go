@@ -217,7 +217,7 @@ func (d *Deps) Heatmap(w http.ResponseWriter, r *http.Request) {
 
 	var where []string
 	var args []any
-	where = append(where, "lifecycle_status = 'APPROVED'")
+	where = append(where, "lifecycle_status = 'MARKET_READY'")
 	where = append(where, "listing_status = 'ACTIVE'")
 	where = append(where, resField+" IS NOT NULL")
 	if make_ != "" {

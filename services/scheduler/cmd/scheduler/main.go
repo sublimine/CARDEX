@@ -82,11 +82,50 @@ func mustConnect(ctx context.Context) *Deps {
 	return &Deps{pg: pg, ch: ch, rdb: rdb}
 }
 
+// ── Advisory Locking ─────────────────────────────────────────────────────────
+
+// tryAdvisoryLock attempts to acquire a PostgreSQL advisory lock.
+// Returns true if lock acquired, false if already held by another process.
+// Lock is automatically released when explicitly unlocked or connection closes.
+func (d *Deps) tryAdvisoryLock(ctx context.Context, lockID int64) bool {
+	var acquired bool
+	err := d.pg.QueryRow(ctx, `SELECT pg_try_advisory_lock($1)`, lockID).Scan(&acquired)
+	if err != nil {
+		log.Printf("[scheduler] advisory lock query failed: %v", err)
+		return false
+	}
+	return acquired
+}
+
+func (d *Deps) releaseAdvisoryLock(ctx context.Context, lockID int64) {
+	_, _ = d.pg.Exec(ctx, `SELECT pg_advisory_unlock($1)`, lockID)
+}
+
+// Lock IDs for each scheduled job (100001–100011).
+const (
+	lockMaterializePriceIndex         int64 = 100001
+	lockRefreshFXRates                int64 = 100002
+	lockExpireStaleListings           int64 = 100003
+	lockDispatchScrapeJobs            int64 = 100004
+	lockPruneVINCache                 int64 = 100005
+	lockOptimizeClickHouse            int64 = 100006
+	lockMaterializePriceCandles       int64 = 100007
+	lockComputeTickerStats            int64 = 100008
+	lockComputeArbitrageOpportunities int64 = 100009
+	lockComputeSourceOverlap          int64 = 100010
+	lockRunEntityResolution           int64 = 100011
+)
+
 // ── Jobs ──────────────────────────────────────────────────────────────────────
 
 // materializePriceIndex computes OHLCV aggregations into price_index from
 // vehicle_inventory events accumulated since the last run.
 func (d *Deps) materializePriceIndex(ctx context.Context) {
+	if !d.tryAdvisoryLock(ctx, lockMaterializePriceIndex) {
+		log.Println("[scheduler] materializePriceIndex: skipped (another instance running)")
+		return
+	}
+	defer d.releaseAdvisoryLock(ctx, lockMaterializePriceIndex)
 	log.Println("[job] materializePriceIndex: start")
 	q := `
 		INSERT INTO cardex.price_index
@@ -130,13 +169,18 @@ func (d *Deps) materializePriceIndex(ctx context.Context) {
 // expireStaleListings marks listings not seen in >14 days as SOLD/EXPIRED in
 // PostgreSQL and publishes delete ops to stream:meili_sync.
 func (d *Deps) expireStaleListings(ctx context.Context) {
+	if !d.tryAdvisoryLock(ctx, lockExpireStaleListings) {
+		log.Println("[scheduler] expireStaleListings: skipped (another instance running)")
+		return
+	}
+	defer d.releaseAdvisoryLock(ctx, lockExpireStaleListings)
 	log.Println("[job] expireStaleListings: start")
 
 	rows, err := d.pg.Query(ctx, `
 		UPDATE vehicles
 		SET listing_status = 'EXPIRED', updated_at = now()
 		WHERE listing_status = 'ACTIVE'
-		  AND scraped_at < now() - INTERVAL '14 days'
+		  AND last_updated_at < now() - INTERVAL '14 days'
 		RETURNING id
 	`)
 	if err != nil {
@@ -175,6 +219,11 @@ func (d *Deps) expireStaleListings(ctx context.Context) {
 //
 // Falls back to last-known values if the ECB feed is unreachable.
 func (d *Deps) refreshFXRates(ctx context.Context) {
+	if !d.tryAdvisoryLock(ctx, lockRefreshFXRates) {
+		log.Println("[scheduler] refreshFXRates: skipped (another instance running)")
+		return
+	}
+	defer d.releaseAdvisoryLock(ctx, lockRefreshFXRates)
 	log.Println("[job] refreshFXRates: start")
 
 	type ecbEnvelope struct {
@@ -251,6 +300,11 @@ func (d *Deps) refreshFXRates(ctx context.Context) {
 // so the scraper fleet can pick them up. Each message specifies platform,
 // country, and whether it is a full or incremental pass.
 func (d *Deps) dispatchScrapeJobs(ctx context.Context) {
+	if !d.tryAdvisoryLock(ctx, lockDispatchScrapeJobs) {
+		log.Println("[scheduler] dispatchScrapeJobs: skipped (another instance running)")
+		return
+	}
+	defer d.releaseAdvisoryLock(ctx, lockDispatchScrapeJobs)
 	log.Println("[job] dispatchScrapeJobs: start")
 
 	jobs := []map[string]interface{}{
@@ -282,6 +336,11 @@ func (d *Deps) dispatchScrapeJobs(ctx context.Context) {
 
 // pruneVINCache removes VIN history cache entries older than 90 days.
 func (d *Deps) pruneVINCache(ctx context.Context) {
+	if !d.tryAdvisoryLock(ctx, lockPruneVINCache) {
+		log.Println("[scheduler] pruneVINCache: skipped (another instance running)")
+		return
+	}
+	defer d.releaseAdvisoryLock(ctx, lockPruneVINCache)
 	log.Println("[job] pruneVINCache: start")
 	tag, err := d.pg.Exec(ctx, `
 		DELETE FROM vin_history_cache
@@ -297,6 +356,11 @@ func (d *Deps) pruneVINCache(ctx context.Context) {
 // optimizeClickHouse runs OPTIMIZE TABLE on MergeTree tables to force merge
 // of parts and reclaim space. Run weekly off-peak.
 func (d *Deps) optimizeClickHouse(ctx context.Context) {
+	if !d.tryAdvisoryLock(ctx, lockOptimizeClickHouse) {
+		log.Println("[scheduler] optimizeClickHouse: skipped (another instance running)")
+		return
+	}
+	defer d.releaseAdvisoryLock(ctx, lockOptimizeClickHouse)
 	log.Println("[job] optimizeClickHouse: start")
 	tables := []string{
 		"cardex.price_index",
@@ -316,6 +380,11 @@ func (d *Deps) optimizeClickHouse(ctx context.Context) {
 // make/model/year/country/fuel_type and upserts into cardex.price_candles.
 // Run nightly at 02:30 UTC after scrape jobs have ingested fresh listings.
 func (d *Deps) materializePriceCandles(ctx context.Context) {
+	if !d.tryAdvisoryLock(ctx, lockMaterializePriceCandles) {
+		log.Println("[scheduler] materializePriceCandles: skipped (another instance running)")
+		return
+	}
+	defer d.releaseAdvisoryLock(ctx, lockMaterializePriceCandles)
 	log.Println("[job] materializePriceCandles: start")
 
 	// Weekly candles — last 104 weeks (2 years rolling)
@@ -399,6 +468,11 @@ func (d *Deps) materializePriceCandles(ctx context.Context) {
 // 1W/1M/3M % changes, 30-day volume, and liquidity score.
 // Run nightly at 03:00 UTC after materializePriceCandles.
 func (d *Deps) computeTickerStats(ctx context.Context) {
+	if !d.tryAdvisoryLock(ctx, lockComputeTickerStats) {
+		log.Println("[scheduler] computeTickerStats: skipped (another instance running)")
+		return
+	}
+	defer d.releaseAdvisoryLock(ctx, lockComputeTickerStats)
 	log.Println("[job] computeTickerStats: start")
 	q := `
 		INSERT INTO cardex.ticker_stats
@@ -469,6 +543,11 @@ func (d *Deps) computeTickerStats(ctx context.Context) {
 // arbitrage opportunities into cardex.arbitrage_opportunities.
 // Run hourly.
 func (d *Deps) computeArbitrageOpportunities(ctx context.Context) {
+	if !d.tryAdvisoryLock(ctx, lockComputeArbitrageOpportunities) {
+		log.Println("[scheduler] computeArbitrageOpportunities: skipped (another instance running)")
+		return
+	}
+	defer d.releaseAdvisoryLock(ctx, lockComputeArbitrageOpportunities)
 	log.Println("[job] computeArbitrageOpportunities: start")
 
 	// NLC cost matrix (logistics EUR + avg destination tax by route).
@@ -767,6 +846,12 @@ func main() {
 
 	// Arbitrage scanner: every hour
 	go every(ctx, time.Hour, d.computeArbitrageOpportunities)
+
+	// Source overlap matrix for capture-recapture population estimation (daily 05:00 UTC)
+	go dailyAt(ctx, 5, d.computeSourceOverlap)
+
+	// Entity resolution: VIN-exact + fingerprint matching (daily 06:00 UTC)
+	go dailyAt(ctx, 6, d.runEntityResolution)
 
 	<-ctx.Done()
 	log.Println("scheduler: shutting down")

@@ -873,4 +873,116 @@ CREATE INDEX idx_entities_parent ON entities (parent_entity_ulid) WHERE parent_e
 -- Admin flag en users
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;
 
+-- =============================================================================
+-- FLEET CENSUS (Government registration statistics — KBA, RDW, DGT, SDES, DIV, ASTRA)
+-- =============================================================================
+CREATE TABLE fleet_census (
+    id                BIGSERIAL PRIMARY KEY,
+    country           CHAR(2) NOT NULL,
+    make              TEXT NOT NULL,
+    year              INT NOT NULL,
+    fuel_type         TEXT,
+    vehicle_count     BIGINT NOT NULL CHECK (vehicle_count >= 0),
+    as_of_date        DATE NOT NULL,
+    source            TEXT NOT NULL,
+    raw_category      TEXT,
+    ingested_at       TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (country, make, year, fuel_type, source, as_of_date)
+) WITH (fillfactor = 90);
+
+CREATE INDEX idx_fleet_census_country ON fleet_census (country, make, year);
+CREATE INDEX idx_fleet_census_date ON fleet_census (as_of_date DESC);
+
+-- =============================================================================
+-- COVERAGE MATRIX (Computed by census service: fleet × turnover × avg_dom / 365)
+-- =============================================================================
+CREATE TABLE coverage_matrix (
+    id                BIGSERIAL PRIMARY KEY,
+    country           CHAR(2) NOT NULL,
+    make              TEXT NOT NULL,
+    year              INT NOT NULL,
+    fuel_type         TEXT,
+    fleet_count       BIGINT NOT NULL,
+    turnover_rate     NUMERIC(6,4),
+    expected_for_sale INT NOT NULL,
+    observed_count    INT NOT NULL,
+    coverage          NUMERIC(5,4) NOT NULL CHECK (coverage >= 0),
+    economic_value_eur NUMERIC(14,2),
+    median_price_eur  NUMERIC(12,2),
+    computed_at       TIMESTAMPTZ DEFAULT NOW()
+) WITH (fillfactor = 80);
+
+CREATE INDEX idx_coverage_country ON coverage_matrix (country, make);
+CREATE INDEX idx_coverage_gap ON coverage_matrix (economic_value_eur DESC NULLS LAST);
+CREATE INDEX idx_coverage_date ON coverage_matrix (computed_at DESC);
+
+-- =============================================================================
+-- CRAWL FRONTIER (Per-shard priority, Thompson Sampling state)
+-- =============================================================================
+CREATE TABLE crawl_frontier (
+    id                BIGSERIAL PRIMARY KEY,
+    platform          TEXT NOT NULL,
+    country           CHAR(2) NOT NULL,
+    make              TEXT NOT NULL,
+    year              INT NOT NULL,
+    priority_score    NUMERIC(6,4) NOT NULL DEFAULT 0,
+    last_crawled_at   TIMESTAMPTZ,
+    next_crawl_at     TIMESTAMPTZ,
+    recrawl_interval_s INT DEFAULT 3600,
+    listings_found    INT DEFAULT 0,
+    listings_new      INT DEFAULT 0,
+    thompson_alpha    INT DEFAULT 1,
+    thompson_beta     INT DEFAULT 1,
+    updated_at        TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (platform, country, make, year)
+) WITH (fillfactor = 70);
+
+CREATE INDEX idx_frontier_priority ON crawl_frontier (priority_score DESC);
+CREATE INDEX idx_frontier_next ON crawl_frontier (next_crawl_at) WHERE next_crawl_at IS NOT NULL;
+
+-- =============================================================================
+-- ENTITY MATCHES (Cross-source dedup: vehicles + dealers, Fellegi-Sunter)
+-- =============================================================================
+CREATE TABLE entity_matches (
+    id                BIGSERIAL PRIMARY KEY,
+    match_type        TEXT NOT NULL CHECK (match_type IN ('VEHICLE','DEALER')),
+    entity_a_id       TEXT NOT NULL,
+    entity_a_source   TEXT NOT NULL,
+    entity_b_id       TEXT NOT NULL,
+    entity_b_source   TEXT NOT NULL,
+    confidence        NUMERIC(4,3) NOT NULL CHECK (confidence BETWEEN 0 AND 1),
+    match_method      TEXT NOT NULL,
+    match_fields      JSONB,
+    validated         BOOLEAN,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (match_type, entity_a_id, entity_a_source, entity_b_id, entity_b_source)
+) WITH (fillfactor = 80);
+
+CREATE INDEX idx_entity_matches_a ON entity_matches (entity_a_id);
+CREATE INDEX idx_entity_matches_b ON entity_matches (entity_b_id);
+CREATE INDEX idx_entity_matches_type ON entity_matches (match_type, confidence DESC);
+
+-- =============================================================================
+-- SOURCE OVERLAP MATRIX (Capture-recapture: Lincoln-Petersen validation)
+-- =============================================================================
+CREATE TABLE source_overlap_matrix (
+    id                BIGSERIAL PRIMARY KEY,
+    country           CHAR(2) NOT NULL,
+    source_a          TEXT NOT NULL,
+    source_b          TEXT NOT NULL,
+    overlap_count     INT NOT NULL,
+    only_a_count      INT NOT NULL,
+    only_b_count      INT NOT NULL,
+    lincoln_petersen_n NUMERIC(14,2),
+    chapman_n         NUMERIC(14,2),
+    chapman_var       NUMERIC(20,2),
+    ci_lower          NUMERIC(14,2),
+    ci_upper          NUMERIC(14,2),
+    capture_rate_a    NUMERIC(5,4),
+    capture_rate_b    NUMERIC(5,4),
+    computed_at       TIMESTAMPTZ DEFAULT NOW()
+) WITH (fillfactor = 90);
+
+CREATE INDEX idx_overlap_country ON source_overlap_matrix (country);
+
 COMMIT;

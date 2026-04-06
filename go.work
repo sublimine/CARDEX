@@ -7,7 +7,10 @@ use (
 	./internal/shared
 	./services/alpha
 	./services/api
+	./services/census
 	./services/forensics
+	./services/frontier
+	./services/imgproxy
 	./services/gateway
 	./services/legal
 	./services/pipeline

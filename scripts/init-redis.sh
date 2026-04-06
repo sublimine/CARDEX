@@ -212,4 +212,23 @@ echo "FX keys:  $($R HLEN fx_buffer) currencies"
 echo "Lua:      3 scripts loaded"
 echo "Rate cfg: $($R HLEN scraper:rate_limits) domains"
 echo ""
+# ---------------------------------------------------------------------------
+# 9. CENSUS & FRONTIER BLOOM FILTERS
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- Census & Frontier ---"
+$R BF.RESERVE bloom:census_vins 0.001 20000000 NONSCALING 2>/dev/null || \
+    echo "  [SKIP] bloom:census_vins already exists"
+echo "  [OK] bloom:census_vins (20M capacity, 0.1% FP)"
+
+# Stream for frontier crawl results (scrapers report back)
+$R XGROUP CREATE stream:crawl_results cg_frontier 0 MKSTREAM 2>/dev/null || \
+    echo "  [SKIP] stream:crawl_results/cg_frontier already exists"
+echo "  [OK] stream:crawl_results → cg_frontier"
+
+# Stream for thumbnail generation requests (pipeline → thumbgen)
+$R XGROUP CREATE stream:thumb_requests cg_thumbgen 0 MKSTREAM 2>/dev/null || \
+    echo "  [SKIP] stream:thumb_requests/cg_thumbgen already exists"
+echo "  [OK] stream:thumb_requests → cg_thumbgen"
+
 echo "=== CARDEX Redis Bootstrap Complete ==="
