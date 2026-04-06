@@ -27,6 +27,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import re
 import time
 from typing import AsyncGenerator
 
@@ -46,11 +47,16 @@ from scrapers.dealer_spider.dms import (
 )
 from scrapers.dealer_spider.dms import generic_feed, schema_org, generic_html
 
-log = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s [spider] %(message)s",
+    force=True,
+)
+log = logging.getLogger("spider")
 
 _STREAM_IN  = "stream:dealer_discovered"
 _CG_SPIDER  = "cg_dealer_spider"
-_CONCURRENCY = int(os.environ.get("SPIDER_CONCURRENCY", "20"))
+_CONCURRENCY = int(os.environ.get("SPIDER_CONCURRENCY", "10"))
 _REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=20, connect=8)
 
 # Maps DMS platform string → extractor coroutine
@@ -112,6 +118,36 @@ class _HTTPHelper:
             return False
 
 
+# ── False-positive filter (repair shops, parts stores, rental agencies) ──────
+
+_NOT_DEALER_PATTERNS = [
+    re.compile(r"\b(werkstatt|reparatur|autowerkstatt|kfz-werkstatt)\b", re.I),  # DE repair
+    re.compile(r"\b(taller|reparación|mecánico)\b", re.I),  # ES repair
+    re.compile(r"\b(atelier|réparation|garage de réparation)\b", re.I),  # FR repair
+    re.compile(r"\b(car hire|autoverhuur|location de voiture|mietwagen)\b", re.I),  # rental
+    re.compile(r"\b(auto parts|pièces auto|recambios|ersatzteile|onderdelen)\b", re.I),  # parts
+    re.compile(r"\b(fahrschule|auto-école|autoescuela|rijschool)\b", re.I),  # driving school
+]
+
+_IS_DEALER_PATTERNS = [
+    re.compile(r"\b(autohaus|händler|fahrzeuge|gebrauchtwagen|neuwagen)\b", re.I),  # DE
+    re.compile(r"\b(concesionario|coches|vehículos|ocasión|seminuevo)\b", re.I),  # ES
+    re.compile(r"\b(concessionnaire|véhicule|occasion|voiture)\b", re.I),  # FR
+    re.compile(r"\b(dealer|showroom|inventory|stock|te koop)\b", re.I),  # NL/EN
+    re.compile(r"\b(vente|verkauf|verkoop|vendita)\b", re.I),  # sales
+]
+
+
+def _is_likely_dealer(html: str) -> bool:
+    """Returns True if page looks like a car dealer, False if repair/parts/rental."""
+    not_dealer_score = sum(1 for p in _NOT_DEALER_PATTERNS if p.search(html))
+    is_dealer_score = sum(1 for p in _IS_DEALER_PATTERNS if p.search(html))
+    # If strong non-dealer signals and no dealer signals -> reject
+    if not_dealer_score >= 2 and is_dealer_score == 0:
+        return False
+    return True
+
+
 # ── Spider worker ─────────────────────────────────────────────────────────────
 
 async def _process_dealer(
@@ -129,8 +165,11 @@ async def _process_dealer(
     website   = fields.get("website", "").strip()
 
     if not website or not website.startswith("http"):
-        await _update_spider_status(pg, dealer_id, "NO_INVENTORY", "no_website")
+        print(f"[spider] SKIP {name} ({country}): no website", flush=True)
+        await _update_spider_status(pg, dealer_id, name, country, "NO_INVENTORY", "no_website")
         return
+
+    print(f"[spider] PROCESSING {name} ({country}): {website}", flush=True)
 
     # Bloom: skip if crawled recently
     bloom_key = f"dealer:crawled:{dealer_id}"
@@ -148,14 +187,20 @@ async def _process_dealer(
         ) as resp:
             if resp.status >= 400:
                 log.warning("spider: %s homepage HTTP %d", name, resp.status)
-                await _update_spider_status(pg, dealer_id, "FAILED", f"http_{resp.status}")
+                await _update_spider_status(pg, dealer_id, name, country, "FAILED", f"http_{resp.status}")
                 return
             html = await resp.text(errors="replace")
             # Use final URL after redirects as canonical base
             base_url = str(resp.url).rstrip("/")
     except Exception as exc:
         log.warning("spider: %s homepage fetch failed: %s", name, exc)
-        await _update_spider_status(pg, dealer_id, "FAILED", str(exc)[:120])
+        await _update_spider_status(pg, dealer_id, name, country, "FAILED", str(exc)[:120])
+        return
+
+    # 1b. Filter false positives (repair shops, parts stores, rental agencies)
+    if not _is_likely_dealer(html):
+        log.info("spider: %s filtered as non-dealer (repair/parts/rental)", name)
+        await _update_spider_status(pg, dealer_id, name, country, "NO_INVENTORY", "false_positive")
         return
 
     # 2. Detect DMS platform
@@ -166,7 +211,7 @@ async def _process_dealer(
     extractor = _DMS_EXTRACTORS.get(platform)
     if not extractor:
         log.warning("spider: no extractor for platform=%s dealer=%s", platform, name)
-        await _update_spider_status(pg, dealer_id, "NO_INVENTORY", f"no_extractor:{platform}")
+        await _update_spider_status(pg, dealer_id, name, country, "NO_INVENTORY", f"no_extractor:{platform}")
         return
 
     # 4. Extract listings
@@ -183,17 +228,22 @@ async def _process_dealer(
             try:
                 await gateway.ingest(listing)
                 listing_count += 1
+                if listing_count <= 3:
+                    print(f"[spider] VEHICLE {name}: {listing.make} {listing.model} {listing.year} EUR{listing.price_raw}", flush=True)
             except Exception as exc:
                 error_count += 1
-                log.debug("spider: ingest error %s: %s", name, exc)
+                if error_count <= 3:
+                    print(f"[spider] INGEST_ERR {name}: {exc}", flush=True)
     except Exception as exc:
-        log.warning("spider: extraction failed %s (platform=%s): %s", name, platform, exc)
-        await _update_spider_status(pg, dealer_id, "FAILED", str(exc)[:120])
+        print(f"[spider] EXTRACT_ERR {name} (platform={platform}): {exc}", flush=True)
+        await _update_spider_status(pg, dealer_id, name, country, "FAILED", str(exc)[:120])
         return
+
+    print(f"[spider] RESULT {name} ({country}): platform={platform} listings={listing_count} errors={error_count}", flush=True)
 
     # 5. Update dealer record
     status = "DONE" if listing_count > 0 else "NO_INVENTORY"
-    await _update_spider_status(pg, dealer_id, status, platform, listing_count)
+    await _update_spider_status(pg, dealer_id, name, country, status, platform, listing_count)
 
     # 6. Mark as crawled in bloom (7-day TTL)
     await rdb.set(bloom_key, "1", ex=7 * 86400)
@@ -207,6 +257,8 @@ async def _process_dealer(
 async def _update_spider_status(
     pg: asyncpg.Pool,
     dealer_id: str,
+    name: str,
+    country: str,
     status: str,
     dms_or_reason: str = "",
     listing_count: int = 0,
@@ -219,12 +271,10 @@ async def _update_spider_status(
                 spider_dms          = $2,
                 spider_listing_count = $3,
                 updated_at          = now()
-            WHERE place_id = $4
-               OR registry_id = $4
-               OR osm_id = $4
-        """, status, dms_or_reason[:64], listing_count, dealer_id)
+            WHERE name = $4 AND country = $5
+        """, status, dms_or_reason[:64], listing_count, name, country)
     except Exception as exc:
-        log.warning("spider: db update failed dealer_id=%s: %s", dealer_id, exc)
+        log.warning("spider: db update failed dealer=%s: %s", name, exc)
 
 
 # ── Consumer loop ─────────────────────────────────────────────────────────────
@@ -304,7 +354,7 @@ async def run() -> None:
         format="%(asctime)s %(levelname)s [spider] %(message)s",
     )
 
-    rdb = redis_from_url(os.environ.get("REDIS_URL", "redis://localhost:6379"))
+    rdb = redis_from_url(os.environ.get("REDIS_URL", "redis://localhost:6379"), decode_responses=True)
     pg  = await asyncpg.create_pool(
         os.environ.get("DATABASE_URL", "postgresql://cardex:cardex@localhost:5432/cardex"),
         min_size=2, max_size=8,

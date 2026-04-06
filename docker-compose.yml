@@ -584,7 +584,7 @@ services:
       REDIS_URL: redis://redis:6379
       GATEWAY_URL: http://gateway:8080
       GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
-      SPIDER_CONCURRENCY: "20"
+      SPIDER_CONCURRENCY: "10"
       PLAYWRIGHT_HEADLESS: "true"
       LOG_LEVEL: info
     command: ["-m", "dealer_spider", "spider"]

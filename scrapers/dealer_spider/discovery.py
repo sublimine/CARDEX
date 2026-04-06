@@ -24,6 +24,7 @@ import asyncio
 import hashlib
 import json
 import os
+import random
 import re
 import signal
 import time
@@ -1549,6 +1550,29 @@ class URLResolver:
     _CONSUMER_GROUP = "cg_url_resolver"
     _CONSUMER_NAME = "resolver-1"
 
+    _USER_AGENTS = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0",
+        "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+    ]
+
+    _ACCEPT_LANGUAGES = {
+        "DE": "de-DE,de;q=0.9,en;q=0.5",
+        "ES": "es-ES,es;q=0.9,en;q=0.5",
+        "FR": "fr-FR,fr;q=0.9,en;q=0.5",
+        "NL": "nl-NL,nl;q=0.9,en;q=0.5",
+        "BE": "nl-BE,nl;q=0.8,fr-BE;q=0.7,en;q=0.5",
+        "CH": "de-CH,de;q=0.9,fr;q=0.7,en;q=0.5",
+    }
+
     _PORTAL_DOMAINS = frozenset({
         "autoscout24.", "mobile.de", "kleinanzeigen.de", "heycar.",
         "coches.net", "wallapop.com", "milanuncios.com", "autocasion.com",
@@ -1582,7 +1606,6 @@ class URLResolver:
     }
 
     def __init__(self) -> None:
-        self._rate = _TokenBucket(0.3)  # 1 req per 3.3s — polite to DDG
         self._resolved = 0
         self._failed = 0
         self._stop = asyncio.Event()
@@ -1606,13 +1629,6 @@ class URLResolver:
         async with httpx.AsyncClient(
             timeout=15.0,
             follow_redirects=True,
-            headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/131.0.0.0 Safari/537.36",
-                "Accept": "text/html,application/xhtml+xml",
-                "Accept-Language": "en-US,en;q=0.9",
-            },
         ) as client:
             while not self._stop.is_set():
                 try:
@@ -1705,21 +1721,38 @@ class URLResolver:
     def stop(self) -> None:
         self._stop.set()
 
+    def _build_headers(self, country: str) -> dict[str, str]:
+        """Build fresh headers with random UA and country-appropriate Accept-Language."""
+        accept_lang = self._ACCEPT_LANGUAGES.get(country, "en-US,en;q=0.9")
+        return {
+            "User-Agent": random.choice(self._USER_AGENTS),
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": accept_lang,
+            "Accept-Encoding": "gzip, deflate, br",
+            "DNT": "1",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+        }
+
     async def _resolve_one(
         self, client: httpx.AsyncClient, name: str, city: str, country: str
     ) -> str | None:
         """Search DuckDuckGo for dealer website. Returns URL or None."""
-        await self._rate.acquire()
+        # Random jitter: 2-6s between requests to avoid detection
+        await asyncio.sleep(2.0 + random.random() * 4.0)
 
         country_name = self._COUNTRY_NAMES.get(country, country)
         auto_kw = self._COUNTRY_AUTO_KEYWORDS.get(country, "car dealer")
         query = f"{name} {city} {country_name} {auto_kw}"
 
+        headers = self._build_headers(country)
+        headers["Referer"] = "https://html.duckduckgo.com/"
+
         try:
             resp = await client.post(
                 self._DDG_URL,
                 data={"q": query, "b": ""},
-                headers={"Referer": "https://html.duckduckgo.com/"},
+                headers=headers,
             )
             if resp.status_code != 200:
                 return None
