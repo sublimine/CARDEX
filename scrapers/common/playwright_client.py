@@ -5,6 +5,7 @@ Honest CardexBot UA — CARDEX is an indexer that drives traffic back to portals
 from __future__ import annotations
 
 import asyncio
+import json
 import random
 from typing import Any, Optional
 
@@ -104,6 +105,51 @@ class PlaywrightClient:
                     pass
             await asyncio.sleep(random.uniform(0.5, 1.5))
             return await page.content()
+        finally:
+            await page.close()
+
+    async def get_page_with_interception(
+        self,
+        url: str,
+        wait_for: str | None = None,
+        timeout: int = 30_000,
+    ) -> tuple[str, list[dict], list[str]]:
+        """Navigate, intercept JSON responses, return (html, intercepted_json_list, iframe_srcs)."""
+        page = await self.new_page()
+        intercepted: list[dict] = []
+
+        async def on_response(response):
+            try:
+                ct = response.headers.get("content-type", "")
+                if response.status == 200 and ("json" in ct or "javascript" in ct):
+                    body = await response.body()
+                    if len(body) > 1024:
+                        data = json.loads(body)
+                        intercepted.append(data)
+            except Exception:
+                pass
+
+        page.on("response", on_response)
+
+        try:
+            await page.goto(url, wait_until="networkidle", timeout=timeout)
+            if wait_for:
+                try:
+                    await page.wait_for_selector(wait_for, timeout=5000)
+                except Exception:
+                    pass
+            await asyncio.sleep(1.0)
+            html = await page.content()
+
+            # Extract iframe sources
+            iframes = await page.query_selector_all("iframe[src]")
+            iframe_srcs: list[str] = []
+            for iframe in iframes:
+                src = await iframe.get_attribute("src")
+                if src:
+                    iframe_srcs.append(src)
+
+            return html, intercepted, iframe_srcs
         finally:
             await page.close()
 
