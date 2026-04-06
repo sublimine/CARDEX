@@ -1037,196 +1037,9 @@ class CommonCrawlProbe(DiscoveryProbe):
 # ── Probe 5: Google Places (Optional) ───────────────────────────────────────
 
 
-class GooglePlacesProbe(DiscoveryProbe):
-    """
-    Uses Google Places Nearby Search with H3 grid to find car dealers.
-    Only runs if GOOGLE_MAPS_API_KEY is set.
-    """
-
-    def __init__(self) -> None:
-        self._api_key = _GOOGLE_API_KEY
-        self._qps = float(os.environ.get("DISCOVERY_QPS", "10"))
-        self._rate = _TokenBucket(self._qps)
-        self._client: httpx.AsyncClient | None = None
-        self._backoff_until = 0.0
-
-    @property
-    def name(self) -> str:
-        return "GOOGLE_MAPS"
-
-    def supports_country(self, country: str) -> bool:
-        return bool(self._api_key)
-
-    async def discover(self, country: str) -> AsyncIterator[DealerRecord]:
-        if not self._api_key:
-            return
-
-        cells = _h3_cells_for_country(country)
-        if not cells:
-            return
-
-        queries = _SEARCH_QUERIES.get(country, ["car dealer"])
-        total_yielded = 0
-
-        async with httpx.AsyncClient(
-            timeout=httpx.Timeout(30.0, connect=10.0),
-            limits=httpx.Limits(max_keepalive_connections=10, max_connections=20),
-        ) as client:
-            self._client = client
-            seen_place_ids: set[str] = set()
-
-            for cell_idx, cell in enumerate(cells):
-                lat, lng = h3.cell_to_latlng(cell)
-
-                for query in queries:
-                    try:
-                        results = await self._nearby_search_all_pages(lat, lng, query)
-                    except Exception as exc:
-                        log.debug(
-                            "probe.google.query_error",
-                            cell=cell,
-                            query=query,
-                            error=str(exc),
-                        )
-                        continue
-
-                    for place in results:
-                        place_id = place.get("place_id", "")
-                        if not place_id or place_id in seen_place_ids:
-                            continue
-                        seen_place_ids.add(place_id)
-
-                        record = self._extract_dealer(place, country, place_id)
-
-                        # Enrich with website
-                        try:
-                            website = await self._fetch_website(place_id)
-                            if website:
-                                record.website = _normalize_website(website)
-                        except Exception:
-                            pass
-
-                        total_yielded += 1
-                        yield record
-
-                if (cell_idx + 1) % 100 == 0:
-                    log.info(
-                        "probe.google.progress",
-                        country=country,
-                        cells_done=cell_idx + 1,
-                        cells_total=len(cells),
-                        found=total_yielded,
-                    )
-
-            self._client = None
-
-        log.info("probe.google.results", country=country, count=total_yielded)
-
-    def _extract_dealer(self, place: dict, country: str, place_id: str) -> DealerRecord:
-        location = place.get("geometry", {}).get("location", {})
-        lat = location.get("lat")
-        lng = location.get("lng")
-        address = place.get("vicinity") or place.get("formatted_address") or ""
-
-        return DealerRecord(
-            name=place.get("name", ""),
-            country=country,
-            source="GOOGLE_MAPS",
-            lat=_float_or_none(lat),
-            lng=_float_or_none(lng),
-            address=address if address else None,
-            place_id=place_id,
-        )
-
-    async def _nearby_search(
-        self,
-        lat: float,
-        lng: float,
-        keyword: str,
-        page_token: str | None = None,
-    ) -> dict:
-        assert self._client is not None
-
-        now = time.monotonic()
-        if self._backoff_until > now:
-            await asyncio.sleep(self._backoff_until - now)
-
-        await self._rate.acquire()
-
-        params: dict[str, Any] = {
-            "key": self._api_key,
-            "location": f"{lat},{lng}",
-            "radius": _SEARCH_RADIUS_M,
-            "keyword": keyword,
-            "type": "car_dealer",
-        }
-        if page_token:
-            params["pagetoken"] = page_token
-
-        for attempt in range(5):
-            resp = await self._client.get(_PLACES_NEARBY_URL, params=params)
-
-            if resp.status_code == 429:
-                backoff = min(2 ** (attempt + 1), 120)
-                log.warning("probe.google.429", backoff=backoff)
-                self._backoff_until = time.monotonic() + backoff
-                await asyncio.sleep(backoff)
-                continue
-
-            if resp.status_code >= 500:
-                await asyncio.sleep(min(2 ** attempt, 60))
-                continue
-
-            resp.raise_for_status()
-            data = resp.json()
-            status = data.get("status", "")
-
-            if status == "OVER_QUERY_LIMIT":
-                backoff = min(2 ** (attempt + 1), 120)
-                self._backoff_until = time.monotonic() + backoff
-                await asyncio.sleep(backoff)
-                continue
-
-            if status in ("REQUEST_DENIED", "INVALID_REQUEST"):
-                log.error("probe.google.error", status=status, error=data.get("error_message"))
-                return {"results": [], "status": status}
-
-            return data
-
-        return {"results": [], "status": "RETRY_EXHAUSTED"}
-
-    async def _nearby_search_all_pages(
-        self, lat: float, lng: float, keyword: str
-    ) -> list[dict]:
-        all_results: list[dict] = []
-        page_token: str | None = None
-
-        for _ in range(3):
-            data = await self._nearby_search(lat, lng, keyword, page_token=page_token)
-            all_results.extend(data.get("results", []))
-            page_token = data.get("next_page_token")
-            if not page_token:
-                break
-            await asyncio.sleep(2.0)
-
-        return all_results
-
-    async def _fetch_website(self, place_id: str) -> str | None:
-        assert self._client is not None
-        await self._rate.acquire()
-
-        resp = await self._client.get(
-            _PLACES_DETAIL_URL,
-            params={
-                "key": self._api_key,
-                "place_id": place_id,
-                "fields": "website,formatted_phone_number",
-            },
-        )
-        if resp.status_code != 200:
-            return None
-        result = resp.json().get("result", {})
-        return result.get("website")
+# GooglePlacesProbe (blind H3 grid scan) has been REMOVED.
+# Replaced by GooglePlacesSniperProbe in the enrichment layer above.
+# Google Places is now a precision instrument, not a carpet bomb.
 
 
 # ── Probe 6: OEM Dealer Locators ────────────────────────────────────────────
@@ -1701,6 +1514,403 @@ async def _publish_dealer(rdb: Any, record: DealerRecord) -> None:
     )
 
 
+# ── URL Resolution Engine (DuckDuckGo/Bing) ────────────────────────────────
+# Takes dealers WITHOUT a website and resolves their URL via search engines.
+# This is NOT a probe — it runs AFTER all probes complete, as an enrichment
+# pass on the dealers table. Coste: 0€.
+
+
+class URLResolver:
+    """
+    Resolves dealer websites from business name + city via DuckDuckGo HTML.
+
+    Strategy:
+      1. Query DuckDuckGo HTML: "{name} {city} {country_name} auto dealer site"
+      2. Parse first organic result that isn't a portal/directory
+      3. Validate: HEAD request to check domain is alive + looks automotive
+      4. Update dealers.website in PostgreSQL
+
+    Excludes known portals (AutoScout24, mobile.de, etc.) from results to
+    avoid circular references. We want the dealer's OWN website.
+    """
+
+    _DDG_URL = "https://html.duckduckgo.com/html/"
+
+    _PORTAL_DOMAINS = frozenset({
+        "autoscout24.", "mobile.de", "kleinanzeigen.de", "heycar.",
+        "coches.net", "wallapop.com", "milanuncios.com", "autocasion.com",
+        "leboncoin.fr", "lacentrale.fr", "paruvendu.com",
+        "marktplaats.nl", "autotrack.nl", "gaspedaal.nl",
+        "2dehands.be", "gocar.be",
+        "tutti.ch", "comparis.ch", "ricardo.ch",
+        "facebook.com", "instagram.com", "twitter.com", "linkedin.com",
+        "youtube.com", "google.com", "yelp.", "tripadvisor.",
+        "pagesjaunes.fr", "gelbeseiten.de", "goudengids.",
+        "paginasamarillas.es", "local.ch", "search.ch",
+        "wikipedia.org", "wikidata.org",
+    })
+
+    _COUNTRY_NAMES = {
+        "DE": "Deutschland",
+        "ES": "España",
+        "FR": "France",
+        "NL": "Nederland",
+        "BE": "België",
+        "CH": "Schweiz",
+    }
+
+    _COUNTRY_AUTO_KEYWORDS = {
+        "DE": "autohaus",
+        "ES": "concesionario coches",
+        "FR": "concessionnaire automobile",
+        "NL": "autobedrijf",
+        "BE": "autobedrijf garage",
+        "CH": "autohaus garage",
+    }
+
+    def __init__(self) -> None:
+        self._rate = _TokenBucket(0.3)  # 1 req per 3.3s — polite to DDG
+        self._resolved = 0
+        self._failed = 0
+
+    async def resolve_missing_websites(
+        self, pg: asyncpg.Pool, rdb: Any
+    ) -> tuple[int, int]:
+        """
+        Query dealers with website IS NULL and spider_status = 'PENDING',
+        resolve their URLs via DuckDuckGo, update the database.
+
+        Returns (resolved_count, failed_count).
+        """
+        rows = await pg.fetch(
+            """
+            SELECT id, name, city, postcode, country, registry_id
+            FROM dealers
+            WHERE website IS NULL
+              AND spider_status = 'PENDING'
+              AND name IS NOT NULL AND name != ''
+            ORDER BY country, city NULLS LAST
+            LIMIT 10000
+            """
+        )
+
+        if not rows:
+            log.info("url_resolver.no_dealers_without_website")
+            return (0, 0)
+
+        log.info("url_resolver.starting", dealers_to_resolve=len(rows))
+
+        async with httpx.AsyncClient(
+            timeout=15.0,
+            follow_redirects=True,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/131.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml",
+                "Accept-Language": "en-US,en;q=0.9",
+            },
+        ) as client:
+            for idx, row in enumerate(rows):
+                dealer_id = row["id"]
+                name = row["name"]
+                city = row["city"] or ""
+                country = row["country"]
+
+                website = await self._resolve_one(client, name, city, country)
+
+                if website:
+                    await pg.execute(
+                        """
+                        UPDATE dealers
+                        SET website = $1, updated_at = NOW()
+                        WHERE id = $2 AND website IS NULL
+                        """,
+                        website,
+                        dealer_id,
+                    )
+                    # Also publish to spider stream
+                    await rdb.xadd(
+                        _STREAM_OUT,
+                        {
+                            "dealer_id": str(dealer_id),
+                            "name": name,
+                            "country": country,
+                            "website": website,
+                            "source": "URL_RESOLVER",
+                        },
+                    )
+                    self._resolved += 1
+                else:
+                    # Mark for Google Places sniper (if available)
+                    await pg.execute(
+                        """
+                        UPDATE dealers
+                        SET spider_status = 'URL_UNRESOLVED', updated_at = NOW()
+                        WHERE id = $1 AND website IS NULL
+                        """,
+                        dealer_id,
+                    )
+                    self._failed += 1
+
+                if (idx + 1) % 100 == 0:
+                    log.info(
+                        "url_resolver.progress",
+                        done=idx + 1,
+                        total=len(rows),
+                        resolved=self._resolved,
+                        failed=self._failed,
+                    )
+
+        log.info(
+            "url_resolver.complete",
+            resolved=self._resolved,
+            failed=self._failed,
+        )
+        return (self._resolved, self._failed)
+
+    async def _resolve_one(
+        self, client: httpx.AsyncClient, name: str, city: str, country: str
+    ) -> str | None:
+        """Search DuckDuckGo for dealer website. Returns URL or None."""
+        await self._rate.acquire()
+
+        country_name = self._COUNTRY_NAMES.get(country, country)
+        auto_kw = self._COUNTRY_AUTO_KEYWORDS.get(country, "car dealer")
+        query = f"{name} {city} {country_name} {auto_kw}"
+
+        try:
+            resp = await client.post(
+                self._DDG_URL,
+                data={"q": query, "b": ""},
+                headers={"Referer": "https://html.duckduckgo.com/"},
+            )
+            if resp.status_code != 200:
+                return None
+        except Exception:
+            return None
+
+        # Parse organic results from DDG HTML
+        html = resp.text
+        urls = re.findall(
+            r'<a[^>]+class="result__a"[^>]+href="([^"]+)"',
+            html,
+        )
+        if not urls:
+            # Fallback: try generic link extraction from result snippets
+            urls = re.findall(
+                r'<a[^>]+rel="nofollow"[^>]+href="//duckduckgo\.com/l/\?uddg=([^&"]+)',
+                html,
+            )
+            urls = [urllib.parse.unquote(u) for u in urls]
+
+        for url in urls[:10]:
+            # Skip portals and directories
+            if any(portal in url.lower() for portal in self._PORTAL_DOMAINS):
+                continue
+
+            # Validate the URL looks real
+            normalized = _normalize_website(url)
+            if not normalized:
+                continue
+
+            # Quick HEAD check to verify domain is alive
+            try:
+                head_resp = await client.head(normalized, timeout=8.0)
+                if head_resp.status_code < 400:
+                    return normalized
+            except Exception:
+                # Domain might block HEAD, try GET
+                try:
+                    get_resp = await client.get(normalized, timeout=8.0)
+                    if get_resp.status_code < 400:
+                        return normalized
+                except Exception:
+                    continue
+
+        return None
+
+
+# ── Google Places Sniper Mode ────────────────────────────────────────────────
+# Google Places is NOT used for blind H3 grid scanning anymore.
+# It is ONLY used as a last-resort enrichment for specific dealers where
+# the free URL resolver failed. This minimizes API cost to near-zero.
+
+
+class GooglePlacesSniperProbe(DiscoveryProbe):
+    """
+    SNIPER MODE: Only queries Google Places for specific dealers that:
+    1. Were discovered by other probes (INSEE, Zefix, OEM, etc.)
+    2. Have NO website after the free URL resolver ran
+    3. Are marked spider_status = 'URL_UNRESOLVED'
+
+    This is NOT a grid-scanning probe. It makes exactly 1-2 API calls per
+    unresolved dealer (text search + place details), not thousands of
+    Nearby Search calls across H3 cells.
+
+    Cost model: ~$0.032 per dealer resolved (1 text search + 1 detail).
+    If 500 dealers are unresolved after free probes, cost = ~$16 total.
+    """
+
+    _TEXT_SEARCH_URL = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+    _DETAIL_URL = "https://maps.googleapis.com/maps/api/place/details/json"
+
+    def __init__(self) -> None:
+        self._api_key = _GOOGLE_API_KEY
+        self._rate = _TokenBucket(5.0)
+
+    @property
+    def name(self) -> str:
+        return "GOOGLE_SNIPER"
+
+    def supports_country(self, country: str) -> bool:
+        return bool(self._api_key)
+
+    async def discover(self, country: str) -> AsyncIterator[DealerRecord]:
+        """This probe does NOT discover new dealers. It enriches existing ones."""
+        # This is a no-op as a discovery probe. The enrichment happens in
+        # resolve_unresolved_dealers() which is called by the orchestrator
+        # AFTER all probes and the URL resolver have run.
+        return
+        yield  # Make this a generator (Python requires yield in async generators)
+
+    async def resolve_unresolved_dealers(
+        self, pg: asyncpg.Pool, rdb: Any
+    ) -> int:
+        """
+        For each dealer with spider_status='URL_UNRESOLVED', attempt to find
+        their Google Places entry and extract the website URL.
+
+        Returns count of dealers resolved.
+        """
+        if not self._api_key:
+            log.info("google_sniper.disabled", reason="no API key")
+            return 0
+
+        rows = await pg.fetch(
+            """
+            SELECT id, name, city, postcode, country
+            FROM dealers
+            WHERE spider_status = 'URL_UNRESOLVED'
+              AND website IS NULL
+              AND place_id IS NULL
+            ORDER BY country, city NULLS LAST
+            LIMIT 2000
+            """
+        )
+
+        if not rows:
+            log.info("google_sniper.no_unresolved_dealers")
+            return 0
+
+        log.info("google_sniper.starting", dealers=len(rows))
+        resolved = 0
+
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            for row in rows:
+                dealer_id = row["id"]
+                name = row["name"]
+                city = row["city"] or ""
+                country = row["country"]
+
+                website, place_id = await self._snipe_one(
+                    client, name, city, country
+                )
+
+                if website or place_id:
+                    await pg.execute(
+                        """
+                        UPDATE dealers
+                        SET website = COALESCE($1, website),
+                            place_id = COALESCE($2, place_id),
+                            spider_status = CASE WHEN $1 IS NOT NULL THEN 'PENDING' ELSE spider_status END,
+                            updated_at = NOW()
+                        WHERE id = $3
+                        """,
+                        website,
+                        place_id,
+                        dealer_id,
+                    )
+                    if website:
+                        await rdb.xadd(
+                            _STREAM_OUT,
+                            {
+                                "dealer_id": str(dealer_id),
+                                "name": name,
+                                "country": country,
+                                "website": website,
+                                "source": "GOOGLE_SNIPER",
+                            },
+                        )
+                        resolved += 1
+                else:
+                    # Truly unresolvable — mark as NO_INVENTORY
+                    await pg.execute(
+                        """
+                        UPDATE dealers
+                        SET spider_status = 'NO_INVENTORY', updated_at = NOW()
+                        WHERE id = $1
+                        """,
+                        dealer_id,
+                    )
+
+        log.info("google_sniper.complete", resolved=resolved, total=len(rows))
+        return resolved
+
+    async def _snipe_one(
+        self, client: httpx.AsyncClient, name: str, city: str, country: str
+    ) -> tuple[str | None, str | None]:
+        """Text Search for a specific dealer, then fetch website from details."""
+        await self._rate.acquire()
+
+        query = f"{name} {city} car dealer"
+        try:
+            resp = await client.get(
+                self._TEXT_SEARCH_URL,
+                params={
+                    "key": self._api_key,
+                    "query": query,
+                    "region": country.lower(),
+                    "type": "car_dealer",
+                },
+            )
+            if resp.status_code != 200:
+                return (None, None)
+            data = resp.json()
+            results = data.get("results", [])
+            if not results:
+                return (None, None)
+        except Exception:
+            return (None, None)
+
+        # Take the first result (most relevant)
+        place = results[0]
+        place_id = place.get("place_id")
+        if not place_id:
+            return (None, None)
+
+        # Fetch website from Place Details
+        await self._rate.acquire()
+        try:
+            detail_resp = await client.get(
+                self._DETAIL_URL,
+                params={
+                    "key": self._api_key,
+                    "place_id": place_id,
+                    "fields": "website,formatted_phone_number",
+                },
+            )
+            if detail_resp.status_code != 200:
+                return (None, place_id)
+            detail = detail_resp.json().get("result", {})
+            website = detail.get("website")
+            if website:
+                website = _normalize_website(website)
+            return (website, place_id)
+        except Exception:
+            return (None, place_id)
+
+
 # ── Discovery Orchestrator ───────────────────────────────────────────────────
 
 
@@ -1718,21 +1928,18 @@ class DiscoveryOrchestrator:
         self._stats: dict[str, dict[str, int]] = {}
 
     def _register_probes(self) -> None:
-        """Register all available probes based on configuration."""
-        # Always-on probes
+        """Register all available probes based on configuration.
+
+        NOTE: Google Places is NOT registered as a probe. It runs as a
+        last-resort sniper AFTER the free URL resolver. See run() flow.
+        """
+        # Always-on free probes (Phase 1: Discovery)
         self._probes.append(OSMProbe())
         self._probes.append(INSEEProbe())
         self._probes.append(ZefixProbe())
         self._probes.append(CommonCrawlProbe())
         self._probes.append(OEMDealerProbe())
         self._probes.append(PortalDirectoryProbe())
-
-        # Optional: Google Places (only if API key is set)
-        if _GOOGLE_API_KEY:
-            self._probes.append(GooglePlacesProbe())
-            log.info("orchestrator.google_places_enabled")
-        else:
-            log.info("orchestrator.google_places_disabled", hint="Set GOOGLE_MAPS_API_KEY to enable")
 
         log.info(
             "orchestrator.probes_registered",
@@ -1875,13 +2082,32 @@ class DiscoveryOrchestrator:
 
     async def run(self, countries: list[str] | None = None) -> dict[str, dict[str, int]]:
         """
-        Main entry point. Runs all probes for all countries sequentially.
-        Returns stats dict: {country: {probe_name: count}}.
+        Main entry point. Executes the full discovery pipeline in 3 phases:
+
+        Phase 1 — DISCOVERY (free probes):
+            OSM, INSEE, Zefix, CommonCrawl, OEM, PortalDirectories
+            → Populates dealers table. Many will have website=NULL.
+
+        Phase 2 — URL RESOLUTION (free, DuckDuckGo):
+            Takes all dealers where website IS NULL, searches for their
+            website via DuckDuckGo HTML scraping. Cost: 0€.
+            → Fills website for ~70-80% of NULL entries.
+
+        Phase 3 — GOOGLE SNIPER (paid, last resort):
+            Takes remaining dealers where URL resolver failed
+            (spider_status='URL_UNRESOLVED'). Uses Google Places Text
+            Search to find exactly those dealers. 1-2 API calls each.
+            → Only runs if GOOGLE_MAPS_API_KEY is set. Cost: ~$0.032/dealer.
+
+        The arrow: Discovery → Free Resolution → Premium Resolution (on failure only).
         """
         countries = countries or _COUNTRIES
         self._register_probes()
         await self._setup()
         self._setup_signal_handlers()
+
+        assert self._pg is not None
+        assert self._rdb is not None
 
         grand_stats: dict[str, dict[str, int]] = {}
 
@@ -1889,12 +2115,15 @@ class DiscoveryOrchestrator:
             "orchestrator.starting",
             countries=countries,
             probes=[p.name for p in self._probes],
+            phases=["DISCOVERY", "URL_RESOLUTION", "GOOGLE_SNIPER"],
         )
 
         try:
+            # ── Phase 1: Discovery (free probes) ────────────────────────
+            log.info("orchestrator.phase1_discovery")
+
             for country in countries:
                 if self._stop_event.is_set():
-                    log.info("orchestrator.stopped_before_country", country=country)
                     break
 
                 country_stats: dict[str, int] = {}
@@ -1902,7 +2131,6 @@ class DiscoveryOrchestrator:
                 for probe in self._probes:
                     if self._stop_event.is_set():
                         break
-
                     count = await self._run_probe_for_country(probe, country)
                     country_stats[probe.name] = count
 
@@ -1910,21 +2138,85 @@ class DiscoveryOrchestrator:
 
                 total = sum(country_stats.values())
                 log.info(
-                    "orchestrator.country_done",
+                    "orchestrator.country_discovery_done",
                     country=country,
                     total_found=total,
                     per_probe=country_stats,
                 )
 
+            if self._stop_event.is_set():
+                return grand_stats
+
+            # ── Phase 2: URL Resolution (free, DuckDuckGo) ─────────────
+            log.info("orchestrator.phase2_url_resolution")
+
+            resolver = URLResolver()
+            resolved, failed = await resolver.resolve_missing_websites(
+                self._pg, self._rdb
+            )
+
+            for cs in grand_stats.values():
+                cs["URL_RESOLVER_resolved"] = resolved
+                cs["URL_RESOLVER_failed"] = failed
+
+            if self._stop_event.is_set():
+                return grand_stats
+
+            # ── Phase 3: Google Sniper (paid, last resort) ─────────────
+            if _GOOGLE_API_KEY and failed > 0:
+                log.info(
+                    "orchestrator.phase3_google_sniper",
+                    unresolved_dealers=failed,
+                )
+                sniper = GooglePlacesSniperProbe()
+                sniped = await sniper.resolve_unresolved_dealers(
+                    self._pg, self._rdb
+                )
+                for cs in grand_stats.values():
+                    cs["GOOGLE_SNIPER"] = sniped
+            elif not _GOOGLE_API_KEY and failed > 0:
+                log.info(
+                    "orchestrator.phase3_skipped",
+                    reason="no GOOGLE_MAPS_API_KEY",
+                    unresolved_dealers=failed,
+                    hint="Set GOOGLE_MAPS_API_KEY to resolve remaining dealers",
+                )
+            else:
+                log.info("orchestrator.phase3_skipped", reason="all dealers resolved")
+
         finally:
             await self._teardown()
 
-        total_all = sum(
-            sum(cs.values()) for cs in grand_stats.values()
-        )
+        # ── Summary ──────────────────────────────────────────────────
+        total_all = sum(sum(cs.values()) for cs in grand_stats.values())
+
+        # Count dealers with/without websites
+        try:
+            async with asyncpg.create_pool(_DATABASE_URL, min_size=1, max_size=2) as pg:
+                row = await pg.fetchrow(
+                    """
+                    SELECT
+                        COUNT(*) as total,
+                        COUNT(*) FILTER (WHERE website IS NOT NULL) as with_website,
+                        COUNT(*) FILTER (WHERE website IS NULL) as without_website
+                    FROM dealers
+                    """
+                )
+                log.info(
+                    "orchestrator.final_stats",
+                    total_dealers=row["total"],
+                    with_website=row["with_website"],
+                    without_website=row["without_website"],
+                    coverage_pct=round(
+                        row["with_website"] / max(row["total"], 1) * 100, 1
+                    ),
+                )
+        except Exception:
+            pass
+
         log.info(
             "orchestrator.complete",
-            total_dealers=total_all,
+            total_discoveries=total_all,
             stats=grand_stats,
         )
         return grand_stats
