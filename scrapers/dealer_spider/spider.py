@@ -201,6 +201,19 @@ def _extract_jsonld_vehicles(
     listings = []
     seen: set[str] = set()
     for obj in _extract_jsonld_blocks(html):
+        # Handle ItemList wrapping individual Vehicle entries
+        if isinstance(obj, dict) and obj.get("@type") == "ItemList":
+            for element in obj.get("itemListElement", []):
+                item = element if isinstance(element, dict) else {}
+                # ListItem wraps the actual item
+                if item.get("@type") == "ListItem":
+                    item = item.get("item", item)
+                if _is_vehicle(item):
+                    listing = _vehicle_from_jsonld(item, dealer_id, dealer_name, base_url, country)
+                    if listing and listing.source_listing_id not in seen:
+                        seen.add(listing.source_listing_id)
+                        listings.append(listing)
+            continue
         if not _is_vehicle(obj):
             continue
         listing = _vehicle_from_jsonld(obj, dealer_id, dealer_name, base_url, country)
@@ -208,6 +221,25 @@ def _extract_jsonld_vehicles(
             seen.add(listing.source_listing_id)
             listings.append(listing)
     return listings
+
+
+# Inventory paths for Vector 1 probing (matches schema_org.py _PROBE_PATHS)
+_JSONLD_PROBE_PATHS = [
+    "/stock", "/inventory", "/vehicles", "/cars", "/used-cars",
+    "/coches", "/fahrzeuge", "/voitures", "/occasion", "/gebrauchtwagen",
+    "/tweedehands", "/occasions", "/coches-segunda-mano", "/gamas/ocasion",
+]
+
+
+def _is_valid_listing(listing: RawListing) -> bool:
+    """Reject garbage before it touches the pipeline."""
+    if not listing.make or not listing.model:
+        return False
+    if listing.year and (listing.year < 1920 or listing.year > 2027):
+        return False
+    if listing.price_raw is not None and (listing.price_raw < 500 or listing.price_raw > 5_000_000):
+        return False
+    return True
 
 
 # ── Vector 2: Sitemap → vehicle detail pages → JSON-LD ──────────────────────
@@ -491,6 +523,22 @@ async def _process_dealer(
 
     # ── VECTOR 1: JSON-LD extraction (instant, zero cost) ────────────────
     listings = _extract_jsonld_vehicles(html, dealer_id, name, base_url, country)
+    if not listings:
+        # Probe inventory paths for JSON-LD (catches OcasionPlus etc.)
+        for probe_path in _JSONLD_PROBE_PATHS:
+            probe_url = base_url + probe_path
+            try:
+                async with session.get(
+                    probe_url, timeout=_REQUEST_TIMEOUT, headers=_HEADERS, allow_redirects=True,
+                ) as probe_resp:
+                    if probe_resp.status < 400:
+                        probe_html = await probe_resp.text(errors="replace")
+                        listings = _extract_jsonld_vehicles(probe_html, dealer_id, name, base_url, country)
+                        if listings:
+                            log.info("spider: %s → Vector 1 JSON-LD found on %s: %d vehicles", name, probe_path, len(listings))
+                            break
+            except Exception:
+                continue
     if listings:
         vector_used = "jsonld"
         log.info("spider: %s → Vector 1 (JSON-LD): %d vehicles", name, len(listings))
@@ -546,6 +594,9 @@ async def _process_dealer(
     # ── Publish all extracted listings ────────────────────────────────────
     if listings:
         for listing in listings:
+            if not _is_valid_listing(listing):
+                print(f"[spider] REJECTED {name}: make={listing.make} model={listing.model} year={listing.year} price={listing.price_raw}", flush=True)
+                continue
             try:
                 await gateway.ingest(listing)
                 listing_count += 1

@@ -244,6 +244,18 @@ func processMessage(ctx context.Context, rdb *redis.Client, pool *pgxpool.Pool, 
 		return
 	}
 
+	// Minimum viable vehicle validation — reject garbage early
+	if v.Make == "" || v.Model == "" {
+		slog.Debug("pipeline: rejected vehicle (missing make/model)", "source", source, "url", v.SourceURL)
+		ackMessage(ctx, rdb, msg.ID)
+		return
+	}
+	if v.Year < 1920 || v.Year > 2027 {
+		slog.Debug("pipeline: rejected vehicle (unrealistic year)", "year", v.Year, "source", source)
+		ackMessage(ctx, rdb, msg.ID)
+		return
+	}
+
 	// Fingerprint: prefer VIN; fall back to URL-based hash for scraper listings
 	fingerprint := computeFingerprint(v.VIN, v.SourceURL, v.Color, v.MileageKM)
 

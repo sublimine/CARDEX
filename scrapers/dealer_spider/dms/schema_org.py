@@ -177,14 +177,38 @@ def _vehicle_from_jsonld(
         vid = (
             vin
             or _str(obj.get("productID") or obj.get("sku") or obj.get("identifier"))
-            or obj.get("@id", "").split("/")[-1]
-            or obj.get("url", "").split("/")[-1]
         )
+        # Try URL-based ID
+        if not vid:
+            url_str = obj.get("url") or obj.get("@id") or ""
+            if url_str:
+                # Extract last meaningful path segment
+                segments = [s for s in url_str.rstrip("/").split("/") if s and len(s) > 1]
+                if segments:
+                    vid = segments[-1]
+        # Last resort: generate from name + model (stable per listing)
+        if not vid or len(vid) < 2:
+            name_str = obj.get("name") or ""
+            model_str = _str(obj.get("model")) or ""
+            if name_str or model_str:
+                import hashlib
+                vid = hashlib.md5(f"{name_str}:{model_str}:{obj.get('offers',{}).get('price','')}".encode()).hexdigest()[:12]
         if not vid or len(vid) < 2:
             return None
 
         make = _extract_make(obj)
-        model = _str(obj.get("model")) or ""
+        model_raw = _str(obj.get("model")) or obj.get("name", "") or ""
+        # Clean model: strip make prefix if present (e.g. "SEAT Altea XL" → "Altea XL")
+        model = model_raw
+        if make and model.upper().startswith(make.upper()):
+            model = model[len(make):].strip()
+        # Strip trailing trim/engine info in parentheses: "Altea XL 1.6 TDI (105 CV)" → "Altea XL"
+        # Keep the model name, remove engine spec
+        if not model and make:
+            # name field might have "Seat Altea XL" — use it
+            name_val = obj.get("name", "")
+            if name_val and make and name_val.upper().startswith(make.upper()):
+                model = name_val[len(make):].strip()
         year = _extract_year(obj)
         price = _extract_price(obj, country)
         mileage = _extract_mileage(obj)
