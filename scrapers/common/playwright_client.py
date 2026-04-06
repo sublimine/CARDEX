@@ -106,3 +106,14 @@ class PlaywrightClient:
             return await page.content()
         finally:
             await page.close()
+
+    async def get_cookies(self) -> list[dict[str, Any]]:
+        """Return all cookies from the current browser context."""
+        if not self._context:
+            return []
+        return await self._context.cookies()
+
+    async def get_cookie(self, name: str) -> dict[str, Any] | None:
+        """Return a specific cookie by name, or None."""
+        cookies = await self.get_cookies()
+        return next((c for c in cookies if c["name"] == name), None)

@@ -5,11 +5,16 @@ Query decomposition: make × year
   Iterates ALL pages per (make, year) until platform returns empty page.
   No artificial page cap.
 
-mobile.de search API returns JSON when Accept: application/json is sent.
-Supports `makeModelVariant[0].makeId` and `firstRegistration.from/to` filters.
+Uses Playwright for initial page loads to bypass Cloudflare JS challenge.
+After the first successful render, the cf_clearance cookie is extracted
+and reused via the HTTP client for faster subsequent requests.
+
+Falls back to Playwright rendering if the HTTP client gets blocked again.
 """
 from __future__ import annotations
 
+import json
+import re
 from typing import AsyncGenerator
 
 import structlog
@@ -66,27 +71,214 @@ class MobileDe(BaseScraper):
     platform = "mobile_de"
     country = "DE"
     domain = "suchen.mobile.de"
-    use_playwright = False
+    use_playwright = True
     _make_id_map: dict[str, str] = {}
+    _cf_cookie_injected: bool = False
 
-    async def _ensure_make_ids(self) -> None:
-        """Fetch complete make list from mobile.de API (runs once at startup)."""
-        if self._make_id_map:
-            return
-        # Start with static map; fetch dynamic map for full coverage
-        self._make_id_map = dict(_STATIC_MAKE_IDS)
+    def __init__(self) -> None:
+        super().__init__()
+        # Playwright renders are ~3-5s each; keep rate conservative to avoid
+        # triggering Cloudflare rate-based blocks on top of the JS challenge.
+        self.http.rate_limiter.rps = 0.15
+
+    # ------------------------------------------------------------------
+    # Cloudflare bypass helpers
+    # ------------------------------------------------------------------
+
+    async def _inject_cf_cookie(self) -> bool:
+        """
+        Extract cf_clearance cookie from Playwright browser context and
+        inject it into the HTTP client for faster subsequent requests.
+        Returns True if a cookie was found and injected.
+        """
+        if not self.playwright:
+            return False
+        try:
+            cf_cookie = await self.playwright.get_cookie("cf_clearance")
+            if cf_cookie and self.http._client:
+                self.http._client.cookies.set(
+                    cf_cookie["name"],
+                    cf_cookie["value"],
+                    domain=cf_cookie.get("domain", ".mobile.de"),
+                )
+                self._cf_cookie_injected = True
+                self.log.info("mobile_de.cf_cookie_injected", domain=cf_cookie.get("domain"))
+                return True
+        except Exception as e:
+            self.log.debug("mobile_de.cf_cookie_extract_failed", error=str(e))
+        return False
+
+    async def _fetch_with_playwright(self, url: str) -> str | None:
+        """
+        Render a page via Playwright. Returns raw HTML or None on failure.
+        After first successful render, injects cf_clearance into HTTP client.
+        """
+        if not self.playwright:
+            return None
+        try:
+            html = await self.playwright.get_page_content(
+                url,
+                wait_for=".result-item, .cBox-body--resultitem, .cBox-body--eyeCatcher, script#__NEXT_DATA__",
+                timeout=45_000,
+            )
+            # Inject cf_clearance cookie into HTTP client after first success
+            if not self._cf_cookie_injected:
+                await self._inject_cf_cookie()
+            return html
+        except Exception as e:
+            self.log.warning("mobile_de.playwright_error", url=url, error=str(e))
+            return None
+
+    async def _fetch_with_http(self, url: str) -> dict | None:
+        """
+        Try fetching JSON via plain HTTP (fast path, works once cf_clearance is set).
+        Returns parsed JSON dict or None if blocked.
+        """
         try:
             data = await self.http.get_json(
-                "https://suchen.mobile.de/fahrzeuge/search.html?isSearchRequest=true&makeModelVariant1.makeId=",
-                headers={"Accept": "application/json", "Accept-Language": "de-DE"},
+                url,
+                headers={
+                    "Accept": "application/json",
+                    "Accept-Language": "de-DE,de;q=0.9",
+                    "Referer": "https://suchen.mobile.de/",
+                },
             )
-            for make_entry in (data.get("makes") or []):
-                make_id = str(make_entry.get("id") or make_entry.get("makeId", ""))
-                make_name = make_entry.get("name") or make_entry.get("makeName", "")
-                if make_id and make_name:
-                    self._make_id_map[make_name] = make_id
+            return data
+        except Exception as e:
+            err_str = str(e).lower()
+            if "403" in err_str or "cloudflare" in err_str or "blocked" in err_str:
+                self.log.debug("mobile_de.http_blocked", url=url)
+                self._cf_cookie_injected = False  # cookie expired, reset
+            else:
+                self.log.warning("mobile_de.http_error", url=url, error=str(e))
+            return None
+
+    # ------------------------------------------------------------------
+    # HTML parsing (for Playwright-rendered pages)
+    # ------------------------------------------------------------------
+
+    def _extract_items_from_html(self, html: str) -> list[dict]:
+        """
+        Parse vehicle listings from rendered HTML.
+        Tries __NEXT_DATA__ JSON first, falls back to embedded JSON-LD / DOM parsing.
+        """
+        # Strategy 1: __NEXT_DATA__ JSON blob (Next.js SSR)
+        next_data_match = re.search(
+            r'<script\s+id="__NEXT_DATA__"\s+type="application/json">(.*?)</script>',
+            html,
+            re.DOTALL,
+        )
+        if next_data_match:
+            try:
+                nd = json.loads(next_data_match.group(1))
+                props = nd.get("props", {}).get("pageProps", {})
+                items = (
+                    props.get("items")
+                    or props.get("results")
+                    or props.get("searchResult", {}).get("items")
+                    or props.get("searchResult", {}).get("results")
+                    or []
+                )
+                if items:
+                    return items
+            except (json.JSONDecodeError, KeyError):
+                pass
+
+        # Strategy 2: Inline JSON search result object
+        # mobile.de sometimes embeds search data in a <script> tag
+        json_match = re.search(
+            r'"searchResult"\s*:\s*(\{.*?"items"\s*:\s*\[.*?\]\s*\})',
+            html,
+            re.DOTALL,
+        )
+        if json_match:
+            try:
+                sr = json.loads(json_match.group(1))
+                items = sr.get("items") or sr.get("results") or []
+                if items:
+                    return items
+            except (json.JSONDecodeError, KeyError):
+                pass
+
+        # Strategy 3: window.__INITIAL_STATE__ or similar
+        init_match = re.search(
+            r'window\.__INITIAL_STATE__\s*=\s*({.*?});?\s*</script>',
+            html,
+            re.DOTALL,
+        )
+        if init_match:
+            try:
+                state = json.loads(init_match.group(1))
+                # Navigate nested structures to find items
+                for key in ("search", "searchResult", "listing", "results"):
+                    if key in state:
+                        candidate = state[key]
+                        if isinstance(candidate, dict):
+                            items = candidate.get("items") or candidate.get("results") or []
+                            if items:
+                                return items
+                        elif isinstance(candidate, list):
+                            return candidate
+            except (json.JSONDecodeError, KeyError):
+                pass
+
+        return []
+
+    def _extract_total_pages_from_html(self, html: str) -> int:
+        """Extract total page count from rendered HTML."""
+        # From __NEXT_DATA__
+        next_data_match = re.search(
+            r'<script\s+id="__NEXT_DATA__"\s+type="application/json">(.*?)</script>',
+            html,
+            re.DOTALL,
+        )
+        if next_data_match:
+            try:
+                nd = json.loads(next_data_match.group(1))
+                props = nd.get("props", {}).get("pageProps", {})
+                tp = (
+                    props.get("totalPages")
+                    or props.get("pagination", {}).get("totalPages")
+                    or props.get("searchResult", {}).get("totalPages")
+                    or (props.get("searchResult", {}).get("pagination") or {}).get("totalPages")
+                )
+                if tp:
+                    return int(tp)
+            except (json.JSONDecodeError, KeyError, TypeError):
+                pass
+        # Fallback: look for pagination element with max page number
+        page_nums = re.findall(r'pageNumber=(\d+)', html)
+        if page_nums:
+            return max(int(p) for p in page_nums)
+        return 1
+
+    # ------------------------------------------------------------------
+    # Make ID resolution
+    # ------------------------------------------------------------------
+
+    async def _ensure_make_ids(self) -> None:
+        """Fetch complete make list from mobile.de (runs once at startup)."""
+        if self._make_id_map:
+            return
+        # Start with static map; try dynamic fetch for full coverage
+        self._make_id_map = dict(_STATIC_MAKE_IDS)
+        try:
+            data = await self._fetch_with_http(
+                "https://suchen.mobile.de/fahrzeuge/search.html"
+                "?isSearchRequest=true&makeModelVariant1.makeId="
+            )
+            if data:
+                for make_entry in (data.get("makes") or []):
+                    make_id = str(make_entry.get("id") or make_entry.get("makeId", ""))
+                    make_name = make_entry.get("name") or make_entry.get("makeName", "")
+                    if make_id and make_name:
+                        self._make_id_map[make_name] = make_id
         except Exception:
             pass  # use static map
+
+    # ------------------------------------------------------------------
+    # Main crawl loop
+    # ------------------------------------------------------------------
 
     async def crawl_shard(self, make: str, year: int) -> AsyncGenerator[RawListing, None]:
         await self._ensure_make_ids()
@@ -105,22 +297,37 @@ class MobileDe(BaseScraper):
                 year=year,
                 make_id=make_id,
             )
-            try:
-                data = await self.http.get_json(
-                    url,
-                    headers={
-                        "Accept": "application/json",
-                        "Accept-Language": "de-DE,de;q=0.9",
-                        "Referer": "https://suchen.mobile.de/",
-                    },
-                )
-            except Exception as e:
-                self.log.warning("mobile_de.fetch_error", url=url, make=make, year=year, error=str(e))
-                break
 
-            items = data.get("items") or data.get("results") or []
+            items: list[dict] = []
+            total_pages: int = 1
+
+            # Fast path: try HTTP with cf_clearance cookie
+            if self._cf_cookie_injected:
+                data = await self._fetch_with_http(url)
+                if data:
+                    items = data.get("items") or data.get("results") or []
+                    total_pages = (
+                        data.get("totalPages")
+                        or (data.get("pagination") or {}).get("totalPages", 1)
+                    )
+
+            # Slow path: Playwright rendering (first request or after cookie expiry)
             if not items:
-                break
+                html = await self._fetch_with_playwright(url)
+                if html is None:
+                    # Playwright failed entirely — mark shard as failed, move on
+                    self.log.warning(
+                        "mobile_de.shard_fetch_failed",
+                        make=make, year=year, page=page,
+                    )
+                    break
+
+                items = self._extract_items_from_html(html)
+                total_pages = self._extract_total_pages_from_html(html)
+
+                if not items:
+                    # Page rendered but no items found — end of results
+                    break
 
             cursor_hit = False
             for item in items:
@@ -138,10 +345,6 @@ class MobileDe(BaseScraper):
             if cursor_hit:
                 break
 
-            total_pages = (
-                data.get("totalPages")
-                or (data.get("pagination") or {}).get("totalPages", 1)
-            )
             if page >= total_pages or len(items) < _PAGE_SIZE:
                 break
             page += 1

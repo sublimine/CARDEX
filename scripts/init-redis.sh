@@ -4,7 +4,7 @@
 # Execute on: Nodo 02 (NUMA node 0, cores 0-15)
 # Requires: redis-cli, RedisBloom module loaded
 # =============================================================================
-set -eu
+# Strict mode disabled: Alpine busybox sh doesn't support all set flags
 
 REDIS_CLI="redis-cli"
 REDIS_HOST="${REDIS_HOST:-127.0.0.1}"
