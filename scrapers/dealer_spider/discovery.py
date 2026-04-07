@@ -1035,12 +1035,193 @@ class CommonCrawlProbe(DiscoveryProbe):
         return records
 
 
-# ── Probe 5: Google Places (Optional) ───────────────────────────────────────
+# ── Probe 5: Google Maps Grid Sweep ─────────────────────────────────────────
 
 
-# GooglePlacesProbe (blind H3 grid scan) has been REMOVED.
-# Replaced by GooglePlacesSniperProbe in the enrichment layer above.
-# Google Places is now a precision instrument, not a carpet bomb.
+class GoogleMapsGridProbe(DiscoveryProbe):
+    """
+    Systematic H3 hex-grid sweep across all 6 countries using Google Places API.
+    Divides each country into H3 resolution-5 hexagons (~252 km² each),
+    queries Places Nearby Search with automotive keywords per cell.
+
+    Yields every business with type=car_dealer and extracts website_url.
+    This catches thousands of small-town dealers invisible to portals and OSM.
+
+    Cost model (res-5):
+      ~10,000 hexes total × 4 keywords × 1 call = ~40,000 API calls
+      At $0.032/call ≈ $1,280 for full 6-country sweep.
+      Set H3_GRID_RESOLUTION env to adjust granularity.
+    """
+
+    _H3_RES = int(os.environ.get("H3_GRID_RESOLUTION", "5"))
+    _NEARBY_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+    _DETAIL_URL = "https://maps.googleapis.com/maps/api/place/details/json"
+
+    # Search radius per hex center (meters). res-5 edge ~15km → 20km covers it.
+    _RADIUS = 20_000
+
+    # Automotive keywords per country — cast wide
+    _QUERIES: dict[str, list[str]] = {
+        "DE": ["Autohaus", "Autohändler", "Gebrauchtwagen", "KFZ Handel"],
+        "ES": ["concesionario coches", "venta coches", "coches ocasión", "vehículos segunda mano"],
+        "FR": ["concessionnaire automobile", "garage vente voiture", "voiture occasion", "vente véhicule"],
+        "NL": ["autodealer", "autobedrijf", "occasion auto", "autohandel"],
+        "BE": ["autodealer", "concessionnaire auto", "garage auto", "tweedehands auto"],
+        "CH": ["Autohaus", "concessionnaire automobile", "Autohändler", "Occasionen"],
+    }
+
+    def __init__(self) -> None:
+        self._api_key = _GOOGLE_API_KEY
+        self._rate = _TokenBucket(10.0)  # 10 QPS (Google allows 50)
+
+    @property
+    def name(self) -> str:
+        return "GOOGLE_GRID"
+
+    def supports_country(self, country: str) -> bool:
+        return bool(self._api_key)
+
+    def _h3_cells(self, country: str) -> list[str]:
+        bbox = _BBOXES.get(country)
+        if not bbox:
+            return []
+        lat_min, lat_max, lng_min, lng_max = bbox
+        polygon = {
+            "type": "Polygon",
+            "coordinates": [[
+                [lng_min, lat_min], [lng_max, lat_min],
+                [lng_max, lat_max], [lng_min, lat_max],
+                [lng_min, lat_min],
+            ]],
+        }
+        return list(h3.geo_to_cells(polygon, res=self._H3_RES))
+
+    async def discover(self, country: str) -> AsyncIterator[DealerRecord]:
+        if not self._api_key:
+            log.warning("probe.google_grid.disabled", reason="no GOOGLE_MAPS_API_KEY")
+            return
+
+        cells = self._h3_cells(country)
+        queries = self._QUERIES.get(country, ["car dealer"])
+        seen_place_ids: set[str] = set()
+        total = 0
+
+        log.info("probe.google_grid.start", country=country, cells=len(cells), queries=len(queries))
+
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            for cell_idx, cell in enumerate(cells):
+                lat, lng = h3.cell_to_latlng(cell)
+
+                for query in queries:
+                    records = await self._search_nearby(
+                        client, lat, lng, query, country, seen_place_ids,
+                    )
+                    for record in records:
+                        total += 1
+                        yield record
+
+                    # Follow next_page_token for up to 3 pages (60 results)
+                    # handled inside _search_nearby
+
+                if (cell_idx + 1) % 200 == 0:
+                    log.info(
+                        "probe.google_grid.progress",
+                        country=country,
+                        cells_done=cell_idx + 1,
+                        cells_total=len(cells),
+                        dealers_found=total,
+                    )
+
+        log.info("probe.google_grid.done", country=country, total=total)
+
+    async def _search_nearby(
+        self,
+        client: httpx.AsyncClient,
+        lat: float,
+        lng: float,
+        query: str,
+        country: str,
+        seen: set[str],
+    ) -> list[DealerRecord]:
+        records: list[DealerRecord] = []
+        next_page_token: str | None = None
+
+        for page in range(3):  # max 3 pages per query (60 results)
+            await self._rate.acquire()
+
+            params: dict[str, Any] = {
+                "key": self._api_key,
+                "location": f"{lat},{lng}",
+                "radius": self._RADIUS,
+                "keyword": query,
+                "type": "car_dealer",
+            }
+            if next_page_token:
+                params = {"key": self._api_key, "pagetoken": next_page_token}
+
+            try:
+                resp = await client.get(self._NEARBY_URL, params=params)
+                if resp.status_code != 200:
+                    break
+                data = resp.json()
+            except Exception:
+                break
+
+            results = data.get("results", [])
+            if not results:
+                break
+
+            for place in results:
+                pid = place.get("place_id", "")
+                if not pid or pid in seen:
+                    continue
+                seen.add(pid)
+
+                name = (place.get("name") or "").strip()
+                if not name:
+                    continue
+
+                geo = place.get("geometry", {}).get("location", {})
+                p_lat = _float_or_none(geo.get("lat"))
+                p_lng = _float_or_none(geo.get("lng"))
+                vicinity = place.get("vicinity") or ""
+
+                # Fetch website from Place Details
+                website = await self._fetch_website(client, pid)
+
+                records.append(DealerRecord(
+                    name=name,
+                    country=country,
+                    source="GOOGLE_GRID",
+                    lat=p_lat,
+                    lng=p_lng,
+                    address=vicinity or None,
+                    website=website,
+                    place_id=pid,
+                ))
+
+            next_page_token = data.get("next_page_token")
+            if not next_page_token:
+                break
+            # Google requires 2s delay before using next_page_token
+            await asyncio.sleep(2.0)
+
+        return records
+
+    async def _fetch_website(self, client: httpx.AsyncClient, place_id: str) -> str | None:
+        await self._rate.acquire()
+        try:
+            resp = await client.get(self._DETAIL_URL, params={
+                "key": self._api_key,
+                "place_id": place_id,
+                "fields": "website",
+            })
+            if resp.status_code == 200:
+                website = resp.json().get("result", {}).get("website")
+                return _normalize_website(website) if website else None
+        except Exception:
+            pass
+        return None
 
 
 # ── Probe 6: OEM Dealer Locators ────────────────────────────────────────────
@@ -1158,269 +1339,519 @@ class OEMDealerProbe(DiscoveryProbe):
         return records
 
 
-# ── Probe 7: Portal Dealer Directories ──────────────────────────────────────
+# ── Probe 7: Portal Aggregator Hijack ──────────────────────────────────────
+#
+# NOT scraping vehicle listings. Scraping DEALER DIRECTORIES from major portals.
+# Each portal lists professional sellers with a "Visit Website" link.
+# We iterate every page of the directory, follow each dealer profile,
+# and extract their homepage URL. This is the highest-yield free probe.
 
 
-class PortalDirectoryProbe(DiscoveryProbe):
+# Portal configuration: base URLs, profile patterns, website extraction patterns
+_PORTAL_AGGR_CONFIG: dict[str, dict[str, Any]] = {
+    "AUTOSCOUT24": {
+        "directories": {
+            "DE": "https://www.autoscout24.de/haendler/",
+            "ES": "https://www.autoscout24.es/concesionarios/",
+            "FR": "https://www.autoscout24.fr/concessionnaires/",
+            "NL": "https://www.autoscout24.nl/dealers/",
+            "BE": "https://www.autoscout24.be/fr/concessionnaires/",
+            "CH": "https://www.autoscout24.ch/de/haendler/",
+        },
+        "max_pages": 500,
+        # Regex: extract profile hrefs from listing pages
+        "profile_re": re.compile(
+            r'href="((?:/(?:haendler|dealers?|concession[a-z]*|concessionnaire[a-z]*)/)[^"?#]+)"',
+            re.I,
+        ),
+        # Domain prefix for resolving relative profile URLs
+        "domain": {
+            "DE": "https://www.autoscout24.de",
+            "ES": "https://www.autoscout24.es",
+            "FR": "https://www.autoscout24.fr",
+            "NL": "https://www.autoscout24.nl",
+            "BE": "https://www.autoscout24.be",
+            "CH": "https://www.autoscout24.ch",
+        },
+        # On the profile page, extract the dealer's OWN website
+        "website_re": [
+            # Explicit "visit website" / "Webseite besuchen" links
+            re.compile(
+                r'href="(https?://(?!(?:www\.)?autoscout24)[^"]+)"[^>]*>\s*'
+                r'(?:Website|Webseite|Sitio\s*web|Site\s*web|Visiter|Besuchen|Bekijken)',
+                re.I,
+            ),
+            # JSON-LD url field (excluding autoscout24 itself)
+            re.compile(r'"url"\s*:\s*"(https?://(?!(?:www\.)?autoscout24)[^"]+)"'),
+            # data-href or class-based website link
+            re.compile(
+                r'class="[^"]*(?:dealer-?website|homepage|extern|website-link)[^"]*"[^>]*'
+                r'href="(https?://(?!(?:www\.)?autoscout24)[^"]+)"',
+                re.I,
+            ),
+        ],
+    },
+    "MOBILE_DE": {
+        "directories": {
+            "DE": "https://www.mobile.de/haendler/",
+        },
+        "max_pages": 500,
+        "profile_re": re.compile(r'href="(/haendler/[^"?#]+)"', re.I),
+        "domain": {"DE": "https://www.mobile.de"},
+        "website_re": [
+            re.compile(
+                r'href="(https?://(?!(?:www\.)?mobile\.de)[^"]+)"[^>]*>\s*'
+                r'(?:Website|Homepage|Webseite)',
+                re.I,
+            ),
+            re.compile(r'"url"\s*:\s*"(https?://(?!(?:www\.)?mobile\.de)[^"]+)"'),
+        ],
+    },
+    "LEBONCOIN": {
+        "directories": {
+            "FR": "https://www.leboncoin.fr/boutiques/voitures/",
+        },
+        "max_pages": 300,
+        "profile_re": re.compile(r'href="(/boutique/[^"?#]+)"', re.I),
+        "domain": {"FR": "https://www.leboncoin.fr"},
+        "website_re": [
+            re.compile(
+                r'href="(https?://(?!(?:www\.)?leboncoin)[^"]+)"[^>]*>\s*'
+                r'(?:Site\s*web|Visiter|Voir\s*le\s*site)',
+                re.I,
+            ),
+            re.compile(r'"website"\s*:\s*"(https?://[^"]+)"'),
+        ],
+    },
+    "COCHES_NET": {
+        "directories": {
+            "ES": "https://www.coches.net/concesionarios/",
+        },
+        "max_pages": 200,
+        "profile_re": re.compile(r'href="(/concesionarios?/[^"?#]+\.htm)"', re.I),
+        "domain": {"ES": "https://www.coches.net"},
+        "website_re": [
+            re.compile(
+                r'href="(https?://(?!(?:www\.)?coches\.net)[^"]+)"[^>]*>\s*'
+                r'(?:Web|Sitio|P[áa]gina|Visitar)',
+                re.I,
+            ),
+            re.compile(r'"url"\s*:\s*"(https?://(?!(?:www\.)?coches\.net)[^"]+)"'),
+        ],
+    },
+    "MARKTPLAATS": {
+        "directories": {
+            "NL": "https://www.marktplaats.nl/verkopers/autos/",
+        },
+        "max_pages": 200,
+        "profile_re": re.compile(r'href="(/verkopers?/[^"?#]+)"', re.I),
+        "domain": {"NL": "https://www.marktplaats.nl"},
+        "website_re": [
+            re.compile(
+                r'href="(https?://(?!(?:www\.)?marktplaats)[^"]+)"[^>]*>\s*'
+                r'(?:Website|Bekijk|Bezoek)',
+                re.I,
+            ),
+        ],
+    },
+    "2DEHANDS": {
+        "directories": {
+            "BE": "https://www.2dehands.be/verkopers/autos/",
+        },
+        "max_pages": 200,
+        "profile_re": re.compile(r'href="(/verkopers?/[^"?#]+)"', re.I),
+        "domain": {"BE": "https://www.2dehands.be"},
+        "website_re": [
+            re.compile(
+                r'href="(https?://(?!(?:www\.)?2dehands)[^"]+)"[^>]*>\s*'
+                r'(?:Website|Bekijk|Bezoek)',
+                re.I,
+            ),
+        ],
+    },
+}
+
+# Skip these domains when extracting dealer websites (portals, social, directories)
+_SKIP_DOMAINS = frozenset({
+    "autoscout24.", "mobile.de", "leboncoin.", "coches.net", "marktplaats.",
+    "2dehands.", "kleinanzeigen.", "wallapop.", "milanuncios.",
+    "facebook.com", "instagram.com", "twitter.com", "linkedin.com",
+    "youtube.com", "google.", "yelp.", "tripadvisor.", "wikipedia.",
+    "pagesjaunes.", "gelbeseiten.", "goudengids.", "paginasamarillas.",
+})
+
+
+class PortalAggregatorProbe(DiscoveryProbe):
     """
-    Scrapes dealer directory pages from AutoScout24, mobile.de, and similar
-    portals. These pages list dealers that are active on the platform.
+    Scrapes dealer DIRECTORIES from major European portals.
+    Phase 1: Paginate through the dealer listing, collect profile URLs.
+    Phase 2: Follow each profile page, extract the dealer's own website URL.
+
+    Portals: AutoScout24 (6 countries), Mobile.de, LeBonCoin, Coches.net,
+             Marktplaats, 2dehands.
     """
 
     def __init__(self) -> None:
-        self._rate = _TokenBucket(0.33)  # ~3 seconds between requests
+        self._list_rate = _TokenBucket(0.5)    # 2s between listing pages
+        self._profile_rate = _TokenBucket(2.0)  # 0.5s between profile fetches
 
     @property
     def name(self) -> str:
-        return "PORTAL"
+        return "PORTAL_AGGR"
 
     async def discover(self, country: str) -> AsyncIterator[DealerRecord]:
-        total_yielded = 0
+        total = 0
 
         async with httpx.AsyncClient(
             timeout=30.0,
             follow_redirects=True,
             headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                              "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                "Accept-Language": "en-US,en;q=0.9,de;q=0.8,fr;q=0.7",
+                "Accept-Language": "en-US,en;q=0.9,de;q=0.8,fr;q=0.7,es;q=0.6,nl;q=0.5",
             },
         ) as client:
-            for portal_name, portal_urls in _PORTAL_DIRECTORIES.items():
-                url = portal_urls.get(country)
-                if not url:
+            for portal_name, cfg in _PORTAL_AGGR_CONFIG.items():
+                dir_url = cfg["directories"].get(country)
+                if not dir_url:
                     continue
 
+                domain = cfg["domain"].get(country, "")
                 try:
-                    records = await self._scrape_portal_directory(
-                        client, portal_name, url, country
-                    )
-                    for record in records:
-                        total_yielded += 1
+                    async for record in self._scrape_portal(
+                        client, portal_name, dir_url, domain, cfg, country,
+                    ):
+                        total += 1
                         yield record
                 except Exception as exc:
-                    log.warning(
-                        "probe.portal.error",
-                        portal=portal_name,
-                        country=country,
-                        error=str(exc),
-                    )
+                    log.warning("probe.portal_aggr.error",
+                                portal=portal_name, country=country, error=str(exc))
 
-        log.info("probe.portal.results", country=country, count=total_yielded)
+        log.info("probe.portal_aggr.results", country=country, total=total)
 
-    async def _scrape_portal_directory(
+    async def _scrape_portal(
         self,
         client: httpx.AsyncClient,
         portal: str,
-        base_url: str,
+        dir_url: str,
+        domain: str,
+        cfg: dict,
         country: str,
-    ) -> list[DealerRecord]:
-        """
-        Scrape a portal dealer directory. AutoScout24 and mobile.de use paginated
-        HTML pages. We extract dealer links from each page and follow pagination.
-        """
-        all_records: list[DealerRecord] = []
+    ) -> AsyncIterator[DealerRecord]:
+        """Phase 1: paginate directory. Phase 2: follow profiles."""
+        profile_re: re.Pattern = cfg["profile_re"]
+        website_patterns: list[re.Pattern] = cfg["website_re"]
+        max_pages = cfg.get("max_pages", 200)
+
+        seen_profiles: set[str] = set()
         page = 1
-        max_pages = 200  # Safety cap
-        seen_names: set[str] = set()
 
         while page <= max_pages:
-            await self._rate.acquire()
+            await self._list_rate.acquire()
 
-            url = base_url if page == 1 else f"{base_url}?page={page}"
-
+            url = dir_url if page == 1 else f"{dir_url}?page={page}"
             try:
                 resp = await client.get(url)
-                if resp.status_code == 404 or resp.status_code == 410:
+                if resp.status_code in (404, 410, 403):
                     break
                 resp.raise_for_status()
             except Exception as exc:
-                log.debug(
-                    "probe.portal.page_error",
-                    portal=portal,
-                    page=page,
-                    error=str(exc),
-                )
+                log.debug("probe.portal_aggr.list_page_fail",
+                          portal=portal, page=page, error=str(exc))
                 break
 
             html = resp.text
-            records = self._parse_dealer_listing_html(html, portal, country)
 
-            if not records:
+            # Extract profile URLs from this listing page
+            profile_hrefs = profile_re.findall(html)
+            if not profile_hrefs:
                 break
 
-            new_count = 0
-            for r in records:
-                key = r.name.lower().strip()
-                if key not in seen_names:
-                    seen_names.add(key)
-                    all_records.append(r)
-                    new_count += 1
+            new_profiles: list[str] = []
+            for href in profile_hrefs:
+                # Normalize: ensure absolute URL
+                if href.startswith("/"):
+                    full = domain + href
+                elif href.startswith("http"):
+                    full = href
+                else:
+                    continue
 
-            # If no new dealers found on this page, we hit the end
-            if new_count == 0:
-                break
+                # Dedup
+                canon = full.rstrip("/").lower()
+                if canon not in seen_profiles:
+                    seen_profiles.add(canon)
+                    new_profiles.append(full)
 
-            # Check for next page link
+            if not new_profiles:
+                break  # pagination exhausted (all dupes)
+
+            # Phase 2: Follow each profile in parallel batches of 5
+            for batch_start in range(0, len(new_profiles), 5):
+                batch = new_profiles[batch_start:batch_start + 5]
+                tasks = [
+                    self._extract_from_profile(
+                        client, profile_url, portal, website_patterns, country,
+                    )
+                    for profile_url in batch
+                ]
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+                for result in results:
+                    if isinstance(result, DealerRecord):
+                        yield result
+
+            # Check for next page
             if not self._has_next_page(html):
                 break
-
             page += 1
 
-        log.debug(
-            "probe.portal.directory_done",
-            portal=portal,
-            country=country,
-            pages=page,
-            count=len(all_records),
-        )
-        return all_records
+            if page % 20 == 0:
+                log.info("probe.portal_aggr.progress",
+                         portal=portal, country=country, page=page,
+                         profiles=len(seen_profiles))
 
-    def _parse_dealer_listing_html(
-        self, html: str, portal: str, country: str
-    ) -> list[DealerRecord]:
-        """
-        Extract dealer entries from portal HTML using regex patterns.
-        These portals have structured listing pages.
-        """
-        records: list[DealerRecord] = []
-        source = f"PORTAL_{portal}"
+        log.info("probe.portal_aggr.portal_done",
+                 portal=portal, country=country, pages=page,
+                 profiles=len(seen_profiles))
 
-        if portal in ("AS24",):
-            # AutoScout24 pattern: dealer cards with name, location, link
-            # Example: <a class="dealer-name" href="/haendler/some-dealer">Dealer Name</a>
-            # Also: structured data in JSON-LD or data attributes
-            patterns = [
-                # JSON-LD pattern
-                re.compile(
-                    r'"@type"\s*:\s*"AutoDealer".*?"name"\s*:\s*"([^"]+)".*?'
-                    r'"address".*?"streetAddress"\s*:\s*"([^"]*)".*?'
-                    r'"addressLocality"\s*:\s*"([^"]*)".*?'
-                    r'"postalCode"\s*:\s*"([^"]*)"',
-                    re.DOTALL,
-                ),
-            ]
-            for pat in patterns:
-                for m in pat.finditer(html):
-                    records.append(DealerRecord(
-                        name=m.group(1).strip(),
-                        country=country,
-                        source=source,
-                        address=m.group(2).strip() or None,
-                        city=m.group(3).strip() or None,
-                        postcode=m.group(4).strip() or None,
-                    ))
-
-            # Fallback: extract dealer names and URLs from links
-            link_pattern = re.compile(
-                r'<a[^>]+href="(/(?:haendler|dealers?|concession)[^"]*)"[^>]*>\s*'
-                r'([^<]{3,80})\s*</a>',
-                re.IGNORECASE,
-            )
-            for m in link_pattern.finditer(html):
-                href = m.group(1).strip()
-                name = m.group(2).strip()
-                name = re.sub(r"\s+", " ", name)
-                if name and len(name) > 2:
-                    records.append(DealerRecord(
-                        name=name,
-                        country=country,
-                        source=source,
-                    ))
-
-        elif portal == "MOBILE_DE":
-            # mobile.de dealer listing
-            link_pattern = re.compile(
-                r'<a[^>]+href="(/haendler/[^"]+)"[^>]*>\s*([^<]{3,80})\s*</a>',
-                re.IGNORECASE,
-            )
-            for m in link_pattern.finditer(html):
-                name = m.group(2).strip()
-                name = re.sub(r"\s+", " ", name)
-                if name and len(name) > 2:
-                    records.append(DealerRecord(
-                        name=name,
-                        country=country,
-                        source=source,
-                    ))
-
-            # mobile.de often has structured data
-            json_ld_pattern = re.compile(
-                r'<script[^>]+type="application/ld\+json"[^>]*>(.*?)</script>',
-                re.DOTALL,
-            )
-            for m in json_ld_pattern.finditer(html):
-                try:
-                    ld_data = json.loads(m.group(1))
-                    if isinstance(ld_data, list):
-                        for item in ld_data:
-                            rec = self._parse_json_ld_dealer(item, country, source)
-                            if rec:
-                                records.append(rec)
-                    elif isinstance(ld_data, dict):
-                        rec = self._parse_json_ld_dealer(ld_data, country, source)
-                        if rec:
-                            records.append(rec)
-                except json.JSONDecodeError:
-                    pass
-
-        return records
-
-    def _parse_json_ld_dealer(
-        self, data: dict, country: str, source: str
+    async def _extract_from_profile(
+        self,
+        client: httpx.AsyncClient,
+        profile_url: str,
+        portal: str,
+        website_patterns: list[re.Pattern],
+        country: str,
     ) -> DealerRecord | None:
-        """Parse a JSON-LD AutoDealer or LocalBusiness entry."""
-        dtype = data.get("@type", "")
-        if dtype not in ("AutoDealer", "LocalBusiness", "Organization"):
+        """Fetch a dealer profile page and extract name + website URL."""
+        await self._profile_rate.acquire()
+
+        try:
+            resp = await client.get(profile_url)
+            if resp.status_code >= 400:
+                return None
+            html = resp.text
+        except Exception:
             return None
 
-        name = (data.get("name") or "").strip()
+        # Extract name from <h1> or JSON-LD
+        name = None
+        h1_match = re.search(r'<h1[^>]*>([^<]{3,120})</h1>', html)
+        if h1_match:
+            name = h1_match.group(1).strip()
+            name = re.sub(r"\s+", " ", name)
+
+        if not name:
+            # Try JSON-LD
+            ld_match = re.search(r'"name"\s*:\s*"([^"]{3,120})"', html)
+            if ld_match:
+                name = ld_match.group(1).strip()
+
         if not name:
             return None
 
-        addr = data.get("address", {})
-        if isinstance(addr, dict):
-            address = addr.get("streetAddress")
-            city = addr.get("addressLocality")
-            postcode = addr.get("postalCode")
-        else:
-            address = None
-            city = None
-            postcode = None
+        # Extract website — try each pattern in order
+        website = None
+        for pattern in website_patterns:
+            m = pattern.search(html)
+            if m:
+                candidate = m.group(1).strip()
+                # Validate: not a portal domain
+                if not any(skip in candidate.lower() for skip in _SKIP_DOMAINS):
+                    website = _normalize_website(candidate)
+                    break
 
-        website = _normalize_website(data.get("url"))
-        phone = data.get("telephone")
+        # Also try JSON-LD structured data
+        if not website:
+            for ld_match in re.finditer(
+                r'<script[^>]+type="application/ld\+json"[^>]*>(.*?)</script>',
+                html, re.DOTALL,
+            ):
+                try:
+                    ld = json.loads(ld_match.group(1))
+                    if isinstance(ld, dict):
+                        ld_url = ld.get("url") or ""
+                        if ld_url and not any(skip in ld_url.lower() for skip in _SKIP_DOMAINS):
+                            website = _normalize_website(ld_url)
+                            break
+                except (json.JSONDecodeError, TypeError):
+                    pass
 
-        geo = data.get("geo", {})
-        lat = _float_or_none(geo.get("latitude")) if isinstance(geo, dict) else None
-        lng = _float_or_none(geo.get("longitude")) if isinstance(geo, dict) else None
+        # Extract address from JSON-LD or meta tags
+        address = city = postcode = phone = None
+        addr_match = re.search(
+            r'"streetAddress"\s*:\s*"([^"]*)".*?'
+            r'"addressLocality"\s*:\s*"([^"]*)".*?'
+            r'"postalCode"\s*:\s*"([^"]*)"',
+            html, re.DOTALL,
+        )
+        if addr_match:
+            address = addr_match.group(1).strip() or None
+            city = addr_match.group(2).strip() or None
+            postcode = addr_match.group(3).strip() or None
+
+        phone_match = re.search(r'"telephone"\s*:\s*"([^"]+)"', html)
+        if phone_match:
+            phone = phone_match.group(1).strip()
+
+        # Coords from JSON-LD
+        lat = lng = None
+        geo_match = re.search(
+            r'"latitude"\s*:\s*"?([0-9.]+)"?.*?"longitude"\s*:\s*"?([0-9.]+)"?',
+            html, re.DOTALL,
+        )
+        if geo_match:
+            lat = _float_or_none(geo_match.group(1))
+            lng = _float_or_none(geo_match.group(2))
 
         return DealerRecord(
             name=name,
             country=country,
-            source=source,
+            source=f"PORTAL_{portal}",
             lat=lat,
             lng=lng,
             address=address,
             city=city,
-            postcode=str(postcode) if postcode else None,
+            postcode=postcode,
             website=website,
-            phone=str(phone) if phone else None,
+            phone=phone,
         )
 
-    def _has_next_page(self, html: str) -> bool:
-        """Check if the HTML contains a next-page link."""
+    @staticmethod
+    def _has_next_page(html: str) -> bool:
         next_patterns = [
             r'rel="next"',
             r'class="[^"]*next[^"]*"',
             r'aria-label="[Nn]ext',
             r'data-page="next"',
-            r'>\s*(?:Next|Weiter|Suivant|Volgende|Siguiente)\s*<',
+            r'>\s*(?:Next|Weiter|Suivant|Volgende|Siguiente|Nächste)\s*<',
+            r'aria-label="[Pp]age\s+suivante"',
         ]
-        for pat in next_patterns:
-            if re.search(pat, html, re.IGNORECASE):
-                return True
-        return False
+        return any(re.search(p, html, re.I) for p in next_patterns)
+
+
+# ── Probe 8: Government Registry Bridge ────────────────────────────────────
+#
+# Wraps the 6 existing crawlers from scrapers/discovery/registries/ that tap
+# into official government business registries. Filters by NACE 45.11
+# (motor vehicle sales). These crawlers are fully functional — DE (Gelbe
+# Seiten), FR (SIRENE), NL (KVK bulk CSV), BE (BCE open data), CH (Zefix),
+# ES (Páginas Amarillas). We bridge them into the main discovery pipeline.
+
+
+class GovernmentRegistryBridgeProbe(DiscoveryProbe):
+    """
+    Bridges existing government registry crawlers into the discovery pipeline.
+
+    Each sub-crawler handles one country's official business registry:
+      DE — Gelbe Seiten (Yellow Pages) systematic PLZ sweep
+      FR — INSEE SIRENE open API (NAF 4511Z, 4519Z, 4520A)
+      NL — KVK bulk CSV download (SBI 4511)
+      BE — BCE/KBO open data ZIP (NACE 4511)
+      CH — Zefix commercial register per canton
+      ES — Páginas Amarillas API (52 provinces × 5 queries)
+
+    These are SEPARATE from the native Probes 2 (INSEE) and 3 (Zefix) which
+    query simpler API endpoints. The bridge crawlers use bulk data downloads
+    and systematic sweeps for deeper coverage.
+    """
+
+    def __init__(self) -> None:
+        self._crawlers: dict[str, Any] = {}
+        self._loaded = False
+
+    def _load_crawlers(self) -> None:
+        if self._loaded:
+            return
+        try:
+            from scrapers.discovery.registries.de_handelsregister import DEHandelsregisterCrawler
+            self._crawlers["DE"] = DEHandelsregisterCrawler()
+        except ImportError:
+            log.debug("probe.registry_bridge.skip", country="DE", reason="import failed")
+        try:
+            from scrapers.discovery.registries.fr_sirene import FRSIRENECrawler
+            self._crawlers["FR"] = FRSIRENECrawler()
+        except ImportError:
+            log.debug("probe.registry_bridge.skip", country="FR", reason="import failed")
+        try:
+            from scrapers.discovery.registries.nl_kvk import NLKVKCrawler
+            self._crawlers["NL"] = NLKVKCrawler()
+        except ImportError:
+            log.debug("probe.registry_bridge.skip", country="NL", reason="import failed")
+        try:
+            from scrapers.discovery.registries.be_bce import BEBCECrawler
+            self._crawlers["BE"] = BEBCECrawler()
+        except ImportError:
+            log.debug("probe.registry_bridge.skip", country="BE", reason="import failed")
+        try:
+            from scrapers.discovery.registries.ch_zefix import CHZefixCrawler
+            self._crawlers["CH"] = CHZefixCrawler()
+        except ImportError:
+            log.debug("probe.registry_bridge.skip", country="CH", reason="import failed")
+        try:
+            from scrapers.discovery.registries.es_aeoc import ESAEOCCrawler
+            self._crawlers["ES"] = ESAEOCCrawler()
+        except ImportError:
+            log.debug("probe.registry_bridge.skip", country="ES", reason="import failed")
+        self._loaded = True
+        log.info("probe.registry_bridge.loaded", crawlers=list(self._crawlers.keys()))
+
+    @property
+    def name(self) -> str:
+        return "GOV_REGISTRY"
+
+    def supports_country(self, country: str) -> bool:
+        self._load_crawlers()
+        return country in self._crawlers
+
+    async def discover(self, country: str) -> AsyncIterator[DealerRecord]:
+        self._load_crawlers()
+        crawler = self._crawlers.get(country)
+        if not crawler:
+            return
+
+        total = 0
+        log.info("probe.registry_bridge.start", country=country,
+                 crawler=type(crawler).__name__)
+
+        try:
+            # All registry crawlers implement async crawl() → AsyncGenerator[dict]
+            async for raw in crawler.crawl():
+                record = self._convert(raw, country)
+                if record:
+                    total += 1
+                    yield record
+
+                    if total % 1000 == 0:
+                        log.info("probe.registry_bridge.progress",
+                                 country=country, found=total)
+        except Exception as exc:
+            log.warning("probe.registry_bridge.error",
+                        country=country, error=str(exc), found_before_error=total)
+
+        log.info("probe.registry_bridge.done", country=country, total=total)
+
+    @staticmethod
+    def _convert(raw: dict, country: str) -> DealerRecord | None:
+        """Convert a registry crawler's raw dict to a DealerRecord."""
+        name = (raw.get("name") or raw.get("company_name") or "").strip()
+        if not name or len(name) < 3:
+            return None
+
+        return DealerRecord(
+            name=name,
+            country=country,
+            source=f"GOV_{country}",
+            lat=_float_or_none(raw.get("lat") or raw.get("latitude")),
+            lng=_float_or_none(raw.get("lng") or raw.get("lon") or raw.get("longitude")),
+            address=raw.get("address") or raw.get("street") or None,
+            city=raw.get("city") or raw.get("locality") or None,
+            postcode=str(raw.get("postcode") or raw.get("zip") or raw.get("postal_code") or "") or None,
+            website=_normalize_website(raw.get("website") or raw.get("url")),
+            phone=raw.get("phone") or raw.get("telephone") or None,
+            registry_id=raw.get("registry_id") or raw.get("siret") or raw.get("kvk_number")
+                        or raw.get("bce_number") or raw.get("uid") or None,
+        )
 
 
 # ── Database Operations ──────────────────────────────────────────────────────
@@ -1997,22 +2428,45 @@ class DiscoveryOrchestrator:
         self._stats: dict[str, dict[str, int]] = {}
 
     def _register_probes(self) -> None:
-        """Register all available probes based on configuration.
+        """Register all discovery probes.
 
-        NOTE: Google Places is NOT registered as a probe. It runs as a
-        last-resort sniper AFTER the free URL resolver. See run() flow.
+        9 probes total:
+          1. OSM — OpenStreetMap Overpass (free, ~10K dealers)
+          2. INSEE — France SIRENE API (free, NAF 45.11Z)
+          3. Zefix — Swiss commercial register (free)
+          4. CommonCrawl — hidden dealer domains (free)
+          5. GoogleMapsGrid — H3 hex sweep with Places API (paid, ~40K+ dealers)
+          6. OEM — 20 brand dealer locator endpoints (free, ~10K dealers)
+          7. PortalAggregator — AS24/Mobile.de/LeBonCoin/Coches.net directories (free, ~30K+ dealers)
+          8. GovernmentRegistry — 6 national business registries NACE 45.11 (free, ~50K+ dealers)
+
+        Google Places Sniper runs AFTER URL resolver as last-resort enrichment.
         """
-        # Always-on free probes (Phase 1: Discovery)
+        # Always-on free probes
         self._probes.append(OSMProbe())
         self._probes.append(INSEEProbe())
         self._probes.append(ZefixProbe())
         self._probes.append(CommonCrawlProbe())
         self._probes.append(OEMDealerProbe())
-        self._probes.append(PortalDirectoryProbe())
+
+        # Portal Aggregator — replaces old PortalDirectoryProbe
+        # Follows dealer profiles to extract website URLs
+        self._probes.append(PortalAggregatorProbe())
+
+        # Government Registry Bridge — 6 national registries
+        self._probes.append(GovernmentRegistryBridgeProbe())
+
+        # Google Maps Grid — H3 systematic sweep (only if API key present)
+        if _GOOGLE_API_KEY:
+            self._probes.append(GoogleMapsGridProbe())
+        else:
+            log.info("orchestrator.google_grid_disabled",
+                     reason="GOOGLE_MAPS_API_KEY not set")
 
         log.info(
             "orchestrator.probes_registered",
             probes=[p.name for p in self._probes],
+            count=len(self._probes),
         )
 
     async def _setup(self) -> None:
