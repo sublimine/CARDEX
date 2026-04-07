@@ -743,20 +743,29 @@ class OEMGateway:
                  brand, country, len(vehicles), published)
         return published
 
-    # ── BMW Group Dedicated Handler ─────────────────────────────────────
+    # ── BMW Group Dedicated Handler (Hybrid Architecture) ──────────────
+    #
+    # Phase 1: HTTP puro → GET /dealer/showAll (sin auth)
+    #          Extrae 475+ dealers con buNo, coords, address
+    #
+    # Phase 2: Playwright → navega al Stocklocator, deja que el JS
+    #          firme la primera petición con el hash anti-CSRF,
+    #          intercepta el hash, luego inyecta un loop fetch()
+    #          desde page.evaluate() que pagina con el hash robado.
+    #          Zero DOM rendering — puro network layer.
 
     _BMW_STOLO_BASE = "https://stolo-data-service.prod.stolo.eu-central-1.aws.bmw.cloud"
     _BMW_DEALERS_URL = _BMW_STOLO_BASE + "/dealer/showAll"
-    _BMW_SEARCH_URL = _BMW_STOLO_BASE + "/vehiclesearch/search/{lang}/{slug}"
-    _BMW_PAGE_SIZE = 50  # conservative to avoid 429
-    _BMW_BATCH_SIZE = 10  # buNos per request
-    _BMW_HEADERS = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                      "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Origin": "https://www.bmw.de",
-        "Referer": "https://www.bmw.de/de-de/sl/gebrauchtwagen/results",
+    _BMW_PAGE_SIZE = 50
+
+    # Stocklocator URLs per country
+    _BMW_SL_URLS = {
+        "DE": "https://www.bmw.de/de-de/sl/gebrauchtwagen/results",
+        "FR": "https://www.bmw.fr/fr-fr/sl/occasions/results",
+        "ES": "https://www.bmw.es/es-es/sl/ocasion/results",
+        "NL": "https://www.bmw.nl/nl-nl/sl/occasions/results",
+        "BE": "https://www.bmw.be/fr-be/sl/occasions/results",
+        "CH": "https://www.bmw.ch/de-ch/sl/gebrauchtwagen/results",
     }
 
     async def _harvest_bmw_group(
@@ -766,16 +775,10 @@ class OEMGateway:
         country: str,
         country_cfg: dict,
     ) -> list[OEMVehicle]:
-        """
-        BMW Group 2-step extraction:
-        1. GET /dealer/showAll → list of buNos
-        2. POST /vehiclesearch/search with buNos in batches → paginated vehicles
-        """
         lang = country_cfg["lang"]
-        slug = country_cfg["slug"]
         category = country_cfg["category"]
 
-        # Step 1: Get all dealer buNos
+        # ── Phase 1: HTTP puro — dealer list ────────────────────────────
         try:
             resp = await client.get(
                 self._BMW_DEALERS_URL,
@@ -786,7 +789,10 @@ class OEMGateway:
                     "language": lang.replace("-", "_"),
                     "slg": "true",
                 },
-                headers=self._BMW_HEADERS,
+                headers={
+                    "Accept": "application/json",
+                    "Origin": "https://www.bmw.de",
+                },
             )
             resp.raise_for_status()
             dealer_data = resp.json()
@@ -795,8 +801,8 @@ class OEMGateway:
             return []
 
         included = dealer_data.get("includedDealers", [])
-        bu_nos = []
-        dealer_map: dict[str, dict] = {}  # buNo → dealer info for reconciliation
+        bu_nos: list[str] = []
+        dealer_map: dict[str, dict] = {}
         for d in included:
             key = d.get("key", "")
             if key:
@@ -805,160 +811,239 @@ class OEMGateway:
                     "name": d.get("name", ""),
                     "city": d.get("city", ""),
                     "postcode": d.get("postalCode", ""),
-                    "distributionPartnerId": d.get("attributes", {}).get("distributionPartnerId", ""),
                 }
 
-        log.info("oem_gateway: BMW/%s — %d dealers (buNos), starting vehicle search",
-                 country, len(bu_nos))
-
+        log.info("oem_gateway: BMW/%s — %d dealers loaded via HTTP", country, len(bu_nos))
         if not bu_nos:
             return []
 
-        # Step 2: Search vehicles in batches of buNos
-        # Use a dedicated client with BMW-specific headers to avoid 400 errors
-        search_url = self._BMW_SEARCH_URL.format(lang=lang, slug=slug)
+        # ── Phase 2: Playwright — hash hijack + injected fetch loop ─────
+        sl_url = self._BMW_SL_URLS.get(country)
+        if not sl_url:
+            log.warning("oem_gateway: BMW/%s no Stocklocator URL configured", country)
+            return []
+
+        from playwright.async_api import async_playwright
+
         all_vehicles: list[OEMVehicle] = []
-        seen_ids: set[str] = set()
 
-        async with httpx.AsyncClient(
-            timeout=30.0,
-            headers=self._BMW_HEADERS,
-            follow_redirects=True,
-        ) as bmw_client:
-          # Process buNos in batches
-          for batch_start in range(0, len(bu_nos), self._BMW_BATCH_SIZE):
-            batch_bunos = bu_nos[batch_start:batch_start + self._BMW_BATCH_SIZE]
-            start_index = 0
+        async with async_playwright() as pw:
+            browser = await pw.chromium.launch(
+                headless=True,
+                args=["--no-sandbox", "--disable-dev-shm-usage"],
+            )
+            page = await browser.new_page(
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                           "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                viewport={"width": 1920, "height": 1080},
+                locale=lang.split("-")[0] + "-" + lang.split("-")[1].upper(),
+            )
 
-            while True:
-                body = {
-                    "resultsContext": {
-                        "sort": [{"by": "SF_OFFER_INSTALLMENT", "order": "ASC"}],
-                    },
-                    "searchContext": [{"buNos": batch_bunos}],
-                }
+            # Block heavy resources
+            await page.route("**/*", lambda route, req: (
+                route.abort() if req.resource_type in ("image", "media", "font", "stylesheet")
+                else route.continue_()
+            ))
 
-                try:
-                    resp = await bmw_client.post(
-                        f"{search_url}?maxResults={self._BMW_PAGE_SIZE}&startIndex={start_index}&brand={brand}",
-                        json=body,
-                    )
-                    if resp.status_code in (429, 403):
-                        log.warning("oem_gateway: BMW/%s rate limited at batch %d, page %d",
-                                    country, batch_start, start_index)
-                        await asyncio.sleep(10)
+            # Capture the hash from the first vehiclesearch request
+            captured_hash: list[str] = []
+            captured_search_url: list[str] = []
+
+            async def _on_request(req):
+                if "/vehiclesearch/search/" in req.url and "hash=" in req.url:
+                    # Extract hash parameter
+                    from urllib.parse import urlparse, parse_qs
+                    parsed = urlparse(req.url)
+                    params = parse_qs(parsed.query)
+                    h = params.get("hash", [""])[0]
+                    if h and not captured_hash:
+                        captured_hash.append(h)
+                        # Capture the base search URL (without query params)
+                        captured_search_url.append(
+                            f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+                        )
+                        log.info("oem_gateway: BMW/%s hash captured: %s...%s",
+                                 country, h[:8], h[-4:])
+
+            page.on("request", _on_request)
+
+            log.info("oem_gateway: BMW/%s navigating to Stocklocator for hash capture", country)
+            try:
+                await page.goto(sl_url, wait_until="domcontentloaded", timeout=45000)
+                # Accept cookies
+                for sel in ["#onetrust-accept-btn-handler",
+                            'button:has-text("Alle akzeptieren")',
+                            'button:has-text("Accept All")']:
+                    try:
+                        btn = await page.query_selector(sel)
+                        if btn and await btn.is_visible():
+                            await btn.click()
+                            break
+                    except Exception:
+                        pass
+
+                # Wait for the JS to fire the first search request
+                for _ in range(20):  # 20 × 1.5s = 30s max
+                    if captured_hash:
                         break
-                    resp.raise_for_status()
-                    data = resp.json()
-                except Exception as exc:
-                    log.warning("oem_gateway: BMW/%s search error at batch %d: %s",
-                                country, batch_start, exc)
-                    break
+                    await asyncio.sleep(1.5)
 
-                total_count = data.get("metadata", {}).get("totalCount", 0)
-                hits = data.get("hits", [])
+            except Exception as exc:
+                log.warning("oem_gateway: BMW/%s Stocklocator navigation failed: %s", country, exc)
+                await browser.close()
+                return []
 
-                if not hits:
-                    break
+            if not captured_hash:
+                log.warning("oem_gateway: BMW/%s failed to capture hash after 30s", country)
+                await browser.close()
+                return []
 
-                for hit in hits:
-                    v = hit.get("vehicle", {})
-                    doc_id = v.get("documentId", "")
-                    if doc_id in seen_ids:
-                        continue
-                    seen_ids.add(doc_id)
+            session_hash = captured_hash[0]
+            search_base = captured_search_url[0]
 
-                    # Extract fields from BMW's nested structure
-                    spec = v.get("vehicleSpecification", {})
-                    mo = spec.get("modelAndOption", {})
-                    lifecycle = v.get("vehicleLifeCycle", {})
-                    ordering = v.get("ordering", {})
-                    retail = ordering.get("retailData", {})
-                    offering = v.get("offering", {})
-                    media = v.get("media", {})
+            # ── Phase 3: Injected fetch loop — paginate from browser context ──
+            # We inject JS that calls the BMW API directly from the browser's
+            # origin context (same cookies, same CORS, same session).
+            # This bypasses the hash verification completely because the
+            # requests come from the legitimate origin.
 
-                    # Model name from modelRange description
-                    model_range = mo.get("modelRange", {})
-                    model_desc = model_range.get("description", {})
-                    model_name = (
-                        model_desc.get(f"{lang.replace('-','_')}")
-                        or model_desc.get(f"default_{lang.split('-')[0].upper()}")
-                        or next(iter(model_desc.values()), "")
-                        if isinstance(model_desc, dict) else ""
-                    )
+            log.info("oem_gateway: BMW/%s starting injected fetch loop (hash=%s...)",
+                     country, session_hash[:8])
 
-                    # Price from offerPrices
-                    bu_no = retail.get("buNo", "")
-                    offer_prices = offering.get("offerPrices", {})
-                    price_info = offer_prices.get(bu_no, {}) if isinstance(offer_prices, dict) else {}
-                    price = price_info.get("offerGrossPrice") or price_info.get("offerGrossVehiclePrice")
+            bu_nos_json = json.dumps(bu_nos)
 
-                    # Mileage
-                    mileage_obj = lifecycle.get("mileage", {})
-                    mileage = mileage_obj.get("km") if isinstance(mileage_obj, dict) else None
+            # Inject the paginated fetch loop
+            raw_vehicles = await page.evaluate(f"""
+                async () => {{
+                    const buNos = {bu_nos_json};
+                    const searchUrl = "{search_base}";
+                    const hash = "{session_hash}";
+                    const brand = "{brand}";
+                    const pageSize = {self._BMW_PAGE_SIZE};
+                    const allHits = [];
+                    let startIndex = 0;
+                    let totalCount = 999999;
 
-                    # Color
-                    colors = mo.get("colors", {})
-                    ext_color = ""
-                    if isinstance(colors, dict):
-                        ext = colors.get("exterior", {})
-                        if isinstance(ext, dict):
-                            ext_color = ext.get("name", "")
+                    // Send ALL buNos at once — the API handles it
+                    const body = JSON.stringify({{
+                        resultsContext: {{ sort: [{{ by: "SF_OFFER_INSTALLMENT", order: "ASC" }}] }},
+                        searchContext: [{{ buNos: buNos }}]
+                    }});
 
-                    # Technical data
-                    tech = spec.get("technicalAndEmission", {}).get("technicalData", {})
-                    fuel = tech.get("fuelType", "") or mo.get("baseFuelType", "")
-                    transmission = tech.get("transmissionType", "")
+                    while (startIndex < totalCount) {{
+                        try {{
+                            const url = `${{searchUrl}}?maxResults=${{pageSize}}&startIndex=${{startIndex}}&brand=${{brand}}&hash=${{hash}}`;
+                            const resp = await fetch(url, {{
+                                method: "POST",
+                                headers: {{ "Content-Type": "application/json" }},
+                                body: body,
+                            }});
+                            if (!resp.ok) {{
+                                console.log("BMW fetch error:", resp.status);
+                                break;
+                            }}
+                            const data = await resp.json();
+                            totalCount = data.metadata?.totalCount || 0;
+                            const hits = data.hits || [];
+                            if (hits.length === 0) break;
 
-                    # First registration year
-                    first_reg = ordering.get("orderData", {}).get("firstRegistrationDate", "")
-                    year = None
-                    if first_reg and len(first_reg) >= 4:
-                        year = _safe_int(first_reg[:4])
+                            for (const hit of hits) {{
+                                const v = hit.vehicle || {{}};
+                                const mo = v.vehicleSpecification?.modelAndOption || {{}};
+                                const lc = v.vehicleLifeCycle || {{}};
+                                const ret = v.ordering?.retailData || {{}};
+                                const off = v.offering?.offerPrices || {{}};
+                                const media = v.media || {{}};
 
-                    # Images
-                    images = media.get("usedCarImageList", [])
-                    image_url = images[0] if images else ""
+                                // Model name
+                                const mrDesc = mo.modelRange?.description || {{}};
+                                const modelName = Object.values(mrDesc)[0] || "";
 
-                    # Source URL
-                    source_url = f"https://www.bmw.de/de-de/sl/gebrauchtwagen/detail/{doc_id}"
+                                // Price
+                                const buNo = ret.buNo || "";
+                                const priceObj = off[buNo] || {{}};
+                                const price = priceObj.offerGrossPrice || priceObj.offerGrossVehiclePrice || null;
 
-                    # Dealer info from our map
-                    dealer_info = dealer_map.get(bu_no, {})
+                                // Mileage
+                                const km = lc.mileage?.km || null;
 
-                    all_vehicles.append(OEMVehicle(
-                        make=mo.get("brand", brand),
-                        model=model_name,
-                        year=year,
-                        price=_safe_int(price),
-                        mileage=_safe_int(mileage),
-                        fuel=fuel,
-                        transmission=transmission,
-                        color=ext_color,
-                        source_url=source_url,
-                        image_url=image_url,
-                        oem_vehicle_id=doc_id,
-                        dealer_name=dealer_info.get("name", ""),
-                        dealer_city=dealer_info.get("city", ""),
-                        dealer_postcode=dealer_info.get("postcode", ""),
-                        oem_dealer_id=bu_no,
-                    ))
+                                // First reg year
+                                const firstReg = v.ordering?.orderData?.firstRegistrationDate || "";
+                                const year = firstReg ? parseInt(firstReg.substring(0, 4)) : null;
 
-                start_index += len(hits)
-                if start_index >= total_count:
-                    break
+                                // Images
+                                const imgs = media.usedCarImageList || [];
 
-                # Rate limiting between pages
-                await asyncio.sleep(1.0)
+                                allHits.push({{
+                                    documentId: v.documentId || "",
+                                    brand: mo.brand || "{brand}",
+                                    model: modelName,
+                                    year: year,
+                                    price: price,
+                                    mileage: km,
+                                    fuel: mo.baseFuelType || "",
+                                    color: "",
+                                    buNo: buNo,
+                                    imageUrl: imgs.length > 0 ? imgs[0] : "",
+                                }});
+                            }}
 
-            # Rate limiting between batches
-            await asyncio.sleep(2.0)
+                            startIndex += hits.length;
 
-            if (batch_start + self._BMW_BATCH_SIZE) % 50 == 0:
-                log.info("oem_gateway: BMW/%s — %d vehicles from %d/%d dealer batches",
-                         country, len(all_vehicles), batch_start + self._BMW_BATCH_SIZE, len(bu_nos))
+                            // Small delay to be polite
+                            await new Promise(r => setTimeout(r, 500));
+                        }} catch (e) {{
+                            console.log("BMW fetch exception:", e.message);
+                            break;
+                        }}
+                    }}
 
-        log.info("oem_gateway: BMW/%s — %d total vehicles from %d dealers",  # noqa: E501
+                    return {{ totalCount, vehicles: allHits }};
+                }}
+            """)
+
+            await browser.close()
+
+        # ── Phase 4: Parse results and build OEMVehicle list ────────────
+        if not raw_vehicles or not isinstance(raw_vehicles, dict):
+            log.warning("oem_gateway: BMW/%s no vehicles from injected fetch", country)
+            return []
+
+        total_count = raw_vehicles.get("totalCount", 0)
+        raw_list = raw_vehicles.get("vehicles", [])
+
+        log.info("oem_gateway: BMW/%s — totalCount=%d, captured=%d vehicles",
+                 country, total_count, len(raw_list))
+
+        seen_ids: set[str] = set()
+        for rv in raw_list:
+            doc_id = rv.get("documentId", "")
+            if not doc_id or doc_id in seen_ids:
+                continue
+            seen_ids.add(doc_id)
+
+            bu_no = rv.get("buNo", "")
+            dealer_info = dealer_map.get(bu_no, {})
+
+            all_vehicles.append(OEMVehicle(
+                make=rv.get("brand", brand),
+                model=rv.get("model", ""),
+                year=rv.get("year"),
+                price=_safe_int(rv.get("price")),
+                mileage=_safe_int(rv.get("mileage")),
+                fuel=rv.get("fuel", ""),
+                transmission="",
+                color=rv.get("color", ""),
+                source_url=f"https://www.bmw.de/de-de/sl/gebrauchtwagen/detail/{doc_id}",
+                image_url=rv.get("imageUrl", ""),
+                oem_vehicle_id=doc_id,
+                dealer_name=dealer_info.get("name", ""),
+                dealer_city=dealer_info.get("city", ""),
+                dealer_postcode=dealer_info.get("postcode", ""),
+                oem_dealer_id=bu_no,
+            ))
+
+        log.info("oem_gateway: BMW/%s — %d unique vehicles from %d dealers",
                  country, len(all_vehicles), len(bu_nos))
         return all_vehicles
 
