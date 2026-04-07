@@ -766,6 +766,7 @@ async def _process_dealer(
     # calls (/api/, /vehicles, /graphql, etc.), grabs JSON at network layer.
     # If CAPTCHA blocks us and we can't solve → mark WAF_BLOCKED_NO_CAPTCHA, move on.
     if not listings and _HAS_PLAYWRIGHT:
+        global _PW_SEMAPHORE
         if _PW_SEMAPHORE is None:
             _PW_SEMAPHORE = asyncio.Semaphore(_PW_MAX_CONCURRENT)
 
