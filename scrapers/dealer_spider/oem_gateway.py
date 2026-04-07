@@ -876,6 +876,33 @@ class OEMGateway:
 
             page.on("request", _on_request)
 
+            # Register vehicle response interceptor BEFORE navigation
+            # so we capture the first vehicle search response
+            vehicle_responses: list[dict] = []
+
+            async def _on_vehicle_response(resp):
+                try:
+                    if "/vehiclesearch/search/" not in resp.url:
+                        return
+                    if resp.status != 200:
+                        return
+                    ct = resp.headers.get("content-type", "")
+                    if "json" not in ct:
+                        return
+                    body = await resp.body()
+                    data = json.loads(body)
+                    hits = data.get("hits", [])
+                    total = data.get("metadata", {}).get("totalCount", 0)
+                    if hits:
+                        vehicle_responses.append(data)
+                        log.info("oem_gateway: BMW/%s intercepted page — %d hits (total: %d, accumulated: %d)",
+                                 country, len(hits), total,
+                                 sum(len(r.get("hits", [])) for r in vehicle_responses))
+                except Exception:
+                    pass
+
+            page.on("response", _on_vehicle_response)
+
             log.info("oem_gateway: BMW/%s navigating to Stocklocator for hash capture", country)
             try:
                 await page.goto(sl_url, wait_until="networkidle", timeout=60000)
@@ -918,35 +945,9 @@ class OEMGateway:
             session_hash = captured_hash[0]
             search_base = captured_search_url[0]
 
-            # ── Phase 3: Intercept vehicle responses from BMW's own pagination ──
-            # Instead of injecting fetches (CORS blocks cross-origin POST),
-            # we let BMW's frontend do the work. We scroll/click to trigger
-            # pagination and intercept the vehicle search responses.
-
-            vehicle_responses: list[dict] = []
-
-            async def _on_vehicle_response(resp):
-                try:
-                    if "/vehiclesearch/search/" not in resp.url:
-                        return
-                    if resp.status != 200:
-                        return
-                    ct = resp.headers.get("content-type", "")
-                    if "json" not in ct:
-                        return
-                    body = await resp.body()
-                    data = json.loads(body)
-                    hits = data.get("hits", [])
-                    total = data.get("metadata", {}).get("totalCount", 0)
-                    if hits:
-                        vehicle_responses.append(data)
-                        log.info("oem_gateway: BMW/%s intercepted page — %d hits (total: %d, accumulated: %d)",
-                                 country, len(hits), total,
-                                 sum(len(r.get("hits", [])) for r in vehicle_responses))
-                except Exception:
-                    pass
-
-            page.on("response", _on_vehicle_response)
+            # ── Phase 3: Scroll/click to trigger BMW's pagination ──────────────
+            # Response interceptor already active from before navigation.
+            # We just need to trigger "load more" to get subsequent pages.
 
             log.info("oem_gateway: BMW/%s intercepting vehicle responses + triggering pagination",
                      country)
