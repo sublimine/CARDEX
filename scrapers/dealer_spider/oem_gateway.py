@@ -705,17 +705,23 @@ class OEMGateway:
         assert self._pg and self._gateway
         published = 0
         failed = 0
+        skip_no_dealer = 0
+        skip_no_url = 0
+        skip_no_model = 0
         for v in vehicles:
             dealer_id = await _reconcile_dealer(self._pg, v, brand, country)
             if not dealer_id:
+                skip_no_dealer += 1
                 continue
 
             source_url = v.source_url or ""
             if not source_url.startswith("http"):
+                skip_no_url += 1
                 continue
 
             model_name = v.model or ""
             if not model_name or not (v.make or brand):
+                skip_no_model += 1
                 continue
 
             try:
@@ -752,8 +758,9 @@ class OEMGateway:
                                 listing.source_url[:80])
                 failed += 1
 
-        log.info("oem_gateway: %s/%s — %d vehicles, %d published",
-                 brand, country, len(vehicles), published)
+        log.info("oem_gateway: %s/%s — %d vehicles, %d published, %d failed, skips: dealer=%d url=%d model=%d",
+                 brand, country, len(vehicles), published, failed,
+                 skip_no_dealer, skip_no_url, skip_no_model)
         return published
 
     # ── BMW Group Dedicated Handler (Hybrid Architecture) ──────────────
