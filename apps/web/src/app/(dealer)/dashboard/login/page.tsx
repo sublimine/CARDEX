@@ -4,6 +4,8 @@ import { useState, FormEvent } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+
 export default function DealerLoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
@@ -17,7 +19,7 @@ export default function DealerLoginPage() {
     setError('')
 
     try {
-      const res = await fetch('/api/v1/auth/login', {
+      const res = await fetch(`${API_BASE}/api/v1/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

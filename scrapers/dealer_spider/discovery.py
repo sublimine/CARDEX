@@ -1757,77 +1757,77 @@ class GovernmentRegistryBridgeProbe(DiscoveryProbe):
     """
 
     def __init__(self) -> None:
-        self._crawlers: dict[str, Any] = {}
+        self._crawler_classes: dict[str, tuple[str, str]] = {}
         self._loaded = False
 
-    def _load_crawlers(self) -> None:
+    def _load_crawler_classes(self) -> None:
+        """Load crawler CLASSES (not instances — they need rdb+session at runtime)."""
         if self._loaded:
             return
-        try:
-            from scrapers.discovery.registries.de_handelsregister import DEHandelsregisterCrawler
-            self._crawlers["DE"] = DEHandelsregisterCrawler()
-        except ImportError:
-            log.debug("probe.registry_bridge.skip", country="DE", reason="import failed")
-        try:
-            from scrapers.discovery.registries.fr_sirene import FRSIRENECrawler
-            self._crawlers["FR"] = FRSIRENECrawler()
-        except ImportError:
-            log.debug("probe.registry_bridge.skip", country="FR", reason="import failed")
-        try:
-            from scrapers.discovery.registries.nl_kvk import NLKVKCrawler
-            self._crawlers["NL"] = NLKVKCrawler()
-        except ImportError:
-            log.debug("probe.registry_bridge.skip", country="NL", reason="import failed")
-        try:
-            from scrapers.discovery.registries.be_bce import BEBCECrawler
-            self._crawlers["BE"] = BEBCECrawler()
-        except ImportError:
-            log.debug("probe.registry_bridge.skip", country="BE", reason="import failed")
-        try:
-            from scrapers.discovery.registries.ch_zefix import CHZefixCrawler
-            self._crawlers["CH"] = CHZefixCrawler()
-        except ImportError:
-            log.debug("probe.registry_bridge.skip", country="CH", reason="import failed")
-        try:
-            from scrapers.discovery.registries.es_aeoc import ESAEOCCrawler
-            self._crawlers["ES"] = ESAEOCCrawler()
-        except ImportError:
-            log.debug("probe.registry_bridge.skip", country="ES", reason="import failed")
+        _registry_map = {
+            "DE": ("scrapers.discovery.registries.de_handelsregister", "DEHandelsregisterCrawler"),
+            "FR": ("scrapers.discovery.registries.fr_sirene", "FRSIRENECrawler"),
+            "NL": ("scrapers.discovery.registries.nl_kvk", "NLKVKCrawler"),
+            "BE": ("scrapers.discovery.registries.be_bce", "BEBCECrawler"),
+            "CH": ("scrapers.discovery.registries.ch_zefix", "CHZefixCrawler"),
+            "ES": ("scrapers.discovery.registries.es_aeoc", "ESAEOCCrawler"),
+        }
+        for country, (module_path, class_name) in _registry_map.items():
+            try:
+                import importlib
+                mod = importlib.import_module(module_path)
+                self._crawler_classes[country] = getattr(mod, class_name)
+            except (ImportError, AttributeError) as exc:
+                log.debug("probe.registry_bridge.skip", country=country, error=str(exc))
         self._loaded = True
-        log.info("probe.registry_bridge.loaded", crawlers=list(self._crawlers.keys()))
+        log.info("probe.registry_bridge.loaded", crawlers=list(self._crawler_classes.keys()))
 
     @property
     def name(self) -> str:
         return "GOV_REGISTRY"
 
     def supports_country(self, country: str) -> bool:
-        self._load_crawlers()
-        return country in self._crawlers
+        self._load_crawler_classes()
+        return country in self._crawler_classes
 
     async def discover(self, country: str) -> AsyncIterator[DealerRecord]:
-        self._load_crawlers()
-        crawler = self._crawlers.get(country)
-        if not crawler:
+        self._load_crawler_classes()
+        crawler_cls = self._crawler_classes.get(country)
+        if not crawler_cls:
             return
 
         total = 0
         log.info("probe.registry_bridge.start", country=country,
-                 crawler=type(crawler).__name__)
+                 crawler=crawler_cls.__name__)
 
+        import aiohttp
+
+        # Create the runtime dependencies the legacy crawlers expect
+        rdb = redis_from_url(_REDIS_URL, decode_responses=True)
         try:
-            # All registry crawlers implement async crawl() → AsyncGenerator[dict]
-            async for raw in crawler.crawl():
-                record = self._convert(raw, country)
-                if record:
-                    total += 1
-                    yield record
+            async with aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=30),
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                                  "AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36",
+                },
+            ) as session:
+                crawler = crawler_cls(rdb=rdb, session=session)
 
-                    if total % 1000 == 0:
-                        log.info("probe.registry_bridge.progress",
-                                 country=country, found=total)
+                async for raw in crawler.crawl():
+                    record = self._convert(raw, country)
+                    if record:
+                        total += 1
+                        yield record
+
+                        if total % 1000 == 0:
+                            log.info("probe.registry_bridge.progress",
+                                     country=country, found=total)
         except Exception as exc:
             log.warning("probe.registry_bridge.error",
                         country=country, error=str(exc), found_before_error=total)
+        finally:
+            await rdb.aclose()
 
         log.info("probe.registry_bridge.done", country=country, total=total)
 

@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { CheckCircle } from 'lucide-react'
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+
 export default function DealerRegisterPage() {
   const router = useRouter()
   const [formData, setFormData] = useState({
@@ -24,7 +26,7 @@ export default function DealerRegisterPage() {
     setError('')
 
     try {
-      const res = await fetch('/api/v1/auth/register', {
+      const res = await fetch(`${API_BASE}/api/v1/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
