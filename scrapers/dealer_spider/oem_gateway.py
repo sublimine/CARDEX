@@ -839,11 +839,20 @@ class OEMGateway:
                 locale=lang.split("-")[0] + "-" + lang.split("-")[1].upper(),
             )
 
-            # Block heavy resources
+            # Block only images/media/font — keep stylesheets (SPA needs CSS to init)
             await page.route("**/*", lambda route, req: (
-                route.abort() if req.resource_type in ("image", "media", "font", "stylesheet")
+                route.abort() if req.resource_type in ("image", "media", "font")
                 else route.continue_()
             ))
+
+            # Stealth patches
+            ctx = page.context
+            await ctx.add_init_script("""
+                Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+                Object.defineProperty(navigator, 'plugins', {get: () => [1,2,3,4,5]});
+                if (!window.chrome) { window.chrome = {}; }
+                if (!window.chrome.runtime) { window.chrome.runtime = {}; }
+            """)
 
             # Capture the hash from the first vehiclesearch request
             captured_hash: list[str] = []
