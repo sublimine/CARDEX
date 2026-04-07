@@ -772,7 +772,7 @@ class OEMGateway:
 
     _BMW_STOLO_BASE = "https://stolo-data-service.prod.stolo.eu-central-1.aws.bmw.cloud"
     _BMW_DEALERS_URL = _BMW_STOLO_BASE + "/dealer/showAll"
-    _BMW_PAGE_SIZE = 50
+    _BMW_PAGE_SIZE = 12
 
     # Stocklocator URLs per country
     _BMW_SL_URLS = {
@@ -860,8 +860,11 @@ class OEMGateway:
                 Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
             """)
 
-            # Intercept hash from first search request
+            # Intercept hash + original POST body from first search request
             captured: list[str] = []
+            captured_post_body: list[str] = []
+
+            captured_headers: list[dict] = []
 
             async def _on_req(req):
                 if "/vehiclesearch/search/" in req.url and "hash=" in req.url:
@@ -871,6 +874,17 @@ class OEMGateway:
                     if h and not captured:
                         captured.append(h)
                         captured.append(f"{p.scheme}://{p.netloc}{p.path}")
+                        # Capture original POST body + headers
+                        try:
+                            pd = req.post_data
+                            if pd:
+                                captured_post_body.append(pd)
+                        except Exception:
+                            pass
+                        try:
+                            captured_headers.append(dict(req.headers))
+                        except Exception:
+                            pass
 
             page.on("request", _on_req)
 
@@ -919,25 +933,47 @@ class OEMGateway:
 
         cookie_header = "; ".join(f"{c['name']}={c['value']}" for c in session_cookies)
 
-        async with httpx.AsyncClient(
-            timeout=30.0,
-            headers={
+        # Use captured headers as base, override with session cookies
+        if captured_headers:
+            siege_headers = dict(captured_headers[0])
+            siege_headers["Cookie"] = cookie_header
+            # Log captured headers for debugging
+            log.info("oem_gateway: BMW/%s using %d captured headers", country, len(siege_headers))
+        else:
+            siege_headers = {
                 "User-Agent": session_ua,
                 "Accept": "application/json",
                 "Content-Type": "application/json",
                 "Origin": "https://www.bmw.de",
                 "Referer": sl_url,
                 "Cookie": cookie_header,
-            },
+            }
+
+        async with httpx.AsyncClient(
+            timeout=30.0,
+            headers=siege_headers,
         ) as siege_client:
             all_vehicles: list[OEMVehicle] = []
             seen_ids: set[str] = set()
             total_count = 0
 
-            search_body = json.dumps({
-                "resultsContext": {"sort": [{"by": "SF_OFFER_INSTALLMENT", "order": "ASC"}]},
-                "searchContext": [{"buNos": bu_nos}],
-            })
+            # Use captured body as template if available, otherwise construct
+            if captured_post_body:
+                try:
+                    original_body = json.loads(captured_post_body[0])
+                    log.info("oem_gateway: BMW/%s using captured POST body template: %s",
+                             country, json.dumps(original_body)[:300])
+                    search_body = captured_post_body[0]
+                except (json.JSONDecodeError, IndexError):
+                    search_body = json.dumps({
+                        "resultsContext": {"sort": [{"by": "SF_OFFER_INSTALLMENT", "order": "ASC"}]},
+                        "searchContext": [{"buNos": bu_nos}],
+                    })
+            else:
+                search_body = json.dumps({
+                    "resultsContext": {"sort": [{"by": "SF_OFFER_INSTALLMENT", "order": "ASC"}]},
+                    "searchContext": [{"buNos": bu_nos}],
+                })
 
             start_index = 0
             page_size = self._BMW_PAGE_SIZE
@@ -959,8 +995,9 @@ class OEMGateway:
                         continue
 
                     if resp.status_code not in (200, 201):
-                        log.warning("oem_gateway: BMW/%s HTTP %d at startIndex=%d",
-                                    country, resp.status_code, start_index)
+                        err_body = resp.text[:500] if resp.text else "(empty)"
+                        log.warning("oem_gateway: BMW/%s HTTP %d at startIndex=%d — body: %s",
+                                    country, resp.status_code, start_index, err_body)
                         consecutive_errors += 1
                         continue
 
