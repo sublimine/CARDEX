@@ -957,7 +957,6 @@ class OEMGateway:
                                 method: "POST",
                                 headers: {{ "Content-Type": "application/json" }},
                                 body: body,
-                                credentials: "include",
                             }});
                             if (!resp.ok) {{
                                 const errText = await resp.text().catch(() => "");
