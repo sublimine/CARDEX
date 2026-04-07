@@ -60,40 +60,22 @@ _CONCURRENCY = int(os.environ.get("OEM_GATEWAY_CONCURRENCY", "3"))
 # These are the XHR/REST endpoints behind their "Gebrauchtwagen"/"Occasion" pages.
 
 _OEM_USED_CAR_APIS: list[dict[str, Any]] = [
-    # ── BMW Group ────────────────────────────────────────────────────────
+    # ── BMW Group — VERIFIED ENDPOINTS (recon 2026-04-07) ────────────────
+    # Architecture: 2-step. First GET dealer list → extract buNos.
+    # Then POST vehiclesearch with buNos in batches.
+    # Handled by dedicated _harvest_bmw_group() method, not generic flow.
     {
         "brand": "BMW",
         "group": "BMW_GROUP",
+        "handler": "_harvest_bmw_group",  # dedicated handler, not generic
         "countries": {
-            "DE": {
-                "url": "https://www.bmw.de/de/ssl/used-car-search.html",
-                "api": "https://www.bmw.de/used-api/search",
-                "params": {"country": "DE", "brand": "BM", "pageSize": 100, "page": 0},
-            },
-            "FR": {
-                "url": "https://www.bmw.fr/fr/ssl/used-car-search.html",
-                "api": "https://www.bmw.fr/used-api/search",
-                "params": {"country": "FR", "brand": "BM", "pageSize": 100, "page": 0},
-            },
-            "ES": {
-                "url": "https://www.bmw.es/es/ssl/used-car-search.html",
-                "api": "https://www.bmw.es/used-api/search",
-                "params": {"country": "ES", "brand": "BM", "pageSize": 100, "page": 0},
-            },
-            "NL": {
-                "api": "https://www.bmw.nl/used-api/search",
-                "params": {"country": "NL", "brand": "BM", "pageSize": 100, "page": 0},
-            },
-            "BE": {
-                "api": "https://www.bmw.be/used-api/search",
-                "params": {"country": "BE", "brand": "BM", "pageSize": 100, "page": 0},
-            },
-            "CH": {
-                "api": "https://www.bmw.ch/used-api/search",
-                "params": {"country": "CH", "brand": "BM", "pageSize": 100, "page": 0},
-            },
+            "DE": {"lang": "de-de", "slug": "gebrauchtwagen", "category": "BM"},
+            "FR": {"lang": "fr-fr", "slug": "occasions", "category": "BM"},
+            "ES": {"lang": "es-es", "slug": "ocasion", "category": "BM"},
+            "NL": {"lang": "nl-nl", "slug": "occasions", "category": "BM"},
+            "BE": {"lang": "fr-be", "slug": "occasions", "category": "BM"},
+            "CH": {"lang": "de-ch", "slug": "gebrauchtwagen", "category": "BM"},
         },
-        "parser": "_parse_bmw",
     },
     # ── Mercedes-Benz ────────────────────────────────────────────────────
     {
@@ -716,6 +698,265 @@ class OEMGateway:
         if self._rdb:
             await self._rdb.aclose()
 
+    async def _publish_vehicles(
+        self, vehicles: list[OEMVehicle], brand: str, country: str,
+    ) -> int:
+        """Reconcile and publish vehicles to the pipeline. Returns count published."""
+        assert self._pg and self._gateway
+        published = 0
+        for v in vehicles:
+            dealer_id = await _reconcile_dealer(self._pg, v, brand, country)
+            if not dealer_id:
+                continue
+
+            listing = RawListing(
+                source_platform=f"oem:{brand.lower()}",
+                source_listing_id=_stable_listing_id(brand, v.oem_vehicle_id or f"{v.make}{v.model}{v.year}"),
+                dealer_id=dealer_id,
+                dealer_name=v.dealer_name or "",
+                make=v.make or brand,
+                model=v.model or "",
+                year=v.year,
+                price_raw=v.price,
+                mileage_raw=v.mileage,
+                fuel=v.fuel or "",
+                transmission=v.transmission or "",
+                color=v.color or "",
+                source_url=v.source_url or "",
+                image_url=v.image_url or "",
+                country=country,
+            )
+
+            if not listing.make or not listing.model:
+                continue
+            if listing.source_url and not listing.source_url.startswith("http"):
+                continue
+
+            try:
+                await self._gateway.ingest(listing)
+                published += 1
+            except Exception as exc:
+                if published == 0:
+                    log.warning("oem_gateway: ingest error: %s", exc)
+
+        log.info("oem_gateway: %s/%s — %d vehicles, %d published",
+                 brand, country, len(vehicles), published)
+        return published
+
+    # ── BMW Group Dedicated Handler ─────────────────────────────────────
+
+    _BMW_STOLO_BASE = "https://stolo-data-service.prod.stolo.eu-central-1.aws.bmw.cloud"
+    _BMW_DEALERS_URL = _BMW_STOLO_BASE + "/dealer/showAll"
+    _BMW_SEARCH_URL = _BMW_STOLO_BASE + "/vehiclesearch/search/{lang}/{slug}"
+    _BMW_PAGE_SIZE = 50  # conservative to avoid 429
+    _BMW_BATCH_SIZE = 10  # buNos per request
+    _BMW_HEADERS = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Origin": "https://www.bmw.de",
+        "Referer": "https://www.bmw.de/de-de/sl/gebrauchtwagen/results",
+    }
+
+    async def _harvest_bmw_group(
+        self,
+        client: httpx.AsyncClient,
+        brand: str,
+        country: str,
+        country_cfg: dict,
+    ) -> list[OEMVehicle]:
+        """
+        BMW Group 2-step extraction:
+        1. GET /dealer/showAll → list of buNos
+        2. POST /vehiclesearch/search with buNos in batches → paginated vehicles
+        """
+        lang = country_cfg["lang"]
+        slug = country_cfg["slug"]
+        category = country_cfg["category"]
+
+        # Step 1: Get all dealer buNos
+        try:
+            resp = await client.get(
+                self._BMW_DEALERS_URL,
+                params={
+                    "country": country,
+                    "category": category,
+                    "clientid": "66_STOCK_DLO",
+                    "language": lang.replace("-", "_"),
+                    "slg": "true",
+                },
+                headers=self._BMW_HEADERS,
+            )
+            resp.raise_for_status()
+            dealer_data = resp.json()
+        except Exception as exc:
+            log.warning("oem_gateway: BMW/%s dealer list failed: %s", country, exc)
+            return []
+
+        included = dealer_data.get("includedDealers", [])
+        bu_nos = []
+        dealer_map: dict[str, dict] = {}  # buNo → dealer info for reconciliation
+        for d in included:
+            key = d.get("key", "")
+            if key:
+                bu_nos.append(key)
+                dealer_map[key] = {
+                    "name": d.get("name", ""),
+                    "city": d.get("city", ""),
+                    "postcode": d.get("postalCode", ""),
+                    "distributionPartnerId": d.get("attributes", {}).get("distributionPartnerId", ""),
+                }
+
+        log.info("oem_gateway: BMW/%s — %d dealers (buNos), starting vehicle search",
+                 country, len(bu_nos))
+
+        if not bu_nos:
+            return []
+
+        # Step 2: Search vehicles in batches of buNos
+        search_url = self._BMW_SEARCH_URL.format(lang=lang, slug=slug)
+        all_vehicles: list[OEMVehicle] = []
+        seen_ids: set[str] = set()
+
+        # Process buNos in batches
+        for batch_start in range(0, len(bu_nos), self._BMW_BATCH_SIZE):
+            batch_bunos = bu_nos[batch_start:batch_start + self._BMW_BATCH_SIZE]
+            start_index = 0
+
+            while True:
+                body = {
+                    "resultsContext": {
+                        "sort": [{"by": "SF_OFFER_INSTALLMENT", "order": "ASC"}],
+                    },
+                    "searchContext": [{"buNos": batch_bunos}],
+                }
+
+                try:
+                    resp = await client.post(
+                        f"{search_url}?maxResults={self._BMW_PAGE_SIZE}&startIndex={start_index}&brand={brand}",
+                        json=body,
+                        headers=self._BMW_HEADERS,
+                    )
+                    if resp.status_code in (429, 403):
+                        log.warning("oem_gateway: BMW/%s rate limited at batch %d, page %d",
+                                    country, batch_start, start_index)
+                        await asyncio.sleep(10)
+                        break
+                    resp.raise_for_status()
+                    data = resp.json()
+                except Exception as exc:
+                    log.warning("oem_gateway: BMW/%s search error at batch %d: %s",
+                                country, batch_start, exc)
+                    break
+
+                total_count = data.get("metadata", {}).get("totalCount", 0)
+                hits = data.get("hits", [])
+
+                if not hits:
+                    break
+
+                for hit in hits:
+                    v = hit.get("vehicle", {})
+                    doc_id = v.get("documentId", "")
+                    if doc_id in seen_ids:
+                        continue
+                    seen_ids.add(doc_id)
+
+                    # Extract fields from BMW's nested structure
+                    spec = v.get("vehicleSpecification", {})
+                    mo = spec.get("modelAndOption", {})
+                    lifecycle = v.get("vehicleLifeCycle", {})
+                    ordering = v.get("ordering", {})
+                    retail = ordering.get("retailData", {})
+                    offering = v.get("offering", {})
+                    media = v.get("media", {})
+
+                    # Model name from modelRange description
+                    model_range = mo.get("modelRange", {})
+                    model_desc = model_range.get("description", {})
+                    model_name = (
+                        model_desc.get(f"{lang.replace('-','_')}")
+                        or model_desc.get(f"default_{lang.split('-')[0].upper()}")
+                        or next(iter(model_desc.values()), "")
+                        if isinstance(model_desc, dict) else ""
+                    )
+
+                    # Price from offerPrices
+                    bu_no = retail.get("buNo", "")
+                    offer_prices = offering.get("offerPrices", {})
+                    price_info = offer_prices.get(bu_no, {}) if isinstance(offer_prices, dict) else {}
+                    price = price_info.get("offerGrossPrice") or price_info.get("offerGrossVehiclePrice")
+
+                    # Mileage
+                    mileage_obj = lifecycle.get("mileage", {})
+                    mileage = mileage_obj.get("km") if isinstance(mileage_obj, dict) else None
+
+                    # Color
+                    colors = mo.get("colors", {})
+                    ext_color = ""
+                    if isinstance(colors, dict):
+                        ext = colors.get("exterior", {})
+                        if isinstance(ext, dict):
+                            ext_color = ext.get("name", "")
+
+                    # Technical data
+                    tech = spec.get("technicalAndEmission", {}).get("technicalData", {})
+                    fuel = tech.get("fuelType", "") or mo.get("baseFuelType", "")
+                    transmission = tech.get("transmissionType", "")
+
+                    # First registration year
+                    first_reg = ordering.get("orderData", {}).get("firstRegistrationDate", "")
+                    year = None
+                    if first_reg and len(first_reg) >= 4:
+                        year = _safe_int(first_reg[:4])
+
+                    # Images
+                    images = media.get("usedCarImageList", [])
+                    image_url = images[0] if images else ""
+
+                    # Source URL
+                    source_url = f"https://www.bmw.de/de-de/sl/gebrauchtwagen/detail/{doc_id}"
+
+                    # Dealer info from our map
+                    dealer_info = dealer_map.get(bu_no, {})
+
+                    all_vehicles.append(OEMVehicle(
+                        make=mo.get("brand", brand),
+                        model=model_name,
+                        year=year,
+                        price=_safe_int(price),
+                        mileage=_safe_int(mileage),
+                        fuel=fuel,
+                        transmission=transmission,
+                        color=ext_color,
+                        source_url=source_url,
+                        image_url=image_url,
+                        oem_vehicle_id=doc_id,
+                        dealer_name=dealer_info.get("name", ""),
+                        dealer_city=dealer_info.get("city", ""),
+                        dealer_postcode=dealer_info.get("postcode", ""),
+                        oem_dealer_id=bu_no,
+                    ))
+
+                start_index += len(hits)
+                if start_index >= total_count:
+                    break
+
+                # Rate limiting between pages
+                await asyncio.sleep(1.0)
+
+            # Rate limiting between batches
+            await asyncio.sleep(2.0)
+
+            if (batch_start + self._BMW_BATCH_SIZE) % 50 == 0:
+                log.info("oem_gateway: BMW/%s — %d vehicles from %d/%d dealer batches",
+                         country, len(all_vehicles), batch_start + self._BMW_BATCH_SIZE, len(bu_nos))
+
+        log.info("oem_gateway: BMW/%s — %d total vehicles from %d dealers",
+                 country, len(all_vehicles), len(bu_nos))
+        return all_vehicles
+
     async def run(self, countries: list[str] | None = None) -> dict[str, int]:
         """Main entry: iterate all OEM APIs for all countries."""
         countries = countries or ["DE", "ES", "FR", "NL", "BE", "CH"]
@@ -740,7 +981,30 @@ class OEMGateway:
         ) as client:
             for oem_cfg in _OEM_USED_CAR_APIS:
                 brand = oem_cfg["brand"]
-                parser_name = oem_cfg["parser"]
+
+                # Check for dedicated handler (e.g. BMW Group)
+                handler_name = oem_cfg.get("handler")
+                if handler_name:
+                    handler_fn = getattr(self, handler_name, None)
+                    if handler_fn:
+                        for country in countries:
+                            country_cfg = oem_cfg.get("countries", {}).get(country)
+                            if not country_cfg:
+                                continue
+                            try:
+                                vehicles = await handler_fn(client, brand, country, country_cfg)
+                            except Exception as exc:
+                                log.warning("oem_gateway: %s/%s handler failed: %s", brand, country, exc)
+                                continue
+
+                            published = await self._publish_vehicles(vehicles, brand, country)
+                            total_vehicles += len(vehicles)
+                            total_reconciled += published
+                            self._stats[f"{brand}_{country}"] = published
+                    continue
+
+                # Generic flow for non-BMW OEMs
+                parser_name = oem_cfg.get("parser", "")
                 parser_fn = _PARSERS.get(parser_name)
                 if not parser_fn:
                     continue
@@ -750,7 +1014,9 @@ class OEMGateway:
                     if not country_cfg:
                         continue
 
-                    api_url = country_cfg["api"]
+                    api_url = country_cfg.get("api", "")
+                    if not api_url:
+                        continue
                     base_params = country_cfg.get("params", {})
 
                     try:
@@ -765,50 +1031,9 @@ class OEMGateway:
                         log.info("oem_gateway: %s/%s — 0 vehicles", brand, country)
                         continue
 
-                    # Reconcile and publish
-                    published = 0
-                    for v in vehicles:
-                        dealer_id = await _reconcile_dealer(self._pg, v, brand, country)
-                        if not dealer_id:
-                            continue
-
-                        listing = RawListing(
-                            source_platform=f"oem:{brand.lower()}",
-                            source_listing_id=_stable_listing_id(brand, v.oem_vehicle_id or f"{v.make}{v.model}{v.year}"),
-                            dealer_id=dealer_id,
-                            dealer_name=v.dealer_name or "",
-                            make=v.make or brand,
-                            model=v.model or "",
-                            year=v.year,
-                            price_raw=v.price,
-                            mileage_raw=v.mileage,
-                            fuel=v.fuel or "",
-                            transmission=v.transmission or "",
-                            color=v.color or "",
-                            source_url=v.source_url or "",
-                            image_url=v.image_url or "",
-                            country=country,
-                        )
-
-                        # Validate
-                        if not listing.make or not listing.model:
-                            continue
-                        if listing.source_url and not listing.source_url.startswith("http"):
-                            continue
-
-                        try:
-                            await self._gateway.ingest(listing)
-                            published += 1
-                        except Exception as exc:
-                            if published == 0:
-                                log.warning("oem_gateway: ingest error: %s", exc)
-
+                    published = await self._publish_vehicles(vehicles, brand, country)
                     total_vehicles += len(vehicles)
                     total_reconciled += published
-
-                    log.info("oem_gateway: %s/%s — %d vehicles, %d published",
-                             brand, country, len(vehicles), published)
-
                     self._stats[f"{brand}_{country}"] = published
 
         # Update OEM_FRANCHISE dealers that got vehicles to DONE
