@@ -869,24 +869,32 @@ class OEMGateway:
 
             log.info("oem_gateway: BMW/%s navigating to Stocklocator for hash capture", country)
             try:
-                await page.goto(sl_url, wait_until="domcontentloaded", timeout=45000)
-                # Accept cookies
+                await page.goto(sl_url, wait_until="networkidle", timeout=60000)
+
+                # Accept cookies — this can block the SPA from firing API calls
                 for sel in ["#onetrust-accept-btn-handler",
                             'button:has-text("Alle akzeptieren")',
-                            'button:has-text("Accept All")']:
+                            'button:has-text("Accept All")',
+                            ".accept-all", "#accept-all"]:
                     try:
                         btn = await page.query_selector(sel)
                         if btn and await btn.is_visible():
                             await btn.click()
+                            await asyncio.sleep(2)
                             break
                     except Exception:
                         pass
 
+                # Scroll to trigger the SPA vehicle load
+                for _ in range(3):
+                    await page.evaluate("window.scrollBy(0, 600)")
+                    await asyncio.sleep(2)
+
                 # Wait for the JS to fire the first search request
-                for _ in range(20):  # 20 × 1.5s = 30s max
+                for _ in range(30):  # 30 × 2s = 60s max
                     if captured_hash:
                         break
-                    await asyncio.sleep(1.5)
+                    await asyncio.sleep(2)
 
             except Exception as exc:
                 log.warning("oem_gateway: BMW/%s Stocklocator navigation failed: %s", country, exc)
