@@ -1024,7 +1024,12 @@ class OEMGateway:
                     first_reg = v.get("ordering", {}).get("orderData", {}).get("firstRegistrationDate", "")
                     year = _safe_int(first_reg[:4]) if first_reg and len(first_reg) >= 4 else None
 
-                    imgs = media.get("usedCarImageList", [])
+                    imgs = media.get("usedCarImageList") or media.get("usedCarImages") or []
+                    first_img = ""
+                    if isinstance(imgs, list) and imgs:
+                        first_img = imgs[0] if isinstance(imgs[0], str) else ""
+                    elif isinstance(imgs, dict):
+                        first_img = next(iter(imgs.values()), "") if imgs else ""
 
                     raw_vehicles["vehicles"].append({
                         "documentId": v.get("documentId", ""),
@@ -1036,7 +1041,7 @@ class OEMGateway:
                         "fuel": mo.get("baseFuelType", ""),
                         "color": "",
                         "buNo": bu_no,
-                        "imageUrl": imgs[0] if imgs else "",
+                        "imageUrl": first_img,
                     })
 
             await browser.close()
