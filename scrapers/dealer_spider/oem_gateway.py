@@ -884,7 +884,7 @@ class OEMGateway:
                 try:
                     if "/vehiclesearch/search/" not in resp.url:
                         return
-                    if resp.status != 200:
+                    if resp.status not in (200, 201):
                         return
                     ct = resp.headers.get("content-type", "")
                     if "json" not in ct:
