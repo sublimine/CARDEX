@@ -812,16 +812,19 @@ class OEMGateway:
                     self._stats[f"{brand}_{country}"] = published
 
         # Update OEM_FRANCHISE dealers that got vehicles to DONE
-        if self._pg:
-            await self._pg.execute("""
-                UPDATE dealers SET spider_status = 'DONE', updated_at = now()
-                WHERE spider_status = 'OEM_FRANCHISE'
-                  AND id IN (
-                      SELECT DISTINCT d.id FROM dealers d
-                      JOIN vehicles v ON v.dealer_name = d.name AND v.country = d.country
-                      WHERE d.spider_status = 'OEM_FRANCHISE'
-                  )
-            """)
+        if self._pg and total_reconciled > 0:
+            try:
+                await self._pg.execute("""
+                    UPDATE dealers SET spider_status = 'DONE', updated_at = now()
+                    WHERE spider_status = 'OEM_FRANCHISE'
+                      AND id IN (
+                          SELECT DISTINCT d.id FROM dealers d
+                          JOIN vehicles v ON v.seller_name = d.name AND v.country = d.country
+                          WHERE d.spider_status = 'OEM_FRANCHISE'
+                      )
+                """)
+            except Exception as exc:
+                log.warning("oem_gateway: reconciliation update failed: %s", exc)
 
         await self._teardown()
 
