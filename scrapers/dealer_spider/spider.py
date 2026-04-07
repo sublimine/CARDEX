@@ -66,13 +66,19 @@ from scrapers.dealer_spider.stealth_http import (
     detect_waf_type, is_challenge_page,
 )
 
+# Type alias for function signatures that accept the HTTP helper
+_HTTPHelper = StealthHTTPHelper
+
 # Stealth Playwright — graceful fallback if not installed
 try:
     import playwright  # noqa: F401
-    from scrapers.dealer_spider.stealth_browser import StealthBrowser
+    from scrapers.dealer_spider.stealth_browser import (
+        StealthBrowser, CaptchaUnavailableError,
+    )
     _HAS_PLAYWRIGHT = True
 except ImportError:
     _HAS_PLAYWRIGHT = False
+    CaptchaUnavailableError = None  # type: ignore[misc, assignment]
 
 logging.basicConfig(
     level=logging.INFO,
@@ -589,123 +595,6 @@ def _find_vehicles_in_json(
     return listings
 
 
-async def _extract_with_playwright(
-    base_url: str,
-    dealer_id: str,
-    dealer_name: str,
-    country: str,
-    homepage_html: str,
-) -> list[RawListing]:
-    """
-    Vectors 3+4: Open dealer site in Playwright, intercept XHR JSON responses,
-    extract iframes, parse everything for vehicle data.
-    """
-    global _PW_SEMAPHORE
-    if not _HAS_PLAYWRIGHT:
-        log.debug("spider: Playwright not available, skipping vectors 3-4 for %s", dealer_name)
-        return []
-
-    if _PW_SEMAPHORE is None:
-        _PW_SEMAPHORE = asyncio.Semaphore(_PW_MAX_CONCURRENT)
-
-    async with _PW_SEMAPHORE:
-        return await _run_playwright_extraction(base_url, dealer_id, dealer_name, country, homepage_html)
-
-
-async def _run_playwright_extraction(
-    base_url: str,
-    dealer_id: str,
-    dealer_name: str,
-    country: str,
-    homepage_html: str,
-) -> list[RawListing]:
-    """Core Playwright extraction logic — runs under semaphore."""
-    base = base_url.rstrip("/")
-    all_listings: list[RawListing] = []
-    seen_ids: set[str] = set()
-
-    def _dedupe(listings: list[RawListing]) -> list[RawListing]:
-        unique = []
-        for l in listings:
-            if l.source_listing_id not in seen_ids:
-                seen_ids.add(l.source_listing_id)
-                unique.append(l)
-        return unique
-
-    # Determine which inventory URLs to try
-    # First, check homepage HTML for inventory links
-    inventory_urls: list[str] = []
-    inventory_urls.extend(DMSDetector.find_inventory_links(base, homepage_html))
-
-    # Add standard inventory paths
-    for path in _INVENTORY_PATHS:
-        candidate = base + path
-        if candidate not in inventory_urls:
-            inventory_urls.append(candidate)
-
-    # Always try the homepage itself too (some SPAs load inventory on /)
-    if base not in inventory_urls:
-        inventory_urls.insert(0, base)
-
-    try:
-        async with PlaywrightClient(headless=True, country=country) as pw:
-            # Try each inventory URL until we find vehicles
-            for url in inventory_urls[:6]:  # Cap at 6 URLs to stay within timeout
-                try:
-                    html, intercepted_json, iframe_srcs = await pw.get_page_with_interception(
-                        url, timeout=_PW_TIMEOUT,
-                    )
-                except Exception as exc:
-                    log.debug("spider: Playwright failed for %s: %s", url, exc)
-                    continue
-
-                # Vector 3: Parse intercepted XHR JSON payloads
-                for payload in intercepted_json:
-                    vehicles = _find_vehicles_in_json(
-                        payload, dealer_id, dealer_name, base, country,
-                    )
-                    all_listings.extend(_dedupe(vehicles))
-
-                # Also check if the rendered HTML now has JSON-LD (SPA may inject it)
-                jsonld_vehicles = _extract_jsonld_vehicles(html, dealer_id, dealer_name, base, country)
-                all_listings.extend(_dedupe(jsonld_vehicles))
-
-                # Vector 4: Process vehicle-related iframes
-                vehicle_iframes = [
-                    src for src in iframe_srcs
-                    if _IFRAME_VEHICLE_PATTERNS.search(src)
-                ]
-                for iframe_src in vehicle_iframes[:3]:  # Cap at 3 iframes
-                    # Resolve relative iframe URLs
-                    if not iframe_src.startswith("http"):
-                        iframe_src = urljoin(base + "/", iframe_src)
-                    try:
-                        iframe_html, iframe_json, _ = await pw.get_page_with_interception(
-                            iframe_src, timeout=_PW_TIMEOUT,
-                        )
-                        # Parse iframe XHR payloads
-                        for payload in iframe_json:
-                            vehicles = _find_vehicles_in_json(
-                                payload, dealer_id, dealer_name, base, country,
-                            )
-                            all_listings.extend(_dedupe(vehicles))
-                        # Parse iframe HTML for JSON-LD
-                        jsonld_vehicles = _extract_jsonld_vehicles(
-                            iframe_html, dealer_id, dealer_name, base, country,
-                        )
-                        all_listings.extend(_dedupe(jsonld_vehicles))
-                    except Exception as exc:
-                        log.debug("spider: iframe extraction failed %s: %s", iframe_src, exc)
-                        continue
-
-                # If we found vehicles, stop trying more URLs
-                if all_listings:
-                    break
-
-    except Exception as exc:
-        log.warning("spider: Playwright session failed for %s: %s", dealer_name, exc)
-
-    return all_listings
 
 
 # ── Spider worker ─────────────────────────────────────────────────────────────
@@ -853,36 +742,89 @@ async def _process_dealer(
                     except Exception:
                         pass
 
-    # ── VECTORS 3+4: Stealth Playwright (outside StealthClient context) ──
+    # ── VECTORS 3+4: Stealth Playwright — targeted XHR interception ──────
+    # Active SPA extraction: opens stealth browser, intercepts internal API
+    # calls (/api/, /vehicles, /graphql, etc.), grabs JSON at network layer.
+    # If CAPTCHA blocks us and we can't solve → mark WAF_BLOCKED_NO_CAPTCHA, move on.
     if not listings and _HAS_PLAYWRIGHT:
+        if _PW_SEMAPHORE is None:
+            _PW_SEMAPHORE = asyncio.Semaphore(_PW_MAX_CONCURRENT)
+
         try:
-            async with _PW_SEMAPHORE or asyncio.Semaphore(_PW_MAX_CONCURRENT):
+            async with _PW_SEMAPHORE:
                 async with StealthBrowser(
                     country=country, proxy_tier=current_tier, headless=True,
                 ) as browser:
-                    if is_whale:
-                        result = await browser.solve_challenge_if_whale(
-                            website, is_whale=True, timeout=_PW_TIMEOUT,
-                        )
-                    else:
-                        result = await browser.extract(website, timeout=_PW_TIMEOUT)
+                    pw_json, pw_html, pw_iframes = await browser.extract_spa(
+                        base_url=website,
+                        is_whale=is_whale,
+                        timeout=_PW_TIMEOUT,
+                    )
 
-                    if result:
-                        pw_html, pw_json, pw_iframes = result
-                        # Parse XHR JSON
-                        for payload in pw_json:
-                            vehicles = _find_vehicles_in_json(
-                                payload, dealer_id, name, base_url, country,
-                            )
-                            listings.extend(vehicles)
-                        # Parse rendered HTML JSON-LD
+                    # Vector 3: Parse intercepted XHR API responses
+                    seen_pw: set[str] = set()
+                    for payload in pw_json:
+                        vehicles = _find_vehicles_in_json(
+                            payload, dealer_id, name, base_url, country,
+                        )
+                        for v in vehicles:
+                            if v.source_listing_id not in seen_pw:
+                                seen_pw.add(v.source_listing_id)
+                                listings.append(v)
+
+                    # Also check rendered HTML for JSON-LD (SPAs may inject after render)
+                    if pw_html:
                         jsonld_vehicles = _extract_jsonld_vehicles(
                             pw_html, dealer_id, name, base_url, country,
                         )
-                        listings.extend(jsonld_vehicles)
+                        for v in jsonld_vehicles:
+                            if v.source_listing_id not in seen_pw:
+                                seen_pw.add(v.source_listing_id)
+                                listings.append(v)
 
-                        if listings:
-                            vector_used = "playwright"
+                    # Vector 4: Vehicle-related iframes
+                    vehicle_iframes = [
+                        src for src in pw_iframes
+                        if _IFRAME_VEHICLE_PATTERNS.search(src)
+                    ]
+                    for iframe_src in vehicle_iframes[:3]:
+                        if not iframe_src.startswith("http"):
+                            iframe_src = urljoin(base_url + "/", iframe_src)
+                        try:
+                            iframe_html, iframe_json, _ = await browser.extract(
+                                iframe_src, timeout=_PW_TIMEOUT,
+                            )
+                            for payload in iframe_json:
+                                vehicles = _find_vehicles_in_json(
+                                    payload, dealer_id, name, base_url, country,
+                                )
+                                for v in vehicles:
+                                    if v.source_listing_id not in seen_pw:
+                                        seen_pw.add(v.source_listing_id)
+                                        listings.append(v)
+                        except Exception:
+                            continue
+
+                    if listings:
+                        vector_used = "playwright_xhr"
+
+        except CaptchaUnavailableError as cap_err:
+            log.warning("spider: %s CAPTCHA blocked — %s", name, cap_err.reason)
+            await _update_dealer_waf(pg, dealer_id, name, country, current_tier, cap_err.waf_type)
+            await _update_spider_status(
+                pg, dealer_id, name, country,
+                "WAF_BLOCKED_NO_CAPTCHA",
+                f"captcha:{cap_err.reason}",
+            )
+            print(
+                f"[SWARM] {name}: WAF_BLOCKED_NO_CAPTCHA — {cap_err.reason}. "
+                f"Skipping to next dealer.",
+                flush=True,
+            )
+            # Mark bloom so we don't retry immediately (24h cooldown for captcha blocks)
+            await rdb.set(bloom_key, "1", ex=24 * 3600)
+            return
+
         except Exception as exc:
             log.warning("spider: %s Playwright failed: %s", name, exc)
 

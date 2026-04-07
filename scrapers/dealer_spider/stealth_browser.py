@@ -1,16 +1,18 @@
 """
 Stealth Browser — Playwright with anti-detection for the Dealer Spider.
 
-Features:
-  - playwright-stealth patches (webdriver, chrome.runtime, plugins, etc.)
-  - Network interceptor: aborts image/media/font/stylesheet/websocket
-  - Realistic context: viewport, locale, timezone per country
-  - Human-like cadence: scroll simulation before extraction
-  - Context reuse: one browser context serves 5-10 dealers
-  - Whale CAPTCHA solver: 2Captcha API for is_whale=true dealers
+Two operational modes:
+  1. extract()        — passive XHR capture on a single URL (legacy)
+  2. extract_spa()    — ACTIVE targeted interception across inventory paths,
+                        filters responses by vehicle-API patterns, closes page
+                        the instant usable JSON arrives. Zero DOM wait.
 
-Used exclusively for Vector 3+4 (XHR interception, iframe extraction)
-when curl_cffi vectors fail or when dealer requires JS rendering.
+CAPTCHA resilience:
+  - If CAPTCHA_API_KEY is absent or 2Captcha fails, the browser does NOT crash.
+  - Raises CaptchaUnavailableError so the spider can mark the dealer
+    WAF_BLOCKED_NO_CAPTCHA in PostgreSQL and move on.
+
+All Playwright contexts auto-close on exit — no orphan processes.
 """
 from __future__ import annotations
 
@@ -18,6 +20,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 import random
 from typing import Any
 
@@ -28,11 +31,23 @@ from playwright.async_api import (
     Page,
     Route,
     Request,
+    Response as PWResponse,
 )
 
 log = logging.getLogger("spider.stealth_browser")
 
-# ── Country-specific browser context profiles ─────────────────────────────────
+
+# ── Exceptions ───────────────────────────────────────────────────────────────
+
+class CaptchaUnavailableError(Exception):
+    """CAPTCHA required but cannot be solved (no key, no balance, solve failed)."""
+    def __init__(self, reason: str, waf_type: str = "captcha"):
+        self.reason = reason
+        self.waf_type = waf_type
+        super().__init__(f"CAPTCHA unavailable: {reason}")
+
+
+# ── Country-specific browser context profiles ────────────────────────────────
 
 _COUNTRY_CONTEXT = {
     "DE": {
@@ -67,7 +82,6 @@ _COUNTRY_CONTEXT = {
     },
 }
 
-# Realistic viewport sizes (common desktop resolutions)
 _VIEWPORTS = [
     {"width": 1920, "height": 1080},
     {"width": 1366, "height": 768},
@@ -76,30 +90,60 @@ _VIEWPORTS = [
     {"width": 1680, "height": 1050},
 ]
 
-# Resource types to block — saves bandwidth, especially on T2 residential
 _BLOCKED_RESOURCE_TYPES = {"image", "media", "font", "stylesheet", "websocket", "other"}
 
-# Proxy env vars
 _PROXY_T1 = os.environ.get("PROXY_T1", "")
 _PROXY_T2 = os.environ.get("PROXY_T2", "")
-
-# 2Captcha for whale dealers
 _CAPTCHA_API_KEY = os.environ.get("CAPTCHA_API_KEY", "")
 
+# ── Vehicle API endpoint patterns ────────────────────────────────────────────
+# These match the internal XHR calls that SPA dealer sites make to their backends.
+# When we see a response URL matching any of these AND the body is JSON >1KB,
+# we grab it immediately.
 
-# ── Network Interceptor ──────────────────────────────────────────────────────
+_VEHICLE_API_RE = re.compile(
+    r"("
+    r"/api/|/v\d+/|/rest/|/graphql|/gql"
+    r"|/vehicles|/vehicle|/stock|/inventory|/listings|/cars"
+    r"|/search|/results|/catalog|/offers"
+    r"|/fahrzeuge|/voitures|/coches|/autos|/occasions"
+    r"|/tweedehands|/occasionen|/gebrauchtwagen"
+    r"|/wp-json/|/feed/|/_next/data/"
+    r")",
+    re.IGNORECASE,
+)
+
+# Inventory page paths to try with Playwright (multilingual)
+_SPA_INVENTORY_PATHS = [
+    "/", "/stock", "/inventory", "/vehicles", "/cars", "/used-cars",
+    "/coches", "/fahrzeuge", "/voitures", "/occasion", "/gebrauchtwagen",
+    "/tweedehands", "/occasions", "/gamas/ocasion", "/angebote",
+    "/usados", "/coches-ocasion", "/autos", "/fleet",
+]
+
+# CAPTCHA selectors — covers reCAPTCHA v2/v3, hCaptcha, Cloudflare Turnstile
+_CAPTCHA_SELECTORS = "[data-sitekey], .g-recaptcha, .h-captcha, #cf-turnstile, #captcha-container"
+
+# Challenge page markers in HTML (Cloudflare, Datadome, Akamai)
+_CHALLENGE_MARKERS = [
+    "managed_checking_msg",        # Cloudflare
+    "cf-browser-verification",     # Cloudflare legacy
+    "geo.captcha-delivery.com",    # Datadome
+    "datadome",                    # Datadome
+    "akamai-browser-challenge",    # Akamai
+    "_sec_cpt",                    # Akamai cookie challenge
+    "px-captcha",                  # PerimeterX
+]
+
+
+# ── Network Interceptor ─────────────────────────────────────────────────────
 
 async def _intercept_route(route: Route, request: Request) -> None:
-    """
-    Network interceptor — abort non-essential resources to minimize bandwidth.
-    Only HTML, JSON, and JS pass through. Everything else is killed.
-    """
-    resource_type = request.resource_type
-    if resource_type in _BLOCKED_RESOURCE_TYPES:
+    """Block non-essential resources. Only HTML/JSON/JS pass through."""
+    if request.resource_type in _BLOCKED_RESOURCE_TYPES:
         await route.abort()
         return
 
-    # Also block by URL pattern (tracking pixels, analytics, ads)
     url = request.url.lower()
     if any(tracker in url for tracker in (
         "google-analytics", "googletagmanager", "facebook.net",
@@ -115,7 +159,6 @@ async def _intercept_route(route: Route, request: Request) -> None:
 # ── Human-like Scroll Simulation ─────────────────────────────────────────────
 
 async def _simulate_human_scroll(page: Page) -> None:
-    """Scroll down 2-3 times with random delays to mimic human reading."""
     scroll_count = random.randint(2, 3)
     for _ in range(scroll_count):
         scroll_amount = random.randint(300, 800)
@@ -123,21 +166,19 @@ async def _simulate_human_scroll(page: Page) -> None:
         await asyncio.sleep(random.uniform(0.4, 1.2))
 
 
-# ── CAPTCHA Solver (Whales only) ─────────────────────────────────────────────
+# ── CAPTCHA Solver (resilient) ───────────────────────────────────────────────
 
-async def _solve_captcha_2captcha(page: Page, site_key: str, page_url: str) -> str | None:
+async def _solve_captcha_2captcha(site_key: str, page_url: str) -> str:
     """
-    Send CAPTCHA to 2Captcha API, wait for solution, inject it.
-    Only called for whale dealers. Returns token or None.
+    Send CAPTCHA to 2Captcha, wait for solution, return token.
+    Raises CaptchaUnavailableError on ANY failure — never returns None.
     """
     if not _CAPTCHA_API_KEY:
-        log.warning("stealth_browser: CAPTCHA_API_KEY not set, cannot solve")
-        return None
+        raise CaptchaUnavailableError("CAPTCHA_API_KEY not set")
 
     import httpx
 
     try:
-        # Submit task
         async with httpx.AsyncClient(timeout=30) as client:
             submit = await client.post("https://2captcha.com/in.php", params={
                 "key": _CAPTCHA_API_KEY,
@@ -148,13 +189,16 @@ async def _solve_captcha_2captcha(page: Page, site_key: str, page_url: str) -> s
             })
             result = submit.json()
             if result.get("status") != 1:
-                log.warning("stealth_browser: 2captcha submit failed: %s", result)
-                return None
+                error_text = result.get("request", "unknown")
+                if "ERROR_ZERO_BALANCE" in str(error_text):
+                    raise CaptchaUnavailableError("2captcha zero balance")
+                if "ERROR_WRONG_USER_KEY" in str(error_text) or "ERROR_KEY_DOES_NOT_EXIST" in str(error_text):
+                    raise CaptchaUnavailableError("2captcha invalid API key")
+                raise CaptchaUnavailableError(f"2captcha submit rejected: {error_text}")
 
             task_id = result["request"]
 
-            # Poll for result (max 120s)
-            for _ in range(24):
+            for _ in range(24):  # 120s max
                 await asyncio.sleep(5)
                 poll = await client.get("https://2captcha.com/res.php", params={
                     "key": _CAPTCHA_API_KEY,
@@ -164,16 +208,28 @@ async def _solve_captcha_2captcha(page: Page, site_key: str, page_url: str) -> s
                 })
                 poll_result = poll.json()
                 if poll_result.get("status") == 1:
-                    return poll_result["request"]  # CAPTCHA token
+                    return poll_result["request"]
                 if poll_result.get("request") == "ERROR_CAPTCHA_UNSOLVABLE":
-                    return None
+                    raise CaptchaUnavailableError("2captcha could not solve")
+
+            raise CaptchaUnavailableError("2captcha timeout (120s)")
+
+    except CaptchaUnavailableError:
+        raise
     except Exception as exc:
-        log.warning("stealth_browser: 2captcha error: %s", exc)
-
-    return None
+        raise CaptchaUnavailableError(f"2captcha network error: {exc}") from exc
 
 
-# ── Stealth Browser Client ───────────────────────────────────────────────────
+# ── Challenge Detection ──────────────────────────────────────────────────────
+
+def _is_challenge_page(html: str) -> bool:
+    """Detect if the page is a WAF challenge/interstitial, not real content."""
+    html_lower = html[:5000].lower()
+    hits = sum(1 for marker in _CHALLENGE_MARKERS if marker in html_lower)
+    return hits >= 1
+
+
+# ── Stealth Browser Client ──────────────────────────────────────────────────
 
 class StealthBrowser:
     """
@@ -181,7 +237,11 @@ class StealthBrowser:
 
     Usage:
         async with StealthBrowser(country="ES", proxy_tier=1) as browser:
-            html, json_payloads, iframes = await browser.extract(url)
+            # Active SPA extraction — tries multiple paths, intercepts API calls
+            vehicles_json, html = await browser.extract_spa(
+                base_url="https://dealer.com",
+                is_whale=True,
+            )
     """
 
     def __init__(
@@ -214,21 +274,32 @@ class StealthBrowser:
 
     async def __aexit__(self, *exc) -> None:
         if self._context:
-            await self._context.close()
+            try:
+                await self._context.close()
+            except Exception:
+                pass
         if self._browser:
-            await self._browser.close()
+            try:
+                await self._browser.close()
+            except Exception:
+                pass
         if self._playwright:
-            await self._playwright.stop()
+            try:
+                await self._playwright.stop()
+            except Exception:
+                pass
 
     async def _create_context(self) -> None:
         """Create a new browser context with stealth patches and country profile."""
         if self._context:
-            await self._context.close()
+            try:
+                await self._context.close()
+            except Exception:
+                pass
 
         ctx_config = _COUNTRY_CONTEXT.get(self._country, _COUNTRY_CONTEXT["DE"])
         viewport = random.choice(_VIEWPORTS)
 
-        # Proxy config
         proxy_config = None
         proxy_url = ""
         if self._proxy_tier == 1:
@@ -255,27 +326,21 @@ class StealthBrowser:
             color_scheme=random.choice(["light", "dark", "no-preference"]),
         )
 
-        # Apply stealth patches
+        # Stealth patches
         try:
             from playwright_stealth import stealth_async
             await stealth_async(self._context)
         except ImportError:
-            # Manual stealth patches if playwright-stealth not installed
             await self._context.add_init_script("""
-                // Hide webdriver flag
                 Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-                // Fake plugins
                 Object.defineProperty(navigator, 'plugins', {
                     get: () => [1, 2, 3, 4, 5],
                 });
-                // Fake languages
                 Object.defineProperty(navigator, 'languages', {
                     get: () => ['""" + ctx_config["locale"] + """', 'en-US', 'en'],
                 });
-                // Remove chrome.runtime in headless
                 if (!window.chrome) { window.chrome = {}; }
                 if (!window.chrome.runtime) { window.chrome.runtime = {}; }
-                // Permissions
                 const originalQuery = window.navigator.permissions.query;
                 window.navigator.permissions.query = (parameters) =>
                     parameters.name === 'notifications'
@@ -283,9 +348,7 @@ class StealthBrowser:
                         : originalQuery(parameters);
             """)
 
-        # Network interceptor — block non-essential resources
         await self._context.route("**/*", _intercept_route)
-
         self._pages_used = 0
 
     async def _ensure_fresh_context(self) -> None:
@@ -296,39 +359,53 @@ class StealthBrowser:
             await self._create_context()
             self._max_pages_per_context = random.randint(5, 10)
 
-    async def extract(
+    # ── Core: targeted XHR interception on a single page ─────────────────
+
+    async def _intercept_page(
         self,
         url: str,
         timeout: int = 30_000,
     ) -> tuple[str, list[dict], list[str]]:
         """
-        Navigate to URL, intercept JSON responses, extract iframes.
-        Returns (html, intercepted_json_list, iframe_srcs).
+        Navigate to URL with TARGETED XHR interception.
+        Captures only responses whose URL matches _VEHICLE_API_RE and body is JSON >1KB.
+        Returns (html, intercepted_vehicle_json_list, iframe_srcs).
         """
         await self._ensure_fresh_context()
-
         page = await self._context.new_page()
         intercepted: list[dict] = []
 
-        async def on_response(response):
+        async def _on_response(response: PWResponse) -> None:
             try:
+                resp_url = response.url
                 ct = response.headers.get("content-type", "")
-                if response.status == 200 and ("json" in ct or "javascript" in ct):
-                    body = await response.body()
-                    if len(body) > 1024:
-                        data = json.loads(body)
-                        intercepted.append(data)
+
+                # Only capture JSON from vehicle-related API endpoints
+                if response.status != 200:
+                    return
+                if "json" not in ct and "javascript" not in ct:
+                    return
+
+                # Targeted filter: URL must match vehicle API patterns
+                if not _VEHICLE_API_RE.search(resp_url):
+                    return
+
+                body = await response.body()
+                if len(body) < 512:  # too small to be inventory
+                    return
+
+                data = json.loads(body)
+                intercepted.append(data)
+                log.debug("stealth_browser: intercepted API response from %s (%d bytes)",
+                          resp_url, len(body))
             except Exception:
                 pass
 
-        page.on("response", on_response)
+        page.on("response", _on_response)
 
         try:
             await page.goto(url, wait_until="networkidle", timeout=timeout)
-
-            # Human-like scroll before extraction
             await _simulate_human_scroll(page)
-
             html = await page.content()
 
             # Extract iframe sources
@@ -343,80 +420,181 @@ class StealthBrowser:
         finally:
             await page.close()
 
-    async def solve_challenge_if_whale(
+    # ── CAPTCHA handling with resilient fallback ─────────────────────────
+
+    async def _handle_captcha_if_present(
         self,
+        page: Page,
         url: str,
         is_whale: bool,
-        timeout: int = 30_000,
-    ) -> tuple[str, list[dict], list[str]] | None:
+    ) -> None:
         """
-        Navigate to URL. If challenged and dealer is_whale, attempt CAPTCHA solve.
-        Returns extraction result or None if solve fails.
+        Check page for CAPTCHA. If found:
+          - whale + key available → solve and inject
+          - otherwise → raise CaptchaUnavailableError (spider marks dealer + moves on)
+        """
+        has_captcha = await page.query_selector(_CAPTCHA_SELECTORS)
+
+        if not has_captcha:
+            # Also check HTML body for challenge interstitials
+            html_snippet = await page.content()
+            if not _is_challenge_page(html_snippet):
+                return  # no challenge, proceed normally
+
+        # We have a challenge
+        site_key = None
+        if has_captcha:
+            site_key = await has_captcha.get_attribute("data-sitekey")
+
+        if not is_whale:
+            raise CaptchaUnavailableError("captcha_non_whale", waf_type="captcha")
+
+        if not site_key:
+            raise CaptchaUnavailableError("captcha_no_sitekey", waf_type="captcha")
+
+        # Whale path: attempt solve
+        log.info("stealth_browser: whale CAPTCHA on %s, attempting solve", url)
+        token = await _solve_captcha_2captcha(site_key, url)
+
+        # Inject solution
+        await page.evaluate(f"""
+            (function() {{
+                var el = document.getElementById('g-recaptcha-response');
+                if (el) el.value = '{token}';
+                var hel = document.querySelector('[name="h-captcha-response"]');
+                if (hel) hel.value = '{token}';
+                if (typeof ___grecaptcha_cfg !== 'undefined') {{
+                    Object.keys(___grecaptcha_cfg.clients).forEach(function(key) {{
+                        var client = ___grecaptcha_cfg.clients[key];
+                        if (client && client.M && client.M.callback) {{
+                            client.M.callback('{token}');
+                        }}
+                    }});
+                }}
+            }})();
+        """)
+        await asyncio.sleep(3)
+
+    # ── Main API: extract_spa ────────────────────────────────────────────
+
+    async def extract_spa(
+        self,
+        base_url: str,
+        is_whale: bool = False,
+        timeout: int = 30_000,
+        max_paths: int = 8,
+    ) -> tuple[list[dict], str, list[str]]:
+        """
+        ACTIVE SPA extraction — the primary Playwright vector.
+
+        1. Opens the dealer's homepage in the stealth browser
+        2. If challenge detected → solve (whale) or raise CaptchaUnavailableError
+        3. Listens on page.on('response') for XHR calls matching _VEHICLE_API_RE
+        4. If homepage yields nothing, tries inventory paths one by one
+        5. The INSTANT we get usable JSON, we grab it and close the page
+
+        Returns:
+            (intercepted_json_list, final_html, iframe_srcs)
+
+        Raises:
+            CaptchaUnavailableError — if CAPTCHA blocks us and we can't solve it
         """
         await self._ensure_fresh_context()
-        page = await self._context.new_page()
-        intercepted: list[dict] = []
+        base = base_url.rstrip("/")
+        all_intercepted: list[dict] = []
+        final_html = ""
+        all_iframes: list[str] = []
 
-        async def on_response(response):
-            try:
-                ct = response.headers.get("content-type", "")
-                if response.status == 200 and ("json" in ct):
+        # Build URL list: homepage + inventory paths
+        urls_to_try = [base]
+        for path in _SPA_INVENTORY_PATHS:
+            candidate = base + path
+            if candidate != base and candidate not in urls_to_try:
+                urls_to_try.append(candidate)
+
+        for url in urls_to_try[:max_paths]:
+            page = await self._context.new_page()
+            page_intercepted: list[dict] = []
+
+            async def _on_response(response: PWResponse) -> None:
+                try:
+                    if response.status != 200:
+                        return
+                    ct = response.headers.get("content-type", "")
+                    if "json" not in ct:
+                        return
+                    if not _VEHICLE_API_RE.search(response.url):
+                        return
                     body = await response.body()
-                    if len(body) > 1024:
-                        intercepted.append(json.loads(body))
-            except Exception:
-                pass
+                    if len(body) < 512:
+                        return
+                    data = json.loads(body)
+                    page_intercepted.append(data)
+                    log.debug("stealth_browser: XHR intercepted %s (%d bytes)",
+                              response.url, len(body))
+                except Exception:
+                    pass
 
-        page.on("response", on_response)
+            page.on("response", _on_response)
 
-        try:
-            await page.goto(url, wait_until="networkidle", timeout=timeout)
-            html = await page.content()
+            try:
+                await page.goto(url, wait_until="networkidle", timeout=timeout)
 
-            # Check if we hit a CAPTCHA challenge
-            has_captcha = await page.query_selector(
-                "[data-sitekey], .g-recaptcha, .h-captcha, #cf-turnstile"
-            )
+                # CAPTCHA gate — raises CaptchaUnavailableError if blocked
+                await self._handle_captcha_if_present(page, url, is_whale)
 
-            if has_captcha and is_whale and _CAPTCHA_API_KEY:
-                site_key = await has_captcha.get_attribute("data-sitekey")
-                if site_key:
-                    log.info("stealth_browser: whale CAPTCHA detected on %s, solving...", url)
-                    token = await _solve_captcha_2captcha(page, site_key, url)
-                    if token:
-                        # Inject solution
-                        await page.evaluate(f"""
-                            document.getElementById('g-recaptcha-response').value = '{token}';
-                            // Trigger callback if exists
-                            if (typeof ___grecaptcha_cfg !== 'undefined') {{
-                                Object.keys(___grecaptcha_cfg.clients).forEach(key => {{
-                                    const client = ___grecaptcha_cfg.clients[key];
-                                    if (client && client.M && client.M.callback) {{
-                                        client.M.callback('{token}');
-                                    }}
-                                }});
-                            }}
-                        """)
-                        await asyncio.sleep(3)
-                        # Re-navigate after solve
-                        await page.goto(url, wait_until="networkidle", timeout=timeout)
-                        html = await page.content()
-                    else:
-                        log.warning("stealth_browser: CAPTCHA solve failed for %s", url)
-                        return None
-            elif has_captcha:
-                # Not a whale — don't solve
-                return None
+                # If we solved a CAPTCHA, re-navigate to get real content
+                if page_intercepted:
+                    # Already got data during initial load + captcha solve
+                    pass
+                else:
+                    # Scroll to trigger lazy-loading XHR calls
+                    await _simulate_human_scroll(page)
+                    # Give SPA time to fire its API calls after scroll
+                    await asyncio.sleep(1.5)
 
-            await _simulate_human_scroll(page)
+                html = await page.content()
 
-            iframes = await page.query_selector_all("iframe[src]")
-            iframe_srcs = []
-            for iframe in iframes:
-                src = await iframe.get_attribute("src")
-                if src:
-                    iframe_srcs.append(src)
+                # Grab iframes
+                iframe_els = await page.query_selector_all("iframe[src]")
+                for iframe_el in iframe_els:
+                    src = await iframe_el.get_attribute("src")
+                    if src:
+                        all_iframes.append(src)
 
-            return html, intercepted, iframe_srcs
-        finally:
-            await page.close()
+                if page_intercepted:
+                    all_intercepted.extend(page_intercepted)
+                    final_html = html
+                    log.info("stealth_browser: captured %d API responses from %s",
+                             len(page_intercepted), url)
+                    await page.close()
+                    break  # got data, stop trying paths
+
+                # No XHR caught — check if rendered HTML has useful content
+                # (some SPAs inject JSON-LD after client-side render)
+                if not final_html:
+                    final_html = html
+
+            except CaptchaUnavailableError:
+                await page.close()
+                raise  # propagate to spider
+            except Exception as exc:
+                log.debug("stealth_browser: page %s failed: %s", url, exc)
+            finally:
+                if not page.is_closed():
+                    await page.close()
+
+        return all_intercepted, final_html, all_iframes
+
+    # ── Legacy extract (kept for backward compat) ────────────────────────
+
+    async def extract(
+        self,
+        url: str,
+        timeout: int = 30_000,
+    ) -> tuple[str, list[dict], list[str]]:
+        """
+        Legacy passive extraction — navigate, intercept everything, return.
+        Prefer extract_spa() for SPA dealers.
+        """
+        return await self._intercept_page(url, timeout)
