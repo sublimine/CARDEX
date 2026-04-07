@@ -918,110 +918,125 @@ class OEMGateway:
             session_hash = captured_hash[0]
             search_base = captured_search_url[0]
 
-            # ── Phase 3: Injected fetch loop — paginate from browser context ──
-            # We inject JS that calls the BMW API directly from the browser's
-            # origin context (same cookies, same CORS, same session).
-            # This bypasses the hash verification completely because the
-            # requests come from the legitimate origin.
+            # ── Phase 3: Intercept vehicle responses from BMW's own pagination ──
+            # Instead of injecting fetches (CORS blocks cross-origin POST),
+            # we let BMW's frontend do the work. We scroll/click to trigger
+            # pagination and intercept the vehicle search responses.
 
-            # Capture browser console for debugging
-            page.on("console", lambda msg: log.info("oem_gateway: BMW/%s [browser] %s", country, msg.text))
+            vehicle_responses: list[dict] = []
 
-            log.info("oem_gateway: BMW/%s starting injected fetch loop (hash=%s...)",
-                     country, session_hash[:8])
+            async def _on_vehicle_response(resp):
+                try:
+                    if "/vehiclesearch/search/" not in resp.url:
+                        return
+                    if resp.status != 200:
+                        return
+                    ct = resp.headers.get("content-type", "")
+                    if "json" not in ct:
+                        return
+                    body = await resp.body()
+                    data = json.loads(body)
+                    hits = data.get("hits", [])
+                    total = data.get("metadata", {}).get("totalCount", 0)
+                    if hits:
+                        vehicle_responses.append(data)
+                        log.info("oem_gateway: BMW/%s intercepted page — %d hits (total: %d, accumulated: %d)",
+                                 country, len(hits), total,
+                                 sum(len(r.get("hits", [])) for r in vehicle_responses))
+                except Exception:
+                    pass
 
-            bu_nos_json = json.dumps(bu_nos)
+            page.on("response", _on_vehicle_response)
 
-            # Inject the paginated fetch loop
-            raw_vehicles = await page.evaluate(f"""
-                async () => {{
-                    const buNos = {bu_nos_json};
-                    const searchUrl = "{search_base}";
-                    const hash = "{session_hash}";
-                    const brand = "{brand}";
-                    const pageSize = {self._BMW_PAGE_SIZE};
-                    const allHits = [];
-                    let startIndex = 0;
-                    let totalCount = 999999;
+            log.info("oem_gateway: BMW/%s intercepting vehicle responses + triggering pagination",
+                     country)
 
-                    // Send ALL buNos at once — the API handles it
-                    const body = JSON.stringify({{
-                        resultsContext: {{ sort: [{{ by: "SF_OFFER_INSTALLMENT", order: "ASC" }}] }},
-                        searchContext: [{{ buNos: buNos }}]
-                    }});
+            # The first page should already have been loaded by now (hash was captured)
+            # Wait a bit for the response to be intercepted
+            await asyncio.sleep(3)
 
-                    while (startIndex < totalCount && startIndex < 50000) {{
-                        try {{
-                            const url = `${{searchUrl}}?maxResults=${{pageSize}}&startIndex=${{startIndex}}&brand=${{brand}}&hash=${{hash}}`;
-                            const resp = await fetch(url, {{
-                                method: "POST",
-                                headers: {{ "Content-Type": "application/json" }},
-                                body: body,
-                            }});
-                            if (!resp.ok) {{
-                                const errText = await resp.text().catch(() => "");
-                                console.log("BMW fetch error:", resp.status, errText.substring(0, 200));
-                                break;
-                            }}
-                            const data = await resp.json();
-                            totalCount = data.metadata?.totalCount || 0;
-                            const hits = data.hits || [];
-                            if (hits.length === 0) break;
+            # Scroll down to trigger "load more" or pagination
+            for scroll_round in range(100):  # max 100 scroll rounds
+                prev_count = sum(len(r.get("hits", [])) for r in vehicle_responses)
 
-                            for (const hit of hits) {{
-                                const v = hit.vehicle || {{}};
-                                const mo = v.vehicleSpecification?.modelAndOption || {{}};
-                                const lc = v.vehicleLifeCycle || {{}};
-                                const ret = v.ordering?.retailData || {{}};
-                                const off = v.offering?.offerPrices || {{}};
-                                const media = v.media || {{}};
+                # Scroll to bottom
+                await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                await asyncio.sleep(2)
 
-                                // Model name
-                                const mrDesc = mo.modelRange?.description || {{}};
-                                const modelName = Object.values(mrDesc)[0] || "";
+                # Try clicking "load more" / "next page" buttons
+                for btn_sel in [
+                    'button:has-text("Mehr anzeigen")',
+                    'button:has-text("Weitere")',
+                    'button:has-text("Show more")',
+                    'button:has-text("Load more")',
+                    '[data-testid*="load-more"]',
+                    '[class*="load-more"]',
+                    '[class*="pagination"] button:last-child',
+                    'a[aria-label="Next"]',
+                    'button[aria-label="Nächste"]',
+                ]:
+                    try:
+                        btn = await page.query_selector(btn_sel)
+                        if btn and await btn.is_visible():
+                            await btn.click()
+                            await asyncio.sleep(3)
+                            break
+                    except Exception:
+                        continue
 
-                                // Price
-                                const buNo = ret.buNo || "";
-                                const priceObj = off[buNo] || {{}};
-                                const price = priceObj.offerGrossPrice || priceObj.offerGrossVehiclePrice || null;
+                new_count = sum(len(r.get("hits", [])) for r in vehicle_responses)
+                if new_count == prev_count:
+                    # No new vehicles loaded — we might be at the end
+                    # Try one more scroll + wait
+                    await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                    await asyncio.sleep(3)
+                    final_count = sum(len(r.get("hits", [])) for r in vehicle_responses)
+                    if final_count == new_count:
+                        break  # truly done
 
-                                // Mileage
-                                const km = lc.mileage?.km || null;
+                if scroll_round % 10 == 0 and scroll_round > 0:
+                    log.info("oem_gateway: BMW/%s scroll round %d — %d vehicles so far",
+                             country, scroll_round, new_count)
 
-                                // First reg year
-                                const firstReg = v.ordering?.orderData?.firstRegistrationDate || "";
-                                const year = firstReg ? parseInt(firstReg.substring(0, 4)) : null;
+            raw_vehicles = {"totalCount": 0, "vehicles": []}
+            for resp_data in vehicle_responses:
+                total = resp_data.get("metadata", {}).get("totalCount", 0)
+                if total > raw_vehicles["totalCount"]:
+                    raw_vehicles["totalCount"] = total
+                for hit in resp_data.get("hits", []):
+                    v = hit.get("vehicle", {})
+                    mo = v.get("vehicleSpecification", {}).get("modelAndOption", {})
+                    lc = v.get("vehicleLifeCycle", {})
+                    ret = v.get("ordering", {}).get("retailData", {})
+                    off = v.get("offering", {}).get("offerPrices", {})
+                    media = v.get("media", {})
 
-                                // Images
-                                const imgs = media.usedCarImageList || [];
+                    mr_desc = mo.get("modelRange", {}).get("description", {})
+                    model_name = next(iter(mr_desc.values()), "") if isinstance(mr_desc, dict) else ""
 
-                                allHits.push({{
-                                    documentId: v.documentId || "",
-                                    brand: mo.brand || "{brand}",
-                                    model: modelName,
-                                    year: year,
-                                    price: price,
-                                    mileage: km,
-                                    fuel: mo.baseFuelType || "",
-                                    color: "",
-                                    buNo: buNo,
-                                    imageUrl: imgs.length > 0 ? imgs[0] : "",
-                                }});
-                            }}
+                    bu_no = ret.get("buNo", "")
+                    price_obj = off.get(bu_no, {}) if isinstance(off, dict) else {}
+                    price = price_obj.get("offerGrossPrice") or price_obj.get("offerGrossVehiclePrice")
 
-                            startIndex += hits.length;
+                    km = lc.get("mileage", {}).get("km") if isinstance(lc.get("mileage"), dict) else None
 
-                            // Small delay to be polite
-                            await new Promise(r => setTimeout(r, 500));
-                        }} catch (e) {{
-                            console.log("BMW fetch exception:", e.message);
-                            break;
-                        }}
-                    }}
+                    first_reg = v.get("ordering", {}).get("orderData", {}).get("firstRegistrationDate", "")
+                    year = int(first_reg[:4]) if first_reg and len(first_reg) >= 4 else None
 
-                    return {{ totalCount, vehicles: allHits }};
-                }}
-            """)
+                    imgs = media.get("usedCarImageList", [])
+
+                    raw_vehicles["vehicles"].append({
+                        "documentId": v.get("documentId", ""),
+                        "brand": mo.get("brand", brand),
+                        "model": model_name,
+                        "year": year,
+                        "price": price,
+                        "mileage": km,
+                        "fuel": mo.get("baseFuelType", ""),
+                        "color": "",
+                        "buNo": bu_no,
+                        "imageUrl": imgs[0] if imgs else "",
+                    })
 
             await browser.close()
 
