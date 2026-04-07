@@ -815,12 +815,18 @@ class OEMGateway:
             return []
 
         # Step 2: Search vehicles in batches of buNos
+        # Use a dedicated client with BMW-specific headers to avoid 400 errors
         search_url = self._BMW_SEARCH_URL.format(lang=lang, slug=slug)
         all_vehicles: list[OEMVehicle] = []
         seen_ids: set[str] = set()
 
-        # Process buNos in batches
-        for batch_start in range(0, len(bu_nos), self._BMW_BATCH_SIZE):
+        async with httpx.AsyncClient(
+            timeout=30.0,
+            headers=self._BMW_HEADERS,
+            follow_redirects=True,
+        ) as bmw_client:
+          # Process buNos in batches
+          for batch_start in range(0, len(bu_nos), self._BMW_BATCH_SIZE):
             batch_bunos = bu_nos[batch_start:batch_start + self._BMW_BATCH_SIZE]
             start_index = 0
 
@@ -833,10 +839,9 @@ class OEMGateway:
                 }
 
                 try:
-                    resp = await client.post(
+                    resp = await bmw_client.post(
                         f"{search_url}?maxResults={self._BMW_PAGE_SIZE}&startIndex={start_index}&brand={brand}",
                         json=body,
-                        headers=self._BMW_HEADERS,
                     )
                     if resp.status_code in (429, 403):
                         log.warning("oem_gateway: BMW/%s rate limited at batch %d, page %d",
@@ -953,7 +958,7 @@ class OEMGateway:
                 log.info("oem_gateway: BMW/%s — %d vehicles from %d/%d dealer batches",
                          country, len(all_vehicles), batch_start + self._BMW_BATCH_SIZE, len(bu_nos))
 
-        log.info("oem_gateway: BMW/%s — %d total vehicles from %d dealers",
+        log.info("oem_gateway: BMW/%s — %d total vehicles from %d dealers",  # noqa: E501
                  country, len(all_vehicles), len(bu_nos))
         return all_vehicles
 
