@@ -594,13 +594,13 @@ async def _reconcile_dealer(
 ) -> str | None:
     """
     Match an OEM vehicle's dealer info against our dealers table.
-    Returns the dealer_id (place_id or generated) for the matched dealer.
+    Returns the dealer id as string, or None if unreconcilable.
 
     Matching priority:
-      1. oem_dealer_id exact match (if we stored it from discovery)
+      1. oem_dealer_id exact match
       2. Name + city fuzzy match within same country
-      3. Name + postcode match
-      4. Create a stub record if no match found
+      3. Name-only match within same country
+      4. Create a stub record (always succeeds)
     """
     dealer_name = (vehicle.dealer_name or "").strip()
     dealer_city = (vehicle.dealer_city or "").strip()
@@ -608,67 +608,63 @@ async def _reconcile_dealer(
     oem_did = (vehicle.oem_dealer_id or "").strip()
 
     if not dealer_name:
+        # Use a synthetic name if we have nothing
+        if oem_did:
+            dealer_name = f"{brand} Dealer {oem_did}"
+        else:
+            return None
+
+    try:
+        # Strategy 1: Match by oem_dealer_id
+        if oem_did:
+            row = await pg.fetchrow(
+                "SELECT id FROM dealers WHERE oem_dealer_id = $1 AND country = $2 LIMIT 1",
+                oem_did, country,
+            )
+            if row:
+                return str(row["id"])
+
+        # Strategy 2: Name + city
+        if dealer_city:
+            row = await pg.fetchrow(
+                "SELECT id FROM dealers WHERE country = $1 AND lower(city) = lower($2) AND name ILIKE $3 LIMIT 1",
+                country, dealer_city, f"%{dealer_name[:25]}%",
+            )
+            if row:
+                if oem_did:
+                    await pg.execute(
+                        "UPDATE dealers SET oem_dealer_id = $1, updated_at = now() WHERE id = $2",
+                        oem_did, row["id"],
+                    )
+                return str(row["id"])
+
+        # Strategy 3: Name-only match
+        row = await pg.fetchrow(
+            "SELECT id FROM dealers WHERE country = $1 AND lower(name) = lower($2) LIMIT 1",
+            country, dealer_name,
+        )
+        if row:
+            if oem_did:
+                await pg.execute(
+                    "UPDATE dealers SET oem_dealer_id = $1, updated_at = now() WHERE id = $2",
+                    oem_did, row["id"],
+                )
+            return str(row["id"])
+
+        # Strategy 4: Create stub — simple INSERT, no complex ON CONFLICT
+        result = await pg.fetchrow(
+            """INSERT INTO dealers (name, country, city, postcode, source, dealer_type,
+                                    spider_status, brand_affiliation, oem_dealer_id, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, 'OEM_FRANCHISE', 'OEM_FRANCHISE', ARRAY[$6]::text[], $7, now(), now())
+               RETURNING id""",
+            dealer_name, country, dealer_city or None, dealer_postcode or None,
+            f"OEM_{brand}", brand, oem_did or None,
+        )
+        return str(result["id"]) if result else None
+
+    except Exception as exc:
+        log.warning("oem_gateway: reconcile error for '%s' (%s): %s", dealer_name, country, exc)
         return None
-
-    # Strategy 1: Match by oem_dealer_id
-    if oem_did:
-        row = await pg.fetchrow(
-            "SELECT id, name FROM dealers WHERE oem_dealer_id = $1 AND country = $2 LIMIT 1",
-            oem_did, country,
-        )
-        if row:
-            return str(row["id"])
-
-    # Strategy 2: Fuzzy name + city match
-    if dealer_city:
-        row = await pg.fetchrow(
-            """SELECT id, name FROM dealers
-               WHERE country = $1
-                 AND lower(city) = lower($2)
-                 AND (lower(name) = lower($3) OR name ILIKE $4)
-               LIMIT 1""",
-            country, dealer_city, dealer_name, f"%{dealer_name[:20]}%",
-        )
-        if row:
-            # Store oem_dealer_id for faster future matches
-            if oem_did:
-                await pg.execute(
-                    "UPDATE dealers SET oem_dealer_id = $1, updated_at = now() WHERE id = $2",
-                    oem_did, row["id"],
-                )
-            return str(row["id"])
-
-    # Strategy 3: Name + postcode
-    if dealer_postcode:
-        row = await pg.fetchrow(
-            """SELECT id, name FROM dealers
-               WHERE country = $1
-                 AND postcode = $2
-                 AND (lower(name) = lower($3) OR name ILIKE $4)
-               LIMIT 1""",
-            country, dealer_postcode, dealer_name, f"%{dealer_name[:20]}%",
-        )
-        if row:
-            if oem_did:
-                await pg.execute(
-                    "UPDATE dealers SET oem_dealer_id = $1, updated_at = now() WHERE id = $2",
-                    oem_did, row["id"],
-                )
-            return str(row["id"])
-
-    # Strategy 4: Create stub dealer record
-    result = await pg.fetchrow(
-        """INSERT INTO dealers (name, country, city, postcode, source, dealer_type,
-                                spider_status, brand_affiliation, oem_dealer_id, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5, 'OEM_FRANCHISE', 'OEM_FRANCHISE', ARRAY[$6]::text[], $7, now(), now())
-           ON CONFLICT (name, country) WHERE COALESCE(place_id,'')='' AND COALESCE(registry_id,'')='' AND COALESCE(osm_id,'')=''
-           DO UPDATE SET oem_dealer_id = COALESCE(EXCLUDED.oem_dealer_id, dealers.oem_dealer_id),
-                         updated_at = now()
-           RETURNING id""",
-        dealer_name, country, dealer_city or None, dealer_postcode or None,
-        f"OEM_{brand}", brand, oem_did or None,
-    )
-    return str(result["id"]) if result else None
 
 
 # ── OEM Gateway Engine ───────────────────────────────────────────────────────
@@ -822,16 +818,25 @@ class OEMGateway:
 
         included = dealer_data.get("includedDealers", [])
         bu_nos: list[str] = []
-        dealer_map: dict[str, dict] = {}
+        dealer_map: dict[str, dict] = {}  # key AND distributionPartnerId → dealer info
         for d in included:
             key = d.get("key", "")
             if key:
                 bu_nos.append(key)
-                dealer_map[key] = {
+                info = {
                     "name": d.get("name", ""),
                     "city": d.get("city", ""),
                     "postcode": d.get("postalCode", ""),
                 }
+                dealer_map[key] = info
+                # Also map by distributionPartnerId (vehicles use this, not key)
+                dist_id = d.get("attributes", {}).get("distributionPartnerId", "")
+                if dist_id:
+                    dealer_map[dist_id] = info
+                # And map by the key prefix (e.g. "00085" from "00085_2")
+                key_prefix = key.split("_")[0]
+                if key_prefix and key_prefix not in dealer_map:
+                    dealer_map[key_prefix] = info
 
         log.info("oem_gateway: BMW/%s — %d dealers loaded via HTTP", country, len(bu_nos))
         if not bu_nos:
@@ -1116,7 +1121,8 @@ class OEMGateway:
             seen_ids.add(doc_id)
 
             bu_no = rv.get("buNo", "")
-            dealer_info = dealer_map.get(bu_no, {})
+            # Try multiple keys: buNo, distributionPartnerId prefix
+            dealer_info = dealer_map.get(bu_no) or dealer_map.get(bu_no.split("_")[0], {})
 
             all_vehicles.append(OEMVehicle(
                 make=rv.get("brand", brand),
@@ -1130,7 +1136,7 @@ class OEMGateway:
                 source_url=f"https://www.bmw.de/de-de/sl/gebrauchtwagen/detail/{doc_id}",
                 image_url=rv.get("imageUrl", ""),
                 oem_vehicle_id=doc_id,
-                dealer_name=dealer_info.get("name", ""),
+                dealer_name=dealer_info.get("name", f"BMW Dealer {bu_no}"),
                 dealer_city=dealer_info.get("city", ""),
                 dealer_postcode=dealer_info.get("postcode", ""),
                 oem_dealer_id=bu_no,
