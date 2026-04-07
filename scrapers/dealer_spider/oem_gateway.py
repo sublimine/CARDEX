@@ -794,7 +794,7 @@ class OEMGateway:
         lang = country_cfg["lang"]
         category = country_cfg["category"]
 
-        # ── Phase 1: HTTP puro — dealer list ────────────────────────────
+        # ── Phase 1: HTTP puro — dealer list (no Playwright) ────────────
         try:
             resp = await client.get(
                 self._BMW_DEALERS_URL,
@@ -805,10 +805,7 @@ class OEMGateway:
                     "language": lang.replace("-", "_"),
                     "slg": "true",
                 },
-                headers={
-                    "Accept": "application/json",
-                    "Origin": "https://www.bmw.de",
-                },
+                headers={"Accept": "application/json", "Origin": "https://www.bmw.de"},
             )
             resp.raise_for_status()
             dealer_data = resp.json()
@@ -818,125 +815,69 @@ class OEMGateway:
 
         included = dealer_data.get("includedDealers", [])
         bu_nos: list[str] = []
-        dealer_map: dict[str, dict] = {}  # key AND distributionPartnerId → dealer info
+        dealer_map: dict[str, dict] = {}
         for d in included:
             key = d.get("key", "")
-            if key:
-                bu_nos.append(key)
-                info = {
-                    "name": d.get("name", ""),
-                    "city": d.get("city", ""),
-                    "postcode": d.get("postalCode", ""),
-                }
-                dealer_map[key] = info
-                # Also map by distributionPartnerId (vehicles use this, not key)
-                dist_id = d.get("attributes", {}).get("distributionPartnerId", "")
-                if dist_id:
-                    dealer_map[dist_id] = info
-                # And map by the key prefix (e.g. "00085" from "00085_2")
-                key_prefix = key.split("_")[0]
-                if key_prefix and key_prefix not in dealer_map:
-                    dealer_map[key_prefix] = info
+            if not key:
+                continue
+            bu_nos.append(key)
+            info = {"name": d.get("name", ""), "city": d.get("city", ""), "postcode": d.get("postalCode", "")}
+            dealer_map[key] = info
+            dist_id = d.get("attributes", {}).get("distributionPartnerId", "")
+            if dist_id:
+                dealer_map[dist_id] = info
+            prefix = key.split("_")[0]
+            if prefix not in dealer_map:
+                dealer_map[prefix] = info
 
         log.info("oem_gateway: BMW/%s — %d dealers loaded via HTTP", country, len(bu_nos))
         if not bu_nos:
             return []
 
-        # ── Phase 2: Playwright — hash hijack + injected fetch loop ─────
+        # ── Phase 2: Playwright session capture (hash + cookies + UA) ───
         sl_url = self._BMW_SL_URLS.get(country)
         if not sl_url:
-            log.warning("oem_gateway: BMW/%s no Stocklocator URL configured", country)
             return []
 
         from playwright.async_api import async_playwright
 
-        all_vehicles: list[OEMVehicle] = []
+        session_hash = ""
+        search_base_url = ""
+        session_cookies: list[dict] = []
+        session_ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
         async with async_playwright() as pw:
-            browser = await pw.chromium.launch(
-                headless=True,
-                args=["--no-sandbox", "--disable-dev-shm-usage"],
-            )
+            browser = await pw.chromium.launch(headless=True, args=["--no-sandbox"])
             page = await browser.new_page(
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                           "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                user_agent=session_ua,
                 viewport={"width": 1920, "height": 1080},
                 locale=lang.split("-")[0] + "-" + lang.split("-")[1].upper(),
             )
-
-            # Block only images/media/font — keep stylesheets (SPA needs CSS to init)
             await page.route("**/*", lambda route, req: (
-                route.abort() if req.resource_type in ("image", "media", "font")
-                else route.continue_()
+                route.abort() if req.resource_type in ("image", "media", "font") else route.continue_()
             ))
-
-            # Stealth patches
-            ctx = page.context
-            await ctx.add_init_script("""
+            await page.context.add_init_script("""
                 Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-                Object.defineProperty(navigator, 'plugins', {get: () => [1,2,3,4,5]});
-                if (!window.chrome) { window.chrome = {}; }
-                if (!window.chrome.runtime) { window.chrome.runtime = {}; }
             """)
 
-            # Capture the hash from the first vehiclesearch request
-            captured_hash: list[str] = []
-            captured_search_url: list[str] = []
+            # Intercept hash from first search request
+            captured: list[str] = []
 
-            async def _on_request(req):
+            async def _on_req(req):
                 if "/vehiclesearch/search/" in req.url and "hash=" in req.url:
-                    # Extract hash parameter
                     from urllib.parse import urlparse, parse_qs
-                    parsed = urlparse(req.url)
-                    params = parse_qs(parsed.query)
-                    h = params.get("hash", [""])[0]
-                    if h and not captured_hash:
-                        captured_hash.append(h)
-                        # Capture the base search URL (without query params)
-                        captured_search_url.append(
-                            f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
-                        )
-                        log.info("oem_gateway: BMW/%s hash captured: %s...%s",
-                                 country, h[:8], h[-4:])
+                    p = urlparse(req.url)
+                    h = parse_qs(p.query).get("hash", [""])[0]
+                    if h and not captured:
+                        captured.append(h)
+                        captured.append(f"{p.scheme}://{p.netloc}{p.path}")
 
-            page.on("request", _on_request)
+            page.on("request", _on_req)
 
-            # Register vehicle response interceptor BEFORE navigation
-            # so we capture the first vehicle search response
-            vehicle_responses: list[dict] = []
-
-            async def _on_vehicle_response(resp):
-                try:
-                    if "/vehiclesearch/search/" not in resp.url:
-                        return
-                    if resp.status not in (200, 201):
-                        return
-                    ct = resp.headers.get("content-type", "")
-                    if "json" not in ct:
-                        return
-                    body = await resp.body()
-                    data = json.loads(body)
-                    hits = data.get("hits", [])
-                    total = data.get("metadata", {}).get("totalCount", 0)
-                    if hits:
-                        vehicle_responses.append(data)
-                        log.info("oem_gateway: BMW/%s intercepted page — %d hits (total: %d, accumulated: %d)",
-                                 country, len(hits), total,
-                                 sum(len(r.get("hits", [])) for r in vehicle_responses))
-                except Exception:
-                    pass
-
-            page.on("response", _on_vehicle_response)
-
-            log.info("oem_gateway: BMW/%s navigating to Stocklocator for hash capture", country)
+            log.info("oem_gateway: BMW/%s Playwright → capturing session", country)
             try:
                 await page.goto(sl_url, wait_until="networkidle", timeout=60000)
-
-                # Accept cookies — this can block the SPA from firing API calls
-                for sel in ["#onetrust-accept-btn-handler",
-                            'button:has-text("Alle akzeptieren")',
-                            'button:has-text("Accept All")',
-                            ".accept-all", "#accept-all"]:
+                for sel in ["#onetrust-accept-btn-handler", 'button:has-text("Alle akzeptieren")']:
                     try:
                         btn = await page.query_selector(sel)
                         if btn and await btn.is_visible():
@@ -945,123 +886,106 @@ class OEMGateway:
                             break
                     except Exception:
                         pass
-
-                # Scroll to trigger the SPA vehicle load
                 for _ in range(3):
                     await page.evaluate("window.scrollBy(0, 600)")
                     await asyncio.sleep(2)
-
-                # Wait for the JS to fire the first search request
-                for _ in range(30):  # 30 × 2s = 60s max
-                    if captured_hash:
+                for _ in range(20):
+                    if captured:
                         break
-                    await asyncio.sleep(2)
-
+                    await asyncio.sleep(1.5)
             except Exception as exc:
-                log.warning("oem_gateway: BMW/%s Stocklocator navigation failed: %s", country, exc)
+                log.warning("oem_gateway: BMW/%s navigation failed: %s", country, exc)
                 await browser.close()
                 return []
 
-            if not captured_hash:
-                log.warning("oem_gateway: BMW/%s failed to capture hash after 30s", country)
+            if len(captured) < 2:
+                log.warning("oem_gateway: BMW/%s hash not captured", country)
                 await browser.close()
                 return []
 
-            session_hash = captured_hash[0]
-            search_base = captured_search_url[0]
+            session_hash = captured[0]
+            search_base_url = captured[1]
 
-            # ── Phase 3: Injected fetch loop — bypass DOM completely ────────────
-            # The first page was intercepted. Now we inject a JS loop that
-            # fetches ALL remaining pages using the captured hash.
-            # The fetch runs from the browser context (www.bmw.de origin)
-            # so CORS allows it as same-origin to the SPA's own API calls.
-            # No credentials flag needed — hash is the auth.
+            # Extract cookies from browser context
+            session_cookies = await page.context.cookies()
+            log.info("oem_gateway: BMW/%s session captured — hash=%s...%s, %d cookies",
+                     country, session_hash[:8], session_hash[-4:], len(session_cookies))
 
-            log.info("oem_gateway: BMW/%s Phase 3 — injected fetch loop (hash=%s..., total=%d)",
-                     country, session_hash[:8],
-                     vehicle_responses[0].get("metadata", {}).get("totalCount", 0) if vehicle_responses else 0)
+            await browser.close()
 
-            # Wait for first page response to be fully processed
-            await asyncio.sleep(2)
+        # ── Phase 3: Python httpx siege with stolen session ─────────────
+        # Transfer cookies + UA + hash to a dedicated httpx client.
+        # Playwright is CLOSED — zero browser overhead from here.
 
-            # Get the total count from first intercepted response
-            first_total = 0
-            if vehicle_responses:
-                first_total = vehicle_responses[0].get("metadata", {}).get("totalCount", 0)
+        cookie_header = "; ".join(f"{c['name']}={c['value']}" for c in session_cookies)
 
-            # If we got the first page, inject a loop for the rest
-            if first_total > 12:
-                # Build the POST body outside the JS to avoid escaping issues
-                # Use the same body that BMW's own frontend sends
-                search_body = json.dumps({
-                    "resultsContext": {"sort": [{"by": "SF_OFFER_INSTALLMENT", "order": "ASC"}]},
-                    "searchContext": [{"buNos": bu_nos}],
-                })
-                # Escape for JS string literal (single quotes wrapping)
-                search_body_escaped = search_body.replace("\\", "\\\\").replace("'", "\\'")
+        async with httpx.AsyncClient(
+            timeout=30.0,
+            headers={
+                "User-Agent": session_ua,
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "Origin": "https://www.bmw.de",
+                "Referer": sl_url,
+                "Cookie": cookie_header,
+            },
+        ) as siege_client:
+            all_vehicles: list[OEMVehicle] = []
+            seen_ids: set[str] = set()
+            total_count = 0
 
-                remaining_json = await page.evaluate(f"""
-                    async () => {{
-                        const allHits = [];
-                        const searchUrl = "{search_base}";
-                        const hash = "{session_hash}";
-                        const brand = "{brand}";
-                        const pageSize = 100;
-                        let startIndex = 12;
-                        const totalCount = {first_total};
-                        let errors = 0;
-                        const body = '{search_body_escaped}';
+            search_body = json.dumps({
+                "resultsContext": {"sort": [{"by": "SF_OFFER_INSTALLMENT", "order": "ASC"}]},
+                "searchContext": [{"buNos": bu_nos}],
+            })
 
-                        while (startIndex < totalCount && startIndex < 50000 && errors < 3) {{
-                            try {{
-                                const url = searchUrl + "?maxResults=" + pageSize + "&startIndex=" + startIndex + "&brand=" + brand + "&hash=" + hash;
-                                const resp = await fetch(url, {{
-                                    method: "POST",
-                                    headers: {{"Content-Type": "application/json"}},
-                                    body: body
-                                }});
-                                if (!resp.ok) {{
-                                    console.log("BMW fetch page error:", resp.status, "at startIndex:", startIndex);
-                                    errors++;
-                                    if (resp.status === 429 || resp.status === 403) {{
-                                        await new Promise(r => setTimeout(r, 10000));
-                                    }}
-                                    continue;
-                                }}
-                                const data = await resp.json();
-                                const hits = data.hits || [];
-                                if (hits.length === 0) break;
-                                allHits.push(...hits);
-                                startIndex += hits.length;
-                                console.log("BMW fetch page OK: startIndex=" + startIndex + " hits=" + hits.length + " total=" + allHits.length);
-                                await new Promise(r => setTimeout(r, 300));
-                            }} catch(e) {{
-                                console.log("BMW fetch exception:", e.message);
-                                errors++;
-                                continue;
-                            }}
-                        }}
-                        console.log("BMW fetch loop done: " + allHits.length + " total hits");
-                        return allHits;
-                    }}
-                """)
+            start_index = 0
+            page_size = self._BMW_PAGE_SIZE
+            consecutive_errors = 0
 
-                if remaining_json and isinstance(remaining_json, list):
-                    log.info("oem_gateway: BMW/%s injected fetch returned %d additional hits",
-                             country, len(remaining_json))
-                    # Append as a pseudo-response
-                    vehicle_responses.append({
-                        "metadata": {"totalCount": first_total},
-                        "hits": remaining_json,
-                    })
+            while consecutive_errors < 3:
+                url = f"{search_base_url}?maxResults={page_size}&startIndex={start_index}&brand={brand}&hash={session_hash}"
 
-            raw_vehicles = {"totalCount": 0, "vehicles": []}
-            for resp_data in vehicle_responses:
-                total = resp_data.get("metadata", {}).get("totalCount", 0)
-                if total > raw_vehicles["totalCount"]:
-                    raw_vehicles["totalCount"] = total
-                for hit in resp_data.get("hits", []):
+                try:
+                    resp = await siege_client.post(url, content=search_body)
+
+                    if resp.status_code in (403, 429):
+                        log.warning("oem_gateway: BMW/%s %d at startIndex=%d — refreshing session",
+                                    country, resp.status_code, start_index)
+                        # Token expired or rate limited — need session refresh
+                        # For now, break and report what we have
+                        consecutive_errors += 1
+                        await asyncio.sleep(5)
+                        continue
+
+                    if resp.status_code not in (200, 201):
+                        log.warning("oem_gateway: BMW/%s HTTP %d at startIndex=%d",
+                                    country, resp.status_code, start_index)
+                        consecutive_errors += 1
+                        continue
+
+                    data = resp.json()
+                    consecutive_errors = 0
+
+                except Exception as exc:
+                    log.warning("oem_gateway: BMW/%s request error at startIndex=%d: %s",
+                                country, start_index, exc)
+                    consecutive_errors += 1
+                    continue
+
+                total_count = data.get("metadata", {}).get("totalCount", 0)
+                hits = data.get("hits", [])
+
+                if not hits:
+                    break
+
+                for hit in hits:
                     v = hit.get("vehicle", {})
+                    doc_id = v.get("documentId", "")
+                    if not doc_id or doc_id in seen_ids:
+                        continue
+                    seen_ids.add(doc_id)
+
                     mo = v.get("vehicleSpecification", {}).get("modelAndOption", {})
                     lc = v.get("vehicleLifeCycle", {})
                     ret = v.get("ordering", {}).get("retailData", {})
@@ -1074,76 +998,51 @@ class OEMGateway:
                     bu_no = ret.get("buNo", "")
                     price_obj = off.get(bu_no, {}) if isinstance(off, dict) else {}
                     price = price_obj.get("offerGrossPrice") or price_obj.get("offerGrossVehiclePrice")
-
                     km = lc.get("mileage", {}).get("km") if isinstance(lc.get("mileage"), dict) else None
-
                     first_reg = v.get("ordering", {}).get("orderData", {}).get("firstRegistrationDate", "")
                     year = _safe_int(first_reg[:4]) if first_reg and len(first_reg) >= 4 else None
 
                     imgs = media.get("usedCarImageList") or media.get("usedCarImages") or []
                     first_img = ""
-                    if isinstance(imgs, list) and imgs:
-                        first_img = imgs[0] if isinstance(imgs[0], str) else ""
-                    elif isinstance(imgs, dict):
-                        first_img = next(iter(imgs.values()), "") if imgs else ""
+                    if isinstance(imgs, list) and imgs and isinstance(imgs[0], str):
+                        first_img = imgs[0]
+                    elif isinstance(imgs, dict) and imgs:
+                        first_img = next(iter(imgs.values()), "")
 
-                    raw_vehicles["vehicles"].append({
-                        "documentId": v.get("documentId", ""),
-                        "brand": mo.get("brand", brand),
-                        "model": model_name,
-                        "year": year,
-                        "price": price,
-                        "mileage": km,
-                        "fuel": mo.get("baseFuelType", ""),
-                        "color": "",
-                        "buNo": bu_no,
-                        "imageUrl": first_img,
-                    })
+                    dealer_info = dealer_map.get(bu_no) or dealer_map.get(bu_no.split("_")[0], {})
 
-            await browser.close()
+                    all_vehicles.append(OEMVehicle(
+                        make=mo.get("brand", brand),
+                        model=model_name,
+                        year=year,
+                        price=_safe_int(price),
+                        mileage=_safe_int(km),
+                        fuel=mo.get("baseFuelType", ""),
+                        transmission="",
+                        color="",
+                        source_url=f"https://www.bmw.de/{lang}/sl/gebrauchtwagen/detail/{doc_id}",
+                        image_url=first_img,
+                        oem_vehicle_id=doc_id,
+                        dealer_name=dealer_info.get("name", f"BMW Dealer {bu_no}"),
+                        dealer_city=dealer_info.get("city", ""),
+                        dealer_postcode=dealer_info.get("postcode", ""),
+                        oem_dealer_id=bu_no,
+                    ))
 
-        # ── Phase 4: Parse results and build OEMVehicle list ────────────
-        if not raw_vehicles or not isinstance(raw_vehicles, dict):
-            log.warning("oem_gateway: BMW/%s no vehicles from injected fetch", country)
-            return []
+                start_index += len(hits)
 
-        total_count = raw_vehicles.get("totalCount", 0)
-        raw_list = raw_vehicles.get("vehicles", [])
+                if start_index >= total_count:
+                    break
 
-        log.info("oem_gateway: BMW/%s — totalCount=%d, captured=%d vehicles",
-                 country, total_count, len(raw_list))
+                # Politeness
+                await asyncio.sleep(0.5)
 
-        seen_ids: set[str] = set()
-        for rv in raw_list:
-            doc_id = rv.get("documentId", "")
-            if not doc_id or doc_id in seen_ids:
-                continue
-            seen_ids.add(doc_id)
+                if start_index % 500 == 0:
+                    log.info("oem_gateway: BMW/%s — %d/%d vehicles extracted",
+                             country, len(all_vehicles), total_count)
 
-            bu_no = rv.get("buNo", "")
-            # Try multiple keys: buNo, distributionPartnerId prefix
-            dealer_info = dealer_map.get(bu_no) or dealer_map.get(bu_no.split("_")[0], {})
-
-            all_vehicles.append(OEMVehicle(
-                make=rv.get("brand", brand),
-                model=rv.get("model", ""),
-                year=rv.get("year"),
-                price=_safe_int(rv.get("price")),
-                mileage=_safe_int(rv.get("mileage")),
-                fuel=rv.get("fuel", ""),
-                transmission="",
-                color=rv.get("color", ""),
-                source_url=f"https://www.bmw.de/de-de/sl/gebrauchtwagen/detail/{doc_id}",
-                image_url=rv.get("imageUrl", ""),
-                oem_vehicle_id=doc_id,
-                dealer_name=dealer_info.get("name", f"BMW Dealer {bu_no}"),
-                dealer_city=dealer_info.get("city", ""),
-                dealer_postcode=dealer_info.get("postcode", ""),
-                oem_dealer_id=bu_no,
-            ))
-
-        log.info("oem_gateway: BMW/%s — %d unique vehicles from %d dealers",
-                 country, len(all_vehicles), len(bu_nos))
+        log.info("oem_gateway: BMW/%s — %d unique vehicles from %d dealers (total available: %d)",
+                 country, len(all_vehicles), len(bu_nos), total_count)
         return all_vehicles
 
     async def run(self, countries: list[str] | None = None) -> dict[str, int]:
