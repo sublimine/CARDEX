@@ -734,13 +734,14 @@ class OEMGateway:
                     color=v.color or None,
                     seller_type="DEALER",
                     seller_name=v.dealer_name or None,
-                    photo_urls=[v.image_url] if v.image_url else [],
-                    thumbnail_url=v.image_url or None,
+                    photo_urls=[v.image_url] if isinstance(v.image_url, str) and v.image_url else (v.image_url if isinstance(v.image_url, list) else []),
+                    thumbnail_url=(v.image_url if isinstance(v.image_url, str) else (v.image_url[0] if isinstance(v.image_url, list) and v.image_url else None)),
                 )
             except Exception as exc:
-                if published == 0:
-                    log.warning("oem_gateway: RawListing validation failed: %s (vehicle=%s)",
-                                exc, v.oem_vehicle_id)
+                if failed < 5:
+                    log.warning("oem_gateway: RawListing validation failed: %s — vehicle_id=%s make=%s model=%s year=%s price=%s url=%s",
+                                exc, v.oem_vehicle_id, v.make, v.model, v.year, v.price, (v.source_url or "")[:80])
+                failed += 1
                 continue
 
             try:
@@ -839,244 +840,271 @@ class OEMGateway:
         if not sl_url:
             return []
 
-        from playwright.async_api import async_playwright
-
-        session_hash = ""
-        search_base_url = ""
-        session_cookies: list[dict] = []
         session_ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
-        async with async_playwright() as pw:
-            browser = await pw.chromium.launch(headless=True, args=["--no-sandbox"])
-            page = await browser.new_page(
-                user_agent=session_ua,
-                viewport={"width": 1920, "height": 1080},
-                locale=lang.split("-")[0] + "-" + lang.split("-")[1].upper(),
-            )
-            await page.route("**/*", lambda route, req: (
-                route.abort() if req.resource_type in ("image", "media", "font") else route.continue_()
-            ))
-            await page.context.add_init_script("""
-                Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-            """)
+        async def _capture_bmw_session() -> tuple[str, str, list[dict], str, dict]:
+            """Launch Playwright, capture hash+cookies+body+headers. Returns (hash, base_url, cookies, body, headers) or raises."""
+            from playwright.async_api import async_playwright
+            async with async_playwright() as pw:
+                browser = await pw.chromium.launch(headless=True, args=["--no-sandbox"])
+                page = await browser.new_page(
+                    user_agent=session_ua,
+                    viewport={"width": 1920, "height": 1080},
+                    locale=lang.split("-")[0] + "-" + lang.split("-")[1].upper(),
+                )
+                await page.route("**/*", lambda route, req: (
+                    route.abort() if req.resource_type in ("image", "media", "font") else route.continue_()
+                ))
+                await page.context.add_init_script("""
+                    Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+                """)
 
-            # Intercept hash + original POST body from first search request
-            captured: list[str] = []
-            captured_post_body: list[str] = []
+                cap: list[str] = []
+                cap_body: list[str] = []
+                cap_hdrs: list[dict] = []
 
-            captured_headers: list[dict] = []
+                async def _on_req(req):
+                    if "/vehiclesearch/search/" in req.url and "hash=" in req.url:
+                        from urllib.parse import urlparse, parse_qs
+                        p = urlparse(req.url)
+                        h = parse_qs(p.query).get("hash", [""])[0]
+                        if h and not cap:
+                            cap.append(h)
+                            cap.append(f"{p.scheme}://{p.netloc}{p.path}")
+                            try:
+                                pd = req.post_data
+                                if pd:
+                                    cap_body.append(pd)
+                            except Exception:
+                                pass
+                            try:
+                                cap_hdrs.append(dict(req.headers))
+                            except Exception:
+                                pass
 
-            async def _on_req(req):
-                if "/vehiclesearch/search/" in req.url and "hash=" in req.url:
-                    from urllib.parse import urlparse, parse_qs
-                    p = urlparse(req.url)
-                    h = parse_qs(p.query).get("hash", [""])[0]
-                    if h and not captured:
-                        captured.append(h)
-                        captured.append(f"{p.scheme}://{p.netloc}{p.path}")
-                        # Capture original POST body + headers
+                page.on("request", _on_req)
+
+                log.info("oem_gateway: BMW/%s Playwright → capturing session", country)
+                try:
+                    await page.goto(sl_url, wait_until="networkidle", timeout=60000)
+                    for sel in ["#onetrust-accept-btn-handler", 'button:has-text("Alle akzeptieren")']:
                         try:
-                            pd = req.post_data
-                            if pd:
-                                captured_post_body.append(pd)
+                            btn = await page.query_selector(sel)
+                            if btn and await btn.is_visible():
+                                await btn.click()
+                                await asyncio.sleep(2)
+                                break
                         except Exception:
                             pass
-                        try:
-                            captured_headers.append(dict(req.headers))
-                        except Exception:
-                            pass
-
-            page.on("request", _on_req)
-
-            log.info("oem_gateway: BMW/%s Playwright → capturing session", country)
-            try:
-                await page.goto(sl_url, wait_until="networkidle", timeout=60000)
-                for sel in ["#onetrust-accept-btn-handler", 'button:has-text("Alle akzeptieren")']:
-                    try:
-                        btn = await page.query_selector(sel)
-                        if btn and await btn.is_visible():
-                            await btn.click()
-                            await asyncio.sleep(2)
+                    for _ in range(3):
+                        await page.evaluate("window.scrollBy(0, 600)")
+                        await asyncio.sleep(2)
+                    for _ in range(20):
+                        if cap:
                             break
-                    except Exception:
-                        pass
-                for _ in range(3):
-                    await page.evaluate("window.scrollBy(0, 600)")
-                    await asyncio.sleep(2)
-                for _ in range(20):
-                    if captured:
-                        break
-                    await asyncio.sleep(1.5)
-            except Exception as exc:
-                log.warning("oem_gateway: BMW/%s navigation failed: %s", country, exc)
+                        await asyncio.sleep(1.5)
+                except Exception as exc:
+                    await browser.close()
+                    raise RuntimeError(f"navigation failed: {exc}")
+
+                if len(cap) < 2:
+                    await browser.close()
+                    raise RuntimeError("hash not captured")
+
+                cookies = await page.context.cookies()
                 await browser.close()
-                return []
 
-            if len(captured) < 2:
-                log.warning("oem_gateway: BMW/%s hash not captured", country)
-                await browser.close()
-                return []
+                return (
+                    cap[0],  # hash
+                    cap[1],  # base_url
+                    cookies,
+                    cap_body[0] if cap_body else "",
+                    cap_hdrs[0] if cap_hdrs else {},
+                )
 
-            session_hash = captured[0]
-            search_base_url = captured[1]
-
-            # Extract cookies from browser context
-            session_cookies = await page.context.cookies()
+        # ── Phase 2: Initial session capture ──────────────────────────────
+        try:
+            session_hash, search_base_url, session_cookies, captured_body, captured_headers = await _capture_bmw_session()
             log.info("oem_gateway: BMW/%s session captured — hash=%s...%s, %d cookies",
                      country, session_hash[:8], session_hash[-4:], len(session_cookies))
-
-            await browser.close()
+        except RuntimeError as exc:
+            log.warning("oem_gateway: BMW/%s %s", country, exc)
+            return []
 
         # ── Phase 3: Python httpx siege with stolen session ─────────────
         # Transfer cookies + UA + hash to a dedicated httpx client.
         # Playwright is CLOSED — zero browser overhead from here.
 
-        cookie_header = "; ".join(f"{c['name']}={c['value']}" for c in session_cookies)
-
-        # Use captured headers as base, override with session cookies
-        if captured_headers:
-            siege_headers = dict(captured_headers[0])
-            siege_headers["Cookie"] = cookie_header
-            # Log captured headers for debugging
-            log.info("oem_gateway: BMW/%s using %d captured headers", country, len(siege_headers))
-        else:
-            siege_headers = {
+        def _build_siege_headers(cookies: list[dict], hdrs: dict) -> dict:
+            ck = "; ".join(f"{c['name']}={c['value']}" for c in cookies)
+            if hdrs:
+                h = dict(hdrs)
+                h["Cookie"] = ck
+                return h
+            return {
                 "User-Agent": session_ua,
                 "Accept": "application/json",
                 "Content-Type": "application/json",
                 "Origin": "https://www.bmw.de",
                 "Referer": sl_url,
-                "Cookie": cookie_header,
+                "Cookie": ck,
             }
 
-        async with httpx.AsyncClient(
-            timeout=30.0,
-            headers=siege_headers,
-        ) as siege_client:
-            all_vehicles: list[OEMVehicle] = []
-            seen_ids: set[str] = set()
-            total_count = 0
+        search_body = captured_body or json.dumps({
+            "resultsContext": {"sort": [{"by": "SF_OFFER_INSTALLMENT", "order": "ASC"}]},
+            "searchContext": [{"buNos": bu_nos}],
+        })
+        log.info("oem_gateway: BMW/%s using %d captured headers, body=%d bytes",
+                 country, len(captured_headers), len(search_body))
 
-            # Use captured body as template if available, otherwise construct
-            if captured_post_body:
-                try:
-                    original_body = json.loads(captured_post_body[0])
-                    log.info("oem_gateway: BMW/%s using captured POST body template: %s",
-                             country, json.dumps(original_body)[:300])
-                    search_body = captured_post_body[0]
-                except (json.JSONDecodeError, IndexError):
-                    search_body = json.dumps({
-                        "resultsContext": {"sort": [{"by": "SF_OFFER_INSTALLMENT", "order": "ASC"}]},
-                        "searchContext": [{"buNos": bu_nos}],
-                    })
-            else:
-                search_body = json.dumps({
-                    "resultsContext": {"sort": [{"by": "SF_OFFER_INSTALLMENT", "order": "ASC"}]},
-                    "searchContext": [{"buNos": bu_nos}],
-                })
+        all_vehicles: list[OEMVehicle] = []
+        seen_ids: set[str] = set()
+        total_count = 0
+        start_index = 0
+        page_size = self._BMW_PAGE_SIZE
+        session_refreshes = 0
+        max_refreshes = 5
 
-            start_index = 0
-            page_size = self._BMW_PAGE_SIZE
+        data: dict = {}
+        while session_refreshes <= max_refreshes:
+            siege_headers = _build_siege_headers(session_cookies, captured_headers)
             consecutive_errors = 0
 
-            while consecutive_errors < 3:
-                url = f"{search_base_url}?maxResults={page_size}&startIndex={start_index}&brand={brand}&hash={session_hash}"
+            async with httpx.AsyncClient(timeout=30.0, headers=siege_headers) as siege_client:
+                while consecutive_errors < 3:
+                    url = f"{search_base_url}?maxResults={page_size}&startIndex={start_index}&brand={brand}&hash={session_hash}"
 
-                try:
-                    resp = await siege_client.post(url, content=search_body)
+                    try:
+                        resp = await siege_client.post(url, content=search_body)
 
-                    if resp.status_code in (403, 429):
-                        log.warning("oem_gateway: BMW/%s %d at startIndex=%d — refreshing session",
-                                    country, resp.status_code, start_index)
-                        # Token expired or rate limited — need session refresh
-                        # For now, break and report what we have
+                        if resp.status_code in (403, 429):
+                            log.warning("oem_gateway: BMW/%s %d at startIndex=%d — will refresh session (attempt %d/%d)",
+                                        country, resp.status_code, start_index, session_refreshes + 1, max_refreshes)
+                            break  # Break inner loop to trigger session refresh
+
+                        if resp.status_code not in (200, 201):
+                            err_body = resp.text[:500] if resp.text else "(empty)"
+                            log.warning("oem_gateway: BMW/%s HTTP %d at startIndex=%d — body: %s",
+                                        country, resp.status_code, start_index, err_body)
+                            consecutive_errors += 1
+                            continue
+
+                        data = resp.json()
+                        consecutive_errors = 0
+
+                    except Exception as exc:
+                        log.warning("oem_gateway: BMW/%s request error at startIndex=%d: %s",
+                                    country, start_index, exc)
                         consecutive_errors += 1
-                        await asyncio.sleep(5)
                         continue
 
-                    if resp.status_code not in (200, 201):
-                        err_body = resp.text[:500] if resp.text else "(empty)"
-                        log.warning("oem_gateway: BMW/%s HTTP %d at startIndex=%d — body: %s",
-                                    country, resp.status_code, start_index, err_body)
-                        consecutive_errors += 1
-                        continue
+                    total_count = data.get("metadata", {}).get("totalCount", 0)
+                    hits = data.get("hits", [])
 
-                    data = resp.json()
-                    consecutive_errors = 0
+                    if not hits:
+                        break
 
-                except Exception as exc:
-                    log.warning("oem_gateway: BMW/%s request error at startIndex=%d: %s",
-                                country, start_index, exc)
-                    consecutive_errors += 1
-                    continue
+                    for hit in hits:
+                        v = hit.get("vehicle", {})
+                        doc_id = v.get("documentId", "")
+                        if not doc_id or doc_id in seen_ids:
+                            continue
+                        seen_ids.add(doc_id)
 
-                total_count = data.get("metadata", {}).get("totalCount", 0)
-                hits = data.get("hits", [])
+                        mo = v.get("vehicleSpecification", {}).get("modelAndOption", {})
+                        lc = v.get("vehicleLifeCycle", {})
+                        ret = v.get("ordering", {}).get("retailData", {})
+                        off = v.get("offering", {}).get("offerPrices", {})
+                        media = v.get("media", {})
 
-                if not hits:
-                    break
+                        mr_desc = mo.get("modelRange", {}).get("description", {})
+                        model_name = next(iter(mr_desc.values()), "") if isinstance(mr_desc, dict) else ""
 
-                for hit in hits:
-                    v = hit.get("vehicle", {})
-                    doc_id = v.get("documentId", "")
-                    if not doc_id or doc_id in seen_ids:
-                        continue
-                    seen_ids.add(doc_id)
+                        bu_no = ret.get("buNo", "")
+                        price_obj = off.get(bu_no, {}) if isinstance(off, dict) else {}
+                        price = price_obj.get("offerGrossPrice") or price_obj.get("offerGrossVehiclePrice")
+                        km = lc.get("mileage", {}).get("km") if isinstance(lc.get("mileage"), dict) else None
+                        first_reg = v.get("ordering", {}).get("orderData", {}).get("firstRegistrationDate", "")
+                        year = _safe_int(first_reg[:4]) if first_reg and len(first_reg) >= 4 else None
 
-                    mo = v.get("vehicleSpecification", {}).get("modelAndOption", {})
-                    lc = v.get("vehicleLifeCycle", {})
-                    ret = v.get("ordering", {}).get("retailData", {})
-                    off = v.get("offering", {}).get("offerPrices", {})
-                    media = v.get("media", {})
+                        imgs = media.get("usedCarImageList") or media.get("usedCarImages") or []
+                        first_img = ""
+                        if isinstance(imgs, list) and imgs:
+                            item = imgs[0]
+                            if isinstance(item, str):
+                                first_img = item
+                            elif isinstance(item, list) and item:
+                                first_img = str(item[0])
+                            elif isinstance(item, dict):
+                                first_img = str(next(iter(item.values()), ""))
+                        elif isinstance(imgs, dict) and imgs:
+                            val = next(iter(imgs.values()), "")
+                            first_img = val if isinstance(val, str) else (val[0] if isinstance(val, list) and val else "")
 
-                    mr_desc = mo.get("modelRange", {}).get("description", {})
-                    model_name = next(iter(mr_desc.values()), "") if isinstance(mr_desc, dict) else ""
+                        dealer_info = dealer_map.get(bu_no) or dealer_map.get(bu_no.split("_")[0], {})
 
-                    bu_no = ret.get("buNo", "")
-                    price_obj = off.get(bu_no, {}) if isinstance(off, dict) else {}
-                    price = price_obj.get("offerGrossPrice") or price_obj.get("offerGrossVehiclePrice")
-                    km = lc.get("mileage", {}).get("km") if isinstance(lc.get("mileage"), dict) else None
-                    first_reg = v.get("ordering", {}).get("orderData", {}).get("firstRegistrationDate", "")
-                    year = _safe_int(first_reg[:4]) if first_reg and len(first_reg) >= 4 else None
+                        all_vehicles.append(OEMVehicle(
+                            make=mo.get("brand", brand),
+                            model=model_name,
+                            year=year,
+                            price=_safe_int(price),
+                            mileage=_safe_int(km),
+                            fuel=mo.get("baseFuelType", ""),
+                            transmission="",
+                            color="",
+                            source_url=f"https://www.bmw.de/{lang}/sl/gebrauchtwagen/detail/{doc_id}",
+                            image_url=first_img,
+                            oem_vehicle_id=doc_id,
+                            dealer_name=dealer_info.get("name", f"BMW Dealer {bu_no}"),
+                            dealer_city=dealer_info.get("city", ""),
+                            dealer_postcode=dealer_info.get("postcode", ""),
+                            oem_dealer_id=bu_no,
+                        ))
 
-                    imgs = media.get("usedCarImageList") or media.get("usedCarImages") or []
-                    first_img = ""
-                    if isinstance(imgs, list) and imgs and isinstance(imgs[0], str):
-                        first_img = imgs[0]
-                    elif isinstance(imgs, dict) and imgs:
-                        first_img = next(iter(imgs.values()), "")
+                    start_index += len(hits)
 
-                    dealer_info = dealer_map.get(bu_no) or dealer_map.get(bu_no.split("_")[0], {})
+                    if start_index >= total_count:
+                        break
 
-                    all_vehicles.append(OEMVehicle(
-                        make=mo.get("brand", brand),
-                        model=model_name,
-                        year=year,
-                        price=_safe_int(price),
-                        mileage=_safe_int(km),
-                        fuel=mo.get("baseFuelType", ""),
-                        transmission="",
-                        color="",
-                        source_url=f"https://www.bmw.de/{lang}/sl/gebrauchtwagen/detail/{doc_id}",
-                        image_url=first_img,
-                        oem_vehicle_id=doc_id,
-                        dealer_name=dealer_info.get("name", f"BMW Dealer {bu_no}"),
-                        dealer_city=dealer_info.get("city", ""),
-                        dealer_postcode=dealer_info.get("postcode", ""),
-                        oem_dealer_id=bu_no,
-                    ))
+                    # Politeness
+                    await asyncio.sleep(0.5)
 
-                start_index += len(hits)
+                    if start_index % 500 == 0:
+                        log.info("oem_gateway: BMW/%s — %d/%d vehicles extracted",
+                                 country, len(all_vehicles), total_count)
 
-                if start_index >= total_count:
-                    break
+            # Inner loop ended — check why
+            if consecutive_errors >= 3:
+                # Non-recoverable errors (not 403/429)
+                break
+            if start_index >= total_count and total_count > 0:
+                # Finished successfully
+                break
+            if not data.get("hits"):
+                # No more data
+                break
 
-                # Politeness
-                await asyncio.sleep(0.5)
+            # If we got here, it was a 403/429 — refresh session
+            session_refreshes += 1
+            if session_refreshes > max_refreshes:
+                log.warning("oem_gateway: BMW/%s max session refreshes exceeded at startIndex=%d", country, start_index)
+                break
 
-                if start_index % 500 == 0:
-                    log.info("oem_gateway: BMW/%s — %d/%d vehicles extracted",
-                             country, len(all_vehicles), total_count)
+            log.info("oem_gateway: BMW/%s refreshing session (attempt %d/%d) at startIndex=%d, %d vehicles so far",
+                     country, session_refreshes, max_refreshes, start_index, len(all_vehicles))
+            await asyncio.sleep(3)
+
+            try:
+                session_hash, search_base_url, session_cookies, captured_body_new, captured_headers_new = await _capture_bmw_session()
+                if captured_body_new:
+                    search_body = captured_body_new
+                if captured_headers_new:
+                    captured_headers = captured_headers_new
+                log.info("oem_gateway: BMW/%s session refreshed — hash=%s...%s, resuming at startIndex=%d",
+                         country, session_hash[:8], session_hash[-4:], start_index)
+            except RuntimeError as exc:
+                log.warning("oem_gateway: BMW/%s session refresh failed: %s", country, exc)
+                break
 
         log.info("oem_gateway: BMW/%s — %d unique vehicles from %d dealers (total available: %d)",
                  country, len(all_vehicles), len(bu_nos), total_count)
