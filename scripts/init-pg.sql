@@ -551,6 +551,8 @@ CREATE TABLE IF NOT EXISTS dealers (
     last_block_at     TIMESTAMPTZ,
     block_count       SMALLINT DEFAULT 0,
     is_whale          BOOLEAN DEFAULT false,
+    oem_brand_url     TEXT,
+    oem_dealer_id     TEXT,
     google_rating     NUMERIC(2,1),
     google_review_count INT,
     created_at        TIMESTAMPTZ DEFAULT NOW(),

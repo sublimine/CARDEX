@@ -92,11 +92,12 @@ def main() -> None:
     )
     parser.add_argument(
         "command",
-        choices=["discover", "spider", "resolve", "all"],
+        choices=["discover", "spider", "resolve", "oem", "all"],
         help="discover = find dealers via all probes (includes resolver in parallel), "
              "spider = crawl dealer websites, "
              "resolve = standalone URL resolver (stream consumer), "
-             "all = discover then spider",
+             "oem = OEM Gateway — harvest centralized brand platforms, "
+             "all = discover then spider then oem",
     )
     parser.add_argument(
         "--probe",
@@ -127,6 +128,9 @@ def main() -> None:
         coro = _run_resolve()
     elif args.command == "spider":
         coro = _run_spider()
+    elif args.command == "oem":
+        from scrapers.dealer_spider.oem_gateway import run as oem_run
+        coro = oem_run(countries=args.countries)
     elif args.command == "all":
         coro = _run_all(
             countries=args.countries,

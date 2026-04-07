@@ -149,6 +149,93 @@ _IS_DEALER_PATTERNS = [
 ]
 
 
+# ── OEM Franchise Classifier ─────────────────────────────────────────────────
+# Detects when a dealer URL points to a centralized OEM ecosystem.
+# These dealers don't have independent inventory — their stock lives on the
+# brand's central platform. The spider should NOT waste time scraping them.
+# Instead, mark as OEM_FRANCHISE and let the OEM Gateway harvest nationally.
+
+_OEM_DOMAIN_MAP: dict[str, str] = {
+    # BMW Group
+    "bmw.de": "BMW", "bmw.fr": "BMW", "bmw.es": "BMW", "bmw.nl": "BMW",
+    "bmw.be": "BMW", "bmw.ch": "BMW", "bmw.com": "BMW",
+    "mini.de": "MINI", "mini.fr": "MINI", "mini.es": "MINI",
+    "mini.nl": "MINI", "mini.be": "MINI", "mini.ch": "MINI",
+    # VAG Group
+    "volkswagen.de": "VW", "volkswagen.fr": "VW", "volkswagen.es": "VW",
+    "volkswagen.nl": "VW", "volkswagen.be": "VW", "volkswagen.ch": "VW",
+    "audi.de": "AUDI", "audi.fr": "AUDI", "audi.es": "AUDI",
+    "audi.nl": "AUDI", "audi.be": "AUDI", "audi.ch": "AUDI",
+    "porsche.com": "PORSCHE",
+    "seat.de": "SEAT", "seat.es": "SEAT", "seat.fr": "SEAT",
+    "cupra.com": "CUPRA",
+    "skoda-auto.de": "SKODA", "skoda-auto.fr": "SKODA", "skoda-auto.es": "SKODA",
+    "skoda-auto.nl": "SKODA", "skoda-auto.be": "SKODA", "skoda-auto.ch": "SKODA",
+    # Mercedes-Benz
+    "mercedes-benz.de": "MERCEDES", "mercedes-benz.fr": "MERCEDES",
+    "mercedes-benz.es": "MERCEDES", "mercedes-benz.nl": "MERCEDES",
+    "mercedes-benz.be": "MERCEDES", "mercedes-benz.ch": "MERCEDES",
+    "mercedes-benz.com": "MERCEDES",
+    "smart.com": "SMART",
+    # Stellantis
+    "peugeot.de": "PEUGEOT", "peugeot.fr": "PEUGEOT", "peugeot.es": "PEUGEOT",
+    "peugeot.nl": "PEUGEOT", "peugeot.be": "PEUGEOT", "peugeot.ch": "PEUGEOT",
+    "citroen.de": "CITROEN", "citroen.fr": "CITROEN", "citroen.es": "CITROEN",
+    "citroen.nl": "CITROEN", "citroen.be": "CITROEN", "citroen.ch": "CITROEN",
+    "opel.de": "OPEL", "opel.fr": "OPEL", "opel.es": "OPEL",
+    "opel.nl": "OPEL", "opel.be": "OPEL", "opel.ch": "OPEL",
+    "fiat.de": "FIAT", "fiat.fr": "FIAT", "fiat.es": "FIAT",
+    "fiat.nl": "FIAT", "fiat.be": "FIAT", "fiat.ch": "FIAT",
+    "jeep.de": "JEEP", "jeep.fr": "JEEP", "jeep.es": "JEEP",
+    "alfaromeo.de": "ALFA_ROMEO", "alfaromeo.fr": "ALFA_ROMEO",
+    "ds-automobiles.de": "DS", "ds-automobiles.fr": "DS",
+    # Renault Group
+    "renault.de": "RENAULT", "renault.fr": "RENAULT", "renault.es": "RENAULT",
+    "renault.nl": "RENAULT", "renault.be": "RENAULT", "renault.ch": "RENAULT",
+    "dacia.de": "DACIA", "dacia.fr": "DACIA", "dacia.es": "DACIA",
+    "dacia.nl": "DACIA", "dacia.be": "DACIA", "dacia.ch": "DACIA",
+    # Toyota/Lexus
+    "toyota.de": "TOYOTA", "toyota.fr": "TOYOTA", "toyota.es": "TOYOTA",
+    "toyota.nl": "TOYOTA", "toyota.be": "TOYOTA", "toyota.ch": "TOYOTA",
+    "lexus.de": "LEXUS", "lexus.fr": "LEXUS", "lexus.es": "LEXUS",
+    # Hyundai/Kia
+    "hyundai.com": "HYUNDAI", "hyundai.de": "HYUNDAI", "hyundai.fr": "HYUNDAI",
+    "kia.com": "KIA", "kia.de": "KIA", "kia.fr": "KIA",
+    # Ford
+    "ford.de": "FORD", "ford.fr": "FORD", "ford.es": "FORD",
+    "ford.nl": "FORD", "ford.be": "FORD", "ford.ch": "FORD",
+    # Volvo
+    "volvocars.com": "VOLVO", "volvocars.de": "VOLVO", "volvocars.fr": "VOLVO",
+    # Nissan/Honda/Mazda
+    "nissan.de": "NISSAN", "nissan.fr": "NISSAN", "nissan.es": "NISSAN",
+    "honda.de": "HONDA", "honda.fr": "HONDA",
+    "mazda.de": "MAZDA", "mazda.fr": "MAZDA", "mazda.es": "MAZDA",
+}
+
+
+def _classify_oem_franchise(url: str) -> tuple[str | None, str | None]:
+    """
+    Check if a dealer URL belongs to a centralized OEM ecosystem.
+    Returns (brand, oem_base_url) or (None, None) if independent.
+    """
+    try:
+        parsed = urlparse(url)
+        host = parsed.netloc.lower()
+        # Strip www. and subdomains to match base domain
+        parts = host.split(".")
+        # Try 2-part domain (bmw.de) and 3-part domain (mercedes-benz.de)
+        for n in (2, 3):
+            if len(parts) >= n:
+                domain = ".".join(parts[-n:])
+                brand = _OEM_DOMAIN_MAP.get(domain)
+                if brand:
+                    oem_base = f"{parsed.scheme}://{parsed.netloc}"
+                    return brand, oem_base
+    except Exception:
+        pass
+    return None, None
+
+
 def _is_likely_dealer(html: str) -> bool:
     """Returns True if page looks like a car dealer, False if repair/parts/rental."""
     not_dealer_score = sum(1 for p in _NOT_DEALER_PATTERNS if p.search(html))
@@ -621,6 +708,28 @@ async def _process_dealer(
     if not website or not website.startswith("http"):
         print(f"[SWARM] {name}: 0 vehicles extracted (no_website, 0 pages). PG insert rate: 0/sec", flush=True)
         await _update_spider_status(pg, dealer_id, name, country, "NO_INVENTORY", "no_website")
+        return
+
+    # ── OEM Franchise classification — BEFORE any HTTP ──────────────────
+    oem_brand, oem_base_url = _classify_oem_franchise(website)
+    if oem_brand:
+        # This dealer's website lives on a centralized OEM platform.
+        # Don't waste bandwidth scraping it — mark for OEM Gateway harvest.
+        await pg.execute("""
+            UPDATE dealers
+            SET spider_status    = 'OEM_FRANCHISE',
+                dealer_type      = 'OEM_FRANCHISE',
+                oem_brand_url    = $1,
+                brand_affiliation = ARRAY(
+                    SELECT DISTINCT unnest(
+                        COALESCE(brand_affiliation, ARRAY[]::text[]) || ARRAY[$2]::text[]
+                    )
+                ),
+                spider_dms       = $3,
+                updated_at       = now()
+            WHERE name = $4 AND country = $5
+        """, oem_base_url, oem_brand, f"oem:{oem_brand.lower()}", name, country)
+        print(f"[SWARM] {name}: OEM_FRANCHISE ({oem_brand}) → {oem_base_url}", flush=True)
         return
 
     t0 = time.monotonic()
