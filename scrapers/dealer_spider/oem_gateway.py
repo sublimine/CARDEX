@@ -704,6 +704,7 @@ class OEMGateway:
         """Reconcile and publish vehicles to the pipeline. Returns count published."""
         assert self._pg and self._gateway
         published = 0
+        failed = 0
         for v in vehicles:
             dealer_id = await _reconcile_dealer(self._pg, v, brand, country)
             if not dealer_id:
@@ -744,8 +745,12 @@ class OEMGateway:
                 await self._gateway.ingest(listing)
                 published += 1
             except Exception as exc:
-                if published == 0:
-                    log.warning("oem_gateway: ingest error: %s", exc)
+                if published + failed < 5:
+                    log.warning("oem_gateway: ingest error [%d]: %s — listing=%s %s %s url=%s",
+                                published + failed, exc,
+                                listing.make, listing.model, listing.year,
+                                listing.source_url[:80])
+                failed += 1
 
         log.info("oem_gateway: %s/%s — %d vehicles, %d published",
                  brand, country, len(vehicles), published)
