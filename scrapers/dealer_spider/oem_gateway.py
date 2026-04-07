@@ -1022,7 +1022,7 @@ class OEMGateway:
                     km = lc.get("mileage", {}).get("km") if isinstance(lc.get("mileage"), dict) else None
 
                     first_reg = v.get("ordering", {}).get("orderData", {}).get("firstRegistrationDate", "")
-                    year = int(first_reg[:4]) if first_reg and len(first_reg) >= 4 else None
+                    year = _safe_int(first_reg[:4]) if first_reg and len(first_reg) >= 4 else None
 
                     imgs = media.get("usedCarImageList", [])
 
@@ -1121,7 +1121,9 @@ class OEMGateway:
                             try:
                                 vehicles = await handler_fn(client, brand, country, country_cfg)
                             except Exception as exc:
-                                log.warning("oem_gateway: %s/%s handler failed: %s", brand, country, exc)
+                                import traceback
+                                log.warning("oem_gateway: %s/%s handler failed: %s\n%s",
+                                            brand, country, exc, traceback.format_exc())
                                 continue
 
                             published = await self._publish_vehicles(vehicles, brand, country)
