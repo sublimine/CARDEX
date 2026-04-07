@@ -597,6 +597,30 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
+  # OEM Gateway — centralized inventory harvest from manufacturer platforms
+  # Queries BMW/Mercedes/VW/Audi/Stellantis/Renault used-car APIs nationally
+  # ---------------------------------------------------------------------------
+  oem-gateway:
+    build: { context: scrapers, dockerfile: Dockerfile }
+    container_name: cardex-oem-gateway
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      gateway:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://cardex:cardex_dev_only@postgres:5432/cardex
+      REDIS_URL: redis://redis:6379
+      GATEWAY_URL: http://gateway:8080
+      GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
+      OEM_GATEWAY_CONCURRENCY: "3"
+      LOG_LEVEL: info
+    command: ["-m", "dealer_spider", "oem"]
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
   # Inventory Reaper — standalone lifecycle manager (404→SOLD)
   # ---------------------------------------------------------------------------
   inventory-reaper:

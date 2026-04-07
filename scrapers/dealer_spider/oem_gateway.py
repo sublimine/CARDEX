@@ -167,6 +167,139 @@ _OEM_USED_CAR_APIS: list[dict[str, Any]] = [
         },
         "parser": "_parse_vag",
     },
+    # ── Stellantis Group (Peugeot, Citroën, Opel, Fiat, Jeep) ───────────
+    {
+        "brand": "PEUGEOT",
+        "group": "STELLANTIS",
+        "countries": {
+            "DE": {"api": "https://www.peugeot.de/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "FR": {"api": "https://www.peugeot.fr/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "ES": {"api": "https://www.peugeot.es/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "NL": {"api": "https://www.peugeot.nl/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "BE": {"api": "https://www.peugeot.be/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "CH": {"api": "https://www.peugeot.ch/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+        },
+        "parser": "_parse_stellantis",
+    },
+    {
+        "brand": "CITROEN",
+        "group": "STELLANTIS",
+        "countries": {
+            "DE": {"api": "https://www.citroen.de/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "FR": {"api": "https://www.citroen.fr/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "ES": {"api": "https://www.citroen.es/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "NL": {"api": "https://www.citroen.nl/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "BE": {"api": "https://www.citroen.be/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "CH": {"api": "https://www.citroen.ch/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+        },
+        "parser": "_parse_stellantis",
+    },
+    {
+        "brand": "OPEL",
+        "group": "STELLANTIS",
+        "countries": {
+            "DE": {"api": "https://www.opel.de/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "FR": {"api": "https://www.opel.fr/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "ES": {"api": "https://www.opel.es/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "NL": {"api": "https://www.opel.nl/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "BE": {"api": "https://www.opel.be/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "CH": {"api": "https://www.opel.ch/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+        },
+        "parser": "_parse_stellantis",
+    },
+    {
+        "brand": "FIAT",
+        "group": "STELLANTIS",
+        "countries": {
+            "DE": {"api": "https://www.fiat.de/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "FR": {"api": "https://www.fiat.fr/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "ES": {"api": "https://www.fiat.es/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+        },
+        "parser": "_parse_stellantis",
+    },
+    {
+        "brand": "JEEP",
+        "group": "STELLANTIS",
+        "countries": {
+            "DE": {"api": "https://www.jeep.de/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "FR": {"api": "https://www.jeep.fr/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "ES": {"api": "https://www.jeep.es/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+        },
+        "parser": "_parse_stellantis",
+    },
+    # ── Renault Group (Renault, Dacia) ───────────────────────────────────
+    {
+        "brand": "RENAULT",
+        "group": "RENAULT",
+        "countries": {
+            "DE": {"api": "https://www.renault.de/wired/commerce/v1/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "FR": {"api": "https://www.renault.fr/wired/commerce/v1/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "ES": {"api": "https://www.renault.es/wired/commerce/v1/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "NL": {"api": "https://www.renault.nl/wired/commerce/v1/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "BE": {"api": "https://www.renault.be/wired/commerce/v1/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "CH": {"api": "https://www.renault.ch/wired/commerce/v1/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+        },
+        "parser": "_parse_renault",
+    },
+    {
+        "brand": "DACIA",
+        "group": "RENAULT",
+        "countries": {
+            "DE": {"api": "https://www.dacia.de/wired/commerce/v1/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "FR": {"api": "https://www.dacia.fr/wired/commerce/v1/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "ES": {"api": "https://www.dacia.es/wired/commerce/v1/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "NL": {"api": "https://www.dacia.nl/wired/commerce/v1/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "BE": {"api": "https://www.dacia.be/wired/commerce/v1/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "CH": {"api": "https://www.dacia.ch/wired/commerce/v1/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+        },
+        "parser": "_parse_renault",
+    },
+    # ── Toyota/Lexus ─────────────────────────────────────────────────────
+    {
+        "brand": "TOYOTA",
+        "group": "TOYOTA",
+        "countries": {
+            "DE": {"api": "https://www.toyota.de/api/used-cars/search", "params": {"pageSize": 100, "page": 0}},
+            "FR": {"api": "https://www.toyota.fr/api/used-cars/search", "params": {"pageSize": 100, "page": 0}},
+            "ES": {"api": "https://www.toyota.es/api/used-cars/search", "params": {"pageSize": 100, "page": 0}},
+            "NL": {"api": "https://www.toyota.nl/api/used-cars/search", "params": {"pageSize": 100, "page": 0}},
+            "BE": {"api": "https://www.toyota.be/api/used-cars/search", "params": {"pageSize": 100, "page": 0}},
+            "CH": {"api": "https://www.toyota.ch/api/used-cars/search", "params": {"pageSize": 100, "page": 0}},
+        },
+        "parser": "_parse_toyota",
+    },
+    # ── Ford ─────────────────────────────────────────────────────────────
+    {
+        "brand": "FORD",
+        "group": "FORD",
+        "countries": {
+            "DE": {"api": "https://www.ford.de/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "FR": {"api": "https://www.ford.fr/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+            "ES": {"api": "https://www.ford.es/api/used-vehicles/search", "params": {"pageSize": 100, "page": 0}},
+        },
+        "parser": "_parse_stellantis",
+    },
+    # ── Hyundai/Kia ──────────────────────────────────────────────────────
+    {
+        "brand": "HYUNDAI",
+        "group": "HYUNDAI_KIA",
+        "countries": {
+            "DE": {"api": "https://www.hyundai.de/api/used-cars", "params": {"pageSize": 100, "page": 0}},
+            "FR": {"api": "https://www.hyundai.fr/api/used-cars", "params": {"pageSize": 100, "page": 0}},
+            "ES": {"api": "https://www.hyundai.es/api/used-cars", "params": {"pageSize": 100, "page": 0}},
+        },
+        "parser": "_parse_generic_oem",
+    },
+    {
+        "brand": "KIA",
+        "group": "HYUNDAI_KIA",
+        "countries": {
+            "DE": {"api": "https://www.kia.com/de/api/used-cars", "params": {"pageSize": 100, "page": 0}},
+            "FR": {"api": "https://www.kia.com/fr/api/used-cars", "params": {"pageSize": 100, "page": 0}},
+            "ES": {"api": "https://www.kia.com/es/api/used-cars", "params": {"pageSize": 100, "page": 0}},
+        },
+        "parser": "_parse_generic_oem",
+    },
 ]
 
 
@@ -301,6 +434,154 @@ def _parse_vag(data: dict, brand: str, country: str) -> list[OEMVehicle]:
     return vehicles
 
 
+def _parse_stellantis(data: dict, brand: str, country: str) -> list[OEMVehicle]:
+    """Parse Stellantis used-car API (Peugeot, Citroën, Opel, Fiat, Jeep, DS, Ford)."""
+    vehicles: list[OEMVehicle] = []
+    results = (data.get("results") or data.get("vehicles") or data.get("data", {}).get("results")
+               or data.get("offers") or data.get("items") or [])
+
+    for item in results:
+        if not isinstance(item, dict):
+            continue
+        dealer_info = item.get("dealer") or item.get("seller") or item.get("point_of_sale") or {}
+        price_val = item.get("price") or item.get("displayPrice") or item.get("grossPrice")
+        if isinstance(price_val, dict):
+            price_val = price_val.get("amount") or price_val.get("value")
+
+        vehicles.append(OEMVehicle(
+            make=item.get("make") or item.get("brand") or brand,
+            model=item.get("model") or item.get("commercialName") or item.get("version") or "",
+            year=_safe_int(item.get("year") or item.get("registrationYear") or (item.get("firstRegistrationDate", "") or "")[:4]),
+            price=_safe_int(price_val),
+            mileage=_safe_int(item.get("mileage") or item.get("km") or item.get("mileageKm")),
+            fuel=item.get("fuel") or item.get("fuelType") or item.get("energy") or "",
+            transmission=item.get("transmission") or item.get("gearbox") or "",
+            color=item.get("color") or item.get("exteriorColor") or item.get("bodyColor") or "",
+            source_url=item.get("url") or item.get("detailUrl") or item.get("vehicleUrl") or "",
+            image_url=item.get("imageUrl") or item.get("mainImage") or item.get("photo") or "",
+            oem_vehicle_id=str(item.get("id") or item.get("vehicleId") or item.get("offerId") or ""),
+            dealer_name=dealer_info.get("name") or dealer_info.get("dealerName") or dealer_info.get("label") or "",
+            dealer_city=dealer_info.get("city") or dealer_info.get("town") or dealer_info.get("locality") or "",
+            dealer_postcode=str(dealer_info.get("postalCode") or dealer_info.get("zipCode") or dealer_info.get("zip") or ""),
+            oem_dealer_id=str(dealer_info.get("id") or dealer_info.get("dealerId") or dealer_info.get("siteCode") or ""),
+        ))
+    return vehicles
+
+
+def _parse_renault(data: dict, brand: str, country: str) -> list[OEMVehicle]:
+    """Parse Renault Group used-car API (Renault, Dacia)."""
+    vehicles: list[OEMVehicle] = []
+    # Renault's wired/commerce API nests data differently
+    results = (data.get("results") or data.get("vehicles") or data.get("data", {}).get("vehicles")
+               or data.get("offers") or data.get("items") or [])
+
+    for item in results:
+        if not isinstance(item, dict):
+            continue
+        dealer_info = item.get("dealer") or item.get("seller") or item.get("distributeur") or {}
+        price_val = item.get("price") or item.get("displayPrice")
+        if isinstance(price_val, dict):
+            price_val = price_val.get("amount") or price_val.get("value") or price_val.get("raw")
+
+        vehicles.append(OEMVehicle(
+            make=item.get("make") or item.get("brand") or item.get("marque") or brand,
+            model=item.get("model") or item.get("commercialName") or item.get("modele") or "",
+            year=_safe_int(item.get("year") or item.get("registrationYear") or (item.get("dateImmatriculation", "") or "")[:4]),
+            price=_safe_int(price_val),
+            mileage=_safe_int(item.get("mileage") or item.get("km") or item.get("kilometrage")),
+            fuel=item.get("fuel") or item.get("fuelType") or item.get("energie") or "",
+            transmission=item.get("transmission") or item.get("gearbox") or item.get("boiteVitesse") or "",
+            color=item.get("color") or item.get("couleur") or "",
+            source_url=item.get("url") or item.get("detailUrl") or item.get("lien") or "",
+            image_url=item.get("imageUrl") or item.get("photo") or "",
+            oem_vehicle_id=str(item.get("id") or item.get("vehicleId") or item.get("offerId") or ""),
+            dealer_name=dealer_info.get("name") or dealer_info.get("nom") or "",
+            dealer_city=dealer_info.get("city") or dealer_info.get("ville") or "",
+            dealer_postcode=str(dealer_info.get("postalCode") or dealer_info.get("codePostal") or ""),
+            oem_dealer_id=str(dealer_info.get("id") or dealer_info.get("rCode") or dealer_info.get("dealerId") or ""),
+        ))
+    return vehicles
+
+
+def _parse_toyota(data: dict, brand: str, country: str) -> list[OEMVehicle]:
+    """Parse Toyota/Lexus used-car API."""
+    vehicles: list[OEMVehicle] = []
+    results = (data.get("results") or data.get("vehicles") or data.get("data", {}).get("vehicles")
+               or data.get("usedCars") or [])
+
+    for item in results:
+        if not isinstance(item, dict):
+            continue
+        dealer_info = item.get("dealer") or item.get("retailer") or {}
+        vehicles.append(OEMVehicle(
+            make=item.get("make") or item.get("brand") or brand,
+            model=item.get("model") or item.get("modelName") or "",
+            year=_safe_int(item.get("year") or item.get("registrationYear")),
+            price=_safe_int(item.get("price") or item.get("displayPrice")),
+            mileage=_safe_int(item.get("mileage") or item.get("km")),
+            fuel=item.get("fuelType") or item.get("fuel") or "",
+            transmission=item.get("transmission") or item.get("gearbox") or "",
+            color=item.get("color") or item.get("exteriorColor") or "",
+            source_url=item.get("url") or item.get("detailUrl") or "",
+            image_url=item.get("imageUrl") or "",
+            oem_vehicle_id=str(item.get("id") or item.get("vehicleId") or ""),
+            dealer_name=dealer_info.get("name") or "",
+            dealer_city=dealer_info.get("city") or "",
+            dealer_postcode=str(dealer_info.get("postalCode") or ""),
+            oem_dealer_id=str(dealer_info.get("id") or dealer_info.get("dealerId") or ""),
+        ))
+    return vehicles
+
+
+def _parse_generic_oem(data: dict, brand: str, country: str) -> list[OEMVehicle]:
+    """Generic OEM parser — tries common field names across all known patterns."""
+    vehicles: list[OEMVehicle] = []
+    # Try every known wrapper key
+    results = []
+    for key in ("results", "vehicles", "items", "data", "offers", "hits", "cars", "listings"):
+        val = data.get(key)
+        if isinstance(val, list) and val:
+            results = val
+            break
+        if isinstance(val, dict):
+            for sub_key in ("results", "vehicles", "items"):
+                sub_val = val.get(sub_key)
+                if isinstance(sub_val, list) and sub_val:
+                    results = sub_val
+                    break
+            if results:
+                break
+    if not results and isinstance(data, list):
+        results = data
+
+    for item in results:
+        if not isinstance(item, dict):
+            continue
+        dealer_info = item.get("dealer") or item.get("seller") or item.get("retailer") or {}
+        price_val = item.get("price") or item.get("displayPrice") or item.get("grossPrice")
+        if isinstance(price_val, dict):
+            price_val = price_val.get("amount") or price_val.get("value")
+
+        vehicles.append(OEMVehicle(
+            make=item.get("make") or item.get("brand") or brand,
+            model=item.get("model") or item.get("modelName") or "",
+            year=_safe_int(item.get("year") or item.get("registrationYear") or item.get("modelYear")),
+            price=_safe_int(price_val),
+            mileage=_safe_int(item.get("mileage") or item.get("km") or item.get("mileageKm")),
+            fuel=item.get("fuel") or item.get("fuelType") or "",
+            transmission=item.get("transmission") or item.get("gearbox") or "",
+            color=item.get("color") or item.get("exteriorColor") or "",
+            source_url=item.get("url") or item.get("detailUrl") or "",
+            image_url=item.get("imageUrl") or item.get("mainImage") or "",
+            oem_vehicle_id=str(item.get("id") or item.get("vehicleId") or ""),
+            dealer_name=dealer_info.get("name") or "",
+            dealer_city=dealer_info.get("city") or "",
+            dealer_postcode=str(dealer_info.get("postalCode") or dealer_info.get("zipCode") or ""),
+            oem_dealer_id=str(dealer_info.get("id") or dealer_info.get("dealerId") or ""),
+        ))
+    return vehicles
+
+
 def _nested_float(d: dict, *keys: str) -> float | None:
     current = d
     for k in keys:
@@ -314,6 +595,10 @@ _PARSERS = {
     "_parse_bmw": _parse_bmw,
     "_parse_mercedes": _parse_mercedes,
     "_parse_vag": _parse_vag,
+    "_parse_stellantis": _parse_stellantis,
+    "_parse_renault": _parse_renault,
+    "_parse_toyota": _parse_toyota,
+    "_parse_generic_oem": _parse_generic_oem,
 }
 
 
