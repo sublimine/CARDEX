@@ -924,6 +924,9 @@ class OEMGateway:
             # This bypasses the hash verification completely because the
             # requests come from the legitimate origin.
 
+            # Capture browser console for debugging
+            page.on("console", lambda msg: log.info("oem_gateway: BMW/%s [browser] %s", country, msg.text))
+
             log.info("oem_gateway: BMW/%s starting injected fetch loop (hash=%s...)",
                      country, session_hash[:8])
 
@@ -947,16 +950,18 @@ class OEMGateway:
                         searchContext: [{{ buNos: buNos }}]
                     }});
 
-                    while (startIndex < totalCount) {{
+                    while (startIndex < totalCount && startIndex < 50000) {{
                         try {{
                             const url = `${{searchUrl}}?maxResults=${{pageSize}}&startIndex=${{startIndex}}&brand=${{brand}}&hash=${{hash}}`;
                             const resp = await fetch(url, {{
                                 method: "POST",
                                 headers: {{ "Content-Type": "application/json" }},
                                 body: body,
+                                credentials: "include",
                             }});
                             if (!resp.ok) {{
-                                console.log("BMW fetch error:", resp.status);
+                                const errText = await resp.text().catch(() => "");
+                                console.log("BMW fetch error:", resp.status, errText.substring(0, 200));
                                 break;
                             }}
                             const data = await resp.json();
