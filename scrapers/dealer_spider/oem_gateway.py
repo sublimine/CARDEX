@@ -709,27 +709,35 @@ class OEMGateway:
             if not dealer_id:
                 continue
 
-            listing = RawListing(
-                source_platform=f"oem:{brand.lower()}",
-                source_listing_id=_stable_listing_id(brand, v.oem_vehicle_id or f"{v.make}{v.model}{v.year}"),
-                dealer_id=dealer_id,
-                dealer_name=v.dealer_name or "",
-                make=v.make or brand,
-                model=v.model or "",
-                year=v.year,
-                price_raw=v.price,
-                mileage_raw=v.mileage,
-                fuel=v.fuel or "",
-                transmission=v.transmission or "",
-                color=v.color or "",
-                source_url=v.source_url or "",
-                image_url=v.image_url or "",
-                country=country,
-            )
-
-            if not listing.make or not listing.model:
+            source_url = v.source_url or ""
+            if not source_url.startswith("http"):
                 continue
-            if listing.source_url and not listing.source_url.startswith("http"):
+
+            model_name = v.model or ""
+            if not model_name or not (v.make or brand):
+                continue
+
+            try:
+                listing = RawListing(
+                    source_platform=f"oem:{brand.lower()}",
+                    source_country=country,
+                    source_url=source_url,
+                    source_listing_id=_stable_listing_id(brand, v.oem_vehicle_id or f"{v.make}{v.model}{v.year}"),
+                    make=v.make or brand,
+                    model=model_name,
+                    year=v.year,
+                    price_raw=float(v.price) if v.price else None,
+                    mileage_km=v.mileage,
+                    color=v.color or None,
+                    seller_type="DEALER",
+                    seller_name=v.dealer_name or None,
+                    photo_urls=[v.image_url] if v.image_url else [],
+                    thumbnail_url=v.image_url or None,
+                )
+            except Exception as exc:
+                if published == 0:
+                    log.warning("oem_gateway: RawListing validation failed: %s (vehicle=%s)",
+                                exc, v.oem_vehicle_id)
                 continue
 
             try:
@@ -945,59 +953,76 @@ class OEMGateway:
             session_hash = captured_hash[0]
             search_base = captured_search_url[0]
 
-            # ── Phase 3: Scroll/click to trigger BMW's pagination ──────────────
-            # Response interceptor already active from before navigation.
-            # We just need to trigger "load more" to get subsequent pages.
+            # ── Phase 3: Injected fetch loop — bypass DOM completely ────────────
+            # The first page was intercepted. Now we inject a JS loop that
+            # fetches ALL remaining pages using the captured hash.
+            # The fetch runs from the browser context (www.bmw.de origin)
+            # so CORS allows it as same-origin to the SPA's own API calls.
+            # No credentials flag needed — hash is the auth.
 
-            log.info("oem_gateway: BMW/%s intercepting vehicle responses + triggering pagination",
-                     country)
+            log.info("oem_gateway: BMW/%s Phase 3 — injected fetch loop (hash=%s..., total=%d)",
+                     country, session_hash[:8],
+                     vehicle_responses[0].get("metadata", {}).get("totalCount", 0) if vehicle_responses else 0)
 
-            # The first page should already have been loaded by now (hash was captured)
-            # Wait a bit for the response to be intercepted
-            await asyncio.sleep(3)
+            # Wait for first page response to be fully processed
+            await asyncio.sleep(2)
 
-            # Scroll down to trigger "load more" or pagination
-            for scroll_round in range(100):  # max 100 scroll rounds
-                prev_count = sum(len(r.get("hits", [])) for r in vehicle_responses)
+            # Get the total count from first intercepted response
+            first_total = 0
+            if vehicle_responses:
+                first_total = vehicle_responses[0].get("metadata", {}).get("totalCount", 0)
 
-                # Scroll to bottom
-                await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                await asyncio.sleep(2)
+            # If we got the first page, inject a loop for the rest
+            if first_total > 12:
+                remaining_json = await page.evaluate(f"""
+                    async () => {{
+                        const allHits = [];
+                        const searchUrl = "{search_base}";
+                        const hash = "{session_hash}";
+                        const brand = "{brand}";
+                        const pageSize = 100;
+                        let startIndex = 12;  // skip first page already captured
+                        const totalCount = {first_total};
+                        let errors = 0;
 
-                # Try clicking "load more" / "next page" buttons
-                for btn_sel in [
-                    'button:has-text("Mehr anzeigen")',
-                    'button:has-text("Weitere")',
-                    'button:has-text("Show more")',
-                    'button:has-text("Load more")',
-                    '[data-testid*="load-more"]',
-                    '[class*="load-more"]',
-                    '[class*="pagination"] button:last-child',
-                    'a[aria-label="Next"]',
-                    'button[aria-label="Nächste"]',
-                ]:
-                    try:
-                        btn = await page.query_selector(btn_sel)
-                        if btn and await btn.is_visible():
-                            await btn.click()
-                            await asyncio.sleep(3)
-                            break
-                    except Exception:
-                        continue
+                        while (startIndex < totalCount && startIndex < 50000 && errors < 3) {{
+                            try {{
+                                const url = searchUrl + "?maxResults=" + pageSize + "&startIndex=" + startIndex + "&brand=" + brand + "&hash=" + hash;
+                                const resp = await fetch(url, {{
+                                    method: "POST",
+                                    headers: {{"Content-Type": "application/json"}},
+                                    body: '{{"resultsContext":{{"sort":[{{"by":"SF_OFFER_INSTALLMENT","order":"ASC"}}]}},"searchContext":[{{"buNos":{json.dumps(bu_nos)}}}]}}'
+                                }});
+                                if (!resp.ok) {{
+                                    errors++;
+                                    if (resp.status === 429 || resp.status === 403) {{
+                                        await new Promise(r => setTimeout(r, 10000));
+                                    }}
+                                    continue;
+                                }}
+                                const data = await resp.json();
+                                const hits = data.hits || [];
+                                if (hits.length === 0) break;
+                                allHits.push(...hits);
+                                startIndex += hits.length;
+                                await new Promise(r => setTimeout(r, 300));
+                            }} catch(e) {{
+                                errors++;
+                                continue;
+                            }}
+                        }}
+                        return allHits;
+                    }}
+                """)
 
-                new_count = sum(len(r.get("hits", [])) for r in vehicle_responses)
-                if new_count == prev_count:
-                    # No new vehicles loaded — we might be at the end
-                    # Try one more scroll + wait
-                    await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                    await asyncio.sleep(3)
-                    final_count = sum(len(r.get("hits", [])) for r in vehicle_responses)
-                    if final_count == new_count:
-                        break  # truly done
-
-                if scroll_round % 10 == 0 and scroll_round > 0:
-                    log.info("oem_gateway: BMW/%s scroll round %d — %d vehicles so far",
-                             country, scroll_round, new_count)
+                if remaining_json and isinstance(remaining_json, list):
+                    log.info("oem_gateway: BMW/%s injected fetch returned %d additional hits",
+                             country, len(remaining_json))
+                    # Append as a pseudo-response
+                    vehicle_responses.append({
+                        "metadata": {"totalCount": first_total},
+                        "hits": remaining_json,
+                    })
 
             raw_vehicles = {"totalCount": 0, "vehicles": []}
             for resp_data in vehicle_responses:
