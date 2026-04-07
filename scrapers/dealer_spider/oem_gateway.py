@@ -974,6 +974,15 @@ class OEMGateway:
 
             # If we got the first page, inject a loop for the rest
             if first_total > 12:
+                # Build the POST body outside the JS to avoid escaping issues
+                # Use the same body that BMW's own frontend sends
+                search_body = json.dumps({
+                    "resultsContext": {"sort": [{"by": "SF_OFFER_INSTALLMENT", "order": "ASC"}]},
+                    "searchContext": [{"buNos": bu_nos}],
+                })
+                # Escape for JS string literal (single quotes wrapping)
+                search_body_escaped = search_body.replace("\\", "\\\\").replace("'", "\\'")
+
                 remaining_json = await page.evaluate(f"""
                     async () => {{
                         const allHits = [];
@@ -981,9 +990,10 @@ class OEMGateway:
                         const hash = "{session_hash}";
                         const brand = "{brand}";
                         const pageSize = 100;
-                        let startIndex = 12;  // skip first page already captured
+                        let startIndex = 12;
                         const totalCount = {first_total};
                         let errors = 0;
+                        const body = '{search_body_escaped}';
 
                         while (startIndex < totalCount && startIndex < 50000 && errors < 3) {{
                             try {{
@@ -991,9 +1001,10 @@ class OEMGateway:
                                 const resp = await fetch(url, {{
                                     method: "POST",
                                     headers: {{"Content-Type": "application/json"}},
-                                    body: '{{"resultsContext":{{"sort":[{{"by":"SF_OFFER_INSTALLMENT","order":"ASC"}}]}},"searchContext":[{{"buNos":{json.dumps(bu_nos)}}}]}}'
+                                    body: body
                                 }});
                                 if (!resp.ok) {{
+                                    console.log("BMW fetch page error:", resp.status, "at startIndex:", startIndex);
                                     errors++;
                                     if (resp.status === 429 || resp.status === 403) {{
                                         await new Promise(r => setTimeout(r, 10000));
@@ -1005,12 +1016,15 @@ class OEMGateway:
                                 if (hits.length === 0) break;
                                 allHits.push(...hits);
                                 startIndex += hits.length;
+                                console.log("BMW fetch page OK: startIndex=" + startIndex + " hits=" + hits.length + " total=" + allHits.length);
                                 await new Promise(r => setTimeout(r, 300));
                             }} catch(e) {{
+                                console.log("BMW fetch exception:", e.message);
                                 errors++;
                                 continue;
                             }}
                         }}
+                        console.log("BMW fetch loop done: " + allHits.length + " total hits");
                         return allHits;
                     }}
                 """)
