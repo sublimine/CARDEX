@@ -64,6 +64,7 @@ from scrapers.dealer_spider.dms.generic_feed import _parse_json as _parse_vehicl
 from scrapers.dealer_spider.stealth_http import (
     StealthClient, StealthHTTPHelper, StealthBlockError,
     detect_waf_type, is_challenge_page,
+    _HAS_PROXIES,
 )
 
 # Type alias for function signatures that accept the HTTP helper
@@ -639,19 +640,38 @@ async def _process_dealer(
     waf_detected = "none"
 
     async with StealthClient(rdb, country=country) as stealth:
-        # Try fetching homepage, escalating tier on block
-        for attempt_tier in range(current_tier, 3):
+        # Determine max tier to attempt — if no proxies configured, only try T0
+        max_tier = 3 if _HAS_PROXIES else 1
+
+        for attempt_tier in range(current_tier, max_tier):
             try:
                 status, html, resp_headers, waf_detected = await stealth.get(
                     website, tier=attempt_tier,
                 )
+                if status in (403, 429) and not _HAS_PROXIES:
+                    # T0 direct IP hit WAF — immediate retreat, no retry
+                    waf_detected = detect_waf_type(
+                        {k.lower(): v for k, v in resp_headers.items()}
+                    ) if resp_headers else "http_block"
+                    log.info("spider: %s HTTP %d (T0 no proxy) — marking PENDING_PROXY", name, status)
+                    await _update_dealer_waf(pg, dealer_id, name, country, 0, waf_detected)
+                    await _update_spider_status(pg, dealer_id, name, country, "PENDING_PROXY", f"waf:{waf_detected}")
+                    print(f"[SWARM] {name}: PENDING_PROXY (HTTP {status}, {waf_detected})", flush=True)
+                    return
                 if status >= 400:
                     log.warning("spider: %s homepage HTTP %d (T%d)", name, status, attempt_tier)
-                    continue  # try next tier
+                    continue
                 current_tier = attempt_tier
                 break
             except StealthBlockError as e:
                 waf_detected = e.waf_type
+                if not _HAS_PROXIES:
+                    # No proxies — don't escalate, mark for later
+                    log.info("spider: %s blocked by %s (T0 no proxy) — PENDING_PROXY", name, e.waf_type)
+                    await _update_dealer_waf(pg, dealer_id, name, country, 0, waf_detected)
+                    await _update_spider_status(pg, dealer_id, name, country, "PENDING_PROXY", f"waf:{waf_detected}")
+                    print(f"[SWARM] {name}: PENDING_PROXY ({waf_detected})", flush=True)
+                    return
                 log.info("spider: %s blocked by %s (T%d), escalating", name, e.waf_type, attempt_tier)
                 continue
             except Exception as exc:
@@ -659,7 +679,6 @@ async def _process_dealer(
                 continue
 
         if not html:
-            # All tiers failed — update WAF info and mark failed
             await _update_dealer_waf(pg, dealer_id, name, country, current_tier, waf_detected)
             await _update_spider_status(pg, dealer_id, name, country, "FAILED", f"waf:{waf_detected}")
             print(f"[SWARM] {name}: BLOCKED by {waf_detected} (all tiers failed)", flush=True)

@@ -584,13 +584,15 @@ services:
       REDIS_URL: redis://redis:6379
       GATEWAY_URL: http://gateway:8080
       GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
-      SPIDER_CONCURRENCY: "${SPIDER_CONCURRENCY:-10}"
+      SPIDER_CONCURRENCY: "${SPIDER_CONCURRENCY:-2}"
       PLAYWRIGHT_HEADLESS: "true"
       LOG_LEVEL: info
       PROXY_T0: "${PROXY_T0:-}"
       PROXY_T1: "${PROXY_T1:-}"
       PROXY_T2: "${PROXY_T2:-}"
       CAPTCHA_API_KEY: "${CAPTCHA_API_KEY:-}"
+      STEALTH_THROTTLE_MIN: "${STEALTH_THROTTLE_MIN:-3.0}"
+      STEALTH_THROTTLE_MAX: "${STEALTH_THROTTLE_MAX:-7.0}"
     command: ["-m", "dealer_spider", "spider"]
     restart: unless-stopped
 

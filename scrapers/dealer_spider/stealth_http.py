@@ -87,6 +87,12 @@ _PROXY_T0 = os.environ.get("PROXY_T0", "")               # local forward proxy o
 _PROXY_T1 = os.environ.get("PROXY_T1", "")               # datacenter pool URL
 _PROXY_T2 = os.environ.get("PROXY_T2", "")               # residential backconnect URL
 
+# Throttle: forced delay (seconds) between ANY request when operating without proxies.
+# Prevents IP burn on T0 direct. Set to 0 when proxies are active.
+_THROTTLE_MIN = float(os.environ.get("STEALTH_THROTTLE_MIN", "3.0"))
+_THROTTLE_MAX = float(os.environ.get("STEALTH_THROTTLE_MAX", "7.0"))
+_HAS_PROXIES = bool(_PROXY_T1 or _PROXY_T2)
+
 # ── WAF Challenge Detection ──────────────────────────────────────────────────
 
 _CHALLENGE_SIGNATURES = [
@@ -242,10 +248,14 @@ class StealthClient:
         session = self._get_session(tier)
         headers = self._build_headers(url)
 
+        # Global throttle when operating without proxies (T0 direct IP)
+        if not _HAS_PROXIES and tier == 0 and _THROTTLE_MIN > 0:
+            import asyncio
+            await asyncio.sleep(random.uniform(_THROTTLE_MIN, _THROTTLE_MAX))
+
         # Domain rate isolation
         safe = await self._check_domain_rate(domain, tier)
         if not safe:
-            # Tiny jitter then proceed — don't skip, just spread
             import asyncio
             await asyncio.sleep(random.uniform(1.0, 3.0))
             await self._rdb.set(f"stealth:domain:{domain}:t{tier}", str(time.time()), ex=120)
