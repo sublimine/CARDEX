@@ -855,10 +855,33 @@ class OEMGateway:
                                 brand, country, page, resp.status_code)
                     break
                 if resp.status_code == 404:
+                    log.info("oem_gateway: %s/%s 404 at page %d", brand, country, page)
                     break
                 resp.raise_for_status()
+
+                ct = resp.headers.get("content-type", "")
+                if "json" not in ct and "javascript" not in ct:
+                    # Server returned HTML instead of JSON — endpoint likely wrong
+                    body_snippet = resp.text[:200].replace("\n", " ")
+                    log.warning("oem_gateway: %s/%s non-JSON response (ct=%s): %s",
+                                brand, country, ct, body_snippet)
+                    break
+
                 data = resp.json()
-            except httpx.HTTPStatusError:
+
+                # Log first response structure for debugging new APIs
+                if page == (base_params.get("page", 0)):
+                    top_keys = list(data.keys())[:10] if isinstance(data, dict) else f"list[{len(data)}]"
+                    log.info("oem_gateway: %s/%s response keys: %s", brand, country, top_keys)
+
+            except httpx.HTTPStatusError as exc:
+                log.warning("oem_gateway: %s/%s HTTP %d at page %d",
+                            brand, country, exc.response.status_code, page)
+                break
+            except json.JSONDecodeError as exc:
+                body_snippet = resp.text[:200].replace("\n", " ")
+                log.warning("oem_gateway: %s/%s JSON decode error: %s — body: %s",
+                            brand, country, exc, body_snippet)
                 break
             except Exception as exc:
                 log.warning("oem_gateway: %s/%s page %d error: %s", brand, country, page, exc)
