@@ -109,8 +109,9 @@ def _parse_json(v: dict, dealer_id: str, dealer_name: str, base_url: str, countr
                     thumb = url
                 photo_urls.append(url)
 
+        from urllib.parse import urljoin as _urljoin
         detail_rel = v.get("url") or v.get("detailpagina") or f"/occasion/{vid}"
-        source_url = detail_rel if detail_rel.startswith("http") else base_url.rstrip("/") + "/" + detail_rel.lstrip("/")
+        source_url = detail_rel if detail_rel.startswith("http") else _urljoin(base_url.rstrip("/") + "/", detail_rel)
 
         return RawListing(
             platform=f"dealer_web:{dealer_id}",
@@ -148,11 +149,17 @@ def _parse_xml(el: ET.Element, dealer_id: str, dealer_name: str, base_url: str, 
         year_s = t("year") or t("bouwjaar")
         year = int(year_s[:4]) if year_s else None
 
+        from urllib.parse import urljoin as _urljoin
+        detail_url = t("url") or t("link") or t("detailUrl")
+        source_url = _urljoin(base_url.rstrip("/") + "/", detail_url) if detail_url else None
+        if not source_url:
+            source_url = _urljoin(base_url.rstrip("/") + "/", f"/occasion/{vid}")
+
         return RawListing(
             platform=f"dealer_web:{dealer_id}",
             country=country,
             listing_id=f"motormanager:{dealer_id}:{vid}",
-            source_url=base_url,
+            source_url=source_url,
             make=make, model=model, year=year,
             price_eur=price,
             mileage_km=mileage,

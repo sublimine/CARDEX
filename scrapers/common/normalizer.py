@@ -17,15 +17,15 @@ from .models import FuelType, Transmission
 # ---------------------------------------------------------------------------
 
 _FUEL_MAP: list[tuple[re.Pattern[str], FuelType]] = [
-    (re.compile(r"electric|elektro|électrique|eléctric|100.*bev|bev", re.I), "ELECTRIC"),
+    (re.compile(r"el[eé]ctric|electric|elektro|[eé]lectrique|elettric|100.*bev|\bbev\b", re.I), "ELECTRIC"),
     (re.compile(r"plug.?in|phev|hybrid.*petrol|petrol.*hybrid", re.I), "HYBRID_PETROL"),
-    (re.compile(r"plug.?in|phev|hybrid.*diesel|diesel.*hybrid", re.I), "HYBRID_DIESEL"),
-    (re.compile(r"hybrid", re.I), "HYBRID_PETROL"),  # generic hybrid → petrol hybrid
-    (re.compile(r"diesel", re.I), "DIESEL"),
+    (re.compile(r"hybrid.*diesel|diesel.*hybrid", re.I), "HYBRID_DIESEL"),
+    (re.compile(r"h[ií]brid|hybrid", re.I), "HYBRID_PETROL"),
+    (re.compile(r"di[eé]sel|gasoil|gazole", re.I), "DIESEL"),
     (re.compile(r"petrol|essence|gasolina|benzin|benzine", re.I), "PETROL"),
-    (re.compile(r"lpg|autogas|gpl|autogas", re.I), "LPG"),
-    (re.compile(r"cng|gas naturel|erdgas|metano", re.I), "CNG"),
-    (re.compile(r"hydrogen|wasserstoff|hydrog", re.I), "HYDROGEN"),
+    (re.compile(r"lpg|autogas|gpl", re.I), "LPG"),
+    (re.compile(r"cng|gnc|gas\s*naturel|erdgas|metano|\btgi\b", re.I), "CNG"),
+    (re.compile(r"hydrogen|wasserstoff|hydrog|hidr[oó]geno", re.I), "HYDROGEN"),
 ]
 
 
@@ -56,6 +56,36 @@ def normalize_transmission(raw: str | None) -> Transmission | None:
         if pattern.search(raw):
             return tx
     return "UNKNOWN"
+
+
+# ---------------------------------------------------------------------------
+# Color
+# ---------------------------------------------------------------------------
+
+_COLOR_MAP: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"\bnegro|noir|schwarz|zwart|nero|black\b", re.I), "Black"),
+    (re.compile(r"\bblanco|blanc|wei[sß]|wit|bianco|white\b", re.I), "White"),
+    (re.compile(r"\bplata|argent|silber|zilver|argento|silver\b", re.I), "Silver"),
+    (re.compile(r"\bgris|grau|grijs|grigio|grey|gray\b", re.I), "Grey"),
+    (re.compile(r"\bazul|bleu|blau|blauw|blu|blue\b", re.I), "Blue"),
+    (re.compile(r"\brojo|rouge|rot|rood|rosso|red\b", re.I), "Red"),
+    (re.compile(r"\bverde|vert|gr[uü]n|groen|green\b", re.I), "Green"),
+    (re.compile(r"\bmarr[oó]n|braun|bruin|marrone|brown\b", re.I), "Brown"),
+    (re.compile(r"\bbeige|beis|crema\b", re.I), "Beige"),
+    (re.compile(r"\bamarillo|jaune|gelb|geel|giallo|yellow\b", re.I), "Yellow"),
+    (re.compile(r"\bnaranja|oranje|arancione|orange\b", re.I), "Orange"),
+    (re.compile(r"\bdorado|goud|gold\b", re.I), "Gold"),
+]
+
+
+def normalize_color(raw: str | None) -> str | None:
+    """Normalize color to canonical English form."""
+    if not raw:
+        return None
+    for pattern, color in _COLOR_MAP:
+        if pattern.search(raw):
+            return color
+    return raw.strip().title()[:30]
 
 
 # ---------------------------------------------------------------------------

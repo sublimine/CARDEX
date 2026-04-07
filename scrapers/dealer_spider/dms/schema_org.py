@@ -24,8 +24,10 @@ import json
 import re
 import xml.etree.ElementTree as ET
 from typing import AsyncGenerator
+from urllib.parse import urlparse
 
 from scrapers.common.models import RawListing
+from scrapers.common.normalizer import normalize_fuel, normalize_transmission, normalize_color
 from scrapers.dealer_spider.dms.generic_feed import _parse_price, _parse_km
 
 # Paths to probe for inventory pages that may embed JSON-LD
@@ -37,7 +39,7 @@ _PROBE_PATHS = [
 
 _SCHEMA_TYPES = {
     "car", "vehicle", "automobile", "usedcar", "usedvehicle",
-    "offeritemcondition", "product",
+    "offeritemcondition",
 }
 
 
@@ -135,13 +137,37 @@ def _extract_year(obj: dict) -> int | None:
     return int(s) if s.isdigit() else None
 
 
-def _extract_url(obj: dict, base_url: str) -> str:
+def _extract_url(obj: dict, base_url: str) -> str | None:
+    """Extract the canonical listing URL. Returns None if only root domain available."""
+    from urllib.parse import urljoin as _urljoin
+
+    # Check direct url, @id, then offers.url
     url = obj.get("url") or obj.get("@id") or ""
-    if url and url.startswith("http"):
-        return url
-    if url and url.startswith("/"):
-        return base_url.rstrip("/") + url
-    return base_url
+    if not url:
+        # Try offers.url (OcasionPlus pattern: url on the Offer, not the Vehicle)
+        offers = obj.get("offers") or obj.get("Offers")
+        if isinstance(offers, list):
+            offers = offers[0] if offers else {}
+        if isinstance(offers, dict):
+            url = offers.get("url") or ""
+    if not url or url == "/":
+        return None
+
+    # Resolve relative URLs against base
+    if url.startswith("http"):
+        resolved = url
+    elif url.startswith("//"):
+        resolved = "https:" + url
+    elif url.startswith("/"):
+        resolved = _urljoin(base_url.rstrip("/") + "/", url)
+    else:
+        resolved = _urljoin(base_url.rstrip("/") + "/", url)
+
+    # Reject if resolved URL is just the root domain
+    parsed = urlparse(resolved)
+    if parsed.path.rstrip("/") == "":
+        return None
+    return resolved
 
 
 def _extract_images(obj: dict) -> tuple[str | None, list[str]]:
@@ -212,9 +238,12 @@ def _vehicle_from_jsonld(
         year = _extract_year(obj)
         price = _extract_price(obj, country)
         mileage = _extract_mileage(obj)
-        color = _str(obj.get("color") or obj.get("vehicleInteriorColor"))
-        fuel = _str(obj.get("fuelType"))
+        color = normalize_color(_str(obj.get("color") or obj.get("vehicleInteriorColor")))
+        fuel = normalize_fuel(_str(obj.get("fuelType")))
+        transmission = normalize_transmission(_str(obj.get("vehicleTransmission")))
         source_url = _extract_url(obj, base_url)
+        if not source_url:
+            return None  # no direct listing URL → reject
         thumb, photos = _extract_images(obj)
 
         return RawListing(
@@ -224,7 +253,8 @@ def _vehicle_from_jsonld(
             source_url=source_url,
             make=make, model=model, year=year,
             price_raw=price, mileage_km=mileage,
-            fuel_type=None,  # normalizer maps
+            fuel_type=fuel,
+            transmission=transmission,
             color=color, vin=vin,
             thumbnail_url=thumb, photo_urls=photos,
             seller_name=dealer_name,

@@ -10,7 +10,7 @@ Dealer Web Spider — orchestrator for extracting inventory from dealer websites
 Flow:
   1. Reads from stream:dealer_discovered (populated by DiscoveryOrchestrator)
   2. For each dealer with a website_url:
-     a. Fetches homepage HTML via aiohttp (fast, cheap)
+     a. Fetches homepage HTML via StealthClient (curl_cffi TLS impersonation)
      b. Tries vectors 1-2 (pure HTTP, no browser)
      c. If vectors 1-2 yield nothing, escalates to Playwright (vectors 3-4)
      d. Listings are published to the standard pipeline via GatewayClient
@@ -37,9 +37,9 @@ import time
 from typing import AsyncGenerator
 from urllib.parse import urljoin, urlparse
 
-import aiohttp
 import asyncpg
 from redis.asyncio import from_url as redis_from_url
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
 from scrapers.common.gateway_client import GatewayClient
 from scrapers.common.models import RawListing
@@ -60,9 +60,16 @@ from scrapers.dealer_spider.dms.schema_org import (
 )
 from scrapers.dealer_spider.dms.generic_feed import _parse_json as _parse_vehicle_json
 
-# Playwright import — graceful fallback if not installed
+# Stealth HTTP layer — curl_cffi with TLS impersonation
+from scrapers.dealer_spider.stealth_http import (
+    StealthClient, StealthHTTPHelper, StealthBlockError,
+    detect_waf_type, is_challenge_page,
+)
+
+# Stealth Playwright — graceful fallback if not installed
 try:
-    from scrapers.common.playwright_client import PlaywrightClient
+    import playwright  # noqa: F401
+    from scrapers.dealer_spider.stealth_browser import StealthBrowser
     _HAS_PLAYWRIGHT = True
 except ImportError:
     _HAS_PLAYWRIGHT = False
@@ -77,7 +84,6 @@ log = logging.getLogger("spider")
 _STREAM_IN  = "stream:dealer_discovered"
 _CG_SPIDER  = "cg_dealer_spider"
 _CONCURRENCY = int(os.environ.get("SPIDER_CONCURRENCY", "10"))
-_REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=20, connect=8)
 
 # Playwright concurrency cap — 3 simultaneous browser pages max
 _PW_SEMAPHORE: asyncio.Semaphore | None = None
@@ -99,16 +105,6 @@ _DMS_EXTRACTORS = {
     "generic_html":   generic_html.extract,
 }
 
-_HEADERS = {
-    "User-Agent": (
-        "CardexBot/1.0 (+https://cardex.eu/bot; scraping@cardex.eu) "
-        "aiohttp/3.9 Python/3.12"
-    ),
-    "Accept": "text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.5",
-    "Accept-Encoding": "gzip, deflate",
-}
-
 # Inventory page paths to try with Playwright
 _INVENTORY_PATHS = [
     "/stock", "/inventory", "/vehicles", "/cars", "/used-cars",
@@ -124,39 +120,6 @@ _IFRAME_VEHICLE_PATTERNS = re.compile(
     r"voiture|coche|occasion|tweedehands)",
     re.IGNORECASE,
 )
-
-
-# ── HTTP helpers shared across workers ───────────────────────────────────────
-
-class _HTTPHelper:
-    """Thin async HTTP helper injected into DMS adapters."""
-
-    def __init__(self, session: aiohttp.ClientSession):
-        self._s = session
-
-    async def get_json(self, url: str, **kwargs) -> dict | list:
-        async with self._s.get(url, timeout=_REQUEST_TIMEOUT, **kwargs) as r:
-            r.raise_for_status()
-            return await r.json(content_type=None)
-
-    async def post_json(self, url: str, **kwargs) -> dict | list:
-        async with self._s.post(url, timeout=_REQUEST_TIMEOUT, **kwargs) as r:
-            r.raise_for_status()
-            return await r.json(content_type=None)
-
-    async def get_text(self, url: str, **kwargs) -> str:
-        async with self._s.get(url, timeout=_REQUEST_TIMEOUT, **kwargs) as r:
-            r.raise_for_status()
-            return await r.text()
-
-    async def head_ok(self, url: str) -> bool:
-        try:
-            async with self._s.head(
-                url, timeout=aiohttp.ClientTimeout(total=5), allow_redirects=True,
-            ) as r:
-                return r.status < 400
-        except Exception:
-            return False
 
 
 # ── False-positive filter (repair shops, parts stores, rental agencies) ──────
@@ -223,12 +186,292 @@ def _extract_jsonld_vehicles(
     return listings
 
 
+# ── Dynamic Pagination Engine ──────────────────────────────────────────────────
+#
+# Three pagination strategies tried in order of confidence:
+#   1. KNOWN_TOTAL — JSON-LD AggregateOffer.offerCount / XHR total_pages → compute page range
+#   2. DOM_SIGNAL  — <link rel="next">, pagination buttons, href with page=N
+#   3. PARAM_PROBE — detected ?page= param on first hit → increment until empty
+#
+# Exhaustion signals (any one stops the crawl):
+#   - HTTP 404/410
+#   - Empty vehicle list on a page
+#   - 3 consecutive pages with 100% duplicate IDs
+#   - Reached computed max_pages (from KNOWN_TOTAL) or hard cap (2000)
+
+_PAGE_PARAM_NAMES = ("page", "p", "pagina", "seite", "pag", "offset", "start", "skip")
+_MAX_PAGES_HARD_CAP = 2000
+
+
+def _estimate_total_pages(html: str, items_per_page: int) -> int | None:
+    """
+    Extract total item count from JSON-LD AggregateOffer or Product metadata.
+    Returns estimated total pages, or None if no signal found.
+    """
+    if items_per_page <= 0:
+        return None
+    for obj in _extract_jsonld_blocks(html):
+        # AggregateOffer on a Product or standalone
+        offers = None
+        if isinstance(obj, dict):
+            if obj.get("@type") == "Product":
+                offers = obj.get("offers") or obj.get("Offers")
+            elif obj.get("@type") in ("AggregateOffer", "AggregateRating"):
+                offers = obj
+        if isinstance(offers, dict) and offers.get("@type") == "AggregateOffer":
+            count = offers.get("offerCount")
+            if count is not None:
+                try:
+                    total = int(count)
+                    pages = (total + items_per_page - 1) // items_per_page
+                    return min(pages, _MAX_PAGES_HARD_CAP)
+                except (ValueError, TypeError):
+                    pass
+    return None
+
+
+def _detect_page_param(url: str) -> str | None:
+    """If the URL already contains a known page parameter, return its name."""
+    params = parse_qs(urlparse(url).query)
+    for key in _PAGE_PARAM_NAMES:
+        if key in params:
+            return key
+    return None
+
+
+def _build_page_url(base_page_url: str, page_param: str, page_num: int) -> str:
+    """Build URL for a specific page number using the detected parameter."""
+    parsed = urlparse(base_page_url)
+    params = parse_qs(parsed.query)
+    params[page_param] = [str(page_num)]
+    new_query = urlencode(params, doseq=True)
+    return urlunparse(parsed._replace(query=new_query))
+
+
+def _find_next_url_in_html(html: str, current_page_num: int, base_netloc: str) -> str | None:
+    """
+    Parse DOM for pagination signals: rel=next, page links, next buttons.
+    Returns absolute URL or None.
+    """
+    def _abs(href: str) -> str | None:
+        if not href:
+            return None
+        if href.startswith("http"):
+            return href
+        if href.startswith("/"):
+            return f"https://{base_netloc}{href}"
+        return None
+
+    # 1. <link rel="next"> or <a rel="next">
+    for pattern in [
+        r'<(?:a|link)[^>]+rel=["\']next["\'][^>]+href=["\']([^"\']+)["\']',
+        r'<(?:a|link)[^>]+href=["\']([^"\']+)["\'][^>]+rel=["\']next["\']',
+    ]:
+        m = re.search(pattern, html, re.I)
+        if m:
+            result = _abs(m.group(1))
+            if result:
+                return result
+
+    # 2. Explicit href with page=<next_page_num>
+    next_num = current_page_num + 1
+    m = re.search(
+        r'href=["\']([^"\']*[?&]page=' + str(next_num) + r'(?:&[^"\']*)?)["\']',
+        html, re.I,
+    )
+    if m:
+        result = _abs(m.group(1))
+        if result:
+            return result
+
+    # 3. Multilingual "next" button text
+    m = re.search(
+        r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>\s*'
+        r'(?:next|siguiente|suivant|weiter|volgende|nächste|próximo|avanti|'
+        r'›|»|→|&#8250;|&#187;|&#8594;)\s*</a>',
+        html, re.I,
+    )
+    if m:
+        result = _abs(m.group(1))
+        if result:
+            return result
+
+    return None
+
+
+async def _paginate_jsonld(
+    stealth: StealthClient,
+    tier: int,
+    first_page_url: str,
+    first_page_html: str,
+    dealer_id: str,
+    dealer_name: str,
+    base_url: str,
+    country: str,
+) -> tuple[list[RawListing], int]:
+    """
+    Dynamic Pagination Engine — uses StealthClient (curl_cffi) for every page.
+    Same TLS fingerprint from page 1 to page 661. Pure curl_cffi.
+    Returns (all_listings, pages_crawled).
+    """
+    all_listings: list[RawListing] = []
+    seen_ids: set[str] = set()
+
+    # ── Process first page ──────────────────────────────────────────────
+    page_listings = _extract_jsonld_vehicles(first_page_html, dealer_id, dealer_name, base_url, country)
+    for listing in page_listings:
+        if listing.source_listing_id not in seen_ids:
+            seen_ids.add(listing.source_listing_id)
+            all_listings.append(listing)
+
+    if not page_listings:
+        return all_listings, 1
+
+    items_per_page = len(page_listings)
+    pages_crawled = 1
+    consecutive_dup_pages = 0
+    parsed_base = urlparse(first_page_url)
+
+    # ── Determine pagination strategy ───────────────────────────────────
+
+    # Strategy A: Compute total from AggregateOffer metadata
+    estimated_pages = _estimate_total_pages(first_page_html, items_per_page)
+
+    # Strategy B: Detect existing page param in URL
+    page_param = _detect_page_param(first_page_url)
+
+    # Strategy C: Probe ?page=2 through stealth
+    if not page_param:
+        probe_url = _build_page_url(first_page_url, "page", 2)
+        try:
+            status, probe_html, _, _ = await stealth.get(probe_url, tier=tier)
+            if status < 400:
+                probe_listings = _extract_jsonld_vehicles(
+                    probe_html, dealer_id, dealer_name, base_url, country,
+                )
+                if probe_listings:
+                    probe_ids = {l.source_listing_id for l in probe_listings}
+                    if not probe_ids.issubset(seen_ids):
+                        page_param = "page"
+                        if estimated_pages is None:
+                            estimated_pages = _estimate_total_pages(probe_html, items_per_page)
+                        for listing in probe_listings:
+                            if listing.source_listing_id not in seen_ids:
+                                seen_ids.add(listing.source_listing_id)
+                                all_listings.append(listing)
+                        pages_crawled += 1
+        except Exception:
+            pass
+
+    # DOM-based fallback
+    if not page_param:
+        dom_next = _find_next_url_in_html(first_page_html, 1, parsed_base.netloc)
+        if not dom_next:
+            return all_listings, pages_crawled
+
+    # ── Compute max pages ───────────────────────────────────────────────
+    max_pages = min(estimated_pages, _MAX_PAGES_HARD_CAP) if estimated_pages else _MAX_PAGES_HARD_CAP
+    start_page = pages_crawled + 1
+    last_html = first_page_html
+
+    log.info(
+        "spider: %s pagination: strategy=%s, estimated_pages=%s, items_per_page=%d",
+        dealer_name,
+        f"param:{page_param}" if page_param else "dom",
+        estimated_pages or "unknown",
+        items_per_page,
+    )
+
+    # ── Page loop — every request through StealthClient ─────────────────
+    for page_num in range(start_page, max_pages + 1):
+        if page_param:
+            next_url = _build_page_url(first_page_url, page_param, page_num)
+        else:
+            next_url = _find_next_url_in_html(last_html, page_num - 1, parsed_base.netloc)
+            if not next_url:
+                break
+
+        try:
+            status, html, _, _ = await stealth.get(next_url, tier=tier)
+            if status in (404, 410):
+                break
+            if status >= 400:
+                break
+        except StealthBlockError:
+            break  # WAF kicked in mid-pagination — stop gracefully
+        except Exception:
+            break
+
+        page_listings = _extract_jsonld_vehicles(html, dealer_id, dealer_name, base_url, country)
+        if not page_listings:
+            break
+
+        new_count = 0
+        for listing in page_listings:
+            if listing.source_listing_id not in seen_ids:
+                seen_ids.add(listing.source_listing_id)
+                all_listings.append(listing)
+                new_count += 1
+
+        pages_crawled += 1
+
+        if new_count == 0:
+            consecutive_dup_pages += 1
+            if consecutive_dup_pages >= 3:
+                break
+        else:
+            consecutive_dup_pages = 0
+
+        last_html = html
+
+        if pages_crawled % 50 == 0:
+            print(
+                f"[SWARM] {dealer_name}: pagination progress — "
+                f"page {pages_crawled}/{max_pages}, {len(all_listings)} vehicles so far",
+                flush=True,
+            )
+
+    return all_listings, pages_crawled
+
+
 # Inventory paths for Vector 1 probing (matches schema_org.py _PROBE_PATHS)
 _JSONLD_PROBE_PATHS = [
     "/stock", "/inventory", "/vehicles", "/cars", "/used-cars",
     "/coches", "/fahrzeuge", "/voitures", "/occasion", "/gebrauchtwagen",
     "/tweedehands", "/occasions", "/coches-segunda-mano", "/gamas/ocasion",
 ]
+
+
+def _normalize_source_url(url: str | None, base_url: str) -> str | None:
+    """
+    Normalize a source URL to absolute form.
+    Handles: relative paths (/vehiculo/123), protocol-relative (//cdn.example.com/...),
+    and already-absolute URLs.
+    Returns None if the URL is unusable.
+    """
+    if not url:
+        return None
+    url = url.strip()
+    if url.startswith("http://") or url.startswith("https://"):
+        return url
+    if url.startswith("//"):
+        return "https:" + url
+    if url.startswith("/"):
+        # Relative path — join with base
+        return urljoin(base_url.rstrip("/") + "/", url)
+    # Bare relative path (no leading /)
+    if url and not url.startswith("#") and not url.startswith("javascript:"):
+        return urljoin(base_url.rstrip("/") + "/", url)
+    return None
+
+
+def _is_root_domain_url(url: str) -> bool:
+    """Return True if url is just a domain root with no meaningful path."""
+    try:
+        parsed = urlparse(url)
+        return parsed.path.rstrip("/") == ""
+    except Exception:
+        return True
 
 
 def _is_valid_listing(listing: RawListing) -> bool:
@@ -238,6 +481,9 @@ def _is_valid_listing(listing: RawListing) -> bool:
     if listing.year and (listing.year < 1920 or listing.year > 2027):
         return False
     if listing.price_raw is not None and (listing.price_raw < 500 or listing.price_raw > 5_000_000):
+        return False
+    # CRITICAL: source_url must be a direct link to the listing, not a root domain
+    if not listing.source_url or _is_root_domain_url(listing.source_url):
         return False
     return True
 
@@ -274,6 +520,8 @@ async def _extract_via_sitemap(
                     continue
                 listing = _vehicle_from_jsonld(obj, dealer_id, dealer_name, base, country)
                 if listing and listing.source_listing_id not in seen:
+                    # Override source_url with the actual detail page URL we fetched
+                    listing.source_url = url
                     seen.add(listing.source_listing_id)
                     listings.append(listing)
         except Exception:
@@ -465,27 +713,29 @@ async def _run_playwright_extraction(
 async def _process_dealer(
     msg_id: str,
     fields: dict,
-    session: aiohttp.ClientSession,
     pg: asyncpg.Pool,
     rdb,
     gateway: GatewayClient,
 ) -> None:
     """
-    Process a single dealer using the 4-vector extraction engine.
-    Tries vectors in order, stops at the first one that yields vehicles.
-    Falls back to legacy DMS-specific extractors for known platforms.
+    Process a single dealer using the 4-vector extraction engine
+    with stealth HTTP (TLS impersonation) and automatic proxy tier escalation.
     """
     dealer_id = fields.get("dealer_id", "")
     name      = fields.get("name", "unknown")
     country   = fields.get("country", "")
     website   = fields.get("website", "").strip()
+    proxy_tier = int(fields.get("proxy_tier", "0"))
+    is_whale   = fields.get("is_whale", "false") == "true"
 
     if not website or not website.startswith("http"):
-        print(f"[spider] SKIP {name} ({country}): no website", flush=True)
+        print(f"[SWARM] {name}: 0 vehicles extracted (no_website, 0 pages). PG insert rate: 0/sec", flush=True)
         await _update_spider_status(pg, dealer_id, name, country, "NO_INVENTORY", "no_website")
         return
 
-    print(f"[spider] PROCESSING {name} ({country}): {website}", flush=True)
+    t0 = time.monotonic()
+    pages_crawled = 0
+    print(f"[SWARM] {name} ({country}) T{proxy_tier}: crawling {website}", flush=True)
 
     # Bloom: skip if crawled recently
     bloom_key = f"dealer:crawled:{dealer_id}"
@@ -493,127 +743,181 @@ async def _process_dealer(
         log.debug("spider: skip %s (bloom hit)", name)
         return
 
-    http = _HTTPHelper(session)
+    # ── Step 1: Fetch homepage with StealthClient ────────────────────────
+    current_tier = proxy_tier
+    html = None
+    base_url = website.rstrip("/")
+    waf_detected = "none"
 
-    # ── Step 1: Fetch homepage with aiohttp (fast, cheap) ────────────────
-    try:
-        async with session.get(
-            website, timeout=_REQUEST_TIMEOUT, headers=_HEADERS, allow_redirects=True,
-        ) as resp:
-            if resp.status >= 400:
-                log.warning("spider: %s homepage HTTP %d", name, resp.status)
-                await _update_spider_status(pg, dealer_id, name, country, "FAILED", f"http_{resp.status}")
-                return
-            html = await resp.text(errors="replace")
-            base_url = str(resp.url).rstrip("/")
-    except Exception as exc:
-        log.warning("spider: %s homepage fetch failed: %s", name, exc)
-        await _update_spider_status(pg, dealer_id, name, country, "FAILED", str(exc)[:120])
-        return
-
-    # Filter false positives (repair shops, parts stores, rental agencies)
-    if not _is_likely_dealer(html):
-        log.info("spider: %s filtered as non-dealer (repair/parts/rental)", name)
-        await _update_spider_status(pg, dealer_id, name, country, "NO_INVENTORY", "false_positive")
-        return
-
-    listing_count = 0
-    error_count   = 0
-    vector_used   = "none"
-
-    # ── VECTOR 1: JSON-LD extraction (instant, zero cost) ────────────────
-    listings = _extract_jsonld_vehicles(html, dealer_id, name, base_url, country)
-    if not listings:
-        # Probe inventory paths for JSON-LD (catches OcasionPlus etc.)
-        for probe_path in _JSONLD_PROBE_PATHS:
-            probe_url = base_url + probe_path
+    async with StealthClient(rdb, country=country) as stealth:
+        # Try fetching homepage, escalating tier on block
+        for attempt_tier in range(current_tier, 3):
             try:
-                async with session.get(
-                    probe_url, timeout=_REQUEST_TIMEOUT, headers=_HEADERS, allow_redirects=True,
-                ) as probe_resp:
-                    if probe_resp.status < 400:
-                        probe_html = await probe_resp.text(errors="replace")
-                        listings = _extract_jsonld_vehicles(probe_html, dealer_id, name, base_url, country)
-                        if listings:
-                            log.info("spider: %s → Vector 1 JSON-LD found on %s: %d vehicles", name, probe_path, len(listings))
-                            break
-            except Exception:
+                status, html, resp_headers, waf_detected = await stealth.get(
+                    website, tier=attempt_tier,
+                )
+                if status >= 400:
+                    log.warning("spider: %s homepage HTTP %d (T%d)", name, status, attempt_tier)
+                    continue  # try next tier
+                current_tier = attempt_tier
+                break
+            except StealthBlockError as e:
+                waf_detected = e.waf_type
+                log.info("spider: %s blocked by %s (T%d), escalating", name, e.waf_type, attempt_tier)
                 continue
-    if listings:
-        vector_used = "jsonld"
-        log.info("spider: %s → Vector 1 (JSON-LD): %d vehicles", name, len(listings))
+            except Exception as exc:
+                log.warning("spider: %s homepage fetch failed (T%d): %s", name, attempt_tier, exc)
+                continue
 
-    # ── VECTOR 2: Sitemap → vehicle detail pages → JSON-LD ──────────────
-    if not listings:
-        try:
-            listings = await _extract_via_sitemap(http, base_url, dealer_id, name, country)
-            if listings:
-                vector_used = "sitemap"
-                log.info("spider: %s → Vector 2 (sitemap): %d vehicles", name, len(listings))
-        except Exception as exc:
-            log.debug("spider: %s sitemap extraction failed: %s", name, exc)
+        if not html:
+            # All tiers failed — update WAF info and mark failed
+            await _update_dealer_waf(pg, dealer_id, name, country, current_tier, waf_detected)
+            await _update_spider_status(pg, dealer_id, name, country, "FAILED", f"waf:{waf_detected}")
+            print(f"[SWARM] {name}: BLOCKED by {waf_detected} (all tiers failed)", flush=True)
+            return
 
-    # ── LEGACY: Try known DMS extractors if detected ─────────────────────
-    # This preserves existing working extractors for known platforms
-    if not listings:
-        detector = DMSDetector(http)
-        platform, feed_url = await detector.detect(base_url, html)
-        if platform not in ("generic_html", "schema_org"):
-            # Known DMS detected — use its specific extractor
-            extractor = _DMS_EXTRACTORS.get(platform)
-            if extractor:
+        # Persist successful tier for future crawls
+        if current_tier != proxy_tier:
+            await _update_dealer_waf(pg, dealer_id, name, country, current_tier, waf_detected)
+
+        # Filter false positives
+        if not _is_likely_dealer(html):
+            await _update_spider_status(pg, dealer_id, name, country, "NO_INVENTORY", "false_positive")
+            return
+
+        http = StealthHTTPHelper(stealth, tier=current_tier)
+        listing_count = 0
+        error_count   = 0
+        vector_used   = "none"
+
+        # ── VECTOR 1: JSON-LD extraction with pagination ─────────────────
+        homepage_vehicles = _extract_jsonld_vehicles(html, dealer_id, name, base_url, country)
+        if homepage_vehicles:
+            listings, pages_crawled = await _paginate_jsonld(stealth, current_tier, website, html, dealer_id, name, base_url, country)
+            vector_used = "jsonld"
+        else:
+            listings = []
+            # Probe inventory paths in parallel batches
+
+            async def _probe_one(path: str) -> tuple[str, str, list] | None:
+                url = base_url + path
                 try:
-                    collected: list[RawListing] = []
-                    async for listing in extractor(
-                        http=http,
-                        dealer_id=dealer_id,
-                        dealer_name=name,
-                        base_url=feed_url or base_url,
-                        country=country,
-                    ):
-                        collected.append(listing)
-                    if collected:
-                        listings = collected
-                        vector_used = f"dms:{platform}"
-                        log.info("spider: %s → Legacy DMS (%s): %d vehicles", name, platform, len(listings))
-                except Exception as exc:
-                    log.debug("spider: %s DMS extractor %s failed: %s", name, platform, exc)
+                    _st, text, _h, _w = await stealth.get(url, tier=current_tier)
+                    vehs = _extract_jsonld_vehicles(text, dealer_id, name, base_url, country)
+                    if vehs:
+                        return (url, text, vehs)
+                except Exception:
+                    pass
+                return None
 
-    # ── VECTORS 3+4: Playwright XHR interception + iframe extraction ─────
-    if not listings:
+            for i in range(0, len(_JSONLD_PROBE_PATHS), 4):
+                batch = _JSONLD_PROBE_PATHS[i:i+4]
+                results = await asyncio.gather(*[_probe_one(p) for p in batch])
+                for result in results:
+                    if result:
+                        probe_url, probe_html, _ = result
+                        listings, pages_crawled = await _paginate_jsonld(
+                            stealth, current_tier, probe_url, probe_html, dealer_id, name, base_url, country,
+                        )
+                        vector_used = "jsonld"
+                        break
+                if listings:
+                    break
+
+        # ── VECTOR 2: Sitemap → vehicle detail pages → JSON-LD ──────────
+        if not listings:
+            try:
+                listings = await _extract_via_sitemap(http, base_url, dealer_id, name, country)
+                if listings:
+                    vector_used = "sitemap"
+            except Exception:
+                pass
+
+        # ── LEGACY: Known DMS extractors ─────────────────────────────────
+        if not listings:
+            detector = DMSDetector(http)
+            platform, feed_url = await detector.detect(base_url, html)
+            if platform not in ("generic_html", "schema_org"):
+                extractor = _DMS_EXTRACTORS.get(platform)
+                if extractor:
+                    try:
+                        collected: list[RawListing] = []
+                        async for listing in extractor(
+                            http=http, dealer_id=dealer_id, dealer_name=name,
+                            base_url=feed_url or base_url, country=country,
+                        ):
+                            collected.append(listing)
+                        if collected:
+                            listings = collected
+                            vector_used = f"dms:{platform}"
+                    except Exception:
+                        pass
+
+    # ── VECTORS 3+4: Stealth Playwright (outside StealthClient context) ──
+    if not listings and _HAS_PLAYWRIGHT:
         try:
-            listings = await _extract_with_playwright(
-                base_url, dealer_id, name, country, html,
-            )
-            if listings:
-                vector_used = "playwright"
-                log.info("spider: %s → Vectors 3+4 (Playwright): %d vehicles", name, len(listings))
-        except Exception as exc:
-            log.warning("spider: %s Playwright extraction failed: %s", name, exc)
+            async with _PW_SEMAPHORE or asyncio.Semaphore(_PW_MAX_CONCURRENT):
+                async with StealthBrowser(
+                    country=country, proxy_tier=current_tier, headless=True,
+                ) as browser:
+                    if is_whale:
+                        result = await browser.solve_challenge_if_whale(
+                            website, is_whale=True, timeout=_PW_TIMEOUT,
+                        )
+                    else:
+                        result = await browser.extract(website, timeout=_PW_TIMEOUT)
 
-    # ── Publish all extracted listings ────────────────────────────────────
+                    if result:
+                        pw_html, pw_json, pw_iframes = result
+                        # Parse XHR JSON
+                        for payload in pw_json:
+                            vehicles = _find_vehicles_in_json(
+                                payload, dealer_id, name, base_url, country,
+                            )
+                            listings.extend(vehicles)
+                        # Parse rendered HTML JSON-LD
+                        jsonld_vehicles = _extract_jsonld_vehicles(
+                            pw_html, dealer_id, name, base_url, country,
+                        )
+                        listings.extend(jsonld_vehicles)
+
+                        if listings:
+                            vector_used = "playwright"
+        except Exception as exc:
+            log.warning("spider: %s Playwright failed: %s", name, exc)
+
+    # ── Normalize URLs + Publish all extracted listings ──────────────────
     if listings:
         for listing in listings:
+            # URL normalization: resolve relative URLs against dealer base
+            listing.source_url = _normalize_source_url(listing.source_url, base_url) or ""
             if not _is_valid_listing(listing):
-                print(f"[spider] REJECTED {name}: make={listing.make} model={listing.model} year={listing.year} price={listing.price_raw}", flush=True)
+                reason = "missing_fields"
+                if listing.source_url and _is_root_domain_url(listing.source_url):
+                    reason = "root_domain_url"
+                elif not listing.source_url:
+                    reason = "no_url"
+                print(f"[SWARM] {name}: REJECTED [{reason}] make={listing.make} model={listing.model} url={listing.source_url}", flush=True)
                 continue
             try:
                 await gateway.ingest(listing)
                 listing_count += 1
                 if listing_count <= 3:
                     print(
-                        f"[spider] VEHICLE {name}: {listing.make} {listing.model} "
+                        f"[SWARM] {name}: VEHICLE {listing.make} {listing.model} "
                         f"{listing.year} EUR{listing.price_raw}",
                         flush=True,
                     )
             except Exception as exc:
                 error_count += 1
                 if error_count <= 3:
-                    print(f"[spider] INGEST_ERR {name}: {exc}", flush=True)
+                    print(f"[SWARM] {name}: INGEST_ERR {exc}", flush=True)
 
+    elapsed = time.monotonic() - t0
+    rate = f"{listing_count / elapsed:.1f}" if elapsed > 0 else "0"
     print(
-        f"[spider] RESULT {name} ({country}): vector={vector_used} "
-        f"listings={listing_count} errors={error_count}",
+        f"[SWARM] {name}: {listing_count} vehicles extracted "
+        f"({vector_used}, {pages_crawled} pages). PG insert rate: {rate}/sec",
         flush=True,
     )
 
@@ -625,8 +929,8 @@ async def _process_dealer(
     await rdb.set(bloom_key, "1", ex=7 * 86400)
 
     log.info(
-        "spider: %s done — vector=%s listings=%d errors=%d",
-        name, vector_used, listing_count, error_count,
+        "spider: %s done — vector=%s listings=%d errors=%d pages=%d elapsed=%.1fs",
+        name, vector_used, listing_count, error_count, pages_crawled, elapsed,
     )
 
 
@@ -653,6 +957,29 @@ async def _update_spider_status(
         log.warning("spider: db update failed dealer=%s: %s", name, exc)
 
 
+async def _update_dealer_waf(
+    pg: asyncpg.Pool,
+    dealer_id: str,
+    name: str,
+    country: str,
+    tier: int,
+    waf_type: str,
+) -> None:
+    """Persist WAF detection and escalated proxy tier for future crawls."""
+    try:
+        await pg.execute("""
+            UPDATE dealers
+            SET proxy_tier    = $1,
+                waf_type      = $2,
+                last_block_at = now(),
+                block_count   = block_count + 1,
+                updated_at    = now()
+            WHERE name = $3 AND country = $4
+        """, tier, waf_type[:32], name, country)
+    except Exception as exc:
+        log.warning("spider: waf update failed dealer=%s: %s", name, exc)
+
+
 # ── Consumer loop ─────────────────────────────────────────────────────────────
 
 async def _consumer(
@@ -662,59 +989,83 @@ async def _consumer(
     rdb,
     gateway: GatewayClient,
 ) -> None:
-    """Long-running consumer that reads from the Redis stream."""
-    conn_headers = {
-        **_HEADERS,
-        "Connection": "keep-alive",
-    }
-    connector = aiohttp.TCPConnector(limit=10, ttl_dns_cache=300)
-    async with aiohttp.ClientSession(
-        headers=conn_headers,
-        connector=connector,
-        trust_env=True,
-    ) as session:
-        last_id = ">"   # read only new messages
-        while True:
-            try:
-                entries = await rdb.xreadgroup(
-                    groupname=_CG_SPIDER,
-                    consumername=f"spider-worker-{worker_id}",
-                    streams={_STREAM_IN: last_id},
-                    count=1,
-                    block=5000,   # 5s block
-                )
-            except Exception as exc:
-                log.warning("spider worker %d: xreadgroup error: %s", worker_id, exc)
-                await asyncio.sleep(2)
-                continue
+    """Long-running consumer — all HTTP goes through StealthClient (curl_cffi)."""
+    last_id = ">"
+    while True:
+        try:
+            entries = await rdb.xreadgroup(
+                groupname=_CG_SPIDER,
+                consumername=f"spider-worker-{worker_id}",
+                streams={_STREAM_IN: last_id},
+                count=1,
+                block=5000,
+            )
+        except Exception as exc:
+            log.warning("spider worker %d: xreadgroup error: %s", worker_id, exc)
+            await asyncio.sleep(2)
+            continue
 
-            if not entries:
-                continue
+        if not entries:
+            continue
 
-            for _stream, messages in entries:
-                for msg_id, fields in messages:
-                    async with semaphore:
+        for _stream, messages in entries:
+            for msg_id, fields in messages:
+                async with semaphore:
+                    try:
+                        await asyncio.wait_for(
+                            _process_dealer(
+                                msg_id, fields, pg, rdb, gateway,
+                            ),
+                            timeout=1800.0,  # 30 min — full inventory pagination
+                        )
+                    except asyncio.TimeoutError:
+                        name = fields.get("name", "?")
+                        print(f"[SWARM] {name}: TIMEOUT (>30m)", flush=True)
+                    except Exception as exc:
+                        log.error("spider worker %d: unhandled error: %s", worker_id, exc)
+                    finally:
                         try:
-                            await asyncio.wait_for(
-                                _process_dealer(
-                                    msg_id, fields, session, pg, rdb, gateway,
-                                ),
-                                timeout=90.0,  # 90s max per dealer
-                            )
-                        except asyncio.TimeoutError:
-                            name = fields.get("name", "?")
-                            print(f"[spider] TIMEOUT {name} (>90s)", flush=True)
-                        except Exception as exc:
-                            log.error("spider worker %d: unhandled error: %s", worker_id, exc)
-                        finally:
-                            # Always ACK — failures are tracked in DB, not re-queued
-                            try:
-                                await rdb.xack(_STREAM_IN, _CG_SPIDER, msg_id)
-                            except Exception:
-                                pass
+                            await rdb.xack(_STREAM_IN, _CG_SPIDER, msg_id)
+                        except Exception:
+                            pass
 
 
 # ── Bootstrap ─────────────────────────────────────────────────────────────────
+
+async def _backfill_pending_dealers(pg: asyncpg.Pool, rdb) -> int:
+    """Queue all PENDING dealers with websites to the spider stream."""
+    rows = await pg.fetch("""
+        SELECT COALESCE(place_id, COALESCE(osm_id, 'id_' || id::text)) as dealer_id,
+               name, country, website, proxy_tier, is_whale
+        FROM dealers
+        WHERE spider_status IN ('PENDING', 'FAILED') AND website IS NOT NULL
+          AND (block_count < 3 OR last_block_at < now() - interval '30 days')
+        ORDER BY
+            CASE WHEN is_whale THEN 0 ELSE 1 END,  -- whales first
+            proxy_tier ASC,                          -- cheap tiers first
+            country, random()
+        LIMIT 50000
+    """)
+
+    pipe = rdb.pipeline()
+    for row in rows:
+        pipe.xadd(
+            _STREAM_IN,
+            {
+                "dealer_id": row["dealer_id"],
+                "name": row["name"],
+                "country": row["country"],
+                "website": row["website"],
+                "proxy_tier": str(row["proxy_tier"] or 0),
+                "is_whale": "true" if row["is_whale"] else "false",
+                "source": "BACKFILL",
+            },
+        )
+    if rows:
+        await pipe.execute()
+
+    return len(rows)
+
 
 async def _ensure_consumer_group(rdb) -> None:
     """Create the consumer group if it doesn't exist."""
@@ -744,6 +1095,13 @@ async def run() -> None:
     gateway = GatewayClient()
 
     await _ensure_consumer_group(rdb)
+
+    # Initialize Playwright semaphore globally
+    global _PW_SEMAPHORE
+    _PW_SEMAPHORE = asyncio.Semaphore(_PW_MAX_CONCURRENT)
+
+    backfilled = await _backfill_pending_dealers(pg, rdb)
+    log.info("spider: backfilled %d pending dealers to stream", backfilled)
 
     semaphore = asyncio.Semaphore(_CONCURRENCY)
     stop_event = asyncio.Event()

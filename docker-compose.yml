@@ -590,6 +590,48 @@ services:
     command: ["-m", "dealer_spider", "spider"]
     restart: unless-stopped
 
+  # ---------------------------------------------------------------------------
+  # Inventory Reaper — standalone lifecycle manager (404→SOLD)
+  # ---------------------------------------------------------------------------
+  inventory-reaper:
+    build: { context: scrapers, dockerfile: Dockerfile }
+    container_name: cardex-inventory-reaper
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://cardex:cardex_dev_only@postgres:5432/cardex
+      REAPER_BATCH_SIZE: "1000"
+      REAPER_CONCURRENCY: "50"
+      REAPER_INTERVAL_MINUTES: "60"
+      LOG_LEVEL: info
+    command: ["-m", "inventory_reaper"]
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Search Indexer — PostgreSQL → MeiliSearch watermark sync
+  # ---------------------------------------------------------------------------
+  search-indexer:
+    build: { context: scrapers, dockerfile: Dockerfile }
+    container_name: cardex-search-indexer
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      meilisearch:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgres://cardex:cardex_dev_only@postgres:5432/cardex
+      REDIS_URL: redis://redis:6379
+      MEILI_URL: http://meilisearch:7700
+      MEILI_MASTER_KEY: cardex_meili_dev_only
+      INDEXER_POLL_INTERVAL: "60"
+      INDEXER_BATCH_SIZE: "1000"
+      LOG_LEVEL: info
+    command: ["-m", "search_indexer"]
+    restart: unless-stopped
+
 volumes:
   pg_data:
   ch_data:

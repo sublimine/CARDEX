@@ -141,7 +141,7 @@ CREATE TABLE vehicles (
     ocr_confidence    NUMERIC(3,2) CHECK (ocr_confidence BETWEEN 0 AND 1),
 
     -- Marketplace / Scraper fields
-    source_url        TEXT,
+    source_url        TEXT NOT NULL CHECK (source_url ~ '^https?://[^/]+/[^/]'),
     source_country    CHAR(2),
     photo_urls        TEXT[],
     listing_status    TEXT DEFAULT 'ACTIVE' CHECK (listing_status IN ('ACTIVE','SOLD','EXPIRED','REMOVED')),
@@ -546,6 +546,11 @@ CREATE TABLE IF NOT EXISTS dealers (
     spider_last_run   TIMESTAMPTZ,
     spider_dms        TEXT,
     spider_listing_count INT DEFAULT 0,
+    proxy_tier        SMALLINT DEFAULT 0 CHECK (proxy_tier BETWEEN 0 AND 2),
+    waf_type          TEXT DEFAULT 'none',
+    last_block_at     TIMESTAMPTZ,
+    block_count       SMALLINT DEFAULT 0,
+    is_whale          BOOLEAN DEFAULT false,
     google_rating     NUMERIC(2,1),
     google_review_count INT,
     created_at        TIMESTAMPTZ DEFAULT NOW(),

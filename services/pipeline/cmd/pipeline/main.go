@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"net/url"
 	"os/signal"
 	"strings"
 	"sync"
@@ -254,6 +255,19 @@ func processMessage(ctx context.Context, rdb *redis.Client, pool *pgxpool.Pool, 
 		slog.Debug("pipeline: rejected vehicle (unrealistic year)", "year", v.Year, "source", source)
 		ackMessage(ctx, rdb, msg.ID)
 		return
+	}
+	// Reject vehicles without a direct listing URL (root domain = garbage)
+	if v.SourceURL == "" {
+		slog.Debug("pipeline: rejected vehicle (no source_url)", "source", source)
+		ackMessage(ctx, rdb, msg.ID)
+		return
+	}
+	if parsedURL, err := url.Parse(v.SourceURL); err == nil {
+		if strings.TrimRight(parsedURL.Path, "/") == "" {
+			slog.Debug("pipeline: rejected vehicle (root domain URL)", "url", v.SourceURL, "source", source)
+			ackMessage(ctx, rdb, msg.ID)
+			return
+		}
 	}
 
 	// Fingerprint: prefer VIN; fall back to URL-based hash for scraper listings

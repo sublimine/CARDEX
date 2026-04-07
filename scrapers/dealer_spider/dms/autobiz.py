@@ -105,8 +105,9 @@ def _parse(v: dict, dealer_id: str, dealer_name: str, base_url: str, country: st
                         thumb = url
                     photo_urls.append(url)
 
+        from urllib.parse import urljoin as _urljoin
         detail_path = v.get("url") or v.get("link") or v.get("detailUrl") or f"/stock/{vid}"
-        source_url = detail_path if detail_path.startswith("http") else base_url.rstrip("/") + "/" + detail_path.lstrip("/")
+        source_url = detail_path if detail_path.startswith("http") else _urljoin(base_url.rstrip("/") + "/", detail_path)
 
         return RawListing(
             platform=f"dealer_web:{dealer_id}",

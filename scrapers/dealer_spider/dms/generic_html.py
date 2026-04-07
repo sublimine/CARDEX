@@ -137,12 +137,19 @@ def _extract_microdata_vehicles(soup, dealer_id: str, dealer_name: str, base_url
         if img_el:
             thumb = img_el.get("src") or img_el.get("content") or img_el.get("href")
 
-        source_url = base_url
+        from urllib.parse import urljoin as _urljoin
+        source_url = None
         a = item.find("a")
-        if a and a.get("href", "").startswith("http"):
-            source_url = a["href"]
-        elif a and a.get("href", "").startswith("/"):
-            source_url = base_url.rstrip("/") + a["href"]
+        if a and a.get("href"):
+            href = a["href"].strip()
+            if href.startswith("http"):
+                source_url = href
+            elif href.startswith("//"):
+                source_url = "https:" + href
+            elif href.startswith("/") or (href and not href.startswith("#")):
+                source_url = _urljoin(base_url.rstrip("/") + "/", href)
+        if not source_url:
+            continue  # no direct link → skip this vehicle
 
         try:
             listing = RawListing(

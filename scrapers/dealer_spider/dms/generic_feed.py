@@ -175,8 +175,19 @@ def _parse_json(v: dict, dealer_id: str, dealer_name: str, base_url: str, countr
         vin   = _pick(v, _VIN_KEYS)
         color = _pick(v, _COLOR_KEYS)
 
-        detail_rel = _pick(v, _URL_KEYS) or f"/{vid}"
-        source_url = detail_rel if detail_rel.startswith("http") else base_url.rstrip("/") + "/" + detail_rel.lstrip("/")
+        detail_rel = _pick(v, _URL_KEYS)
+        if not detail_rel:
+            return None  # no listing URL → reject
+        from urllib.parse import urljoin as _urljoin, urlparse as _urlparse
+        if detail_rel.startswith("http"):
+            source_url = detail_rel
+        elif detail_rel.startswith("//"):
+            source_url = "https:" + detail_rel
+        else:
+            source_url = _urljoin(base_url.rstrip("/") + "/", detail_rel.lstrip("/"))
+        # Reject if resolved URL is just the root domain
+        if _urlparse(source_url).path.rstrip("/") == "":
+            return None
 
         thumb, photos = _extract_thumb(v)
 
@@ -225,11 +236,18 @@ async def _parse_xml(text: str, dealer_id: str, dealer_name: str, base_url: str,
             vin   = t(["vin", "VIN"])
             thumb = t(["image", "photo", "thumbnail", "picture"])
 
+            from urllib.parse import urljoin as _urljoin
+            detail_url = t(["url", "link", "detailUrl", "uri"])
+            if detail_url:
+                xml_source_url = detail_url if detail_url.startswith("http") else _urljoin(base_url.rstrip("/") + "/", detail_url)
+            else:
+                xml_source_url = _urljoin(base_url.rstrip("/") + "/", f"/vehicle/{vid}")
+
             yield RawListing(
                 source_platform=f"dealer_web:{dealer_id}",
                 source_country=country,
                 source_listing_id=f"xml:{dealer_id}:{vid}",
-                source_url=base_url,
+                source_url=xml_source_url,
                 make=make, model=model, year=year,
                 price_raw=price, mileage_km=mileage,
                 vin=vin, thumbnail_url=thumb,
