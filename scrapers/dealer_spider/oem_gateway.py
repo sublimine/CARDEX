@@ -49,7 +49,7 @@ from redis.asyncio import from_url as redis_from_url
 from scrapers.common.gateway_client import GatewayClient
 from scrapers.common.models import RawListing
 
-log = logging.getLogger("oem_gateway")
+log = logging.getLogger("SCRAPER")
 
 _DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://cardex:cardex@localhost:5432/cardex")
 _REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
@@ -697,13 +697,18 @@ class OEMGateway:
     async def _publish_vehicles(
         self, vehicles: list[OEMVehicle], brand: str, country: str,
     ) -> int:
-        """Reconcile and publish vehicles to the pipeline. Returns count published."""
-        assert self._pg and self._gateway
+        """Reconcile and publish vehicles directly to PostgreSQL. Returns count published."""
+        import hashlib as _hashlib
+        from datetime import datetime, timezone
+
+        assert self._pg
         published = 0
         failed = 0
         skip_no_dealer = 0
         skip_no_url = 0
         skip_no_model = 0
+        now = datetime.now(timezone.utc)
+
         for v in vehicles:
             dealer_id = await _reconcile_dealer(self._pg, v, brand, country)
             if not dealer_id:
@@ -720,39 +725,55 @@ class OEMGateway:
                 skip_no_model += 1
                 continue
 
-            try:
-                listing = RawListing(
-                    source_platform=f"oem:{brand.lower()}",
-                    source_country=country,
-                    source_url=source_url,
-                    source_listing_id=_stable_listing_id(brand, v.oem_vehicle_id or f"{v.make}{v.model}{v.year}"),
-                    make=v.make or brand,
-                    model=model_name,
-                    year=v.year,
-                    price_raw=float(v.price) if v.price else None,
-                    mileage_km=v.mileage,
-                    color=v.color or None,
-                    seller_type="DEALER",
-                    seller_name=v.dealer_name or None,
-                    photo_urls=[v.image_url] if isinstance(v.image_url, str) and v.image_url else (v.image_url if isinstance(v.image_url, list) else []),
-                    thumbnail_url=(v.image_url if isinstance(v.image_url, str) else (v.image_url[0] if isinstance(v.image_url, list) and v.image_url else None)),
-                )
-            except Exception as exc:
-                if failed < 5:
-                    log.warning("oem_gateway: RawListing validation failed: %s — vehicle_id=%s make=%s model=%s year=%s price=%s url=%s",
-                                exc, v.oem_vehicle_id, v.make, v.model, v.year, v.price, (v.source_url or "")[:80])
-                failed += 1
-                continue
+            source_id = _stable_listing_id(brand, v.oem_vehicle_id or f"{v.make}{v.model}{v.year}")
+            make = v.make or brand
+            thumb = ""
+            if isinstance(v.image_url, str):
+                thumb = v.image_url
+            elif isinstance(v.image_url, list) and v.image_url:
+                thumb = v.image_url[0] if isinstance(v.image_url[0], str) else ""
+            photo_urls = [thumb] if thumb else []
+
+            # Generate ULID-like ID and fingerprint
+            import ulid as _ulid
+            vehicle_ulid = str(_ulid.ULID())
+            fp_input = f"{source_id}:{make}:{model_name}:{v.year}:{v.price}:{v.mileage}"
+            fingerprint = _hashlib.sha256(fp_input.encode()).hexdigest()
 
             try:
-                await self._gateway.ingest(listing)
+                await self._pg.execute("""
+                    INSERT INTO vehicles (
+                        vehicle_ulid, fingerprint_sha256, source_id, source_platform,
+                        ingestion_channel, source_url, source_country,
+                        make, model, year, mileage_km, color, fuel_type,
+                        price_raw, currency_raw, seller_type, seller_name,
+                        photo_urls, thumbnail_url, thumb_url,
+                        first_seen_at, last_updated_at, lifecycle_status, listing_status
+                    ) VALUES (
+                        $1, $2, $3, $4, $5, $6, $7,
+                        $8, $9, $10, $11, $12, $13,
+                        $14, $15, $16, $17,
+                        $18, $19, $19,
+                        $20, $20, $21, $22
+                    )
+                    ON CONFLICT (fingerprint_sha256) DO UPDATE SET
+                        price_raw = EXCLUDED.price_raw,
+                        mileage_km = EXCLUDED.mileage_km,
+                        last_updated_at = EXCLUDED.last_updated_at,
+                        listing_status = EXCLUDED.listing_status
+                """,
+                    vehicle_ulid, fingerprint, source_id, f"oem:{brand.lower()}",
+                    "SCRAPER", source_url, country[:2],
+                    make, model_name, v.year, v.mileage, v.color or None, v.fuel or None,
+                    float(v.price) if v.price else None, "EUR", "DEALER", v.dealer_name or None,
+                    photo_urls, thumb,
+                    now, "INGESTED", "ACTIVE",
+                )
                 published += 1
             except Exception as exc:
-                if published + failed < 5:
-                    log.warning("oem_gateway: ingest error [%d]: %s — listing=%s %s %s url=%s",
-                                published + failed, exc,
-                                listing.make, listing.model, listing.year,
-                                listing.source_url[:80])
+                if failed < 5:
+                    log.warning("oem_gateway: DB insert failed: %s — %s %s %s",
+                                exc, make, model_name, source_url[:80])
                 failed += 1
 
         log.info("oem_gateway: %s/%s — %d vehicles, %d published, %d failed, skips: dealer=%d url=%d model=%d",
