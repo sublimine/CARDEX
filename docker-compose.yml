@@ -543,99 +543,23 @@ services:
       - clickhouse
 
   # ---------------------------------------------------------------------------
-  # Dealer Discovery (Google Maps Places API → stream:dealer_discovered)
-  # Only runs with: docker compose --profile discovery up
+  # Enrich Worker — async consumer of unenriched vehicle_index pointers
   # ---------------------------------------------------------------------------
-  dealer-discovery:
+  enrich-worker:
     build: { context: scrapers, dockerfile: Dockerfile }
-    container_name: cardex-dealer-discovery
+    container_name: cardex-enrich-worker
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     environment:
-      GOOGLE_MAPS_API_KEY: "${GOOGLE_MAPS_API_KEY:-}"
       DATABASE_URL: postgres://cardex:cardex_dev_only@postgres:5432/cardex
       REDIS_URL: redis://redis:6379
-      DISCOVERY_COUNTRIES: "DE,ES,FR,NL,BE,CH"
-      DISCOVERY_QPS: "10"
+      ENRICH_BATCH_SIZE: "50"
+      ENRICH_CONCURRENCY: "20"
       LOG_LEVEL: info
-    command: ["-m", "dealer_spider", "discover"]
-    restart: unless-stopped
-    profiles: ["discovery"]
-
-  # ---------------------------------------------------------------------------
-  # Dealer Spider (stream:dealer_discovered consumer → per-dealer inventory scrape)
-  # Runs always — consumes from stream:dealer_discovered
-  # ---------------------------------------------------------------------------
-  dealer-spider:
-    build: { context: scrapers, dockerfile: Dockerfile }
-    container_name: cardex-dealer-spider
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      gateway:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: postgres://cardex:cardex_dev_only@postgres:5432/cardex
-      REDIS_URL: redis://redis:6379
-      GATEWAY_URL: http://gateway:8080
-      GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
-      SPIDER_CONCURRENCY: "${SPIDER_CONCURRENCY:-2}"
-      PLAYWRIGHT_HEADLESS: "true"
-      LOG_LEVEL: info
-      PROXY_T0: "${PROXY_T0:-}"
-      PROXY_T1: "${PROXY_T1:-}"
-      PROXY_T2: "${PROXY_T2:-}"
-      CAPTCHA_API_KEY: "${CAPTCHA_API_KEY:-}"
-      STEALTH_THROTTLE_MIN: "${STEALTH_THROTTLE_MIN:-3.0}"
-      STEALTH_THROTTLE_MAX: "${STEALTH_THROTTLE_MAX:-7.0}"
-    command: ["-m", "dealer_spider", "spider"]
-    restart: unless-stopped
-
-  # ---------------------------------------------------------------------------
-  # OEM Gateway — centralized inventory harvest from manufacturer platforms
-  # Queries BMW/Mercedes/VW/Audi/Stellantis/Renault used-car APIs nationally
-  # ---------------------------------------------------------------------------
-  oem-gateway:
-    build: { context: scrapers, dockerfile: Dockerfile }
-    container_name: cardex-oem-gateway
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      gateway:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: postgres://cardex:cardex_dev_only@postgres:5432/cardex
-      REDIS_URL: redis://redis:6379
-      GATEWAY_URL: http://gateway:8080
-      GATEWAY_HMAC_SECRET: dev_pipeline_hmac_secret_change_in_prod
-      OEM_GATEWAY_CONCURRENCY: "3"
-      LOG_LEVEL: info
-    command: ["-m", "dealer_spider", "oem"]
-    restart: unless-stopped
-
-  # ---------------------------------------------------------------------------
-  # Inventory Reaper — standalone lifecycle manager (404→SOLD)
-  # ---------------------------------------------------------------------------
-  inventory-reaper:
-    build: { context: scrapers, dockerfile: Dockerfile }
-    container_name: cardex-inventory-reaper
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: postgres://cardex:cardex_dev_only@postgres:5432/cardex
-      REAPER_BATCH_SIZE: "1000"
-      REAPER_CONCURRENCY: "50"
-      REAPER_INTERVAL_MINUTES: "60"
-      LOG_LEVEL: info
-    command: ["-m", "inventory_reaper"]
+    command: ["-m", "enrich_worker"]
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------

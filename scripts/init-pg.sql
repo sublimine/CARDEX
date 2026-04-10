@@ -575,6 +575,116 @@ CREATE INDEX IF NOT EXISTS idx_dealers_place_id    ON dealers (place_id) WHERE p
 COMMIT;
 
 -- =============================================================================
+-- DISCOVERY CANDIDATES — Raw dealer discovery funnel (sitemap-first pipeline)
+-- =============================================================================
+-- One row per (domain | identity) heard of from any discovery source. This
+-- is the intake table. Downstream the sitemap resolver probes each candidate
+-- and only the ones with a valid sitemap are promoted into the indexer's
+-- active source registry.
+--
+-- Source layers:
+--   1  oem          — verified OEM dealer locator endpoints (e.g. BMW STOLO)
+--   2  portal       — marketplace dealer directories (AS24, mobile.de, LBC…)
+--   3  registry     — government / trade registries (SIRENE, Zefix, BOVAG…)
+--   4  osm          — OpenStreetMap Overpass shop=car*
+--   5  common_crawl — CC URL index keyword sweep per TLD
+--
+-- Sources produce either:
+--   • a domain-ful row          (portal_aggregator, common_crawl, OSM w/ website)
+--   • an identity-only row      (oem_bmw without website, SIRENE, OSM w/o website)
+-- Identity-only rows get a domain later via the DDG resolver worker.
+--
+-- MVCC policy: zero COALESCE-everything updates. Allowed mutations are
+--   (a) last_seen heartbeat on rediscovery,
+--   (b) sitemap_status + sitemap_url + sitemap_probed_at when the resolver
+--       finishes a probe,
+--   (c) domain/url fill-in once DDG resolves an identity-only row.
+-- Anything else must be an INSERT of a new row or a DELETE.
+-- =============================================================================
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS discovery_candidates (
+    id                BIGSERIAL PRIMARY KEY,
+    domain            TEXT,
+    country           CHAR(2) NOT NULL,
+    source_layer      SMALLINT NOT NULL CHECK (source_layer BETWEEN 1 AND 5),
+    source            TEXT NOT NULL,        -- e.g. 'oem:bmw', 'portal:autoscout24'
+    url               TEXT,                 -- canonical https://domain/
+
+    -- Identity fields (any source may fill)
+    name              TEXT,
+    address           TEXT,
+    city              TEXT,
+    postcode          TEXT,
+    phone             TEXT,
+    email             TEXT,
+    lat               DOUBLE PRECISION,
+    lng               DOUBLE PRECISION,
+    registry_id       TEXT,                 -- SIRET / KBO / CHE / OSM id / BMW key
+    external_refs     JSONB NOT NULL DEFAULT '{}'::jsonb,
+
+    -- Timestamps
+    first_seen        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_seen         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    -- Sitemap resolver state
+    sitemap_status    TEXT NOT NULL DEFAULT 'pending'
+                      CHECK (sitemap_status IN ('pending','probing','found','none','error','deferred')),
+    sitemap_url       TEXT,
+    sitemap_probed_at TIMESTAMPTZ,
+    sitemap_error     TEXT,
+
+    -- Indexer bridge state (sitemap_bridge worker)
+    url_regex_override TEXT,                 -- per-domain override, NULL uses universal
+    indexer_last_run   TIMESTAMPTZ,          -- claim cursor + last successful run
+    indexer_urls_seen  INT,                  -- last cycle: urls matched by regex
+    indexer_new        INT,                  -- last cycle: new rows inserted
+    indexer_gone       INT,                  -- last cycle: stale rows deleted
+    indexer_error      TEXT,
+
+    -- DDG resolver state (identity-only rows → domain)
+    ddg_attempts       SMALLINT NOT NULL DEFAULT 0,  -- increments on failed resolve
+    ddg_last_attempt   TIMESTAMPTZ,                  -- cursor + crash recovery
+    ddg_error          TEXT
+) WITH (fillfactor = 85);
+
+-- Dedup by registered domain (one candidate per physical website per country).
+-- Partial unique index so identity-only rows (domain IS NULL) can coexist.
+CREATE UNIQUE INDEX IF NOT EXISTS ux_disc_cand_domain_country
+    ON discovery_candidates (domain, country)
+    WHERE domain IS NOT NULL;
+
+-- Dedup identity-only rows by (source, registry_id, country).
+CREATE UNIQUE INDEX IF NOT EXISTS ux_disc_cand_identity
+    ON discovery_candidates (source, registry_id, country)
+    WHERE domain IS NULL AND registry_id IS NOT NULL;
+
+-- Resolver worker queue: pending candidates with a domain to probe.
+CREATE INDEX IF NOT EXISTS idx_disc_cand_resolver_queue
+    ON discovery_candidates (sitemap_status, country)
+    WHERE sitemap_status = 'pending' AND domain IS NOT NULL;
+
+-- Indexer bridge queue: found sitemaps ready (or due) for an index cycle.
+-- Sorted by indexer_last_run NULLS FIRST to prioritize never-indexed rows.
+CREATE INDEX IF NOT EXISTS idx_disc_cand_indexer_queue
+    ON discovery_candidates (indexer_last_run NULLS FIRST, first_seen)
+    WHERE sitemap_status = 'found';
+
+-- DDG resolver queue: identity-only rows still eligible for web search.
+-- Excludes rows that exhausted retry budget (ddg_attempts >= 5).
+CREATE INDEX IF NOT EXISTS idx_disc_cand_ddg_queue
+    ON discovery_candidates (ddg_last_attempt NULLS FIRST, first_seen)
+    WHERE domain IS NULL AND ddg_attempts < 5;
+
+-- Analytics indexes
+CREATE INDEX IF NOT EXISTS idx_disc_cand_country_layer
+    ON discovery_candidates (country, source_layer);
+CREATE INDEX IF NOT EXISTS idx_disc_cand_last_seen
+    ON discovery_candidates (last_seen);
+
+COMMIT;
+
+-- =============================================================================
 -- CRM SYSTEM — Full DealCar.io-level dealer CRM
 -- =============================================================================
 BEGIN;
@@ -991,5 +1101,50 @@ CREATE TABLE source_overlap_matrix (
 ) WITH (fillfactor = 90);
 
 CREATE INDEX idx_overlap_country ON source_overlap_matrix (country);
+
+-- =============================================================================
+-- VEHICLE_EVENTS (Append-only event log — zero UPDATE, zero DELETE)
+-- =============================================================================
+CREATE TABLE vehicle_events (
+    event_id          BIGSERIAL PRIMARY KEY,
+    url_hash          TEXT NOT NULL,
+    url_original      TEXT NOT NULL DEFAULT '',
+    source_domain     TEXT NOT NULL DEFAULT '',
+    country           CHAR(2) NOT NULL DEFAULT '',
+    sitemap_source    TEXT NOT NULL DEFAULT '',
+    event_type        TEXT NOT NULL CHECK (event_type IN ('SEEN','ENRICHED','GONE')),
+    titulo_modelo     TEXT,
+    precio            NUMERIC(12,2),
+    moneda            CHAR(3) DEFAULT 'EUR',
+    kilometraje       INT,
+    anio              SMALLINT,
+    thumbnail_url     TEXT,
+    ts                TIMESTAMPTZ NOT NULL DEFAULT NOW()
+) WITH (fillfactor = 100, autovacuum_enabled = false);
+
+CREATE INDEX idx_ve_hash ON vehicle_events (url_hash);
+
+-- =============================================================================
+-- VEHICLE_INDEX (Primary inventory — PG mandated, last_seen hard delete purge)
+-- =============================================================================
+CREATE TABLE vehicle_index (
+    url_hash          TEXT PRIMARY KEY,
+    url_original      TEXT NOT NULL,
+    source_domain     TEXT NOT NULL,
+    country           CHAR(2) NOT NULL,
+    sitemap_source    TEXT NOT NULL DEFAULT '',
+    titulo_modelo     TEXT,
+    precio            NUMERIC(12,2),
+    moneda            CHAR(3) DEFAULT 'EUR',
+    kilometraje       INT,
+    anio              SMALLINT,
+    thumbnail_url     TEXT,
+    last_seen         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_vi_dc ON vehicle_index (source_domain, country);
+CREATE INDEX idx_vi_ls ON vehicle_index (last_seen);
+CREATE INDEX idx_vi_country ON vehicle_index (country);
 
 COMMIT;

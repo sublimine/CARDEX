@@ -65,9 +65,6 @@ TARGET_MAP: dict[str, str] = {
     "autoscout24_ch":   "scrapers.ch.autoscout24_ch",
     "tutti":            "scrapers.ch.tutti",
     "comparis":         "scrapers.ch.comparis",
-    # Discovery / dealer spider
-    "discovery":        "scrapers.discovery.orchestrator",
-    "dealer_spider":    "scrapers.dealer_spider.spider",
 }
 
 CYCLE_WAIT = int(os.environ.get("CYCLE_WAIT_SECONDS", "3600"))

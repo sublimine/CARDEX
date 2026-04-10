@@ -2,12 +2,7 @@
 Entry point: reads SCRAPER_TARGET env var and runs the matching scraper.
 e.g. SCRAPER_TARGET=autoscout24_de runs scrapers/de/autoscout24_de.py
 
-Discovery targets:
-  discovery          — full 7-layer dealer discovery (all countries)
-  discovery_es/fr/de/nl/be/ch — single-country discovery
-
 Portal scraper targets: autoscout24_de, mobile_de, coches_net, ...
-Dealer spider:         dealer_spider
 """
 import asyncio
 import importlib
@@ -64,18 +59,11 @@ def main() -> None:
         "autoscout24_ch":   "scrapers.ch.autoscout24_ch",
         "tutti":            "scrapers.ch.tutti",
         "comparis":         "scrapers.ch.comparis",
-        # ── Dealer discovery (7-layer orchestrator) ───────────────────────────
+        # ── Discovery orchestrator + workers ─────────────────────────────────
         "discovery":        "scrapers.discovery.orchestrator",
-        "discovery_es":     "scrapers.discovery.orchestrator",
-        "discovery_fr":     "scrapers.discovery.orchestrator",
-        "discovery_de":     "scrapers.discovery.orchestrator",
-        "discovery_nl":     "scrapers.discovery.orchestrator",
-        "discovery_be":     "scrapers.discovery.orchestrator",
-        "discovery_ch":     "scrapers.discovery.orchestrator",
-        # ── Dealer website spider ─────────────────────────────────────────────
-        "dealer_spider":    "scrapers.dealer_spider.spider",
-        # ── Legacy Google Maps crawler (replaced by discovery) ────────────────
-        "google_maps":      "scrapers.google_maps.crawler",
+        "ddg_worker":       "scrapers.discovery.ddg_worker",
+        "sitemap_resolver": "scrapers.discovery.sitemap_resolver",
+        "sitemap_bridge":   "scrapers.discovery.sitemap_bridge",
     }
 
     module_path = target_map.get(target)
@@ -86,11 +74,6 @@ def main() -> None:
             file=sys.stderr,
         )
         sys.exit(1)
-
-    # Single-country discovery: inject DISCOVERY_COUNTRIES env
-    if target.startswith("discovery_") and "_" in target[len("discovery_"):]:
-        country = target.split("_", 1)[1].upper()
-        os.environ.setdefault("DISCOVERY_COUNTRIES", country)
 
     log.info("scraper.starting", target=target, module=module_path)
     mod = importlib.import_module(module_path)

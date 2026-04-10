@@ -389,6 +389,32 @@ TTL snapshot_date + INTERVAL 3 YEAR DELETE
 SETTINGS index_granularity = 8192;
 
 -- =============================================================================
+-- SITEMAP INDEX: Live vehicle pointer projection (ReplacingMergeTree)
+-- Mutations are O(1) amortized — the columnar engine collapses versions
+-- natively during background merges. Zero dead tuples. Zero WAL bloat.
+-- INSERT SEEN: is_active=1. INSERT GONE: is_active=0.
+-- Query with FINAL to get collapsed view, or use the MV below.
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS cardex.vehicle_pointers (
+    url_hash          FixedString(32),
+    url_original      String,
+    source_domain     LowCardinality(String),
+    country           LowCardinality(FixedString(2)),
+    sitemap_source    String DEFAULT '',
+    titulo_modelo     String DEFAULT '',
+    precio            Float64 DEFAULT 0,
+    moneda            LowCardinality(FixedString(3)) DEFAULT 'EUR',
+    kilometraje       UInt32 DEFAULT 0,
+    anio              UInt16 DEFAULT 0,
+    thumbnail_url     String DEFAULT '',
+    is_active         UInt8 DEFAULT 1,
+    ts                DateTime64(3) DEFAULT now64(3)
+) ENGINE = ReplacingMergeTree(ts)
+ORDER BY url_hash
+PARTITION BY country
+SETTINGS index_granularity = 8192;
+
+-- =============================================================================
 -- CENSUS: Crawl efficiency tracking (frontier learning)
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS cardex.crawl_efficiency (

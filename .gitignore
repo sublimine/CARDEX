@@ -13,3 +13,7 @@ bin/
 # JWT keys (generated locally by 'make gen-keys')
 secrets/
 *.pem
+
+# Python
+**/__pycache__/
+*.pyc
