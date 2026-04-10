@@ -456,6 +456,153 @@ def _is_sold(html: str, og_title: str) -> bool:
     return any(m in title_block for m in _SOLD_MARKERS)
 
 
+_RE_DEALERK_IMG = re.compile(
+    r"cdn\.dealerk\.fr/dealer/datafiles/vehicle/images/[^\"' )]+",
+    re.IGNORECASE,
+)
+_RE_BODY_CLASS = re.compile(
+    r'<body[^>]*\bclass\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE
+)
+
+
+def _extract_dealerk_gallery(html: str) -> list[str]:
+    """
+    MotorK / dealerk sites embed every photo as
+    `cdn.dealerk.fr/dealer/datafiles/vehicle/images/{size}/{dealer}/{hash}.jpg`.
+    The `$original$` size is the full-resolution version. We rewrite any
+    thumbnail size (0x250, 200x150, etc.) to $original$ and dedupe.
+    """
+    raw = _RE_DEALERK_IMG.findall(html)
+    seen: set[str] = set()
+    out: list[str] = []
+    for url in raw:
+        # Rewrite size segment to $original$
+        normalized = re.sub(
+            r"/dealer/datafiles/vehicle/images/[^/]+/",
+            "/dealer/datafiles/vehicle/images/$original$/",
+            url,
+        )
+        normalized = "https://" + normalized.lstrip("/")
+        if normalized not in seen:
+            seen.add(normalized)
+            out.append(normalized)
+    return out
+
+
+def _extract_dealerk_meta(html: str) -> dict[str, Any]:
+    """
+    Extract structured metadata from MotorK/dealerk body class. Pattern:
+        voitures-occasion city-X make-Y model-Z fuel-A version-B id-N out-of-stock?
+    """
+    out: dict[str, Any] = {}
+    m = _RE_BODY_CLASS.search(html)
+    if not m:
+        return out
+    classes = m.group(1).split()
+    for cls in classes:
+        if cls.startswith("make-"):
+            out["make"] = cls[5:].replace("-", " ").title()
+        elif cls.startswith("model-"):
+            out["model"] = cls[6:].replace("-", " ").title()
+        elif cls.startswith("fuel-") or cls.startswith("fuelType-"):
+            v = cls.split("-", 1)[1]
+            out["fuel_type"] = _norm_fuel(v)
+        elif cls.startswith("version-"):
+            out["variant"] = cls[8:].replace("-", " ")
+        elif cls.startswith("city-"):
+            out["city"] = cls[5:].replace("-", " ").title()
+        elif cls == "out-of-stock":
+            out["_sold"] = True
+    return out
+
+
+_RE_GALLERY_IMG = re.compile(
+    r'<img[^>]+(?:data-(?:src|lazy|original|srcset)|src)\s*=\s*["\']'
+    r'(https?://[^"\']+\.(?:jpe?g|webp|png))', re.IGNORECASE,
+)
+
+
+def _extract_all_vehicle_images(html: str, base_url: str) -> list[str]:
+    """
+    Find every image URL on the page that looks like a vehicle photo.
+    Filters out logos/icons. Used to populate gallery_urls.
+    """
+    found: list[str] = []
+    seen: set[str] = set()
+
+    # Pass 1: dealerk-specific (highest precision)
+    for u in _extract_dealerk_gallery(html):
+        if u not in seen:
+            seen.add(u)
+            found.append(u)
+
+    # Pass 2: <img src/data-src> with vehicle hint
+    for m in _RE_GALLERY_IMG.finditer(html):
+        url = m.group(1)
+        if _looks_like_logo(url):
+            continue
+        full = urljoin(base_url, url)
+        if full in seen:
+            continue
+        if _looks_like_vehicle_photo(url) or any(
+            h in url.lower() for h in ("/uploads/", "/upload/", "/medias/", "/cars/", "/vehicle")
+        ):
+            seen.add(full)
+            found.append(full)
+
+    return found[:30]  # cap at 30 photos per listing
+
+
+_RE_DESCRIPTION_BLOCK = re.compile(
+    r'<(?:div|section|article)[^>]*\bclass\s*=\s*["\'][^"\']*'
+    r'(?:vehicle-description|car-description|description|content|product-description|details)'
+    r'[^"\']*["\'][^>]*>(.*?)</(?:div|section|article)>',
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def _extract_description(html: str, jsonld_desc: str | None, og_desc: str | None) -> str | None:
+    """
+    Description extraction priority:
+      1. JSON-LD `description` field (cleanest)
+      2. og:description (clean enough)
+      3. First .description / .car-description block in HTML
+      4. First <p> in <article> or <main>
+    """
+    if jsonld_desc:
+        return _clean_text(jsonld_desc)[:1500]
+    if og_desc:
+        return _clean_text(og_desc)[:1500]
+    m = _RE_DESCRIPTION_BLOCK.search(html)
+    if m:
+        text = _clean_text(re.sub(r"<[^>]+>", " ", m.group(1)))
+        if len(text) > 30:
+            return text[:1500]
+    return None
+
+
+def _clean_text(s: str) -> str:
+    s = re.sub(r"&nbsp;|&#160;", " ", s)
+    s = re.sub(r"&amp;", "&", s)
+    s = re.sub(r"&quot;", '"', s)
+    s = re.sub(r"&#39;|&apos;", "'", s)
+    s = re.sub(r"\s+", " ", s)
+    return s.strip()
+
+
+def _clean_title(t: str) -> str:
+    """
+    Strip 'Occasion ' / 'New ' prefix and ' | Site Name' suffix.
+    Requires whitespace BOTH sides of the dash so compound words like
+    'ECO-G', 'T-Roc', 'X-Trail' are not split.
+    """
+    clean = re.sub(r"^(?:occasion|new|nuevo|gebraucht|used)\s+", "", t, flags=re.I)
+    # Suffix split: only on " | XXX$" or " — XXX$" with REQUIRED spaces both sides
+    clean = re.split(r"\s+[|–—]\s+[A-Z]", clean)[0].strip()
+    # Or on " - SiteName$" only if SiteName has no further words after
+    return clean
+
+
 def extract(html: str, url: str) -> tuple[dict[str, Any] | None, bool]:
     """
     Returns (doc, sold).
@@ -468,14 +615,20 @@ def extract(html: str, url: str) -> tuple[dict[str, Any] | None, bool]:
     og_image = meta.get("og:image", "") or meta.get("twitter:image", "")
     og_desc = meta.get("og:description", "") or meta.get("description", "")
 
+    # Sold detection: title-based (English/multilang) + dealerk body-class
     if _is_sold(html, og_title):
+        return None, True
+
+    # Dealerk fast-path: body class is structured metadata
+    dk_meta = _extract_dealerk_meta(html)
+    if dk_meta.get("_sold"):
         return None, True
 
     # JSON-LD pass first
     result = _extract_jsonld(html)
 
     # Body text scrape — fills holes left by JSON-LD
-    text = _strip_tags(html[:120_000])  # cap to first 120 KB
+    text = _strip_tags(html[:160_000])
 
     if not result.get("price_eur"):
         v = _scrape_price(text)
@@ -497,24 +650,32 @@ def extract(html: str, url: str) -> tuple[dict[str, Any] | None, bool]:
         if img:
             result["image"] = img
 
-    # Always resolve image against base URL — JSON-LD can return
-    # protocol-relative or absolute paths.
     if result.get("image"):
         result["image"] = urljoin(url, result["image"])
 
     if not result.get("title") and og_title:
         result["title"] = og_title
 
-    if not result:
+    # Merge dealerk body-class extraction (lower precedence than JSON-LD)
+    for k, v in dk_meta.items():
+        if k.startswith("_"):
+            continue
+        if not result.get(k):
+            result[k] = v
+
+    # Gallery: collect ALL vehicle images on the page
+    gallery = _extract_all_vehicle_images(html, url)
+
+    # Description (separate from variant text)
+    description = _extract_description(html, result.get("description"), og_desc)
+
+    if not result and not gallery and not description:
         return None, False
 
     # Build the Meili partial-update doc
     doc: dict[str, Any] = {}
     if t := result.get("title"):
-        # Clean the title: strip prefixes like "Occasion " and suffixes like " | Site"
-        clean = re.sub(r"^(?:occasion|new|nuevo|gebraucht|used)\s+", "", t, flags=re.I)
-        clean = re.split(r"\s*[|–—-]\s*[A-Z][^|]*$", clean)[0].strip()
-        doc["variant"] = clean[:200]
+        doc["variant"] = _clean_title(t)[:240]
     if make := result.get("make"):
         doc["make"] = str(make)[:80]
     if model := result.get("model"):
@@ -534,6 +695,13 @@ def extract(html: str, url: str) -> tuple[dict[str, Any] | None, bool]:
     if img := result.get("image"):
         doc["thumbnail_url"] = img
         doc["thumb_url"] = img
+    elif gallery:
+        doc["thumbnail_url"] = gallery[0]
+        doc["thumb_url"] = gallery[0]
+    if gallery:
+        doc["gallery_urls"] = gallery
+    if description:
+        doc["description"] = description
 
     return (doc if doc else None), False
 
