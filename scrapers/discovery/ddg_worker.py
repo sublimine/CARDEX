@@ -73,6 +73,11 @@ _ONESHOT = os.environ.get("DDG_WORKER_ONESHOT", "0") == "1"
 
 
 # ── SQL ──────────────────────────────────────────────────────────────────────
+#
+# NOTE: the retry cool-down interval is embedded as a literal INTERVAL in
+# the SQL text (not a $2 parameter) because asyncpg binds $N::interval to
+# a Python `datetime.timedelta`, not a string. Environment override still
+# works: the value is substituted at module load into the f-string.
 
 _CLAIM_SQL = f"""
 WITH claimed AS (
@@ -81,7 +86,7 @@ WITH claimed AS (
     WHERE domain IS NULL
       AND ddg_attempts < {_MAX_ATTEMPTS}
       AND (ddg_last_attempt IS NULL
-           OR ddg_last_attempt < NOW() - $2::interval)
+           OR ddg_last_attempt < NOW() - INTERVAL '{_MIN_INTERVAL}')
       AND name IS NOT NULL
     ORDER BY ddg_last_attempt NULLS FIRST, first_seen
     LIMIT $1
@@ -141,7 +146,7 @@ WHERE discovery_candidates.domain = $2
 # ── Worker ───────────────────────────────────────────────────────────────────
 
 async def _claim_batch(pool: asyncpg.Pool) -> list[asyncpg.Record]:
-    return await pool.fetch(_CLAIM_SQL, _BATCH_SIZE, _MIN_INTERVAL)
+    return await pool.fetch(_CLAIM_SQL, _BATCH_SIZE)
 
 
 async def _resolve_one(

@@ -38,7 +38,7 @@ log = logging.getLogger(__name__)
 
 _CC_INDEX_DEFAULT = os.environ.get(
     "CC_INDEX_URL",
-    "https://index.commoncrawl.org/CC-MAIN-2026-05-index",
+    "https://index.commoncrawl.org/CC-MAIN-2026-12-index",
 )
 _CC_COLLINFO_URL = "https://index.commoncrawl.org/collinfo.json"
 
@@ -122,11 +122,22 @@ class CommonCrawlSource:
 
         try:
             resp = await self._client.get(self._index_url, params=params)
-            if resp.status_code == 404:
-                return
-            resp.raise_for_status()
         except Exception as exc:
             log.debug("common_crawl request failed keyword=%s: %s", keyword, exc)
+            return
+
+        if resp.status_code == 404:
+            return  # no results for this keyword
+        if resp.status_code in (502, 503, 504):
+            # Common Crawl CDX service is frequently degraded. Log once,
+            # skip this keyword, let the rest of the orchestrator proceed.
+            log.warning(
+                "common_crawl: CDX service degraded (%d) for %s — skipping keyword",
+                resp.status_code, keyword,
+            )
+            return
+        if resp.status_code != 200:
+            log.debug("common_crawl HTTP %d keyword=%s", resp.status_code, keyword)
             return
 
         for line in resp.text.splitlines():
@@ -151,11 +162,21 @@ class CommonCrawlSource:
 
             seen.add(domain)
             yield {
-                "domain": domain,
-                "country": country,
-                "source": "common_crawl",
-                "url": f"https://{domain}/",
-                "keyword": keyword,
+                "domain":       domain,
+                "country":      country,
+                "source_layer": 5,
+                "source":       "common_crawl",
+                "url":          f"https://{domain}/",
+                "name":         None,
+                "address":      None,
+                "city":         None,
+                "postcode":     None,
+                "phone":        None,
+                "email":        None,
+                "lat":          None,
+                "lng":          None,
+                "registry_id":  None,
+                "external_refs": {"keyword": keyword},
             }
 
     async def _throttle(self) -> None:

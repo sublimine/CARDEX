@@ -68,23 +68,33 @@ _SKIP_DOMAINS = frozenset({
 
 
 # Portal configuration — profile-URL and website-URL regexes per site.
+#
+# Reality check 2026-04-10: most portal dealer directories are either
+# hallucinated URLs (404) or Cloudflare-gated (403). Only AutoScout24 DE
+# publishes a reachable public dealer directory. The rest are commented
+# out with the observed HTTP status — if a portal later opens up or we
+# get a residential proxy, uncomment and re-verify.
+#
+# Verified 2026-04-10:
+#   AS24 DE  → 200 (/haendler/ OK)
+#   AS24 ES  → 404 (path does not exist)
+#   AS24 FR  → 404 (no public dealer directory)
+#   AS24 NL  → 404
+#   AS24 BE  → 404
+#   AS24 CH  → 403 (Cloudflare)
+#   mobile.de → 403
+#   LeBonCoin → 403
+#   Coches.net → 403
+#   Marktplaats → 404
+#   2dehands → 404
+
 PORTALS: dict[str, dict[str, Any]] = {
     "autoscout24": {
         "directories": {
             "DE": "https://www.autoscout24.de/haendler/",
-            "ES": "https://www.autoscout24.es/concesionarios/",
-            "FR": "https://www.autoscout24.fr/concessionnaires/",
-            "NL": "https://www.autoscout24.nl/dealers/",
-            "BE": "https://www.autoscout24.be/fr/concessionnaires/",
-            "CH": "https://www.autoscout24.ch/de/haendler/",
         },
         "domain": {
             "DE": "https://www.autoscout24.de",
-            "ES": "https://www.autoscout24.es",
-            "FR": "https://www.autoscout24.fr",
-            "NL": "https://www.autoscout24.nl",
-            "BE": "https://www.autoscout24.be",
-            "CH": "https://www.autoscout24.ch",
         },
         "max_pages": 500,
         "profile_re": re.compile(
@@ -105,74 +115,15 @@ PORTALS: dict[str, dict[str, Any]] = {
             ),
         ],
     },
-    "mobile_de": {
-        "directories": {"DE": "https://www.mobile.de/haendler/"},
-        "domain": {"DE": "https://www.mobile.de"},
-        "max_pages": 500,
-        "profile_re": re.compile(r'href="(/haendler/[^"?#]+)"', re.I),
-        "website_re": [
-            re.compile(
-                r'href="(https?://(?!(?:www\.)?mobile\.de)[^"]+)"[^>]*>\s*'
-                r'(?:Website|Homepage|Webseite)',
-                re.I,
-            ),
-            re.compile(r'"url"\s*:\s*"(https?://(?!(?:www\.)?mobile\.de)[^"]+)"'),
-        ],
-    },
-    "leboncoin": {
-        "directories": {"FR": "https://www.leboncoin.fr/boutiques/voitures/"},
-        "domain": {"FR": "https://www.leboncoin.fr"},
-        "max_pages": 300,
-        "profile_re": re.compile(r'href="(/boutique/[^"?#]+)"', re.I),
-        "website_re": [
-            re.compile(
-                r'href="(https?://(?!(?:www\.)?leboncoin)[^"]+)"[^>]*>\s*'
-                r'(?:Site\s*web|Visiter|Voir\s*le\s*site)',
-                re.I,
-            ),
-            re.compile(r'"website"\s*:\s*"(https?://[^"]+)"'),
-        ],
-    },
-    "coches_net": {
-        "directories": {"ES": "https://www.coches.net/concesionarios/"},
-        "domain": {"ES": "https://www.coches.net"},
-        "max_pages": 200,
-        "profile_re": re.compile(r'href="(/concesionarios?/[^"?#]+\.htm)"', re.I),
-        "website_re": [
-            re.compile(
-                r'href="(https?://(?!(?:www\.)?coches\.net)[^"]+)"[^>]*>\s*'
-                r'(?:Web|Sitio|P[áa]gina|Visitar)',
-                re.I,
-            ),
-            re.compile(r'"url"\s*:\s*"(https?://(?!(?:www\.)?coches\.net)[^"]+)"'),
-        ],
-    },
-    "marktplaats": {
-        "directories": {"NL": "https://www.marktplaats.nl/verkopers/autos/"},
-        "domain": {"NL": "https://www.marktplaats.nl"},
-        "max_pages": 200,
-        "profile_re": re.compile(r'href="(/verkopers?/[^"?#]+)"', re.I),
-        "website_re": [
-            re.compile(
-                r'href="(https?://(?!(?:www\.)?marktplaats)[^"]+)"[^>]*>\s*'
-                r'(?:Website|Bekijk|Bezoek)',
-                re.I,
-            ),
-        ],
-    },
-    "2dehands": {
-        "directories": {"BE": "https://www.2dehands.be/verkopers/autos/"},
-        "domain": {"BE": "https://www.2dehands.be"},
-        "max_pages": 200,
-        "profile_re": re.compile(r'href="(/verkopers?/[^"?#]+)"', re.I),
-        "website_re": [
-            re.compile(
-                r'href="(https?://(?!(?:www\.)?2dehands)[^"]+)"[^>]*>\s*'
-                r'(?:Website|Bekijk|Bezoek)',
-                re.I,
-            ),
-        ],
-    },
+    # The following portals are blocked (403) or 404 from a residential
+    # client connection. Left commented-out for reference; re-enable only
+    # after verifying the directory endpoint is reachable again.
+    #
+    # "mobile_de"   : mobile.de/haendler                  HTTP 403
+    # "leboncoin"   : leboncoin.fr/boutiques/voitures     HTTP 403
+    # "coches_net"  : coches.net/concesionarios           HTTP 403 (Cloudflare)
+    # "marktplaats" : marktplaats.nl/verkopers/autos      HTTP 404
+    # "2dehands"    : 2dehands.be/verkopers/autos         HTTP 404
 }
 
 
@@ -326,17 +277,21 @@ class PortalAggregatorSource:
         lat, lng = _extract_coords(html)
 
         return {
-            "domain": domain,
-            "country": country,
-            "source": f"portal:{portal}",
-            "url": website,
-            "name": name,
-            "address": addr,
-            "city": city,
-            "postcode": postcode,
-            "phone": phone,
-            "lat": lat,
-            "lng": lng,
+            "domain":       domain,
+            "country":      country,
+            "source_layer": 2,
+            "source":       f"portal:{portal}",
+            "url":          website,
+            "name":         name,
+            "address":      addr,
+            "city":         city,
+            "postcode":     postcode,
+            "phone":        phone,
+            "email":        None,
+            "lat":          lat,
+            "lng":          lng,
+            "registry_id":  None,
+            "external_refs": {},
         }
 
 

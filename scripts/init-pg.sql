@@ -480,10 +480,13 @@ COMMIT;
 -- =============================================================================
 BEGIN;
 
+-- NOTE: crm_vehicle_ulid is a soft reference to crm_vehicles(crm_vehicle_ulid)
+-- that is intentionally NOT enforced as a FK here because crm_vehicles is
+-- defined later in this file. FK integrity is maintained at the app level.
 CREATE TABLE IF NOT EXISTS publishing_listings (
     pub_ulid          TEXT PRIMARY KEY,
     entity_ulid       TEXT NOT NULL REFERENCES entities(entity_ulid) ON DELETE CASCADE,
-    crm_vehicle_ulid  TEXT NOT NULL REFERENCES crm_vehicles(crm_vehicle_ulid) ON DELETE CASCADE,
+    crm_vehicle_ulid  TEXT NOT NULL,
     platform          TEXT NOT NULL CHECK (platform IN (
                           'AUTOSCOUT24','WALLAPOP','COCHES_NET','MOBILE_DE',
                           'MARKTPLAATS','LACENTRALE','MILANUNCIOS','MANUAL')),
@@ -557,12 +560,7 @@ CREATE TABLE IF NOT EXISTS dealers (
     google_review_count INT,
     created_at        TIMESTAMPTZ DEFAULT NOW(),
     updated_at        TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE NULLS NOT DISTINCT (
-        COALESCE(place_id, ''),
-        COALESCE(registry_id, ''),
-        name,
-        country
-    )
+    UNIQUE NULLS NOT DISTINCT (place_id, registry_id, name, country)
 ) WITH (fillfactor = 80);
 
 CREATE INDEX IF NOT EXISTS idx_dealers_country     ON dealers (country);

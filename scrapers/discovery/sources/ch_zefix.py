@@ -3,13 +3,15 @@ Zefix — Switzerland's central commercial register.
 
 Zefix is maintained by the Swiss Federal Office of Justice (EJPD/BJ) and
 indexes every company registered in any of the 26 cantonal commercial
-registers. The public REST API lives at:
+registers. The REST API lives at:
 
     https://www.zefix.admin.ch/ZefixPublicREST/
 
-It exposes a JSON company-search endpoint that accepts a name fragment,
-canton filter, and deleted-firms toggle. No authentication, no rate limit
-beyond normal politeness.
+**Authentication**: as of 2026, the PublicREST endpoint requires HTTP
+Basic auth. The previous open-public access was discontinued. To enable
+this source set `ZEFIX_USER` and `ZEFIX_PASS` in the environment
+(free account, register at zefix.ch). When credentials are absent the
+source skips gracefully — the rest of the pipeline proceeds normally.
 
 Zefix does not index companies by NOGA activity code in the public search,
 so we do a per-canton × per-keyword sweep and filter by a car-trade lexicon
@@ -37,6 +39,8 @@ _ZEFIX_BASE = os.environ.get(
     "https://www.zefix.admin.ch/ZefixPublicREST/api/v1",
 )
 _SEARCH_URL = f"{_ZEFIX_BASE}/company/search"
+_ZEFIX_USER = os.environ.get("ZEFIX_USER", "")
+_ZEFIX_PASS = os.environ.get("ZEFIX_PASS", "")
 
 # 26 Swiss cantons — ISO 3166-2:CH codes.
 _CANTONS: tuple[str, ...] = (
@@ -68,9 +72,15 @@ class ZefixSource:
 
     def __init__(self, client: httpx.AsyncClient):
         self._client = client
+        self._auth = (_ZEFIX_USER, _ZEFIX_PASS) if _ZEFIX_USER and _ZEFIX_PASS else None
 
     async def discover(self, country: str = "CH") -> AsyncIterator[dict]:
         if country != "CH":
+            return
+        if not self._auth:
+            log.info(
+                "zefix: skipping — set ZEFIX_USER and ZEFIX_PASS to enable this source",
+            )
             return
 
         seen_uids: set[str] = set()
@@ -102,6 +112,7 @@ class ZefixSource:
                     _SEARCH_URL,
                     json=payload,
                     headers={"Accept": "application/json"},
+                    auth=self._auth,
                     timeout=20.0,
                 )
             except Exception as exc:

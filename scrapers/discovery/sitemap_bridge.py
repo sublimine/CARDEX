@@ -128,12 +128,23 @@ _VEHICLE_PATH_KEYWORDS = (
     "vehicle", "vehicles", "car", "cars", "stock", "inventory", "listing",
 )
 
-# ID signature: either a 5+ digit run anywhere after the keyword path
-# (covers /…-123456, /…/123456, /…-id_12345, …-A4-2020-156789km, etc.),
-# or a known listing-id query parameter. Numeric-5 is the single most
-# common signal across all EU dealer CMS products.
-_ID_SIGNATURE = (
-    r"\d{5,}"
+# Listing-identity signatures AFTER the keyword. A URL qualifies as an
+# individual listing (rather than a category/home/blog page) when ANY of:
+#
+#   1. A path segment contains 2+ hyphens  — slug pattern common to
+#      WordPress-based dealer sites (Autobiz, Autentia, WP Car Manager,
+#      and generic WooCommerce). Example: /vehicule/fiesta-1-0-ecoboost-85-active
+#      Category pages are short and hyphen-poor (/coches/audi/a4/), so a
+#      2-hyphen threshold cleanly separates them.
+#
+#   2. A 5+ digit numeric run  — covers dealer CMS that embed listing
+#      IDs in the URL: /gebrauchtwagen/audi-a4-123456, /vehicle/78910.
+#
+#   3. A known listing-id query parameter  — OEM/portal-style URLs:
+#      ?productId=, ?vehicleId=, ?carId=, ?stockId=, etc.
+_LISTING_SIGNATURE = (
+    r"-[^/?#]*-[^/?#]*"                    # segment with 2+ hyphens
+    r"|\d{5,}"                             # 5+ digit run
     r"|[?&](?:productId|vehicleId|carId|stockId|listingId|adId|"
     r"Angebotsnr|annonce[_-]?id|ref|reference)=\w+"
 )
@@ -142,10 +153,10 @@ _KW_GROUP = "|".join(re.escape(k) for k in _VEHICLE_PATH_KEYWORDS)
 
 # Positive match: vehicle-path keyword at the START of a path segment
 # (either a full segment or a compound segment like `coches-ocasion`,
-# `pkw-angebote`, `gebrauchtwagen-detail`) AND an id signature anywhere
-# after it in the URL.
+# `pkw-angebote`, `gebrauchtwagen-detail`) AND a listing signature
+# anywhere after it in the URL.
 UNIVERSAL_VEHICLE_URL_REGEX_SRC = (
-    rf"(?i)(?:^|/)(?:{_KW_GROUP})(?:[/_\-]|$).*?(?:{_ID_SIGNATURE})"
+    rf"(?i)(?:^|/)(?:{_KW_GROUP})(?:[/_\-]|$)[^?#]*?(?:{_LISTING_SIGNATURE})"
 )
 
 # Compile once at module load. The sealed _index_source expects a regex
@@ -168,14 +179,19 @@ def resolve_url_regex(
 
 # ── SQL ──────────────────────────────────────────────────────────────────────
 
-_CLAIM_SQL_BASE = """
+# NOTE: min_interval is embedded as a literal INTERVAL in the SQL text
+# (not a parameter) because asyncpg binds $N::interval to a Python
+# datetime.timedelta, not a string. Environment override still works —
+# substituted at module load into the f-string below.
+
+_CLAIM_SQL_BASE = f"""
 WITH claimed AS (
     SELECT id
     FROM discovery_candidates
     WHERE sitemap_status = 'found'
       AND (indexer_last_run IS NULL
-           OR indexer_last_run < NOW() - $2::interval)
-      {country_filter}
+           OR indexer_last_run < NOW() - INTERVAL '{_MIN_INTERVAL}')
+      {{country_filter}}
     ORDER BY indexer_last_run NULLS FIRST, first_seen
     LIMIT $1
     FOR UPDATE SKIP LOCKED
@@ -207,7 +223,7 @@ WHERE id = $1
 def _build_claim_sql() -> str:
     if _COUNTRIES_FILTER:
         return _CLAIM_SQL_BASE.format(
-            country_filter="AND country = ANY($3::text[])",
+            country_filter="AND country = ANY($2::text[])",
         )
     return _CLAIM_SQL_BASE.format(country_filter="")
 
@@ -215,10 +231,8 @@ def _build_claim_sql() -> str:
 async def _claim_batch(pool: asyncpg.Pool) -> list[asyncpg.Record]:
     sql = _build_claim_sql()
     if _COUNTRIES_FILTER:
-        return await pool.fetch(
-            sql, _BATCH_SIZE, _MIN_INTERVAL, list(_COUNTRIES_FILTER),
-        )
-    return await pool.fetch(sql, _BATCH_SIZE, _MIN_INTERVAL)
+        return await pool.fetch(sql, _BATCH_SIZE, list(_COUNTRIES_FILTER))
+    return await pool.fetch(sql, _BATCH_SIZE)
 
 
 async def _finalize(

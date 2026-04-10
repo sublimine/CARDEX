@@ -123,20 +123,29 @@ def _parse_dealer(d: dict, country: str) -> dict | None:
     website = _normalize(website)
     domain = _domain(website)
 
+    # Stable identifier: prefer the buNo key (outlet-level, e.g. "00085_2"),
+    # fall back to the distributionPartnerId (company-level, e.g. "00085").
+    registry_id = key or dist_id or None
+
     return {
-        "domain": domain,
-        "country": country,
-        "source": "oem:bmw",
-        "url": website,
-        "name": name,
-        "city": d.get("city") or None,
-        "postcode": d.get("postalCode") or None,
-        "address": d.get("street") or attrs.get("street") or None,
-        "phone": d.get("phone") or attrs.get("phone") or None,
-        "lat": lat,
-        "lng": lng,
-        "oem_key": key or None,
-        "oem_partner_id": dist_id or None,
+        "domain":       domain,
+        "country":      country,
+        "source_layer": 1,
+        "source":       "oem:bmw",
+        "url":          website,
+        "name":         name,
+        "address":      d.get("street") or attrs.get("street") or None,
+        "city":         d.get("city") or None,
+        "postcode":     d.get("postalCode") or None,
+        "phone":        d.get("phone") or attrs.get("phone") or None,
+        "email":        None,
+        "lat":          lat,
+        "lng":          lng,
+        "registry_id":  registry_id,
+        "external_refs": {
+            "oem_key":        key or None,
+            "oem_partner_id": dist_id or None,
+        },
     }
 
 
