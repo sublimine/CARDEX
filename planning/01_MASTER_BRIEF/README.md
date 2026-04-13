@@ -1,9 +1,21 @@
-# 01 — Master Brief
+# 01_MASTER_BRIEF
 
-Contiene la definición canónica del proyecto CARDEX: misión, alcance geográfico (DE/FR/ES/BE/NL/CH),
-modelo de negocio índice-puntero, y principios rectores de operación.
+Brief institucional autoritativo de CARDEX. Fuente de verdad del proyecto.
 
-Incluye criterios de éxito cuantificables por fase, restricciones absolutas (legalidad, presupuesto),
-y el glosario de términos institucionales usados en toda la documentación.
+## Documentos
 
-Referencia base para todos los documentos posteriores. Ninguna decisión de diseño contradice este brief.
+| Documento | Descripción |
+|---|---|
+| `00_MASTER_BRIEF.md` | Misión, modelo arquitectónico, cobertura, geografía, restricciones absolutas |
+| `01_PRINCIPLES.md` | Cinco principios (R1-R5) con implicaciones operacionales detalladas |
+| `02_SUCCESS_CRITERIA.md` | Criterios cuantitativos verificables por fase + estándares de calidad |
+
+## Política de modificación
+
+Estos documentos son AUTORITATIVOS. Cualquier modificación requiere:
+1. Justificación explícita del cambio
+2. Evaluación de impacto en documentos dependientes (02-07)
+3. Actualización del CHANGELOG en cada documento afectado
+4. Aprobación del operador (Salman)
+
+Las divergencias en implementación frente a estos documentos deben documentarse explícitamente como excepciones razonadas.
