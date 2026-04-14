@@ -1,0 +1,26 @@
+{
+  "dealers": [
+    {
+      "id": "DE-HYU-401",
+      "name": "Hyundai Berlin Mitte",
+      "address": {
+        "street": "Kurfürstendamm 10",
+        "postalCode": "10707",
+        "city": "Berlin",
+        "countryCode": "DE"
+      },
+      "phone": "+49 30 40000001"
+    },
+    {
+      "dealerCode": "DE-KIA-402",
+      "name": "Kia Berlin Zentrum",
+      "address": {
+        "street": "Torstraße 5",
+        "zipCode": "10119",
+        "city": "Berlin",
+        "countryCode": "DE"
+      }
+    }
+  ],
+  "total": 2
+}
