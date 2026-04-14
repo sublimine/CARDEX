@@ -67,6 +67,11 @@ type Config struct {
 	// Default: false
 	SkipFamilyH bool
 
+	// SkipFamilyI, when true, bypasses Familia I (inspection & certification) entirely.
+	// Useful when external API rate limits for Open Data endpoints need to be preserved.
+	// Default: false
+	SkipFamilyI bool
+
 	// SkipBrowser, when true, skips browser (Playwright) initialisation.
 	// All browser-dependent sub-techniques (F.2, G.FR.1, H.VWG) will be silently
 	// skipped. Useful in CI environments without Playwright installed.
@@ -115,6 +120,10 @@ func LoadFromEnv() (*Config, error) {
 
 	if os.Getenv("DISCOVERY_SKIP_FAMILY_H") == "true" {
 		c.SkipFamilyH = true
+	}
+
+	if os.Getenv("DISCOVERY_SKIP_FAMILY_I") == "true" {
+		c.SkipFamilyI = true
 	}
 
 	if os.Getenv("DISCOVERY_SKIP_BROWSER") == "true" {
