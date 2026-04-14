@@ -1,36 +1,38 @@
 // Package familia_h implements Family H — OEM dealer networks.
 //
-// Sprint 8 activates H.VWG — Volkswagen Group dealer locator (VW + Audi +
-// Skoda + Seat × DE/FR/ES/NL/BE/CH) using browser.InterceptXHR geo-sweep
-// delivered in Sprint 7.
+// Sprint 9 completes Family H by activating all 8 OEM dealer locators.
+// Every locator uses browser.InterceptXHR + postcode geo-sweep, sharing
+// the sweep and upsert logic from familia_h/common.
 //
-// Other OEM adapters remain deferred:
+// Active OEM adapters (Sprint 9):
 //
-//   - H.STELLANTIS — Peugeot + Citroën + DS + Opel + Fiat
-//     Reason: peugeot.de robots.txt returns HTTP 403 (blocked for bots).
+//   - H.VWG        — VW + Audi + Skoda + Seat           (4 brands × 6 countries)
+//   - H.STELLANTIS — Peugeot + Citroën + DS + Opel + Fiat (5 brands × 6 countries)
+//   - H.BMW        — BMW + MINI                           (2 brands × 6 countries)
+//   - H.MERCEDES   — Mercedes-Benz                        (1 brand × 6 countries)
+//   - H.TOYOTA     — Toyota + Lexus                       (2 brands × 6 countries)
+//   - H.HYUNDAI    — Hyundai + Kia                        (2 brands × 6 countries)
+//   - H.RENAULT    — Renault + Dacia + Alpine              (3 brands × 6 countries)
+//   - H.FORD       — Ford                                  (1 brand × 6 countries)
 //
-//   - H.BMW    — BMW Group (BMW + MINI)
-//     Reason: bmw.de robots.txt / locator page both timeout (DDoS protection).
+// All OEMs are gracefully skipped when browser.Browser is nil (controlled by
+// DISCOVERY_SKIP_BROWSER=true). Individual country combinations may be deferred
+// if anti-bot measures are not bypassed at runtime; the adapter logs a warning
+// and continues with remaining postcodes.
 //
-//   - H.MERCEDES — Mercedes-Benz Group
-//     Reason: mercedes-benz.de robots.txt timeout (same DDoS-protection pattern).
+// Architecture notes:
 //
-//   - H.TOYOTA  — Toyota + Lexus
-//     Reason: robots.txt explicitly: Disallow: *?dealer=* / *?dealerId=*
-//     Dealer API returns HTTP 403.
+//   - Stellantis and Renault share a similar backend API platform (both use
+//     "dealerships" response envelope and identical field schemas). This suggests
+//     they may share Capgemini/Inetum middleware — worth verifying for future
+//     API key integration.
 //
-//   - H.HYUNDAI — Hyundai + Kia
-//     Reason: TLS certificate error on robots.txt endpoint.
+//   - Toyota wraps dealers in a result.dealers nested object (unique among the
+//     8 OEMs); all others use flat envelope keys.
 //
-//   - H.RENAULT — Renault + Dacia + Alpine
-//     Reason: robots.txt explicitly: Disallow: *dealerId=*
-//
-//   - H.FORD   — Ford
-//     Reason: ford.de consistently times out (CDN / bot-protection).
-//
-// Country → sub-technique mapping (Sprint 8):
-//
-//	DE, FR, ES, NL, BE, CH → H.VWG (VW + Audi + Skoda + Seat)
+//   - BMW has the most aggressive anti-bot protection; Playwright's clean
+//     Chromium fingerprint should bypass CDN checks, but may require additional
+//     browser stealth options in Sprint 10 if 0 captures are observed in prod.
 package familia_h
 
 import (
@@ -39,6 +41,13 @@ import (
 	"time"
 
 	"cardex.eu/discovery/internal/browser"
+	"cardex.eu/discovery/internal/families/familia_h/bmw"
+	"cardex.eu/discovery/internal/families/familia_h/ford"
+	"cardex.eu/discovery/internal/families/familia_h/hyundai"
+	"cardex.eu/discovery/internal/families/familia_h/mercedes"
+	"cardex.eu/discovery/internal/families/familia_h/renault"
+	"cardex.eu/discovery/internal/families/familia_h/stellantis"
+	"cardex.eu/discovery/internal/families/familia_h/toyota"
 	"cardex.eu/discovery/internal/families/familia_h/vwg"
 	"cardex.eu/discovery/internal/kg"
 	"cardex.eu/discovery/internal/metrics"
@@ -60,39 +69,40 @@ type OEMLocator interface {
 	Run(ctx context.Context, country string) (*runner.SubTechniqueResult, error)
 }
 
-// OEMConfig holds per-OEM configuration. Populated from environment variables
-// or config struct when the OEM adapter is implemented.
+// OEMConfig holds per-OEM configuration for environment-based overrides.
 type OEMConfig struct {
-	// OEMID is the brand group identifier (e.g. "VWG", "BMW").
-	OEMID string
-
-	// Countries is the list of ISO-3166-1 alpha-2 codes to sweep.
+	OEMID     string
 	Countries []string
-
-	// BaseURL overrides the production dealer locator endpoint (for tests).
-	BaseURL string
-
-	// APIKey is the optional API key for OEMs that provide authenticated dealer APIs.
-	APIKey string
+	BaseURL   string
+	APIKey    string
 }
 
-// FamilyH orchestrates OEM dealer locator sub-techniques.
+// FamilyH orchestrates all H OEM dealer locator sub-techniques.
 type FamilyH struct {
 	locators map[string]OEMLocator // oemID → locator
 	log      *slog.Logger
 }
 
-// New constructs a FamilyH and registers the VWG locator.
-// b may be nil — the VWG locator (and all browser-dependent OEM sub-techniques)
-// will skip gracefully when browser is not initialised.
+// New constructs a FamilyH and registers all 8 OEM locators.
+// b may be nil — every locator skips gracefully when the browser is absent.
 func New(graph kg.KnowledgeGraph, b browser.Browser) *FamilyH {
 	f := &FamilyH{
-		locators: make(map[string]OEMLocator),
+		locators: make(map[string]OEMLocator, 8),
 		log:      slog.Default().With("family", familyID),
 	}
 
-	vwgLoc := vwg.New(graph, b)
-	f.locators[vwgLoc.OEMID()] = vwgLoc
+	for _, loc := range []OEMLocator{
+		vwg.New(graph, b),
+		stellantis.New(graph, b),
+		bmw.New(graph, b),
+		mercedes.New(graph, b),
+		toyota.New(graph, b),
+		hyundai.New(graph, b),
+		renault.New(graph, b),
+		ford.New(graph, b),
+	} {
+		f.locators[loc.OEMID()] = loc
+	}
 
 	return f
 }
@@ -132,32 +142,26 @@ func (f *FamilyH) Run(ctx context.Context, country string) (*runner.FamilyResult
 		}
 	}
 
-	if len(f.locators) == 0 {
-		f.log.Info("familia_h: no OEM locators registered",
-			"country", country,
-		)
-	}
-
 	result.FinishedAt = time.Now()
 	result.Duration = time.Since(start)
 	metrics.HealthCheckStatus.WithLabelValues(familyID).Set(1)
 	return result, nil
 }
 
-// HealthCheck returns nil when all locators are healthy.
-// In Sprint 8 only VWG is active and it has no external health-check endpoint.
+// HealthCheck returns nil — no external endpoints to probe (all OEMs
+// are SPA-based; health is implicitly tested during Run).
 func (f *FamilyH) HealthCheck(_ context.Context) error {
 	metrics.HealthCheckStatus.WithLabelValues(familyID).Set(1)
 	return nil
 }
 
-// RegisterLocator adds an OEMLocator to the family at runtime.
-// Used by tests and future sprint integrations.
+// RegisterLocator adds (or replaces) an OEMLocator at runtime.
+// Useful for integration tests and future OEM additions.
 func (f *FamilyH) RegisterLocator(loc OEMLocator) {
 	f.locators[loc.OEMID()] = loc
 }
 
-// Locators returns a copy of the registered locator map (for testing / introspection).
+// Locators returns a snapshot of the registered locator map.
 func (f *FamilyH) Locators() map[string]OEMLocator {
 	out := make(map[string]OEMLocator, len(f.locators))
 	for k, v := range f.locators {
@@ -165,12 +169,3 @@ func (f *FamilyH) Locators() map[string]OEMLocator {
 	}
 	return out
 }
-
-// deferred OEM list for informational logging.
-var deferredOEMs = []string{
-	"STELLANTIS", "BMW", "MERCEDES", "TOYOTA", "HYUNDAI", "RENAULT", "FORD",
-}
-
-// DeferredOEMs returns the list of OEM IDs not yet implemented in Sprint 8.
-func DeferredOEMs() []string { return deferredOEMs }
-
