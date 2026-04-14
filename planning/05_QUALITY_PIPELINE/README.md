@@ -38,3 +38,10 @@ Especificación institucional del pipeline de calidad de datos V01-V20. Es el ga
 
 ## Principio de operación
 Gateway sin excepciones: un `vehicle_record` que falle cualquier validator BLOCKING no se publica. Entra a dead-letter queue (DLQ) o manual review queue (MRQ) según `NextAction`. Los validators WARNING producen flags que pueden desencadenar revisión pero no bloquean la publicación. Los validators INFO solo loguean.
+
+## TTL y freshness
+
+El pipeline de calidad asigna el TTL inicial del registro según el tier de refresh activo en el momento de la ingesta. Los valores de TTL por tier están definidos en `06_ARCHITECTURE/12_REFRESH_STRATEGY.md`:
+- HOT: 45 min | WARM: 3 h | COLD: 12 h | PUSH: 24 h
+
+Un registro que expira su TTL sin ser confirmado transiciona a `EXPIRED` automáticamente y vuelve a pasar por el quality gateway si el Refresh Worker obtiene una nueva versión del source.

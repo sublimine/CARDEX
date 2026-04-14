@@ -18,6 +18,7 @@ Todos los documentos: **DOCUMENTADO** — 2026-04-14
 | 09 | [09_SECURITY_HARDENING.md](09_SECURITY_HARDENING.md) | Debian CIS, UFW, SSH Ed25519, fail2ban, TLS, auditd, AppArmor, secrets rotation | DOCUMENTADO |
 | 10 | [10_SCALING_PATH.md](10_SCALING_PATH.md) | Fases S0-S3 con criterios cuantitativos, GPU path para NLG, K8s endgame | DOCUMENTADO |
 | 11 | [11_CI_CD_PIPELINE.md](11_CI_CD_PIPELINE.md) | Forgejo self-hosted, illegal-pattern linter blocker, test gates, deploy in-place | DOCUMENTADO |
+| 12 | [12_REFRESH_STRATEGY.md](12_REFRESH_STRATEGY.md) | Política asimétrica de refresh por tier (HOT/WARM/COLD/PUSH/ON-DEMAND), SLA freshness, budget req/min | DOCUMENTADO |
 
 ## Principios rectores de arquitectura
 

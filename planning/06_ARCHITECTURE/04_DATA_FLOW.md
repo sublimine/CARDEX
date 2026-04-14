@@ -272,3 +272,17 @@ sequenceDiagram
 | SSE fan-out | <100ms | NATS pub-sub latencia negligible |
 | **Total (sin NLG)** | **~1-8 horas** | Desde dealer descubierto hasta ACTIVE sin descripción |
 | **Total (con NLG)** | **Siguiente noche** | Descripción generada en la próxima ventana nocturna |
+
+---
+
+## Refresh asimétrico
+
+El data flow descrito arriba opera sobre un baseline de refresh 4-8h (Tier COLD). En operación real el sistema aplica **refresh tiered** según la actividad del buyer (ver `12_REFRESH_STRATEGY.md` para spec completa):
+
+- **Tier HOT** (5-15 min): vehículos con buyer activity reciente (view/save/open en las últimas 2h)
+- **Tier WARM** (1-2h): vehículos nuevos en el índice (<7d) o con ≥5 views en 30 días
+- **Tier COLD** (4-8h): long-tail sin actividad reciente
+- **Tier PUSH** (<1 min): dealers con Edge client — el dealer empuja cambios directamente
+- **Tier ON-DEMAND** (<8s): re-fetch sincrónico al abrir un listing si `last_confirmed_at ≥ 30 min`
+
+El Refresh Scheduler re-evalúa el tier de cada vehículo cada 15 min basándose en eventos de buyer activity emitidos a NATS `cardex.buyer.activity`. La invalidación vía SSE fan-out se mantiene idéntica cross-tier (<100ms propagación al terminal del comprador).
