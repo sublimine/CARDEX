@@ -251,6 +251,43 @@ return &ValidationResult{Status: SKIP, NextAction: DEFER}
 - **Template demasiado corto:** descripción de solo "2019 BMW 3er" sin detalles. Mitigación: el template fallback requiere mínimo 3 campos; si solo hay make+model+year, la descripción se genera pero recibe baja confianza.
 - **Idioma incorrecto:** dealer CH registrado en DE pero con listing en FR. Mitigación: si `LanguageDetected` del listing difiere del idioma por defecto del país, usar `LanguageDetected`.
 
+## AI Act Compliance (Art. 50 Reg. UE 2024/1689)
+
+A partir del 2 de agosto de 2026, el AI Act exige que el contenido generado por IA sea identificable como tal mediante metadata machine-readable + disclosure visible al usuario final.
+
+### Implementación obligatoria
+
+1. **Metadata structured en el output del NLG**:
+```json
+{
+  "description_text": "...",
+  "ai_disclosure": {
+    "generated_by_ai": true,
+    "model_name": "Llama-3-8B-Instruct",
+    "model_provider": "Meta",
+    "model_quantization": "Q4_K_M",
+    "training_cutoff_date": "2023-12",
+    "generation_timestamp": "ISO 8601",
+    "facts_source": "structured_data_from_validators_V01_to_V18",
+    "post_edit": "LanguageTool grammar check + hallucination filter"
+  }
+}
+```
+
+2. **Persistencia en `vehicle_record`**: añadir columna `description_ai_disclosure_json TEXT NOT NULL DEFAULT '{}'` en migration v4.
+
+3. **Disclosure UI obligatorio en terminal buyer**: badge "Descripción generada por IA" visible junto al texto. Tooltip con detalles del modelo bajo demanda.
+
+4. **Auditoría externa**: cada release del modelo NLG documentada en `planning/00_AUDIT/AI_ACT/model_release_log.md` (crear).
+
+5. **Hallucination rate metric**: exposición vía Prometheus `cardex_nlg_hallucination_rate{model_version}` con alerta si >0.5%.
+
+### Excepción
+Si el operador decide migrar a un modelo proprietary (ej. API third-party con disclosure equivalente), el campo `model_name` se actualiza pero la estructura del disclosure se mantiene.
+
+### Penalty
+Incumplimiento Art. 50: hasta 6% del turnover anual o €30M (lo mayor). Aplica desde 2 agosto 2026.
+
 ## Iteración futura
 - Soporte de generación multilingüe simultánea (una descripción por idioma por registro)
 - Fine-tuning de Llama 3 8B sobre corpus de descripciones de vehículos profesionales verificadas
