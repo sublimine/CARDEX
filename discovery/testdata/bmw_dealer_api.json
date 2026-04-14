@@ -1,0 +1,25 @@
+{
+  "dealers": [
+    {
+      "id": "DE-BMW-101",
+      "name": "BMW München Zentrum",
+      "address": {
+        "street": "Maximilianstr. 1",
+        "postalCode": "80539",
+        "city": "München",
+        "countryCode": "DE"
+      },
+      "phone": "+49 89 10000001"
+    },
+    {
+      "code": "DE-BMW-102",
+      "name": "BMW München Nord",
+      "address": {
+        "street": "Schleißheimer Str. 100",
+        "zipCode": "80797",
+        "city": "München",
+        "countryCode": "DE"
+      }
+    }
+  ]
+}
