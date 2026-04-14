@@ -1,0 +1,26 @@
+{
+  "dealerships": [
+    {
+      "id": "FR-REN-501",
+      "name": "Renault Paris 15ème",
+      "address": {
+        "street": "15 Rue Lecourbe",
+        "postalCode": "75015",
+        "city": "Paris",
+        "countryCode": "FR"
+      },
+      "phone": "+33 1 50 00 00 01"
+    },
+    {
+      "siteId": "FR-DAC-502",
+      "name": "Dacia Paris Sud",
+      "address": {
+        "street": "17 Rue Lecourbe",
+        "zipCode": "75015",
+        "city": "Paris",
+        "country": "FR"
+      }
+    }
+  ],
+  "total": 2
+}
