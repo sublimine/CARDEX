@@ -138,13 +138,15 @@ Cada decisión de stack se justifica en tres dimensiones:
 
 | | Decisión | Alternativas consideradas |
 |---|---|---|
-| **Elección** | **Playwright (Go bindings via playwright-go) — CardexBot/1.0, cero evasión** | Puppeteer, Selenium, playwright-stealth, Splash |
+| **Elección** | **Playwright (`github.com/playwright-community/playwright-go` v0.5700.1) — CardexBot/1.0, cero evasión** | Puppeteer, Selenium, playwright-stealth, Splash |
 
 **Justificación:**
-- **playwright-go:** bindings Go oficialmente soportados para Playwright (Microsoft); Chromium headless sin UI
-- **Transparent UA:** `CardexBot/1.0` configurado explícitamente; sin modificación de headers TLS, sin fingerprintig evasion
-- **XHR interception:** `page.Route()` para capturar llamadas XHR/Fetch de inventario — E07 usa esto para APIs no documentadas
-- **Network throttling:** configurable para simular comportamiento normal (no flood)
+- **playwright-community/playwright-go:** bindings Go oficiales para Playwright (Microsoft); Chromium headless sin UI; sincronizado con Playwright v1.49
+- **Transparent UA:** `CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu)` configurado explícitamente; sin modificación de headers TLS, sin fingerprinting evasion
+- **XHR interception:** `page.OnResponse()` + `page.Route()` para capturar llamadas XHR/Fetch de inventario — E07 usa esto para APIs no documentadas, E13 para VLM screenshots
+- **Rate limiter SQLite:** `HostRateLimiter` con persistencia SQLite — state survives process restarts, per-host interval enforcement
+- **Módulo reutilizable:** `discovery/internal/browser` — `FetchHTML`, `Screenshot`, `InterceptXHR` con pool de contextos, semáforo de concurrencia, resource blocking por glob patterns
+- **VLM foundation (E13):** `Screenshot()` proporciona imagen full-page como entrada al pipeline ONNX VLM (Innovation #2, Sprint 8+)
 - **Razón de descarte playwright-stealth:** diseñado para evadir detección — prohibido explícitamente en CARDEX (ILLEGAL_CODE_PURGE_PLAN.md)
 - **Razón de descarte Splash:** proyecto poco activo; basado en Lua+Python; overhead adicional sin ventaja
 
