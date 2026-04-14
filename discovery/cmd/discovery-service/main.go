@@ -1,10 +1,11 @@
-// discovery-service — Phase 2 Sprint 6
+// discovery-service — Phase 2 Sprint 8
 //
 // Startup sequence:
 //  1. Load config from environment variables.
 //  2. Open (or create) the SQLite Knowledge Graph and apply migrations.
-//  3. Start Prometheus /metrics HTTP endpoint.
-//  4. Run a discovery cycle for each configured country (Family A, B, C, F, G, H).
+//  3. Initialise the Playwright browser (unless DISCOVERY_SKIP_BROWSER=true).
+//  4. Start Prometheus /metrics HTTP endpoint.
+//  5. Run a discovery cycle for each configured country (Family A, B, C, F, G, H).
 //     (continuous daemon mode blocks until SIGINT/SIGTERM)
 //
 // Environment variables:
@@ -18,6 +19,7 @@
 //   KBO_PASS                  KBO Open Data portal password     (required for BE)
 //   DISCOVERY_ONE_SHOT        "true" = run once and exit        (default: false)
 //   DISCOVERY_COUNTRIES       comma-separated ISO-3166-1 codes  (default: FR)
+//   DISCOVERY_SKIP_BROWSER    "true" = skip Playwright init     (default: false)
 //   DISCOVERY_SKIP_FAMILY_C   "true" = skip Family C entirely   (default: false)
 //   DISCOVERY_SKIP_FAMILY_F   "true" = skip Family F entirely   (default: false)
 //   DISCOVERY_SKIP_FAMILY_G   "true" = skip Family G entirely   (default: false)
@@ -36,6 +38,7 @@ import (
 
 	_ "modernc.org/sqlite" // SQLite driver — pure Go, no CGO
 
+	"cardex.eu/discovery/internal/browser"
 	"cardex.eu/discovery/internal/config"
 	"cardex.eu/discovery/internal/db"
 	"cardex.eu/discovery/internal/families/familia_a"
@@ -70,6 +73,31 @@ func main() {
 	log.Info("knowledge graph opened", "path", cfg.DBPath)
 
 	graph := kg.NewSQLiteGraph(database)
+
+	// ── Browser (Playwright) ───────────────────────────────────────────────
+	// browser.Browser is nil when SkipBrowser=true or Playwright unavailable.
+	// All browser-dependent sub-techniques (F.2 AutoScout24, G.FR.1 Mobilians,
+	// H.VWG) skip gracefully when b is nil.
+	var b browser.Browser
+	if !cfg.SkipBrowser {
+		pb, browserErr := browser.New(nil, database)
+		if browserErr != nil {
+			log.Warn("browser init failed; F.2/G.FR.1/H.VWG will be skipped",
+				"err", browserErr,
+				"hint", "set DISCOVERY_SKIP_BROWSER=true to suppress this warning",
+			)
+		} else {
+			b = pb
+			defer func() {
+				if err := b.Close(); err != nil {
+					log.Warn("browser close error", "err", err)
+				}
+			}()
+			log.Info("browser initialised (Playwright/Chromium)")
+		}
+	} else {
+		log.Info("browser skipped (DISCOVERY_SKIP_BROWSER=true)")
+	}
 
 	// ── Prometheus metrics server ──────────────────────────────────────────
 	mux := http.NewServeMux()
@@ -110,13 +138,13 @@ func main() {
 		families = append(families, familia_c.New(graph, database))
 	}
 	if !cfg.SkipFamilyF {
-		families = append(families, familia_f.New(graph, database))
+		families = append(families, familia_f.New(graph, database, b))
 	}
 	if !cfg.SkipFamilyG {
-		families = append(families, familia_g.New(graph))
+		families = append(families, familia_g.New(graph, b))
 	}
 	if !cfg.SkipFamilyH {
-		families = append(families, familia_h.New(graph))
+		families = append(families, familia_h.New(graph, b))
 	}
 
 	for _, country := range cfg.Countries {

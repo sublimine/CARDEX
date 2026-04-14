@@ -64,9 +64,14 @@ type Config struct {
 	SkipFamilyG bool
 
 	// SkipFamilyH, when true, bypasses Familia H (OEM dealer networks) entirely.
-	// In Sprint 6 all OEMs are deferred, so this flag is a no-op until Sprint 7+.
 	// Default: false
 	SkipFamilyH bool
+
+	// SkipBrowser, when true, skips browser (Playwright) initialisation.
+	// All browser-dependent sub-techniques (F.2, G.FR.1, H.VWG) will be silently
+	// skipped. Useful in CI environments without Playwright installed.
+	// Default: false
+	SkipBrowser bool
 }
 
 // LoadFromEnv builds a Config from environment variables.
@@ -110,6 +115,10 @@ func LoadFromEnv() (*Config, error) {
 
 	if os.Getenv("DISCOVERY_SKIP_FAMILY_H") == "true" {
 		c.SkipFamilyH = true
+	}
+
+	if os.Getenv("DISCOVERY_SKIP_BROWSER") == "true" {
+		c.SkipBrowser = true
 	}
 
 	if raw := os.Getenv("DISCOVERY_COUNTRIES"); raw != "" {

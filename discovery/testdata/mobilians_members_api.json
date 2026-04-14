@@ -1,0 +1,25 @@
+{
+  "hits": [
+    {
+      "id": "MOB-001",
+      "title": "Garage Dupont SA",
+      "street": "12 Rue de la République",
+      "zip": "75001",
+      "city": "Paris",
+      "phone": "01 23 45 67 89",
+      "email": "contact@garage-dupont.fr",
+      "url": "https://www.garage-dupont.fr"
+    },
+    {
+      "id": "MOB-002",
+      "title": "Auto Centre Lyon",
+      "street": "55 Avenue des Frères Lumière",
+      "zip": "69008",
+      "city": "Lyon",
+      "phone": "04 78 12 34 56",
+      "email": "info@autocentrelyon.fr",
+      "url": "https://www.autocentrelyon.fr"
+    }
+  ],
+  "total": 2
+}
