@@ -5,6 +5,43 @@
 
 ---
 
+## Estado de ejecución
+
+**PURGA COMPLETADA — 2026-04-14**
+
+| Archivo | Acción | Estado |
+|---|---|---|
+| `scrapers/dealer_spider/stealth_http.py` | DELETED | PURGED |
+| `scrapers/dealer_spider/stealth_browser.py` | DELETED | PURGED |
+| `scrapers/common/proxy_manager.py` | DELETED | PURGED |
+| `scrapers/dealer_spider/recon_oem.py` | DELETED (UA spoofing + stealth patches) | PURGED |
+| `ingestion/cmd/api_crawler/main.go` | REWRITTEN — StealthEngine→CardexHTTPClient, UA→CardexBot | PURGED |
+| `ingestion/cmd/sitemap_vacuum/main.go` | UA fixed Googlebot→CardexBot | PURGED |
+| `scrapers/common/base_scraper.py` | ProxyManager import/usage removed | PURGED |
+| `scrapers/common/http_client.py` | ProxyManager import/param removed | PURGED |
+| `scrapers/common/playwright_client.py` | ProxyManager import/param removed | PURGED |
+| `scrapers/dealer_spider/spider.py` | Stealth imports replaced with httpx+CardexBot; StealthBrowser→PlaywrightClient | PURGED |
+| `scrapers/dealer_spider/discovery.py` | Chrome UAs and _USER_AGENTS pool replaced with CardexBot | PURGED |
+| `scrapers/dealer_spider/oem_gateway.py` | Chrome UA replaced with CardexBot | PURGED |
+| `services/imgproxy/cmd/imgproxy/main.go` | Chrome UA block replaced with CardexBot | PURGED |
+| `vision/cmd/worker/main.go` | Chrome UA replaced with CardexBot | PURGED |
+| `scrapers/requirements.txt` | `curl_cffi==0.7.4` removed | PURGED |
+| `ingestion/requirements.txt` | `curl_cffi==0.5.10` removed | PURGED |
+| `scrapers/discovery/enricher.py` | CARDEX/1.0→CardexBot/1.0 | PURGED |
+| `services/scheduler/cmd/scheduler/main.go` | CARDEX/1.0→CardexBot/1.0 | PURGED |
+| `services/census/pkg/sources/*.go` (7 files) | CardexCensus/1.0→CardexBot/1.0 | PURGED |
+
+**CI blocker activado:** `.forgejo/workflows/illegal-pattern-scan.yml`
+
+**Verificacion post-purga:**
+- CS-0-1 (zero illegal patterns): 0 matches — PASS
+- CS-0-2 (zero blacklisted deps): 0 matches — PASS
+- CS-0-3 (CardexBot UA only): PASS — all variable references resolve to CardexBot
+- CS-0-4 (robots.txt compliance): PASS — RobotsChecker wired
+- CS-0-5 (CI workflow): PASS — `.forgejo/workflows/illegal-pattern-scan.yml`
+
+---
+
 ## Contexto
 
 SPEC V6 declara ilegales bajo el régimen institucional CARDEX las siguientes técnicas:
