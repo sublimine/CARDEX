@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="de">
+<head><title>Händler Verzeichnis - AutoScout24</title></head>
+<body>
+<nav><a href="/">Home</a> &rsaquo; <a href="/haendler/">Händler</a></nav>
+
+<!-- Dealer listing cards (rendered by Next.js SPA) -->
+<main id="main-target">
+  <section data-testid="dealer-listing">
+    <article>
+      <a href="/haendler/autohaus-muster-gmbh-10001/" data-testid="dealer-card-link">
+        Autohaus Muster GmbH
+      </a>
+    </article>
+    <article>
+      <a href="/haendler/berliner-automobile-ag-10002/" data-testid="dealer-card-link">
+        Berliner Automobile AG
+      </a>
+    </article>
+    <article>
+      <a href="/haendler/premium-cars-berlin-10003/" data-testid="dealer-card-link">
+        Premium Cars Berlin
+      </a>
+    </article>
+  </section>
+
+  <!-- Pagination -->
+  <nav aria-label="pagination">
+    <a href="/haendler/?currentPage=2" rel="next">Seite 2</a>
+  </nav>
+</main>
+
+<!-- Meta links that should be filtered out -->
+<a href="/haendler/suche/">Händler suchen</a>
+<a href="/haendler/hinzufuegen/">Händler hinzufügen</a>
+<a href="/haendler/">Alle Händler</a>
+</body>
+</html>

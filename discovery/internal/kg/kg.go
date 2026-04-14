@@ -43,6 +43,7 @@ const (
 	// ── Family F — aggregator marketplace identifiers ────────────────────────
 	IdentifierMobileDeID      IdentifierType = "MOBILE_DE_ID"       // mobile.de dealer profile slug/ID
 	IdentifierLaCentraleProID IdentifierType = "LACENTRALE_PRO_ID"  // La Centrale garage/pro directory ID
+	IdentifierAutoScout24ID   IdentifierType = "AUTOSCOUT24_ID"     // AutoScout24 dealer account ID (pan-EU)
 
 	// ── Family G — sectoral association member identifiers ───────────────────
 	IdentifierMemberBOVAG   IdentifierType = "MEMBER_BOVAG"    // BOVAG (NL) member number or slug

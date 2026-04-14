@@ -1,24 +1,25 @@
 // Package familia_f implements Family F — Aggregator dealer directories.
 //
-// Sprint 5 delivers two sub-techniques out of four planned:
+// Sprint 8 activates F.2 AutoScout24 using the Playwright browser module
+// delivered in Sprint 7.
 //
-//   - F.1 — mobile.de Händlersuche (DE)  ← implemented
-//   - F.4 — La Centrale Pro directory (FR) ← implemented
+// Active sub-techniques:
 //
-// Deferred to Sprint 6 (dedicated Playwright/browser sprint):
-//   - F.2 — AutoScout24 dealer-search (pan-EU: DE/FR/ES/BE/NL/CH)
-//     Reason: main dealer listing (/haendler/) is a client-side SPA with no
-//     static JSON payload; country-specific paths (/garages/, /autobedrijven/)
-//     are also blocked in AutoScout24's robots.txt.
+//   - F.1 — mobile.de Händlersuche (DE)
+//   - F.2 — AutoScout24 dealer-search (pan-EU: DE/FR/NL/BE/CH)
+//   - F.4 — La Centrale Pro directory (FR)
+//
+// Deferred:
 //   - F.3 — Autocasion dealer directory (ES)
-//     Reason: site is behind a Cloudflare challenge that blocks all cloud-IP
-//     access; robots.txt could not be fetched to verify crawl permissions.
+//     Reason: Cloudflare challenge blocks all cloud-IP access.
+//   - F.2 for ES: robots.txt connection error; path status unknown.
 //
 // Country → sub-technique mapping:
 //
-//	DE → F.1 (mobile.de)
-//	FR → F.4 (La Centrale)
-//	ES, BE, NL, CH → no Sprint 5 source; logged and skipped
+//	DE → F.1 (mobile.de) + F.2 (AutoScout24)
+//	FR → F.4 (La Centrale) + F.2 (AutoScout24)
+//	NL, BE, CH → F.2 (AutoScout24) only
+//	ES → no source; logged and skipped
 package familia_f
 
 import (
@@ -28,6 +29,8 @@ import (
 	"log/slog"
 	"time"
 
+	"cardex.eu/discovery/internal/browser"
+	"cardex.eu/discovery/internal/families/familia_f/autoscout24"
 	"cardex.eu/discovery/internal/families/familia_f/lacentrale"
 	"cardex.eu/discovery/internal/families/familia_f/mobilede"
 	"cardex.eu/discovery/internal/kg"
@@ -37,22 +40,24 @@ import (
 
 const (
 	familyID   = "F"
-	familyName = "Aggregator dealer directories (mobile.de + La Centrale Pro)"
+	familyName = "Aggregator dealer directories (mobile.de + AutoScout24 + La Centrale Pro)"
 )
 
 // FamilyF orchestrates the implemented F sub-techniques per country.
 type FamilyF struct {
-	mobilede   *mobilede.MobileDe
-	lacentrale *lacentrale.LaCentrale
-	log        *slog.Logger
+	mobilede    *mobilede.MobileDe
+	lacentrale  *lacentrale.LaCentrale
+	autoscout24 *autoscout24.AutoScout24
+	log         *slog.Logger
 }
 
 // New constructs a FamilyF with production endpoints.
-func New(graph kg.KnowledgeGraph, _ *sql.DB) *FamilyF {
+func New(graph kg.KnowledgeGraph, _ *sql.DB, b browser.Browser) *FamilyF {
 	return &FamilyF{
-		mobilede:   mobilede.New(graph),
-		lacentrale: lacentrale.New(graph),
-		log:        slog.Default().With("family", familyID),
+		mobilede:    mobilede.New(graph),
+		lacentrale:  lacentrale.New(graph),
+		autoscout24: autoscout24.New(graph, b),
+		log:         slog.Default().With("family", familyID),
 	}
 }
 
@@ -63,7 +68,6 @@ func (f *FamilyF) FamilyID() string { return familyID }
 func (f *FamilyF) Name() string { return familyName }
 
 // Run executes the configured F sub-techniques for the given country.
-// Countries without a Sprint 5 source (ES, BE, NL, CH) return an empty result.
 func (f *FamilyF) Run(ctx context.Context, country string) (*runner.FamilyResult, error) {
 	start := time.Now()
 	result := &runner.FamilyResult{
@@ -72,36 +76,40 @@ func (f *FamilyF) Run(ctx context.Context, country string) (*runner.FamilyResult
 		StartedAt: start,
 	}
 
+	collect := func(res *runner.SubTechniqueResult, err error, label string) {
+		if res != nil {
+			result.SubResults = append(result.SubResults, res)
+			result.TotalNew += res.Discovered
+			result.TotalErrors += res.Errors
+		}
+		if err != nil {
+			result.TotalErrors++
+			f.log.Warn("familia_f: sub-technique error", "sub", label, "err", err)
+		}
+	}
+
 	switch country {
 	case "DE":
-		res, err := f.mobilede.Run(ctx)
-		if res != nil {
-			result.SubResults = append(result.SubResults, res)
-			result.TotalNew += res.Discovered
-			result.TotalErrors += res.Errors
-		}
-		if err != nil {
-			result.TotalErrors++
-			f.log.Warn("familia_f: mobile.de error", "err", err)
-		}
+		res1, err1 := f.mobilede.Run(ctx)
+		collect(res1, err1, "mobile.de")
+		res2, err2 := f.autoscout24.Run(ctx, country)
+		collect(res2, err2, "autoscout24")
 
 	case "FR":
-		res, err := f.lacentrale.Run(ctx)
-		if res != nil {
-			result.SubResults = append(result.SubResults, res)
-			result.TotalNew += res.Discovered
-			result.TotalErrors += res.Errors
-		}
-		if err != nil {
-			result.TotalErrors++
-			f.log.Warn("familia_f: La Centrale error", "err", err)
-		}
+		res1, err1 := f.lacentrale.Run(ctx)
+		collect(res1, err1, "lacentrale")
+		res2, err2 := f.autoscout24.Run(ctx, country)
+		collect(res2, err2, "autoscout24")
 
-	case "ES", "BE", "NL", "CH":
-		// F.2 (AutoScout24) and F.3 (Autocasion) deferred to Sprint 6.
-		f.log.Info("familia_f: no Sprint-5 source configured",
+	case "NL", "BE", "CH":
+		res, err := f.autoscout24.Run(ctx, country)
+		collect(res, err, "autoscout24")
+
+	case "ES":
+		// F.2 ES deferred: robots.txt inaccessible. F.3 Autocasion blocked by Cloudflare.
+		f.log.Info("familia_f: no source configured for ES",
 			"country", country,
-			"deferred", "F.2 AutoScout24 (SPA), F.3 Autocasion (Cloudflare)",
+			"deferred", "F.2 AutoScout24 ES (robots.txt error), F.3 Autocasion (Cloudflare)",
 		)
 
 	default:
