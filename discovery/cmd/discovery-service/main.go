@@ -1,0 +1,108 @@
+// discovery-service — Phase 2 Sprint 1
+//
+// Startup sequence:
+//  1. Load config from environment variables.
+//  2. Open (or create) the SQLite Knowledge Graph and apply migrations.
+//  3. Start Prometheus /metrics HTTP endpoint.
+//  4. Run a single discovery cycle over the configured countries.
+//     (continuous daemon mode is a future sprint concern)
+//
+// Environment variables:
+//   DISCOVERY_DB_PATH    path to SQLite KG file   (default: ./data/discovery.db)
+//   METRICS_ADDR         HTTP bind address         (default: :9090)
+//   INSEE_TOKEN          INSEE Sirene Bearer token  (required for FR)
+//   INSEE_RATE_PER_MIN   Sirene req/min ceiling     (default: 25)
+//   DISCOVERY_ONE_SHOT   "true" = run once and exit (default: false)
+package main
+
+import (
+	"context"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	_ "modernc.org/sqlite" // SQLite driver — pure Go, no CGO
+
+	"cardex.eu/discovery/internal/config"
+	"cardex.eu/discovery/internal/db"
+	"cardex.eu/discovery/internal/families/familia_a"
+	"cardex.eu/discovery/internal/kg"
+	_ "cardex.eu/discovery/internal/metrics" // register Prometheus metrics
+)
+
+func main() {
+	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
+
+	cfg, err := config.LoadFromEnv()
+	if err != nil {
+		log.Error("config load failed", "err", err)
+		os.Exit(1)
+	}
+
+	// ── Database ───────────────────────────────────────────────────────────
+	database, err := db.Open(cfg.DBPath)
+	if err != nil {
+		log.Error("db.Open failed", "path", cfg.DBPath, "err", err)
+		os.Exit(1)
+	}
+	defer database.Close()
+	log.Info("knowledge graph opened", "path", cfg.DBPath)
+
+	graph := kg.NewSQLiteGraph(database)
+
+	// ── Prometheus metrics server ──────────────────────────────────────────
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.Handler())
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
+	srv := &http.Server{Addr: cfg.MetricsAddr, Handler: mux}
+	go func() {
+		log.Info("metrics server listening", "addr", cfg.MetricsAddr)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Error("metrics server error", "err", err)
+		}
+	}()
+
+	// ── Discovery run ──────────────────────────────────────────────────────
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	familyA := familia_a.New(graph, cfg.InseeToken, cfg.InseeRatePerMin)
+
+	for _, country := range cfg.Countries {
+		log.Info("starting discovery cycle", "family", familyA.FamilyID(), "country", country)
+		result, err := familyA.Run(ctx, country)
+		if err != nil {
+			log.Error("discovery cycle error",
+				"family", familyA.FamilyID(),
+				"country", country,
+				"err", err,
+			)
+			continue
+		}
+		log.Info("discovery cycle complete",
+			"family", familyA.FamilyID(),
+			"country", country,
+			"new", result.TotalNew,
+			"errors", result.TotalErrors,
+			"duration_s", result.Duration.Seconds(),
+		)
+	}
+
+	if !cfg.OneShot {
+		// Daemon mode: block until signal.
+		log.Info("one-shot run complete; set DISCOVERY_ONE_SHOT=true to exit after run")
+		<-ctx.Done()
+	}
+
+	log.Info("discovery service shutting down")
+	_ = srv.Shutdown(context.Background())
+}
