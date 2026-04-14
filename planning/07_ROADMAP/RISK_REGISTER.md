@@ -234,3 +234,63 @@
 | R-L-04 | Legal — precio incorrecto | BAJA | MEDIO | BAJA | Abierto |
 | R-M-02 | Mercado — dealers bloquean bot | BAJA | ALTO | BAJA | Abierto |
 | R-M-03 | Mercado — NPS bajo crónico | BAJA | CRÍTICO | BAJA | Abierto |
+
+---
+
+## Riesgos Adicionales (Mega Audit 2026-04-14)
+
+### Regulatory (R-R)
+| ID | Riesgo | Prob | Impacto | Horizonte | Mitigación |
+|---|---|---|---|---|---|
+| R-R-01 | AI Act Art. 50 transparency NLG | HIGH | HIGH | <3mo (ago 2026) | Implementar disclosure structured (V19 spec actualizado) |
+| R-R-02 | DSA classification "online platform" | MED | MED | 3-12mo | Trusted flaggers + transparency reports antes del lanzamiento |
+| R-R-03 | EU Battery Passport NLG datos batería EVs | MED | MED | 12-24mo | Integrar WLTP + battery health en V18 vocabulary |
+| R-R-04 | Swiss nDSG enforcement endurece | LOW | MED | indefinido | CH módulo aislado, exit option documentada |
+| R-R-05 | Sustainable Products Regulation ESG vehicle | LOW | LOW | 24-36mo | Monitor only |
+
+### Cybersecurity (R-C)
+| ID | Riesgo | Prob | Impacto | Horizonte | Mitigación |
+|---|---|---|---|---|---|
+| R-C-01 | Go supply chain attack (BoltDB-style) | MED | EXISTENTIAL | continuous | govulncheck en CI + go.sum frozen + dependabot |
+| R-C-02 | Hetzner VPS brute force / DDoS | MED | HIGH | continuous | fail2ban + ufw + Caddy rate limiting |
+| R-C-03 | SSH key compromise | LOW | EXISTENTIAL | continuous | Ed25519 + hardware key + 2FA agent forwarding only |
+| R-C-04 | Caddy/Go stdlib zero-day | LOW | HIGH | continuous | unattended-upgrades + monitoreo CVE feeds |
+| R-C-05 | Credential leakage via git push accidental | MED | MED | continuous | gitleaks pre-commit hook + .gitignore patterns + envrc |
+| R-C-06 | Phishing al operador único | MED | HIGH | continuous | hardware key 2FA + email filter strict |
+
+### Adversarial (R-A)
+| ID | Riesgo | Prob | Impacto | Horizonte | Mitigación |
+|---|---|---|---|---|---|
+| R-A-01 | Scout24 cease-and-desist mes 1 | MED | EXISTENTIAL | <3mo | Pre-launch ToS deep audit + latencia diferida + cap % por source |
+| R-A-02 | DPA national complaint by ZDK/BOVAG | LOW | HIGH | 3-12mo | Outreach proactivo + transparency report inicial |
+| R-A-03 | Trademark "CARDEX" registered by competitor | LOW | MED | <12mo | Evidencia de uso temprano via commits públicos |
+| R-A-04 | Disgruntled dealer leaks Edge data | LOW | MED | post-launch | Edge client logs + audit trail dealer-side |
+| R-A-05 | Ransomware si CARDEX critical infra | LOW | EXISTENTIAL | 12-36mo | Backups offline encrypted + IR plan |
+
+### Dependency (R-D)
+| ID | Riesgo | Prob | Impacto | Horizonte | Mitigación |
+|---|---|---|---|---|---|
+| R-D-01 | Common Crawl cambia license | LOW | HIGH | indefinido | Snapshot local + monitor announcements |
+| R-D-02 | OSM cambia ODbL | VERY LOW | HIGH | indefinido | OSM data dump local |
+| R-D-03 | crt.sh shutdown | LOW | MED | continuous | Alternative: Censys CT, sslmate.com |
+| R-D-04 | Hetzner ban web crawling | LOW | HIGH | continuous | Multi-VPS opcional Scaleway/IONOS |
+| R-D-05 | goquery/colly deprecated | LOW | LOW | indefinido | net/html stdlib fallback |
+| R-D-06 | Wayback Machine forced removal | LOW | LOW | continuous | Local snapshots de URLs críticas |
+
+### AI-specific (R-AI)
+| ID | Riesgo | Prob | Impacto | Horizonte | Mitigación |
+|---|---|---|---|---|---|
+| R-AI-01 | Llama 3 license restricción 700M MAU | MED | HIGH | 12-18mo | Migration plan a Mistral 7B + Phi-3 documentado |
+| R-AI-02 | NLG output libelous → lawsuit | MED | MED | post-launch | Hallucination filter + manual review queue para outliers |
+| R-AI-03 | Hallucinated specs → buyer claim | MED | HIGH | post-launch | V20 coherence check + disclosure AI Act |
+| R-AI-04 | AI Act bias disclosure | MED | MED | 6-12mo | Bias audit periódico + dataset balanceado |
+| R-AI-05 | Vision classifier mis-categorization | LOW | LOW | post-launch | V05 cross-validation con V02/V03/V04 |
+
+### Existential (R-X)
+| ID | Riesgo | Prob | Impacto | Horizonte | Mitigación |
+|---|---|---|---|---|---|
+| R-X-01 | OEM direct-to-consumer elimina dealer | LOW | EXISTENTIAL | 5-10yr | Pivot a fleet/B2B intelligence si tendencia se materializa |
+| R-X-02 | EU mandates interoperable vehicle data standards | MED | HIGH | 3-7yr | First-mover advantage en data quality + relationships |
+| R-X-03 | Autonomous vehicle services replace ownership 2035+ | LOW | EXISTENTIAL | 10+yr | Pivot a fleet management |
+| R-X-04 | Indicata/JATO M&A acquires sources | MED | HIGH | 12-36mo | Network effect via Edge dealer onboarding |
+| R-X-05 | VC competitor copies model con €100M | MED | HIGH | 12-24mo | Ejecución ≠ replicable; relación dealer es moat real |
