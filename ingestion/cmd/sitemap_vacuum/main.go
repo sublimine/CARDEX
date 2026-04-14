@@ -55,7 +55,7 @@ func main() {
 		slog.Error("fallo creando request", "error", err)
 		os.Exit(1)
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)")
+	req.Header.Set("User-Agent", "CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu)")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -75,7 +75,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	slog.Info("índice interceptado", "total_sitemaps", len(index.Sitemaps))
+	slog.Info("índice escaneado", "total_sitemaps", len(index.Sitemaps))
 
 	totalExtracted := 0
 	for _, sm := range index.Sitemaps {
@@ -117,7 +117,7 @@ func extractURLs(sitemapURL string) []string {
 		slog.Warn("fallo creando request", "url", sitemapURL, "error", err)
 		return nil
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)")
+	req.Header.Set("User-Agent", "CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu)")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

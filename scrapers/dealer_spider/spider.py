@@ -10,7 +10,7 @@ Dealer Web Spider — orchestrator for extracting inventory from dealer websites
 Flow:
   1. Reads from stream:dealer_discovered (populated by DiscoveryOrchestrator)
   2. For each dealer with a website_url:
-     a. Fetches homepage HTML via StealthClient (curl_cffi TLS impersonation)
+     a. Fetches homepage HTML via CardexBot HTTP client (httpx, honest UA)
      b. Tries vectors 1-2 (pure HTTP, no browser)
      c. If vectors 1-2 yield nothing, escalates to Playwright (vectors 3-4)
      d. Listings are published to the standard pipeline via GatewayClient
@@ -34,10 +34,11 @@ import logging
 import os
 import re
 import time
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 from urllib.parse import urljoin, urlparse
 
 import asyncpg
+import httpx
 from redis.asyncio import from_url as redis_from_url
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
@@ -60,26 +61,48 @@ from scrapers.dealer_spider.dms.schema_org import (
 )
 from scrapers.dealer_spider.dms.generic_feed import _parse_json as _parse_vehicle_json
 
-# Stealth HTTP layer — curl_cffi with TLS impersonation
-from scrapers.dealer_spider.stealth_http import (
-    StealthClient, StealthHTTPHelper, StealthBlockError,
-    detect_waf_type, is_challenge_page,
-    _HAS_PROXIES,
+CARDEX_UA = (
+    "CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu) "
+    "httpx/0.27 Python/3.12"
 )
+_CARDEX_HEADERS = {
+    "User-Agent": CARDEX_UA,
+    "Accept": "text/html,application/xhtml+xml,application/json,application/xml",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+}
 
-# Type alias for function signatures that accept the HTTP helper
-_HTTPHelper = StealthHTTPHelper
 
-# Stealth Playwright — graceful fallback if not installed
+class _SimpleHTTPHelper:
+    """Thin wrapper around httpx.AsyncClient for DMS extractor compatibility."""
+
+    def __init__(self, client: httpx.AsyncClient) -> None:
+        self._client = client
+
+    async def get_text(self, url: str) -> str:
+        resp = await self._client.get(url)
+        resp.raise_for_status()
+        return resp.text
+
+    async def get_json(self, url: str) -> Any:
+        resp = await self._client.get(url)
+        resp.raise_for_status()
+        return resp.json()
+
+    async def head(self, url: str) -> int:
+        resp = await self._client.head(url)
+        return resp.status_code
+
+
+_HTTPHelper = _SimpleHTTPHelper
+
+_HAS_PLAYWRIGHT = False
 try:
     import playwright  # noqa: F401
-    from scrapers.dealer_spider.stealth_browser import (
-        StealthBrowser, CaptchaUnavailableError,
-    )
+    from scrapers.common.playwright_client import PlaywrightClient as _PlaywrightClientCls
     _HAS_PLAYWRIGHT = True
 except ImportError:
-    _HAS_PLAYWRIGHT = False
-    CaptchaUnavailableError = None  # type: ignore[misc, assignment]
+    pass
 
 logging.basicConfig(
     level=logging.INFO,
@@ -394,8 +417,7 @@ def _find_next_url_in_html(html: str, current_page_num: int, base_netloc: str) -
 
 
 async def _paginate_jsonld(
-    stealth: StealthClient,
-    tier: int,
+    http: httpx.AsyncClient,
     first_page_url: str,
     first_page_html: str,
     dealer_id: str,
@@ -404,8 +426,7 @@ async def _paginate_jsonld(
     country: str,
 ) -> tuple[list[RawListing], int]:
     """
-    Dynamic Pagination Engine — uses StealthClient (curl_cffi) for every page.
-    Same TLS fingerprint from page 1 to page 661. Pure curl_cffi.
+    Dynamic Pagination Engine — uses CardexBot HTTP client for every page.
     Returns (all_listings, pages_crawled).
     """
     all_listings: list[RawListing] = []
@@ -434,12 +455,13 @@ async def _paginate_jsonld(
     # Strategy B: Detect existing page param in URL
     page_param = _detect_page_param(first_page_url)
 
-    # Strategy C: Probe ?page=2 through stealth
+    # Strategy C: Probe ?page=2
     if not page_param:
         probe_url = _build_page_url(first_page_url, "page", 2)
         try:
-            status, probe_html, _, _ = await stealth.get(probe_url, tier=tier)
-            if status < 400:
+            probe_resp = await http.get(probe_url)
+            probe_html = probe_resp.text
+            if probe_resp.status_code < 400:
                 probe_listings = _extract_jsonld_vehicles(
                     probe_html, dealer_id, dealer_name, base_url, country,
                 )
@@ -476,7 +498,7 @@ async def _paginate_jsonld(
         items_per_page,
     )
 
-    # ── Page loop — every request through StealthClient ─────────────────
+    # ── Page loop ────────────────────────────────────────────────────────
     for page_num in range(start_page, max_pages + 1):
         if page_param:
             next_url = _build_page_url(first_page_url, page_param, page_num)
@@ -486,13 +508,12 @@ async def _paginate_jsonld(
                 break
 
         try:
-            status, html, _, _ = await stealth.get(next_url, tier=tier)
-            if status in (404, 410):
+            page_resp = await http.get(next_url)
+            if page_resp.status_code in (404, 410):
                 break
-            if status >= 400:
+            if page_resp.status_code >= 400:
                 break
-        except StealthBlockError:
-            break  # WAF kicked in mid-pagination — stop gracefully
+            html = page_resp.text
         except Exception:
             break
 
@@ -695,15 +716,12 @@ async def _process_dealer(
     gateway: GatewayClient,
 ) -> None:
     """
-    Process a single dealer using the 4-vector extraction engine
-    with stealth HTTP (TLS impersonation) and automatic proxy tier escalation.
+    Process a single dealer using the 4-vector extraction engine.
     """
     dealer_id = fields.get("dealer_id", "")
     name      = fields.get("name", "unknown")
     country   = fields.get("country", "")
     website   = fields.get("website", "").strip()
-    proxy_tier = int(fields.get("proxy_tier", "0"))
-    is_whale   = fields.get("is_whale", "false") == "true"
 
     if not website or not website.startswith("http"):
         print(f"[SWARM] {name}: 0 vehicles extracted (no_website, 0 pages). PG insert rate: 0/sec", flush=True)
@@ -734,7 +752,7 @@ async def _process_dealer(
 
     t0 = time.monotonic()
     pages_crawled = 0
-    print(f"[SWARM] {name} ({country}) T{proxy_tier}: crawling {website}", flush=True)
+    print(f"[SWARM] {name} ({country}): crawling {website}", flush=True)
 
     # Bloom: skip if crawled recently
     bloom_key = f"dealer:crawled:{dealer_id}"
@@ -742,84 +760,54 @@ async def _process_dealer(
         log.debug("spider: skip %s (bloom hit)", name)
         return
 
-    # ── Step 1: Fetch homepage with StealthClient ────────────────────────
-    current_tier = proxy_tier
-    html = None
     base_url = website.rstrip("/")
-    waf_detected = "none"
+    html = None
 
-    async with StealthClient(rdb, country=country) as stealth:
-        # Determine max tier to attempt — if no proxies configured, only try T0
-        max_tier = 3 if _HAS_PROXIES else 1
-
-        for attempt_tier in range(current_tier, max_tier):
-            try:
-                status, html, resp_headers, waf_detected = await stealth.get(
-                    website, tier=attempt_tier,
-                )
-                if status in (403, 429) and not _HAS_PROXIES:
-                    # T0 direct IP hit WAF — immediate retreat, no retry
-                    waf_detected = detect_waf_type(
-                        {k.lower(): v for k, v in resp_headers.items()}
-                    ) if resp_headers else "http_block"
-                    log.info("spider: %s HTTP %d (T0 no proxy) — marking PENDING_PROXY", name, status)
-                    await _update_dealer_waf(pg, dealer_id, name, country, 0, waf_detected)
-                    await _update_spider_status(pg, dealer_id, name, country, "PENDING_PROXY", f"waf:{waf_detected}")
-                    print(f"[SWARM] {name}: PENDING_PROXY (HTTP {status}, {waf_detected})", flush=True)
-                    return
-                if status >= 400:
-                    log.warning("spider: %s homepage HTTP %d (T%d)", name, status, attempt_tier)
-                    continue
-                current_tier = attempt_tier
-                break
-            except StealthBlockError as e:
-                waf_detected = e.waf_type
-                if not _HAS_PROXIES:
-                    # No proxies — don't escalate, mark for later
-                    log.info("spider: %s blocked by %s (T0 no proxy) — PENDING_PROXY", name, e.waf_type)
-                    await _update_dealer_waf(pg, dealer_id, name, country, 0, waf_detected)
-                    await _update_spider_status(pg, dealer_id, name, country, "PENDING_PROXY", f"waf:{waf_detected}")
-                    print(f"[SWARM] {name}: PENDING_PROXY ({waf_detected})", flush=True)
-                    return
-                log.info("spider: %s blocked by %s (T%d), escalating", name, e.waf_type, attempt_tier)
-                continue
-            except Exception as exc:
-                log.warning("spider: %s homepage fetch failed (T%d): %s", name, attempt_tier, exc)
-                continue
-
-        if not html:
-            await _update_dealer_waf(pg, dealer_id, name, country, current_tier, waf_detected)
-            await _update_spider_status(pg, dealer_id, name, country, "FAILED", f"waf:{waf_detected}")
-            print(f"[SWARM] {name}: BLOCKED by {waf_detected} (all tiers failed)", flush=True)
+    async with httpx.AsyncClient(
+        headers=_CARDEX_HEADERS,
+        follow_redirects=True,
+        timeout=httpx.Timeout(30.0, connect=10.0),
+        http2=True,
+    ) as client:
+        # ── Step 1: Fetch homepage ───────────────────────────────────────
+        try:
+            resp = await client.get(website)
+            if resp.status_code >= 400:
+                log.warning("spider: %s homepage HTTP %d", name, resp.status_code)
+                await _update_spider_status(pg, dealer_id, name, country, "FAILED", f"http:{resp.status_code}")
+                print(f"[SWARM] {name}: FAILED (HTTP {resp.status_code})", flush=True)
+                return
+            html = resp.text
+        except Exception as exc:
+            log.warning("spider: %s homepage fetch failed: %s", name, exc)
+            await _update_spider_status(pg, dealer_id, name, country, "FAILED", "fetch_error")
             return
-
-        # Persist successful tier for future crawls
-        if current_tier != proxy_tier:
-            await _update_dealer_waf(pg, dealer_id, name, country, current_tier, waf_detected)
 
         # Filter false positives
         if not _is_likely_dealer(html):
             await _update_spider_status(pg, dealer_id, name, country, "NO_INVENTORY", "false_positive")
             return
 
-        http = StealthHTTPHelper(stealth, tier=current_tier)
+        http_helper = _SimpleHTTPHelper(client)
         listing_count = 0
         error_count   = 0
         vector_used   = "none"
+        listings: list[RawListing] = []
 
         # ── VECTOR 1: JSON-LD extraction with pagination ─────────────────
         homepage_vehicles = _extract_jsonld_vehicles(html, dealer_id, name, base_url, country)
         if homepage_vehicles:
-            listings, pages_crawled = await _paginate_jsonld(stealth, current_tier, website, html, dealer_id, name, base_url, country)
+            listings, pages_crawled = await _paginate_jsonld(client, website, html, dealer_id, name, base_url, country)
             vector_used = "jsonld"
         else:
-            listings = []
             # Probe inventory paths in parallel batches
-
             async def _probe_one(path: str) -> tuple[str, str, list] | None:
                 url = base_url + path
                 try:
-                    _st, text, _h, _w = await stealth.get(url, tier=current_tier)
+                    probe_resp = await client.get(url)
+                    if probe_resp.status_code >= 400:
+                        return None
+                    text = probe_resp.text
                     vehs = _extract_jsonld_vehicles(text, dealer_id, name, base_url, country)
                     if vehs:
                         return (url, text, vehs)
@@ -834,7 +822,7 @@ async def _process_dealer(
                     if result:
                         probe_url, probe_html, _ = result
                         listings, pages_crawled = await _paginate_jsonld(
-                            stealth, current_tier, probe_url, probe_html, dealer_id, name, base_url, country,
+                            client, probe_url, probe_html, dealer_id, name, base_url, country,
                         )
                         vector_used = "jsonld"
                         break
@@ -844,7 +832,7 @@ async def _process_dealer(
         # ── VECTOR 2: Sitemap → vehicle detail pages → JSON-LD ──────────
         if not listings:
             try:
-                listings = await _extract_via_sitemap(http, base_url, dealer_id, name, country)
+                listings = await _extract_via_sitemap(http_helper, base_url, dealer_id, name, country)
                 if listings:
                     vector_used = "sitemap"
             except Exception:
@@ -852,7 +840,7 @@ async def _process_dealer(
 
         # ── LEGACY: Known DMS extractors ─────────────────────────────────
         if not listings:
-            detector = DMSDetector(http)
+            detector = DMSDetector(http_helper)
             platform, feed_url = await detector.detect(base_url, html)
             if platform not in ("generic_html", "schema_org"):
                 extractor = _DMS_EXTRACTORS.get(platform)
@@ -860,7 +848,7 @@ async def _process_dealer(
                     try:
                         collected: list[RawListing] = []
                         async for listing in extractor(
-                            http=http, dealer_id=dealer_id, dealer_name=name,
+                            http=http_helper, dealer_id=dealer_id, dealer_name=name,
                             base_url=feed_url or base_url, country=country,
                         ):
                             collected.append(listing)
@@ -870,10 +858,9 @@ async def _process_dealer(
                     except Exception:
                         pass
 
-    # ── VECTORS 3+4: Stealth Playwright — targeted XHR interception ──────
-    # Active SPA extraction: opens stealth browser, intercepts internal API
-    # calls (/api/, /vehicles, /graphql, etc.), grabs JSON at network layer.
-    # If CAPTCHA blocks us and we can't solve → mark WAF_BLOCKED_NO_CAPTCHA, move on.
+    # ── VECTORS 3+4: Playwright XHR interception + iframe extraction ──────
+    # Active SPA extraction: intercepts internal API calls (/api/, /vehicles,
+    # /graphql, etc.), grabs JSON at network layer. Uses CardexBot UA.
     if not listings and _HAS_PLAYWRIGHT:
         global _PW_SEMAPHORE
         if _PW_SEMAPHORE is None:
@@ -881,13 +868,9 @@ async def _process_dealer(
 
         try:
             async with _PW_SEMAPHORE:
-                async with StealthBrowser(
-                    country=country, proxy_tier=current_tier, headless=True,
-                ) as browser:
-                    pw_json, pw_html, pw_iframes = await browser.extract_spa(
-                        base_url=website,
-                        is_whale=is_whale,
-                        timeout=_PW_TIMEOUT,
+                async with _PlaywrightClientCls(headless=True, country=country) as browser:
+                    pw_html, pw_json, pw_iframes = await browser.get_page_with_interception(
+                        website, timeout=_PW_TIMEOUT,
                     )
 
                     # Vector 3: Parse intercepted XHR API responses
@@ -920,7 +903,7 @@ async def _process_dealer(
                         if not iframe_src.startswith("http"):
                             iframe_src = urljoin(base_url + "/", iframe_src)
                         try:
-                            iframe_html, iframe_json, _ = await browser.extract(
+                            _, iframe_json, _ = await browser.get_page_with_interception(
                                 iframe_src, timeout=_PW_TIMEOUT,
                             )
                             for payload in iframe_json:
@@ -936,23 +919,6 @@ async def _process_dealer(
 
                     if listings:
                         vector_used = "playwright_xhr"
-
-        except CaptchaUnavailableError as cap_err:
-            log.warning("spider: %s CAPTCHA blocked — %s", name, cap_err.reason)
-            await _update_dealer_waf(pg, dealer_id, name, country, current_tier, cap_err.waf_type)
-            await _update_spider_status(
-                pg, dealer_id, name, country,
-                "WAF_BLOCKED_NO_CAPTCHA",
-                f"captcha:{cap_err.reason}",
-            )
-            print(
-                f"[SWARM] {name}: WAF_BLOCKED_NO_CAPTCHA — {cap_err.reason}. "
-                f"Skipping to next dealer.",
-                flush=True,
-            )
-            # Mark bloom so we don't retry immediately (24h cooldown for captcha blocks)
-            await rdb.set(bloom_key, "1", ex=24 * 3600)
-            return
 
         except Exception as exc:
             log.warning("spider: %s Playwright failed: %s", name, exc)
@@ -1028,27 +994,23 @@ async def _update_spider_status(
         log.warning("spider: db update failed dealer=%s: %s", name, exc)
 
 
-async def _update_dealer_waf(
+async def _update_dealer_block(
     pg: asyncpg.Pool,
-    dealer_id: str,
     name: str,
     country: str,
-    tier: int,
-    waf_type: str,
+    http_status: int,
 ) -> None:
-    """Persist WAF detection and escalated proxy tier for future crawls."""
+    """Record that a dealer site returned a blocking HTTP status."""
     try:
         await pg.execute("""
             UPDATE dealers
-            SET proxy_tier    = $1,
-                waf_type      = $2,
-                last_block_at = now(),
+            SET last_block_at = now(),
                 block_count   = block_count + 1,
                 updated_at    = now()
-            WHERE name = $3 AND country = $4
-        """, tier, waf_type[:32], name, country)
+            WHERE name = $1 AND country = $2
+        """, name, country)
     except Exception as exc:
-        log.warning("spider: waf update failed dealer=%s: %s", name, exc)
+        log.warning("spider: block update failed dealer=%s status=%d: %s", name, http_status, exc)
 
 
 # ── Consumer loop ─────────────────────────────────────────────────────────────
@@ -1060,7 +1022,7 @@ async def _consumer(
     rdb,
     gateway: GatewayClient,
 ) -> None:
-    """Long-running consumer — all HTTP goes through StealthClient (curl_cffi)."""
+    """Long-running consumer — all HTTP uses CardexBot/1.0 (httpx)."""
     last_id = ">"
     while True:
         try:
@@ -1107,14 +1069,11 @@ async def _backfill_pending_dealers(pg: asyncpg.Pool, rdb) -> int:
     """Queue all PENDING dealers with websites to the spider stream."""
     rows = await pg.fetch("""
         SELECT COALESCE(place_id, COALESCE(osm_id, 'id_' || id::text)) as dealer_id,
-               name, country, website, proxy_tier, is_whale
+               name, country, website
         FROM dealers
         WHERE spider_status IN ('PENDING', 'FAILED') AND website IS NOT NULL
           AND (block_count < 3 OR last_block_at < now() - interval '30 days')
-        ORDER BY
-            CASE WHEN is_whale THEN 0 ELSE 1 END,  -- whales first
-            proxy_tier ASC,                          -- cheap tiers first
-            country, random()
+        ORDER BY country, random()
         LIMIT 50000
     """)
 
@@ -1127,8 +1086,6 @@ async def _backfill_pending_dealers(pg: asyncpg.Pool, rdb) -> int:
                 "name": row["name"],
                 "country": row["country"],
                 "website": row["website"],
-                "proxy_tier": str(row["proxy_tier"] or 0),
-                "is_whale": "true" if row["is_whale"] else "false",
                 "source": "BACKFILL",
             },
         )

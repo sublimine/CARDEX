@@ -1,7 +1,7 @@
 """
 Async HTTP client for CARDEX — honest indexer approach.
 
-CardexBot identifies itself transparently, like Googlebot.
+CardexBot identifies itself transparently as an indexer.
 Portals benefit from our traffic redirects, so polite crawling
 is both legally clean and practically effective.
 
@@ -9,7 +9,6 @@ Features:
 - Honest CardexBot/1.0 User-Agent
 - Rate limiting per domain (from Redis scraper:rate_limits)
 - Exponential backoff on transient errors (429/503)
-- Optional proxy support via ProxyManager (IP distribution, not evasion)
 """
 from __future__ import annotations
 
@@ -21,8 +20,6 @@ from typing import Any, Optional
 import httpx
 import structlog
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-
-from .proxy_manager import ProxyManager
 
 log = structlog.get_logger()
 
@@ -75,26 +72,19 @@ class HTTPClient:
         self,
         domain: str,
         default_rps: float = 0.3,
-        proxy_manager: Optional[ProxyManager] = None,
         country: Optional[str] = None,
     ) -> None:
         self.domain = domain
         self.country = country
         self.rate_limiter = RateLimiter(domain, default_rps)
-        self.proxy_manager = proxy_manager
         self._client: httpx.AsyncClient | None = None
 
     async def __aenter__(self) -> "HTTPClient":
-        proxy = None
-        if self.proxy_manager:
-            proxy = await self.proxy_manager.get(country=self.country)
-
         self._client = httpx.AsyncClient(
             headers=DEFAULT_HEADERS,
             follow_redirects=True,
             timeout=httpx.Timeout(30.0, connect=10.0),
             http2=True,
-            proxies=proxy,
             limits=httpx.Limits(max_keepalive_connections=5, max_connections=10),
         )
         return self

@@ -104,7 +104,7 @@ func (r *RDW) fetchPage(ctx context.Context, offset, limit int) ([]FleetRecord, 
 	if err != nil {
 		return nil, false, fmt.Errorf("rdw: request: %w", err)
 	}
-	req.Header.Set("User-Agent", "CardexCensus/1.0 (+https://cardex.eu)")
+	req.Header.Set("User-Agent", "CardexBot/1.0 (+https://cardex.eu/bot; census)")
 	if r.appToken != "" {
 		req.Header.Set("X-App-Token", r.appToken)
 	}

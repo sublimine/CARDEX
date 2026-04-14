@@ -33,8 +33,7 @@ func downloadAndHash(imageURL string) (uint64, error) {
 		return 0, err
 	}
 
-	// Evasión estandarizada de WAF/CDN
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36")
+	req.Header.Set("User-Agent", "CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu)")
 
 	resp, err := client.Do(req)
 	if err != nil {

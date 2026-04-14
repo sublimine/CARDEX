@@ -83,7 +83,7 @@ func (a *ASTRA) fetchCSV(ctx context.Context) ([]FleetRecord, error) {
 	if err != nil {
 		return nil, fmt.Errorf("request: %w", err)
 	}
-	req.Header.Set("User-Agent", "CardexCensus/1.0 (+https://cardex.eu)")
+	req.Header.Set("User-Agent", "CardexBot/1.0 (+https://cardex.eu/bot; census)")
 	req.Header.Set("Accept", "text/csv, application/csv, */*")
 
 	resp, err := a.httpClient.Do(req)
@@ -274,7 +274,7 @@ func (a *ASTRA) fetchPxWebJSON(ctx context.Context) ([]FleetRecord, error) {
 	if err != nil {
 		return nil, fmt.Errorf("request: %w", err)
 	}
-	req.Header.Set("User-Agent", "CardexCensus/1.0 (+https://cardex.eu)")
+	req.Header.Set("User-Agent", "CardexBot/1.0 (+https://cardex.eu/bot; census)")
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 

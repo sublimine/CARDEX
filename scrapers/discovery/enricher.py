@@ -135,7 +135,7 @@ class DealerEnricher:
             async with self.session.get(
                 _NOMINATIM_URL, params=params,
                 timeout=aiohttp.ClientTimeout(total=10),
-                headers={"User-Agent": "CARDEX/1.0 (dealer discovery; contact@cardex.io)"},
+                headers={"User-Agent": "CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu) httpx/0.27 Python/3.12"},
             ) as resp:
                 results = await resp.json()
                 if results:

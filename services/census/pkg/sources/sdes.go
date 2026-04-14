@@ -84,7 +84,7 @@ func (s *SDES) resolveLatestCSV(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("User-Agent", "CardexCensus/1.0 (+https://cardex.eu)")
+	req.Header.Set("User-Agent", "CardexBot/1.0 (+https://cardex.eu/bot; census)")
 	req.Header.Set("Accept", "application/json")
 
 	resp, err := s.httpClient.Do(req)
@@ -158,7 +158,7 @@ func (s *SDES) fetchAndParseCSV(ctx context.Context, csvURL string) ([]FleetReco
 	if err != nil {
 		return nil, fmt.Errorf("request: %w", err)
 	}
-	req.Header.Set("User-Agent", "CardexCensus/1.0 (+https://cardex.eu)")
+	req.Header.Set("User-Agent", "CardexBot/1.0 (+https://cardex.eu/bot; census)")
 	req.Header.Set("Accept", "text/csv, application/csv, */*")
 
 	resp, err := s.httpClient.Do(req)

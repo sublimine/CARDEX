@@ -12,8 +12,6 @@ from typing import Any, Optional
 import structlog
 from playwright.async_api import async_playwright, Browser, BrowserContext, Page
 
-from .proxy_manager import ProxyManager
-
 log = structlog.get_logger()
 
 CARDEX_UA = (
@@ -32,11 +30,9 @@ class PlaywrightClient:
     def __init__(
         self,
         headless: bool = True,
-        proxy_manager: Optional[ProxyManager] = None,
         country: Optional[str] = None,
     ) -> None:
         self.headless = headless
-        self.proxy_manager = proxy_manager
         self.country = country
         self._playwright: Any = None
         self._browser: Browser | None = None
@@ -44,19 +40,6 @@ class PlaywrightClient:
 
     async def __aenter__(self) -> "PlaywrightClient":
         self._playwright = await async_playwright().start()
-
-        proxy_url = None
-        if self.proxy_manager:
-            proxy_url = await self.proxy_manager.get(country=self.country)
-
-        proxy_config = None
-        if proxy_url and "@" in proxy_url:
-            creds = proxy_url.split("@")[0].split("://")[-1]
-            u, p = creds.split(":", 1)
-            server = proxy_url.split("://")[0] + "://" + proxy_url.split("@")[-1]
-            proxy_config = {"server": server, "username": u, "password": p}
-        elif proxy_url:
-            proxy_config = {"server": proxy_url}
 
         self._browser = await self._playwright.chromium.launch(
             headless=self.headless,
@@ -67,7 +50,6 @@ class PlaywrightClient:
             viewport={"width": 1280, "height": 800},
             locale="en-US",
             java_script_enabled=True,
-            proxy=proxy_config,
         )
         # Block images, fonts, media to reduce bandwidth
         await self._context.route(

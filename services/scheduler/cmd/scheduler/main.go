@@ -243,7 +243,7 @@ func (d *Deps) refreshFXRates(ctx context.Context) {
 
 	req, _ := http.NewRequestWithContext(httpCtx, http.MethodGet,
 		"https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml", nil)
-	req.Header.Set("User-Agent", "CARDEX/1.0 FX-fetcher")
+	req.Header.Set("User-Agent", "CardexBot/1.0 (+https://cardex.eu/bot; fx-fetcher)")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

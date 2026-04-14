@@ -42,7 +42,6 @@ from .gateway_client import GatewayClient
 from .http_client import HTTPClient
 from .models import RawListing
 from .playwright_client import PlaywrightClient
-from .proxy_manager import ProxyManager
 from .robots_checker import RobotsChecker
 from .sitemap_parser import SitemapParser
 
@@ -111,16 +110,13 @@ class BaseScraper(ABC):
             hmac_secret=hmac_secret,
             redis_client=self._redis,
         )
-        self.proxy_manager = ProxyManager(self._redis)
         self.http = HTTPClient(
             self.domain,
-            proxy_manager=self.proxy_manager,
             country=self.country,
         )
         self.playwright: PlaywrightClient | None = (
             PlaywrightClient(
                 headless=os.environ.get("PLAYWRIGHT_HEADLESS", "true").lower() != "false",
-                proxy_manager=self.proxy_manager,
                 country=self.country,
             )
             if self.use_playwright
@@ -317,8 +313,7 @@ class BaseScraper(ABC):
             entered.append(cm)
 
         try:
-            # Load proxy pool and rate limits from Redis
-            await self.proxy_manager.load()
+            # Load rate limits from Redis
             await self.http.rate_limiter.load_from_redis(self._redis)
 
             # Load robots.txt — discover sitemaps + crawl-delay

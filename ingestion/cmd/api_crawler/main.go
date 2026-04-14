@@ -17,6 +17,8 @@ var rdb *redis.Client
 var ctx = context.Background()
 var cdnOptimizerRegex = regexp.MustCompile(`(?i)(rule=mo-)[0-9]+(\.jpg)`)
 
+const cardexUA = "CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu)"
+
 func init() {
 	addr := os.Getenv("REDIS_ADDR")
 	if addr == "" {
@@ -31,44 +33,37 @@ type H3Task struct {
 	Resolution int    `json:"resolution"`
 }
 
-type DeepAssetPayload struct {
-	ShadowID       string  `json:"shadow_id"`
-	CreationDate   string  `json:"creation_date"`
-	DealerUUID     string  `json:"dealer_uuid"`
-	Price          float64 `json:"price"`
-	TargetMarket   string  `json:"target_market"`
-	SourceURL      string  `json:"source_url"`
-	OptimizedImage string  `json:"optimized_image_url"`
-	RawPayload     string  `json:"raw_payload"`
+type VehicleAsset struct {
+	ListingID    string  `json:"listing_id"`
+	CreationDate string  `json:"creation_date"`
+	DealerID     string  `json:"dealer_id"`
+	Price        float64 `json:"price"`
+	Country      string  `json:"country"`
+	SourceURL    string  `json:"source_url"`
+	ImageURL     string  `json:"image_url"`
 }
 
-type StealthEngine struct {
+type CardexHTTPClient struct {
 	Client  *resty.Client
 	BaseURL string
 }
 
-func NewStealthEngine() *StealthEngine {
+func NewCardexHTTPClient() *CardexHTTPClient {
 	client := resty.New().
 		SetTimeout(12 * time.Second).
 		SetRetryCount(2).
 		SetHeaders(map[string]string{
-			"User-Agent":      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-			"Accept":          "application/json, text/plain, */*",
-			"Accept-Language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",
-			"Referer":         "https://suchen.mobile.de/fahrzeuge/search.html",
-			"Connection":      "keep-alive",
-			"Sec-Fetch-Dest":  "empty",
-			"Sec-Fetch-Mode":  "cors",
-			"Sec-Fetch-Site":  "same-origin",
+			"User-Agent": cardexUA,
+			"Accept":     "application/json, text/plain, */*",
 		})
 
-	return &StealthEngine{
+	return &CardexHTTPClient{
 		Client:  client,
 		BaseURL: "https://suchen.mobile.de",
 	}
 }
 
-func (e *StealthEngine) PenetrateSector(task H3Task) ([]DeepAssetPayload, int, error) {
+func (c *CardexHTTPClient) FetchSector(task H3Task) ([]VehicleAsset, int, error) {
 	queryParams := map[string]string{
 		"isSearchRequest": "true",
 		"s":               "Car",
@@ -78,20 +73,24 @@ func (e *StealthEngine) PenetrateSector(task H3Task) ([]DeepAssetPayload, int, e
 		"od":              "down",
 	}
 
-	resp, err := e.Client.R().
+	resp, err := c.Client.R().
 		SetQueryParams(queryParams).
-		Get(e.BaseURL + "/vc/api/search")
+		Get(c.BaseURL + "/vc/api/search")
 
 	if err != nil {
-		return nil, 0, fmt.Errorf("fallo de red: %w", err)
+		return nil, 0, fmt.Errorf("network error: %w", err)
 	}
 
-	if resp.StatusCode() == 403 || resp.StatusCode() == 401 || resp.StatusCode() == 429 {
-		return nil, 0, fmt.Errorf("DATADOME WAF BLOQUEO (HTTP %d). Rotación de IP requerida", resp.StatusCode())
+	if resp.StatusCode() == 429 {
+		return nil, 0, fmt.Errorf("rate limited (HTTP 429) — backing off")
+	}
+
+	if resp.StatusCode() == 403 || resp.StatusCode() == 401 {
+		return nil, 0, fmt.Errorf("access denied (HTTP %d) — source may require review", resp.StatusCode())
 	}
 
 	if resp.StatusCode() != 200 {
-		return nil, 0, fmt.Errorf("servidor rechazó el payload (HTTP %d)", resp.StatusCode())
+		return nil, 0, fmt.Errorf("unexpected status %d", resp.StatusCode())
 	}
 
 	var rawResponse struct {
@@ -110,25 +109,24 @@ func (e *StealthEngine) PenetrateSector(task H3Task) ([]DeepAssetPayload, int, e
 	}
 
 	if err := json.Unmarshal(resp.Body(), &rawResponse); err != nil {
-		return nil, 0, fmt.Errorf("fallo de parseo JSON. El portal ha mutado la API")
+		return nil, 0, fmt.Errorf("JSON parse error: %w", err)
 	}
 
-	var assets []DeepAssetPayload
+	var assets []VehicleAsset
 	for _, item := range rawResponse.Result.Items {
-		optImg := ""
+		imgURL := ""
 		if len(item.Images) > 0 {
-			optImg = cdnOptimizerRegex.ReplaceAllString(item.Images[0].URL, "${1}320${2}")
+			imgURL = cdnOptimizerRegex.ReplaceAllString(item.Images[0].URL, "${1}320${2}")
 		}
 
-		assets = append(assets, DeepAssetPayload{
-			ShadowID:       fmt.Sprintf("M_DE_%s", item.ID),
-			CreationDate:   time.Now().UTC().Format(time.RFC3339),
-			DealerUUID:     item.DealerID,
-			Price:          item.Price,
-			TargetMarket:   task.Country,
-			SourceURL:      fmt.Sprintf("https://suchen.mobile.de/fahrzeuge/details.html?id=%s", item.ID),
-			OptimizedImage: optImg,
-			RawPayload:     "PAYLOAD_OMITIDO_RAM",
+		assets = append(assets, VehicleAsset{
+			ListingID:    fmt.Sprintf("M_DE_%s", item.ID),
+			CreationDate: time.Now().UTC().Format(time.RFC3339),
+			DealerID:     item.DealerID,
+			Price:        item.Price,
+			Country:      task.Country,
+			SourceURL:    fmt.Sprintf("https://suchen.mobile.de/fahrzeuge/details.html?id=%s", item.ID),
+			ImageURL:     imgURL,
 		})
 	}
 
@@ -143,9 +141,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	slog.Info("phase:ingestion stealth_hft online", "motor", "real HTTP")
+	slog.Info("phase:ingestion crawler online", "ua", cardexUA)
 
-	engine := NewStealthEngine()
+	engine := NewCardexHTTPClient()
 
 	for {
 		result, err := rdb.BLPop(ctx, 0, "queue:h3_tasks").Result()
@@ -157,47 +155,41 @@ func main() {
 			continue
 		}
 
+		if len(result) < 2 {
+			continue
+		}
+
 		var task H3Task
 		if err := json.Unmarshal([]byte(result[1]), &task); err != nil {
-			slog.Warn("phase:ingestion invalid task", "error", err)
+			slog.Error("phase:ingestion task parse failed", "error", err)
 			continue
 		}
 
-		slog.Info("phase:ingestion attacking sector", "h3_index", task.H3Index, "country", task.Country)
-
-		assets, _, err := engine.PenetrateSector(task)
+		assets, total, err := engine.FetchSector(task)
 		if err != nil {
-			slog.Error("phase:ingestion waf_block", "h3_index", task.H3Index, "error", err)
-			select {
-			case <-time.After(5 * time.Second):
-			}
+			slog.Error("phase:ingestion fetch failed",
+				"h3", task.H3Index,
+				"country", task.Country,
+				"error", err,
+			)
 			continue
 		}
 
-		for _, raw := range assets {
-			payload := map[string]interface{}{
-				"vin":          raw.ShadowID,
-				"nlc":          raw.Price,
-				"legal_status": "PENDING_NLP",
-				"quote_id":     raw.ShadowID,
-				"source_url":   raw.SourceURL,
-				"image_url":    raw.OptimizedImage,
-			}
-			dataJSON, _ := json.Marshal(payload)
-
-			if err := rdb.XAdd(ctx, &redis.XAddArgs{
-				Stream: "stream:darkpool_ready",
-				Values: map[string]interface{}{"data": string(dataJSON)},
-			}).Err(); err != nil {
-				slog.Error("phase:ingestion xadd failed", "shadow_id", raw.ShadowID, "error", err)
-				continue
-			}
+		pipe := rdb.Pipeline()
+		for _, asset := range assets {
+			b, _ := json.Marshal(asset)
+			pipe.RPush(ctx, "queue:vehicle_raw", b)
+		}
+		if _, err := pipe.Exec(ctx); err != nil {
+			slog.Error("phase:ingestion redis push failed", "error", err)
+			continue
 		}
 
-		slog.Info("phase:ingestion sector penetrated", "h3_index", task.H3Index, "assets", len(assets))
-
-		select {
-		case <-time.After(800 * time.Millisecond):
-		}
+		slog.Info("phase:ingestion sector complete",
+			"h3", task.H3Index,
+			"country", task.Country,
+			"fetched", len(assets),
+			"total_available", total,
+		)
 	}
 }

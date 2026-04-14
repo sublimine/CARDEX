@@ -1247,7 +1247,7 @@ class OEMDealerProbe(DiscoveryProbe):
             timeout=30.0,
             follow_redirects=True,
             headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                "User-Agent": "CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu) httpx/0.27 Python/3.12",
                 "Accept": "application/json, text/html, */*",
                 "Accept-Language": "en-US,en;q=0.9,de;q=0.8,fr;q=0.7",
             },
@@ -1506,8 +1506,7 @@ class PortalAggregatorProbe(DiscoveryProbe):
             timeout=30.0,
             follow_redirects=True,
             headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                              "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                "User-Agent": "CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu) httpx/0.27 Python/3.12",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
                 "Accept-Language": "en-US,en;q=0.9,de;q=0.8,fr;q=0.7,es;q=0.6,nl;q=0.5",
             },
@@ -1808,8 +1807,7 @@ class GovernmentRegistryBridgeProbe(DiscoveryProbe):
             async with aiohttp.ClientSession(
                 timeout=aiohttp.ClientTimeout(total=30),
                 headers={
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                                  "AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36",
+                    "User-Agent": "CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu) httpx/0.27 Python/3.12",
                 },
             ) as session:
                 crawler = crawler_cls(rdb=rdb, session=session)
@@ -1981,19 +1979,7 @@ class URLResolver:
     _CONSUMER_GROUP = "cg_url_resolver"
     _CONSUMER_NAME = "resolver-1"
 
-    _USER_AGENTS = [
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15",
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0",
-        "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0",
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-    ]
+    _USER_AGENT = "CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu) httpx/0.27 Python/3.12"
 
     _ACCEPT_LANGUAGES = {
         "DE": "de-DE,de;q=0.9,en;q=0.5",
@@ -2153,10 +2139,10 @@ class URLResolver:
         self._stop.set()
 
     def _build_headers(self, country: str) -> dict[str, str]:
-        """Build fresh headers with random UA and country-appropriate Accept-Language."""
+        """Build fresh headers with country-appropriate Accept-Language."""
         accept_lang = self._ACCEPT_LANGUAGES.get(country, "en-US,en;q=0.9")
         return {
-            "User-Agent": random.choice(self._USER_AGENTS),
+            "User-Agent": self._USER_AGENT,
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": accept_lang,
             "Accept-Encoding": "gzip, deflate, br",

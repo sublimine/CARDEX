@@ -88,7 +88,7 @@ func (k *KBA) fetchGenesis(ctx context.Context) ([]FleetRecord, error) {
 	if err != nil {
 		return nil, fmt.Errorf("kba: genesis request: %w", err)
 	}
-	req.Header.Set("User-Agent", "CardexCensus/1.0 (+https://cardex.eu)")
+	req.Header.Set("User-Agent", "CardexBot/1.0 (+https://cardex.eu/bot; census)")
 
 	resp, err := k.httpClient.Do(req)
 	if err != nil {

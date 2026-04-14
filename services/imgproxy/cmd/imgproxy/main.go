@@ -232,16 +232,8 @@ func (d *Deps) generate(ctx context.Context, ulid, imgURL string) error {
 	// retrieval — Google's own crawler uses Googlebot for HTML but fetches images with
 	// standard HTTP clients.
 	req.Header = http.Header{
-		"User-Agent":      {"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"},
-		"Accept":          {"image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"},
-		"Accept-Language":  {"en-US,en;q=0.9"},
-		"Accept-Encoding":  {"identity"},
-		"Sec-Fetch-Dest":  {"image"},
-		"Sec-Fetch-Mode":  {"no-cors"},
-		"Sec-Fetch-Site":  {"cross-site"},
-		"Sec-Ch-Ua":       {`"Chromium";v="131", "Not_A Brand";v="24"`},
-		"Sec-Ch-Ua-Mobile": {"?0"},
-		"Sec-Ch-Ua-Platform": {`"Linux"`},
+		"User-Agent": {"CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu)"},
+		"Accept":     {"image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"},
 	}
 
 	resp, err := d.hc.Do(req)

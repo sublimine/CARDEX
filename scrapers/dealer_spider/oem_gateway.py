@@ -1162,8 +1162,7 @@ class OEMGateway:
             timeout=30.0,
             follow_redirects=True,
             headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                              "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                "User-Agent": "CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu) httpx/0.27 Python/3.12",
                 "Accept": "application/json, */*",
                 "Accept-Language": "en-US,en;q=0.9",
             },
