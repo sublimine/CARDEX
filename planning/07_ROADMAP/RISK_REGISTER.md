@@ -6,11 +6,13 @@
 
 ## Convención de evaluación
 
+> Las estimaciones de probabilidad son juicios cualitativos de diseño, no probabilidades estadísticas derivadas de datos históricos. Revisión trimestral según PHASE_8_MAINTENANCE.md.
+
 | Probabilidad | Definición |
 |---|---|
-| ALTA | >50% de que ocurra durante el proyecto |
-| MEDIA | 20-50% de probabilidad |
-| BAJA | <20% de probabilidad |
+| ALTA | >50% de que ocurra durante el proyecto (juicio) |
+| MEDIA | 20-50% de probabilidad (juicio) |
+| BAJA | <20% de probabilidad (juicio) |
 
 | Impacto | Definición |
 |---|---|
@@ -117,7 +119,7 @@
 - **Impacto:** MEDIO (latencias en pipeline, posible necesidad de upgrade a S1 antes de lo esperado)
 - **Mitigación:**
   1. Criterios de scaling en `10_SCALING_PATH.md` monitorizan WAL checkpoint latency p99
-  2. SQLite WAL puede manejar ~10.000 writes/s en NVMe — CARDEX S0 estimado <1.000 writes/s
+  2. SQLite WAL puede manejar >10.000 writes/s en NVMe (hipótesis conservadora — benchmark propio pendiente); CARDEX S0 estimado <1.000 writes/s (hipótesis)
   3. Separación OLTP/OLAP reduce presión en SQLite (DuckDB absorbe queries analíticas)
 - **Trigger de acción:** WAL checkpoint latency p99 >200ms sostenido 24h
 - **Status:** ABIERTO — monitorizado en Grafana
@@ -137,9 +139,9 @@
 
 ## Categoría: Operacional
 
-### R-O-01: VPS Hetzner CX41 outage
+### R-O-01: VPS Hetzner CX42 outage (ex-CX41, renombrado 2024)
 - **Descripción:** El VPS tiene una interrupción no planificada (fallo de hardware, mantenimiento de Hetzner, etc.).
-- **Probabilidad:** BAJA (Hetzner SLA 99.9% uptime)
+- **Probabilidad:** BAJA (SLA 99.9% uptime — verificar SLA contractual actual en hetzner.com antes de aprovisionar)
 - **Impacto:** ALTO (sistema no disponible durante el outage)
 - **Mitigación:**
   1. Backups en Storage Box (mismo datacenter, tráfico interno gratuito) — sistema restaurable en <2 horas
@@ -170,7 +172,7 @@
   1. Alerting rule "DiskUsageHigh" a 80% — tiempo de reacción >1 semana normalmente
   2. Limpieza de parquet files antiguos (DuckDB expunge de records EXPIRED/SOLD > 90 días)
   3. Rotación de journald logs agresiva si /var/log crece
-  4. Upgrade a CX51 (360 GB NVMe) es inmediato via Hetzner Cloud API
+  4. Upgrade a CX52 (360 GB NVMe, ex-CX51) es inmediato via Hetzner Cloud API
 - **Trigger de acción:** alerta Prometheus DiskUsageHigh (>80%)
 - **Status:** ABIERTO — alerta activa en P5
 
