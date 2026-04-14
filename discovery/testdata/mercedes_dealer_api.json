@@ -1,0 +1,26 @@
+{
+  "dealerships": [
+    {
+      "id": "DE-MB-201",
+      "name": "Mercedes-Benz Berlin Mitte",
+      "address": {
+        "street": "Unter den Linden 1",
+        "postalCode": "10117",
+        "city": "Berlin",
+        "countryCode": "DE"
+      },
+      "phone": "+49 30 20000001"
+    },
+    {
+      "dealershipId": "DE-MB-202",
+      "name": "Mercedes-Benz Berlin West",
+      "address": {
+        "street": "Kurfürstendamm 50",
+        "postalCode": "10707",
+        "city": "Berlin",
+        "countryCode": "DE"
+      }
+    }
+  ],
+  "total": 2
+}
