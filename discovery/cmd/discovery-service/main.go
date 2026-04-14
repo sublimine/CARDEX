@@ -1,10 +1,10 @@
-// discovery-service — Phase 2 Sprint 4
+// discovery-service — Phase 2 Sprint 5
 //
 // Startup sequence:
 //  1. Load config from environment variables.
 //  2. Open (or create) the SQLite Knowledge Graph and apply migrations.
 //  3. Start Prometheus /metrics HTTP endpoint.
-//  4. Run a discovery cycle for each configured country (Family A, B, then C).
+//  4. Run a discovery cycle for each configured country (Family A, B, C, then F).
 //     (continuous daemon mode blocks until SIGINT/SIGTERM)
 //
 // Environment variables:
@@ -19,6 +19,7 @@
 //   DISCOVERY_ONE_SHOT        "true" = run once and exit        (default: false)
 //   DISCOVERY_COUNTRIES       comma-separated ISO-3166-1 codes  (default: FR)
 //   DISCOVERY_SKIP_FAMILY_C   "true" = skip Family C entirely   (default: false)
+//   DISCOVERY_SKIP_FAMILY_F   "true" = skip Family F entirely   (default: false)
 package main
 
 import (
@@ -38,6 +39,7 @@ import (
 	"cardex.eu/discovery/internal/families/familia_a"
 	"cardex.eu/discovery/internal/families/familia_b"
 	"cardex.eu/discovery/internal/families/familia_c"
+	"cardex.eu/discovery/internal/families/familia_f"
 	"cardex.eu/discovery/internal/kg"
 	_ "cardex.eu/discovery/internal/metrics" // register Prometheus metrics
 	"cardex.eu/discovery/internal/runner"
@@ -102,6 +104,9 @@ func main() {
 	families := []familyRunner{familyA, familyB}
 	if !cfg.SkipFamilyC {
 		families = append(families, familia_c.New(graph, database))
+	}
+	if !cfg.SkipFamilyF {
+		families = append(families, familia_f.New(graph, database))
 	}
 
 	for _, country := range cfg.Countries {

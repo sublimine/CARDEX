@@ -89,8 +89,8 @@ INSERT OR IGNORE INTO dealer_location
   (location_id, dealer_id, is_primary,
    address_line1, address_line2, postal_code, city, region,
    country_code, lat, lon, h3_index,
-   opening_hours_json, source_families)
-VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+   opening_hours_json, phone, source_families)
+VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
 
 	_, err := g.db.ExecContext(ctx, q,
 		loc.LocationID,
@@ -106,6 +106,7 @@ VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
 		loc.Lon,
 		loc.H3Index,
 		loc.OpeningHoursJSON,
+		loc.Phone,
 		loc.SourceFamilies,
 	)
 	if err != nil {

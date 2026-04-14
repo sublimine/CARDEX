@@ -53,6 +53,11 @@ type Config struct {
 	// Useful when CT/Wayback/DNS rate limits need to be preserved.
 	// Default: false
 	SkipFamilyC bool
+
+	// SkipFamilyF, when true, bypasses Familia F (aggregator directories) entirely.
+	// Useful when marketplace crawl rate limits need to be preserved.
+	// Default: false
+	SkipFamilyF bool
 }
 
 // LoadFromEnv builds a Config from environment variables.
@@ -84,6 +89,10 @@ func LoadFromEnv() (*Config, error) {
 
 	if os.Getenv("DISCOVERY_SKIP_FAMILY_C") == "true" {
 		c.SkipFamilyC = true
+	}
+
+	if os.Getenv("DISCOVERY_SKIP_FAMILY_F") == "true" {
+		c.SkipFamilyF = true
 	}
 
 	if raw := os.Getenv("DISCOVERY_COUNTRIES"); raw != "" {

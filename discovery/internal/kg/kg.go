@@ -39,6 +39,10 @@ const (
 
 	// Familia C — cartografía web
 	IdentifierDomainCT IdentifierType = "DOMAIN_FROM_CT" // Domain discovered via Certificate Transparency logs
+
+	// ── Family F — aggregator marketplace identifiers ────────────────────────
+	IdentifierMobileDeID      IdentifierType = "MOBILE_DE_ID"       // mobile.de dealer profile slug/ID
+	IdentifierLaCentraleProID IdentifierType = "LACENTRALE_PRO_ID"  // La Centrale garage/pro directory ID
 )
 
 // DealerEntity is the canonical representation of a B2B dealer operator.
@@ -84,7 +88,8 @@ type DealerLocation struct {
 	Lon               *float64
 	H3Index           *string // Sprint 1: nil stub; computed in Sprint 2
 	OpeningHoursJSON  *string
-	SourceFamilies    string // comma-separated: "A,B,H"
+	Phone             *string // optional phone number — added by Sprint 5 migration v3
+	SourceFamilies    string  // comma-separated: "A,B,H"
 }
 
 // DealerWebPresence is a known web domain presence for a dealer entity,

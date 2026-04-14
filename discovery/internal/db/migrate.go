@@ -18,6 +18,11 @@ var incrementalMigrations = []struct {
 		description: "dealer_web_presence.metadata_json — Sprint 4 Familia C web cartography",
 		sql:         `ALTER TABLE dealer_web_presence ADD COLUMN metadata_json TEXT`,
 	},
+	{
+		version:     3,
+		description: "dealer_location.phone — Sprint 5 Familia F phone number storage",
+		sql:         `ALTER TABLE dealer_location ADD COLUMN phone TEXT`,
+	},
 }
 
 // Migrate applies the embedded base schema (v1) on a brand-new database, then
