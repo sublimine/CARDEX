@@ -67,6 +67,16 @@ type Config struct {
 	// Default: false
 	SkipFamilyH bool
 
+	// SkipFamilyK, when true, bypasses Familia K (alternative search engines) entirely.
+	// Useful when SearXNG query budget needs to be preserved.
+	// Default: false
+	SkipFamilyK bool
+
+	// SkipFamilyM, when true, bypasses Familia M (fiscal signal enrichment) entirely.
+	// Useful when VAT validation rate limits need to be preserved.
+	// Default: false
+	SkipFamilyM bool
+
 	// SkipFamilyI, when true, bypasses Familia I (inspection & certification) entirely.
 	// Useful when external API rate limits for Open Data endpoints need to be preserved.
 	// Default: false
@@ -124,6 +134,14 @@ func LoadFromEnv() (*Config, error) {
 
 	if os.Getenv("DISCOVERY_SKIP_FAMILY_I") == "true" {
 		c.SkipFamilyI = true
+	}
+
+	if os.Getenv("DISCOVERY_SKIP_FAMILY_K") == "true" {
+		c.SkipFamilyK = true
+	}
+
+	if os.Getenv("DISCOVERY_SKIP_FAMILY_M") == "true" {
+		c.SkipFamilyM = true
 	}
 
 	if os.Getenv("DISCOVERY_SKIP_BROWSER") == "true" {

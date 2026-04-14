@@ -8,20 +8,39 @@ import (
 // incrementalMigrations are applied in version order after the base schema (v1).
 // Each migration is applied at most once — the schema_version table records which
 // versions have already been applied.
+// sqls may contain multiple SQL statements; each is executed individually so that
+// SQLite single-statement constraints (e.g. ALTER TABLE) are respected.
 var incrementalMigrations = []struct {
 	version     int
 	description string
-	sql         string
+	sqls        []string
 }{
 	{
 		version:     2,
 		description: "dealer_web_presence.metadata_json — Sprint 4 Familia C web cartography",
-		sql:         `ALTER TABLE dealer_web_presence ADD COLUMN metadata_json TEXT`,
+		sqls:        []string{`ALTER TABLE dealer_web_presence ADD COLUMN metadata_json TEXT`},
 	},
 	{
 		version:     3,
 		description: "dealer_location.phone — Sprint 5 Familia F phone number storage",
-		sql:         `ALTER TABLE dealer_location ADD COLUMN phone TEXT`,
+		sqls:        []string{`ALTER TABLE dealer_location ADD COLUMN phone TEXT`},
+	},
+	{
+		version:     4,
+		description: "dealer_entity VAT validation fields — Sprint 11 Familia M",
+		sqls: []string{
+			`ALTER TABLE dealer_entity ADD COLUMN vat_validated_at TEXT`,
+			`ALTER TABLE dealer_entity ADD COLUMN vat_valid_status TEXT`,
+		},
+	},
+	{
+		version:     5,
+		description: "processing_state key-value store — Sprint 11 Familia K SearXNG checkpoint",
+		sqls: []string{`CREATE TABLE IF NOT EXISTS processing_state (
+  key        TEXT PRIMARY KEY,
+  value      TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+)`},
 	},
 }
 
@@ -57,8 +76,10 @@ func Migrate(db *sql.DB) error {
 		if applied > 0 {
 			continue // already applied
 		}
-		if _, err := db.Exec(m.sql); err != nil {
-			return fmt.Errorf("migrate v%d %q: %w", m.version, m.description, err)
+		for i, stmt := range m.sqls {
+			if _, err := db.Exec(stmt); err != nil {
+				return fmt.Errorf("migrate v%d %q stmt[%d]: %w", m.version, m.description, i, err)
+			}
 		}
 		if _, err := db.Exec(
 			`INSERT INTO schema_version(version, description) VALUES (?,?)`,

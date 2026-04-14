@@ -13,7 +13,9 @@ var BaseWeights = map[string]float64{
 	"G": 0.20, // Sectoral associations (BOVAG, ZDK, Mobilians, etc.) — legal-commercial, high reliability
 	"H": 0.25, // OEM dealer networks — OEM official = maximum authority, highest reliability
 	"I": 0.05, // Inspection & certification networks — adjacent signal, low primary weight
-	// D–E, J–O: registered when implemented
+	"K": 0.05, // Alternative search engines (SearXNG/Marginalia) — low primary, confirmation signal
+	"M": 0.00, // Fiscal signal enrichment (VIES/UID) — enrichment only, uses consistency_multiplier
+	// D–E, J, L, N–O: registered when implemented
 }
 
 // ComputeConfidence computes the confidence score for a dealer given the set of

@@ -58,6 +58,13 @@ const (
 	// e.g. "VW:DE-12345", "BMW:DE-67890", "TOYOTA:DE-99001"
 	IdentifierOEMDealerID IdentifierType = "OEM_DEALER_ID" // OEM official dealer ID — deferred Sprint 7+
 
+	// ── Family K — alternative search engine identifiers ─────────────────────
+	IdentifierDomainFromSearch IdentifierType = "DOMAIN_FROM_SEARCH" // domain discovered via SearXNG/Marginalia
+
+	// ── Family M — fiscal signal identifiers ──────────────────────────────────
+	IdentifierVATValidatedVIES IdentifierType = "VAT_VALIDATED_VIES" // VIES-confirmed VAT number
+	IdentifierUIDValidatedCH   IdentifierType = "UID_VALIDATED_CH"   // Swiss UID-Register confirmed UID
+
 	// ── Family I — inspection & certification network identifiers ─────────────
 	// Inspection stations are NOT dealer candidates (is_dealer_candidate=false).
 	// They are adjacent signals used to cross-reference dealer operators that also
@@ -70,6 +77,17 @@ const (
 	IdentifierBoschCarServiceID IdentifierType = "BOSCH_CAR_SERVICE_ID" // Bosch Car Service partner ID (pan-EU)
 	IdentifierMFKStationID      IdentifierType = "MFK_STATION_ID"       // MFK station ID (CH)
 )
+
+// DealerVATCandidate is a lightweight projection of dealer_entity used for
+// VAT validation batch runs (Family M). It omits heavy fields not needed during
+// the validation loop.
+type DealerVATCandidate struct {
+	DealerID        string
+	PrimaryVAT      string // non-null guaranteed by the query filter
+	CountryCode     string
+	CanonicalName   string
+	ConfidenceScore float64
+}
 
 // DealerEntity is the canonical representation of a B2B dealer operator.
 type DealerEntity struct {
@@ -187,4 +205,28 @@ type KnowledgeGraph interface {
 	// ListWebPresencesByCountry returns all web presence entries for dealers
 	// whose country_code matches the given ISO 3166-1 alpha-2 code.
 	ListWebPresencesByCountry(ctx context.Context, country string) ([]*DealerWebPresence, error)
+
+	// ── Family M — VAT validation ────────────────────────────────────────────
+
+	// FindDealersForVATValidation returns dealers that have a primary_vat set
+	// and whose VAT validation is either missing or older than staleDays days.
+	// Only dealers whose country_code is in the countries list are returned.
+	FindDealersForVATValidation(ctx context.Context, countries []string, staleDays int) ([]*DealerVATCandidate, error)
+
+	// UpdateVATValidation writes the vat_validated_at timestamp and
+	// vat_valid_status (e.g. "VALID", "INVALID", "NOT_FOUND", "ERROR") for the
+	// given dealer.
+	UpdateVATValidation(ctx context.Context, dealerID string, validatedAt time.Time, status string) error
+
+	// UpdateConfidenceScore overwrites the confidence_score for the given dealer.
+	// Used by M.1/M.2 to bump score when VAT is confirmed valid.
+	UpdateConfidenceScore(ctx context.Context, dealerID string, score float64) error
+
+	// ── Family K — search signal / state ────────────────────────────────────
+
+	// GetProcessingState returns the value stored under key, or ("", nil) if absent.
+	GetProcessingState(ctx context.Context, key string) (string, error)
+
+	// SetProcessingState upserts the value for key with the current timestamp.
+	SetProcessingState(ctx context.Context, key, value string) error
 }

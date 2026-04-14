@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
 )
 
 // SQLiteGraph is the production KnowledgeGraph backed by a modernc.org/sqlite
@@ -163,4 +165,108 @@ LIMIT 1`
 		return "", fmt.Errorf("kg.FindDealerByIdentifier %s/%s: %w", idType, idValue, err)
 	}
 	return dealerID, nil
+}
+
+// ── Family M — VAT validation ─────────────────────────────────────────────────
+
+// FindDealersForVATValidation returns dealers with a non-null primary_vat whose
+// validation is absent or older than staleDays days, restricted to the given
+// country codes.
+func (g *SQLiteGraph) FindDealersForVATValidation(
+	ctx context.Context,
+	countries []string,
+	staleDays int,
+) ([]*DealerVATCandidate, error) {
+	if len(countries) == 0 {
+		return nil, nil
+	}
+
+	placeholders := make([]string, len(countries))
+	args := make([]interface{}, len(countries)+1)
+	for i, c := range countries {
+		placeholders[i] = "?"
+		args[i] = c
+	}
+	args[len(countries)] = staleDays
+
+	q := `
+SELECT dealer_id, primary_vat, country_code, canonical_name, confidence_score
+FROM dealer_entity
+WHERE primary_vat IS NOT NULL
+  AND country_code IN (` + strings.Join(placeholders, ",") + `)
+  AND (
+    vat_validated_at IS NULL
+    OR vat_validated_at < datetime('now', '-' || ? || ' days')
+  )
+ORDER BY dealer_id`
+
+	rows, err := g.db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, fmt.Errorf("kg.FindDealersForVATValidation: %w", err)
+	}
+	defer rows.Close()
+
+	var candidates []*DealerVATCandidate
+	for rows.Next() {
+		c := &DealerVATCandidate{}
+		if err := rows.Scan(&c.DealerID, &c.PrimaryVAT, &c.CountryCode, &c.CanonicalName, &c.ConfidenceScore); err != nil {
+			return nil, fmt.Errorf("kg.FindDealersForVATValidation scan: %w", err)
+		}
+		candidates = append(candidates, c)
+	}
+	return candidates, rows.Err()
+}
+
+// UpdateVATValidation writes the vat_validated_at and vat_valid_status columns.
+func (g *SQLiteGraph) UpdateVATValidation(ctx context.Context, dealerID string, validatedAt time.Time, status string) error {
+	const q = `
+UPDATE dealer_entity
+SET vat_validated_at = ?, vat_valid_status = ?
+WHERE dealer_id = ?`
+	_, err := g.db.ExecContext(ctx, q,
+		validatedAt.UTC().Format("2006-01-02T15:04:05Z"), status, dealerID)
+	if err != nil {
+		return fmt.Errorf("kg.UpdateVATValidation %q: %w", dealerID, err)
+	}
+	return nil
+}
+
+// UpdateConfidenceScore overwrites confidence_score for the given dealer.
+func (g *SQLiteGraph) UpdateConfidenceScore(ctx context.Context, dealerID string, score float64) error {
+	const q = `UPDATE dealer_entity SET confidence_score = ? WHERE dealer_id = ?`
+	_, err := g.db.ExecContext(ctx, q, score, dealerID)
+	if err != nil {
+		return fmt.Errorf("kg.UpdateConfidenceScore %q: %w", dealerID, err)
+	}
+	return nil
+}
+
+// ── Family K — processing state ───────────────────────────────────────────────
+
+// GetProcessingState returns the stored value for key, or ("", nil) if absent.
+func (g *SQLiteGraph) GetProcessingState(ctx context.Context, key string) (string, error) {
+	const q = `SELECT value FROM processing_state WHERE key = ?`
+	var value string
+	err := g.db.QueryRowContext(ctx, q, key).Scan(&value)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("kg.GetProcessingState %q: %w", key, err)
+	}
+	return value, nil
+}
+
+// SetProcessingState upserts (key, value) with the current UTC timestamp.
+func (g *SQLiteGraph) SetProcessingState(ctx context.Context, key, value string) error {
+	const q = `
+INSERT INTO processing_state(key, value, updated_at)
+VALUES (?, ?, ?)
+ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`
+	_, err := g.db.ExecContext(ctx, q, key, value,
+		time.Now().UTC().Format("2006-01-02T15:04:05Z"))
+	if err != nil {
+		return fmt.Errorf("kg.SetProcessingState %q: %w", key, err)
+	}
+	return nil
 }
