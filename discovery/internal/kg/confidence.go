@@ -7,7 +7,8 @@ package kg
 // adjustment.  Current implementation: plain sum, clamped to [0.0, 1.0].
 var BaseWeights = map[string]float64{
 	"A": 0.35, // Registros mercantiles — legal-fiscal, high reliability
-	// B–O: registered when implemented
+	"B": 0.15, // Geocartografía (OSM + Wikidata) — geo-recon, medium reliability
+	// C–O: registered when implemented
 }
 
 // ComputeConfidence computes the confidence score for a dealer given the set of

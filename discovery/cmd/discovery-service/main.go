@@ -1,10 +1,10 @@
-// discovery-service — Phase 2 Sprint 2
+// discovery-service — Phase 2 Sprint 3
 //
 // Startup sequence:
 //  1. Load config from environment variables.
 //  2. Open (or create) the SQLite Knowledge Graph and apply migrations.
 //  3. Start Prometheus /metrics HTTP endpoint.
-//  4. Run a discovery cycle for each configured country.
+//  4. Run a discovery cycle for each configured country (Family A then Family B).
 //     (continuous daemon mode blocks until SIGINT/SIGTERM)
 //
 // Environment variables:
@@ -35,8 +35,10 @@ import (
 	"cardex.eu/discovery/internal/config"
 	"cardex.eu/discovery/internal/db"
 	"cardex.eu/discovery/internal/families/familia_a"
+	"cardex.eu/discovery/internal/families/familia_b"
 	"cardex.eu/discovery/internal/kg"
 	_ "cardex.eu/discovery/internal/metrics" // register Prometheus metrics
+	"cardex.eu/discovery/internal/runner"
 )
 
 func main() {
@@ -89,25 +91,33 @@ func main() {
 		KBOPass:              cfg.KBOPass,
 	}
 	familyA := familia_a.New(graph, familyACfg, database)
+	familyB := familia_b.New(graph, familia_b.Config{Countries: cfg.Countries})
+
+	families := []interface {
+		FamilyID() string
+		Run(ctx context.Context, country string) (*runner.FamilyResult, error)
+	}{familyA, familyB}
 
 	for _, country := range cfg.Countries {
-		log.Info("starting discovery cycle", "family", familyA.FamilyID(), "country", country)
-		result, err := familyA.Run(ctx, country)
-		if err != nil {
-			log.Error("discovery cycle error",
-				"family", familyA.FamilyID(),
+		for _, fam := range families {
+			log.Info("starting discovery cycle", "family", fam.FamilyID(), "country", country)
+			result, err := fam.Run(ctx, country)
+			if err != nil {
+				log.Error("discovery cycle error",
+					"family", fam.FamilyID(),
+					"country", country,
+					"err", err,
+				)
+				continue
+			}
+			log.Info("discovery cycle complete",
+				"family", fam.FamilyID(),
 				"country", country,
-				"err", err,
+				"new", result.TotalNew,
+				"errors", result.TotalErrors,
+				"duration_s", result.Duration.Seconds(),
 			)
-			continue
 		}
-		log.Info("discovery cycle complete",
-			"family", familyA.FamilyID(),
-			"country", country,
-			"new", result.TotalNew,
-			"errors", result.TotalErrors,
-			"duration_s", result.Duration.Seconds(),
-		)
 	}
 
 	if !cfg.OneShot {

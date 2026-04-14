@@ -32,6 +32,10 @@ const (
 	IdentifierHandelsregister IdentifierType = "HANDELSREGISTER"
 	IdentifierBORMEAct        IdentifierType = "BORME_ACT"  // BORME announcement ID: BORME-A-YYYY-NNN-NN
 	IdentifierKBO             IdentifierType = "KBO_BCE"    // Belgian KBO/BCE enterprise number: NNNN.NNN.NNN
+
+	// Familia B — geocartografía
+	IdentifierOSMID       IdentifierType = "OSM_ID"       // OpenStreetMap element: "node/12345678" or "way/12345678"
+	IdentifierWikidataQID IdentifierType = "WIKIDATA_QID" // Wikidata entity: "Q12345"
 )
 
 // DealerEntity is the canonical representation of a B2B dealer operator.
