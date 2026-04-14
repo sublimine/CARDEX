@@ -1,18 +1,23 @@
-// discovery-service — Phase 2 Sprint 1
+// discovery-service — Phase 2 Sprint 2
 //
 // Startup sequence:
 //  1. Load config from environment variables.
 //  2. Open (or create) the SQLite Knowledge Graph and apply migrations.
 //  3. Start Prometheus /metrics HTTP endpoint.
-//  4. Run a single discovery cycle over the configured countries.
-//     (continuous daemon mode is a future sprint concern)
+//  4. Run a discovery cycle for each configured country.
+//     (continuous daemon mode blocks until SIGINT/SIGTERM)
 //
 // Environment variables:
-//   DISCOVERY_DB_PATH    path to SQLite KG file   (default: ./data/discovery.db)
-//   METRICS_ADDR         HTTP bind address         (default: :9090)
-//   INSEE_TOKEN          INSEE Sirene Bearer token  (required for FR)
-//   INSEE_RATE_PER_MIN   Sirene req/min ceiling     (default: 25)
-//   DISCOVERY_ONE_SHOT   "true" = run once and exit (default: false)
+//   DISCOVERY_DB_PATH         path to SQLite KG file           (default: ./data/discovery.db)
+//   METRICS_ADDR              HTTP bind address                 (default: :9090)
+//   INSEE_TOKEN               INSEE Sirene Bearer token         (required for FR)
+//   INSEE_RATE_PER_MIN        Sirene req/min ceiling            (default: 25)
+//   OFFENEREGISTER_DB_PATH    OffeneRegister SQLite path        (default: ./data/offeneregister.db)
+//   KVK_API_KEY               KvK Zoeken API key                (optional; Path 2 skipped if absent)
+//   KBO_USER                  KBO Open Data portal username     (required for BE)
+//   KBO_PASS                  KBO Open Data portal password     (required for BE)
+//   DISCOVERY_ONE_SHOT        "true" = run once and exit        (default: false)
+//   DISCOVERY_COUNTRIES       comma-separated ISO-3166-1 codes  (default: FR)
 package main
 
 import (
@@ -75,7 +80,15 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	familyA := familia_a.New(graph, cfg.InseeToken, cfg.InseeRatePerMin)
+	familyACfg := &familia_a.Config{
+		InseeToken:           cfg.InseeToken,
+		InseeRatePerMin:      cfg.InseeRatePerMin,
+		OffeneRegisterDBPath: cfg.OffeneRegisterDBPath,
+		KvKAPIKey:            cfg.KvKAPIKey,
+		KBOUser:              cfg.KBOUser,
+		KBOPass:              cfg.KBOPass,
+	}
+	familyA := familia_a.New(graph, familyACfg, database)
 
 	for _, country := range cfg.Countries {
 		log.Info("starting discovery cycle", "family", familyA.FamilyID(), "country", country)
@@ -98,8 +111,7 @@ func main() {
 	}
 
 	if !cfg.OneShot {
-		// Daemon mode: block until signal.
-		log.Info("one-shot run complete; set DISCOVERY_ONE_SHOT=true to exit after run")
+		log.Info("discovery cycle done; blocking until signal (set DISCOVERY_ONE_SHOT=true to exit)")
 		<-ctx.Done()
 	}
 

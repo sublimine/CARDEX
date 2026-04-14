@@ -30,6 +30,8 @@ const (
 	IdentifierBCE            IdentifierType = "BCE"
 	IdentifierZefix          IdentifierType = "ZEFIX_UID"
 	IdentifierHandelsregister IdentifierType = "HANDELSREGISTER"
+	IdentifierBORMEAct        IdentifierType = "BORME_ACT"  // BORME announcement ID: BORME-A-YYYY-NNN-NN
+	IdentifierKBO             IdentifierType = "KBO_BCE"    // Belgian KBO/BCE enterprise number: NNNN.NNN.NNN
 )
 
 // DealerEntity is the canonical representation of a B2B dealer operator.

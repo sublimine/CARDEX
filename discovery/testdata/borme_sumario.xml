@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sumario>
+  <diario numero="001">
+    <sumario_nbo tipo="A" nombre="Inscripciones del Registro Mercantil">
+      <empresa id="BORME-A-2024-001-1">
+        <nombre_empresa>AUTOCENTRO MADRID SL</nombre_empresa>
+        <acto>Constitución</acto>
+        <tipo>CONSTITUCIÓN</tipo>
+        <provincia>Madrid</provincia>
+        <registro>Registro Mercantil de Madrid</registro>
+        <url_pdf>https://www.boe.es/borme/dias/2024/01/02/pdfs/BORME-A-2024-001-1.pdf</url_pdf>
+        <url_xml>https://www.boe.es/datosabiertos/api/borme/acto/BORME-A-2024-001-1</url_xml>
+      </empresa>
+      <empresa id="BORME-A-2024-001-2">
+        <nombre_empresa>CONCESIONARIO NORTE SA</nombre_empresa>
+        <acto>Modificación estatutos</acto>
+        <tipo>MODIFICACIÓN</tipo>
+        <provincia>Barcelona</provincia>
+        <registro>Registro Mercantil de Barcelona</registro>
+        <url_pdf>https://www.boe.es/borme/dias/2024/01/02/pdfs/BORME-A-2024-001-2.pdf</url_pdf>
+        <url_xml>https://www.boe.es/datosabiertos/api/borme/acto/BORME-A-2024-001-2</url_xml>
+      </empresa>
+      <empresa id="BORME-A-2024-001-3">
+        <nombre_empresa>VEHICULOS DEL SUR SL</nombre_empresa>
+        <acto>Disolución</acto>
+        <tipo>DISOLUCIÓN</tipo>
+        <provincia>Sevilla</provincia>
+        <registro>Registro Mercantil de Sevilla</registro>
+        <url_pdf>https://www.boe.es/borme/dias/2024/01/02/pdfs/BORME-A-2024-001-3.pdf</url_pdf>
+        <url_xml>https://www.boe.es/datosabiertos/api/borme/acto/BORME-A-2024-001-3</url_xml>
+      </empresa>
+    </sumario_nbo>
+    <sumario_nbo tipo="B" nombre="Anuncios y avisos legales">
+      <empresa id="BORME-B-2024-001-1">
+        <nombre_empresa>EMPRESA SECCION B SL</nombre_empresa>
+        <acto>Anuncio</acto>
+        <tipo>ANUNCIO</tipo>
+        <provincia>Valencia</provincia>
+        <registro>Registro Mercantil de Valencia</registro>
+        <url_pdf>https://www.boe.es/borme/dias/2024/01/02/pdfs/BORME-B-2024-001-1.pdf</url_pdf>
+        <url_xml></url_xml>
+      </empresa>
+    </sumario_nbo>
+  </diario>
+</sumario>

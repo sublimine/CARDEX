@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // Config holds all runtime configuration for the discovery service.
@@ -19,32 +20,49 @@ type Config struct {
 	MetricsAddr string
 
 	// InseeToken is the OAuth2 Bearer token for the INSEE Sirene API.
-	// Required for Family A FR sub-techniques.
+	// Required for Family A FR sub-technique.
 	InseeToken string
 
 	// InseeRatePerMin is the number of requests per minute allowed against
-	// the INSEE Sirene API. Defaults to 25 (conservative below the 30 req/min
-	// free-tier limit).
+	// the INSEE Sirene API. Defaults to 25 (below the 30 req/min free-tier limit).
 	InseeRatePerMin int
 
+	// OffeneRegisterDBPath is the filesystem path where the decompressed
+	// OffeneRegister SQLite will be stored.
+	// Default: ./data/offeneregister.db
+	OffeneRegisterDBPath string
+
+	// KvKAPIKey is the API key for the KvK Zoeken v2 API (Path 2 of A.NL.1).
+	// If empty, keyword search is skipped; bulk density ingest still runs.
+	KvKAPIKey string
+
+	// KBOUser and KBOPass are the KBO Open Data portal credentials.
+	// Required for A.BE.1. Register at kbopub.economie.fgov.be/kbo-open-data.
+	KBOUser string
+	KBOPass string
+
 	// OneShot, when true, runs a single discovery cycle and exits.
-	// Default: false (continuous daemon mode).
+	// Default: false (daemon mode — blocks until SIGINT/SIGTERM).
 	OneShot bool
 
-	// Countries is the comma-separated list of ISO-3166-1 codes to discover.
-	// Default: "FR"
+	// Countries is the list of ISO-3166-1 alpha-2 codes to run discovery for.
+	// Default: ["FR"]
 	Countries []string
 }
 
 // LoadFromEnv builds a Config from environment variables.
-// Returns an error if any required variable is absent.
+// Returns an error if any required variable has an invalid value.
 func LoadFromEnv() (*Config, error) {
 	c := &Config{
-		DBPath:          getEnvDefault("DISCOVERY_DB_PATH", "./data/discovery.db"),
-		MetricsAddr:     getEnvDefault("METRICS_ADDR", ":9090"),
-		InseeToken:      os.Getenv("INSEE_TOKEN"),
-		InseeRatePerMin: 25,
-		Countries:       []string{"FR"},
+		DBPath:               getEnvDefault("DISCOVERY_DB_PATH", "./data/discovery.db"),
+		MetricsAddr:          getEnvDefault("METRICS_ADDR", ":9090"),
+		InseeToken:           os.Getenv("INSEE_TOKEN"),
+		InseeRatePerMin:      25,
+		OffeneRegisterDBPath: getEnvDefault("OFFENEREGISTER_DB_PATH", "./data/offeneregister.db"),
+		KvKAPIKey:            os.Getenv("KVK_API_KEY"),
+		KBOUser:              os.Getenv("KBO_USER"),
+		KBOPass:              os.Getenv("KBO_PASS"),
+		Countries:            []string{"FR"},
 	}
 
 	if raw := os.Getenv("INSEE_RATE_PER_MIN"); raw != "" {
@@ -57,6 +75,19 @@ func LoadFromEnv() (*Config, error) {
 
 	if os.Getenv("DISCOVERY_ONE_SHOT") == "true" {
 		c.OneShot = true
+	}
+
+	if raw := os.Getenv("DISCOVERY_COUNTRIES"); raw != "" {
+		parts := strings.Split(raw, ",")
+		countries := make([]string, 0, len(parts))
+		for _, p := range parts {
+			if s := strings.TrimSpace(strings.ToUpper(p)); s != "" {
+				countries = append(countries, s)
+			}
+		}
+		if len(countries) > 0 {
+			c.Countries = countries
+		}
 	}
 
 	return c, nil
