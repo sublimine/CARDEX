@@ -43,6 +43,19 @@ const (
 	// ── Family F — aggregator marketplace identifiers ────────────────────────
 	IdentifierMobileDeID      IdentifierType = "MOBILE_DE_ID"       // mobile.de dealer profile slug/ID
 	IdentifierLaCentraleProID IdentifierType = "LACENTRALE_PRO_ID"  // La Centrale garage/pro directory ID
+
+	// ── Family G — sectoral association member identifiers ───────────────────
+	IdentifierMemberBOVAG   IdentifierType = "MEMBER_BOVAG"    // BOVAG (NL) member number or slug
+	IdentifierMemberZDK     IdentifierType = "MEMBER_ZDK"      // ZDK (DE) member ID — deferred Sprint 7+
+	IdentifierMemberMobilians IdentifierType = "MEMBER_MOBILIANS" // Mobilians (FR) member ID — deferred Sprint 7+
+	IdentifierMemberFaconauto IdentifierType = "MEMBER_FACONAUTO" // FACONAUTO (ES) member ID — deferred Sprint 7+
+	IdentifierMemberTraxio  IdentifierType = "MEMBER_TRAXIO"   // TRAXIO (BE) member ID — deferred Sprint 7+
+	IdentifierMemberAGVS    IdentifierType = "MEMBER_AGVS_UPSA" // AGVS-UPSA (CH) member ID — deferred Sprint 7+
+
+	// ── Family H — OEM dealer network identifiers ────────────────────────────
+	// Value format: "{oem_brand}:{dealer_id}" to avoid cross-brand collisions.
+	// e.g. "VW:DE-12345", "BMW:DE-67890", "TOYOTA:DE-99001"
+	IdentifierOEMDealerID IdentifierType = "OEM_DEALER_ID" // OEM official dealer ID — deferred Sprint 7+
 )
 
 // DealerEntity is the canonical representation of a B2B dealer operator.

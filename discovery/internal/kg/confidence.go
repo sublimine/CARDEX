@@ -10,7 +10,9 @@ var BaseWeights = map[string]float64{
 	"B": 0.15, // Geocartografía (OSM + Wikidata) — geo-recon, medium reliability
 	"C": 0.10, // Cartografía web (Wayback + CT logs + passive DNS) — web-recon, low-medium reliability
 	"F": 0.20, // Aggregator dealer directories (mobile.de, AutoScout24, etc.) — marketplace-verified, high reliability
-	// D–E, G–O: registered when implemented
+	"G": 0.20, // Sectoral associations (BOVAG, ZDK, Mobilians, etc.) — legal-commercial, high reliability
+	"H": 0.25, // OEM dealer networks — OEM official = maximum authority, highest reliability
+	// D–E, I–O: registered when implemented
 }
 
 // ComputeConfidence computes the confidence score for a dealer given the set of

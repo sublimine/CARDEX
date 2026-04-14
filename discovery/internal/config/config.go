@@ -58,6 +58,15 @@ type Config struct {
 	// Useful when marketplace crawl rate limits need to be preserved.
 	// Default: false
 	SkipFamilyF bool
+
+	// SkipFamilyG, when true, bypasses Familia G (sectoral associations) entirely.
+	// Default: false
+	SkipFamilyG bool
+
+	// SkipFamilyH, when true, bypasses Familia H (OEM dealer networks) entirely.
+	// In Sprint 6 all OEMs are deferred, so this flag is a no-op until Sprint 7+.
+	// Default: false
+	SkipFamilyH bool
 }
 
 // LoadFromEnv builds a Config from environment variables.
@@ -93,6 +102,14 @@ func LoadFromEnv() (*Config, error) {
 
 	if os.Getenv("DISCOVERY_SKIP_FAMILY_F") == "true" {
 		c.SkipFamilyF = true
+	}
+
+	if os.Getenv("DISCOVERY_SKIP_FAMILY_G") == "true" {
+		c.SkipFamilyG = true
+	}
+
+	if os.Getenv("DISCOVERY_SKIP_FAMILY_H") == "true" {
+		c.SkipFamilyH = true
 	}
 
 	if raw := os.Getenv("DISCOVERY_COUNTRIES"); raw != "" {
