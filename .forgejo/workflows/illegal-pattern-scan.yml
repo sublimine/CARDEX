@@ -1,0 +1,139 @@
+name: Illegal Pattern Scan
+
+# Enforces R1: zero evasion techniques in active code.
+# Blocks merge if any of the blacklisted patterns appear in source files.
+# See planning/00_AUDIT/ILLEGAL_CODE_PURGE_PLAN.md for the full policy.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["main", "develop"]
+
+jobs:
+  illegal-pattern-scan:
+    name: R1 — Illegal pattern check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── CS-0-1: Zero illegal evasion patterns in source code ──────────
+      - name: CS-0-1 · Illegal evasion patterns
+        run: |
+          MATCHES=$(grep -rnE \
+            "(curl_cffi|playwright[._-]stealth|2captcha|scrapingbee|scraperapi|brightdata|smartproxy|\
+impersonate[._]chrome|impersonate[._]firefox|JA3[^_]|JA4[^_]|tls[._]finger|\
+StealthClient|StealthBrowser|StealthHTTPHelper|StealthEngine|\
+undetected[._]chromedriver|puppeteer[._]stealth|user[._]agent[._]spoof|\
+FakeChromeUA|bypass[._]cloudflare|antibot|fake[._]useragent|residential[._]proxy)" \
+            --include="*.go" --include="*.py" --include="*.js" \
+            --include="*.ts" --include="*.rs" \
+            --exclude-dir=node_modules --exclude-dir=vendor \
+            --exclude-dir=target --exclude-dir=.git \
+            --exclude-dir=planning \
+            . 2>/dev/null || true)
+
+          if [ -n "$MATCHES" ]; then
+            echo "❌ CS-0-1 FAILED: Illegal evasion patterns detected:"
+            echo "$MATCHES"
+            echo ""
+            echo "See planning/00_AUDIT/ILLEGAL_CODE_PURGE_PLAN.md for remediation."
+            exit 1
+          fi
+          echo "✓ CS-0-1 PASS — zero illegal patterns"
+
+      # ── CS-0-2: Blacklisted dependencies ─────────────────────────────
+      - name: CS-0-2 · Blacklisted dependencies
+        run: |
+          MANIFESTS=$(find . \
+            -name "requirements*.txt" -o \
+            -name "pyproject.toml" -o \
+            -name "package.json" \
+            -not -path "*/node_modules/*" \
+            -not -path "*/vendor/*" \
+            -not -path "*/planning/*" \
+            2>/dev/null)
+
+          MATCHES=$(grep -lE \
+            "(curl[._-]cffi|playwright[._-]stealth|2captcha|scrapingbee|\
+undetected[._-]chromedriver|fake[._-]useragent|brightdata|smartproxy|\
+puppeteer-extra-plugin-stealth|playwright-extra)" \
+            $MANIFESTS 2>/dev/null || true)
+
+          if [ -n "$MATCHES" ]; then
+            echo "❌ CS-0-2 FAILED: Blacklisted packages in dependencies:"
+            echo "$MATCHES"
+            exit 1
+          fi
+          echo "✓ CS-0-2 PASS — no blacklisted dependencies"
+
+      # ── CS-0-3: All HTTP clients use CardexBot UA ─────────────────────
+      # Checks literal User-Agent strings AND resolves common variable names
+      # (cardexUA, CARDEX_UA, _USER_AGENT) to ensure they contain CardexBot.
+      - name: CS-0-3 · CardexBot User-Agent compliance
+        run: |
+          # Any literal User-Agent string that does not contain "Cardex"
+          LITERAL_VIOLATIONS=$(grep -rnE '"User-Agent"\s*[=:{]\s*"(?!.*Cardex)[^"]+"' \
+            --include="*.go" --include="*.py" \
+            --exclude-dir=.git --exclude-dir=planning \
+            . 2>/dev/null || true)
+
+          if [ -n "$LITERAL_VIOLATIONS" ]; then
+            echo "❌ CS-0-3 FAILED: Non-CardexBot User-Agent literal found:"
+            echo "$LITERAL_VIOLATIONS"
+            exit 1
+          fi
+
+          # Verify that the canonical UA constants resolve to CardexBot strings
+          UA_CONSTANTS=$(grep -rn "cardexUA\s*=\|CARDEX_UA\s*=\|_USER_AGENT\s*=" \
+            --include="*.go" --include="*.py" \
+            --exclude-dir=.git --exclude-dir=planning \
+            . 2>/dev/null || true)
+
+          NON_CARDEX=$(echo "$UA_CONSTANTS" | grep -v "CardexBot" || true)
+          if [ -n "$NON_CARDEX" ]; then
+            echo "❌ CS-0-3 FAILED: UA constant not set to CardexBot:"
+            echo "$NON_CARDEX"
+            exit 1
+          fi
+
+          echo "✓ CS-0-3 PASS — all HTTP clients use CardexBot UA"
+
+      # ── CS-0-4: robots.txt compliance checker exists and is wired ─────
+      - name: CS-0-4 · robots.txt compliance operational
+        run: |
+          CHECKER=$(grep -rn "RobotsChecker\|robots_checker\|can_fetch" \
+            --include="*.go" --include="*.py" \
+            --exclude-dir=.git --exclude-dir=planning \
+            . 2>/dev/null | head -1)
+
+          if [ -z "$CHECKER" ]; then
+            echo "❌ CS-0-4 FAILED: RobotsChecker not found in active code"
+            exit 1
+          fi
+          echo "✓ CS-0-4 PASS — RobotsChecker wired"
+          echo "  $CHECKER"
+
+      # ── Deleted files check: ensure purged files stay deleted ─────────
+      - name: Purge guard · Ensure stealth files not re-introduced
+        run: |
+          ILLEGAL_FILES=(
+            "scrapers/dealer_spider/stealth_http.py"
+            "scrapers/dealer_spider/stealth_browser.py"
+            "scrapers/common/proxy_manager.py"
+            "scrapers/dealer_spider/recon_oem.py"
+          )
+
+          FOUND=0
+          for f in "${ILLEGAL_FILES[@]}"; do
+            if [ -f "$f" ]; then
+              echo "❌ PURGE GUARD: $f re-introduced — must not exist"
+              FOUND=1
+            fi
+          done
+
+          if [ "$FOUND" -eq 1 ]; then
+            exit 1
+          fi
+          echo "✓ PURGE GUARD PASS — all purged files remain deleted"
