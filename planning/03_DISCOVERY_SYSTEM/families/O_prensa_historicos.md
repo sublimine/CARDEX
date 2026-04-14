@@ -130,7 +130,9 @@ NER + entity linking funciona en los 6 idiomas objetivo. Un dealer BE con websit
 
 ## Cross-validation
 
-| Familia | Overlap | Único de O |
+> Hipótesis de diseño — porcentajes de overlap a validar empíricamente en primera ejecución de discovery completo.
+
+| Familia | Overlap hipotético | Único de O |
 |---|---|---|
 | A | ~60% | O captura dealers en prensa antes que en registros (aperturas pre-registro formal) |
 | G | ~30% | O captura dealers independientes no en asociación |

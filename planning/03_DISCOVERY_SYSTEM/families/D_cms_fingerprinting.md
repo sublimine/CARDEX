@@ -154,7 +154,9 @@ Lista expandible iterativamente. Cada plugin nuevo descubierto se añade.
 
 ## Cross-validation con otras familias
 
-| Otra familia | Overlap | Discovery único de D |
+> Hipótesis de diseño — porcentajes de overlap a validar empíricamente. Nota: C→D es 100% por diseño (D consume output de C), no una hipótesis empírica.
+
+| Otra familia | Overlap hipotético | Discovery único de D |
 |---|---|---|
 | C | 100% (D consume URLs de C) | D no descubre dealers nuevos sino características técnicas de los descubiertos |
 | E | ~30% | D detecta CMS propio; E detecta hosting en DMS provider |

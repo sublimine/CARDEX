@@ -112,7 +112,9 @@ Queries de productos/modelos específicos → identificación de qué dealers ap
 
 ## Cross-validation
 
-| Familia | Overlap | Único de K |
+> Hipótesis de diseño — porcentajes de overlap a validar empíricamente en primera ejecución de discovery completo.
+
+| Familia | Overlap hipotético | Único de K |
 |---|---|---|
 | C (web cartography) | ~60% | K captura sites no crawleados por Common Crawl (emergentes o small) |
 | F (aggregators) | ~30% | K captura independientes fuera de marketplaces |

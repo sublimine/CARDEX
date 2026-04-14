@@ -159,7 +159,9 @@ Estrategia: agregación paciente, una vez por ciudad mayor.
 
 ## Cross-validation con otras familias
 
-| Otra familia | Overlap | Discovery único de B |
+> Hipótesis de diseño — porcentajes de overlap a validar empíricamente en primera ejecución de discovery completo.
+
+| Otra familia | Overlap hipotético | Discovery único de B |
 |---|---|---|
 | A (registros) | ~60% | B captura POIs sin registro formal localizado (entidades nuevas, irregularidades) |
 | C (web) | ~70% indirecto | B aporta el seed para discovery web vía dominio resuelto desde POI |

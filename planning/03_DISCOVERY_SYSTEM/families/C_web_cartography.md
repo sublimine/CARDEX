@@ -128,7 +128,9 @@ Cero crawling propio masivo. Consumo de crawls ajenos.
 
 ## Cross-validation con otras familias
 
-| Otra familia | Overlap | Discovery único de C |
+> Hipótesis de diseño — porcentajes de overlap a validar empíricamente en primera ejecución de discovery completo.
+
+| Otra familia | Overlap hipotético | Discovery único de C |
 |---|---|---|
 | A | ~50% | C captura empresas con presencia web sin equivalente fácil en registro mercantil |
 | B | ~70% | C captura dominios sin POI físico (pure online) |

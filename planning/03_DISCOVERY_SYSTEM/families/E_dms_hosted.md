@@ -106,7 +106,9 @@ Es la palanca de eficiencia: cada DMS hosted provider es un "marketplace dealer-
 
 ## Cross-validation con otras familias
 
-| Otra familia | Overlap | Discovery único de E |
+> Hipótesis de diseño — porcentajes de overlap a validar empíricamente en primera ejecución de discovery completo.
+
+| Otra familia | Overlap hipotético | Discovery único de E |
 |---|---|---|
 | C | ~60% | E captura dealers cuyo "site" es un subdomain DMS no detectado en CC |
 | D | inverso (ver D) | D detecta CMS propio; E detecta hosting compartido |

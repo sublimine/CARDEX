@@ -106,7 +106,9 @@ Registrant info histórico → identificación de grupos dealer con múltiples d
 
 ## Cross-validation
 
-| Familia | Overlap | Único de N |
+> Hipótesis de diseño — porcentajes de overlap a validar empíricamente en primera ejecución de discovery completo.
+
+| Familia | Overlap hipotético | Único de N |
 |---|---|---|
 | C (web) | ~50% | N descubre subdominios y hermanos no linkados |
 | E (DMS) | ~60% | N confirma mapping infra DMS y descubre providers menores |

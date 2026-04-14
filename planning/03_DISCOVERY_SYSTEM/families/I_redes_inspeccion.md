@@ -78,7 +78,9 @@ Directorios públicos diseñados para consumidor final. Consentimiento implícit
 
 ## Cross-validation
 
-| Familia | Overlap | Único de I |
+> Hipótesis de diseño — porcentajes de overlap a validar empíricamente en primera ejecución de discovery completo.
+
+| Familia | Overlap hipotético | Único de I |
 |---|---|---|
 | A | ~40% (estaciones puras no son dealers) | I captura talleres con venta ocasional no en registro dealer formal |
 | B | ~60% | I aporta certificación técnica como signal de seriedad |

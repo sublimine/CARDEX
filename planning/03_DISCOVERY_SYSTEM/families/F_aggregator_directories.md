@@ -111,7 +111,9 @@ La mayoría exponen `sitemap.xml` con las URLs de perfiles dealer listadas. Acce
 
 ## Cross-validation con otras familias
 
-| Familia | Overlap | Único de F |
+> Hipótesis de diseño — porcentajes de overlap a validar empíricamente en primera ejecución de discovery completo.
+
+| Familia | Overlap hipotético | Único de F |
 |---|---|---|
 | A | ~30% | F captura dealers sin registro fácilmente localizable |
 | B | ~50% | F confirma geo + aporta teléfono/website |

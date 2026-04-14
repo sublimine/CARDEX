@@ -13,10 +13,10 @@ Especificación técnica detallada del subsistema de generación de descripcione
 
 ### Selección
 - **Llama 3 8B Instruct** cuantizado **Q4_K_M** via llama.cpp
-- Justificación: mejor relación calidad/CPU en la gama 7-8B (superior a Mistral 7B en seguimiento de instrucciones estructuradas), Q4_K_M es el punto óptimo de quantization (pérdida de calidad < 2% vs FP16 en benchmarks de instrucción)
+- Justificación: mejor relación calidad/CPU en la gama 7-8B (superior a Mistral 7B en seguimiento de instrucciones estructuradas según benchmarks comunidad). Q4_K_M punto óptimo de quantization — "pérdida de calidad < 2% vs FP16" es claim de benchmarks comunidad llama.cpp sin fuente primaria citada; hipótesis aceptable pero pendiente validación con el modelo real en hardware target
 - Tamaño en disco: ~4.9 GB (GGUF format)
-- RAM requerida: ~6 GB (VPS CX41 tiene 8 GB — viable, deja margen)
-- Velocidad en CPU: ~8-12 tokens/s en Hetzner CX41 (Intel Ice Lake 4 vCPU) — suficiente para batch nocturno
+- RAM requerida: ~5-6 GB estimados para el modelo; **VPS CX42 tiene 16 GB RAM** (no 8 GB — la confusión es con el plan CX22). Deja ~10 GB para servicios concurrentes [verificado vs tabla 05_VPS_SPEC.md]
+- Velocidad en CPU: ~2-12 tokens/s en Hetzner CX42 (AMD EPYC 4 vCPU) — rango hipotético; 06_STACK_DECISIONS.md estima ~2-8 tok/s. Benchmark propio pendiente post-aprovisionamiento
 
 ### Alternativas evaluadas y descartadas
 - Mistral 7B: inferior en seguimiento de instrucciones multilingüe
@@ -309,4 +309,4 @@ La descripción template es factualmente correcta pero no fluida. Se marca `desc
   validators_passed += "V19"
 ```
 
-El batch nocturno procesa ~1.000-3.000 descripciones por noche dependiendo de CPU load. Para el lanzamiento inicial, la latencia entre indexación y descripción disponible puede ser de hasta 24h. Post-madurez, la queue se mantiene con backlog <1h.
+El batch nocturno procesa ~1.000-3.000 descripciones por noche dependiendo de CPU load (hipótesis — depende de throughput real de llama.cpp en CX42; ver 06_STACK_DECISIONS.md). Para el lanzamiento inicial, la latencia entre indexación y descripción disponible puede ser de hasta 24h. Post-madurez, la queue se mantiene con backlog <1h (hipótesis a validar en operación real).

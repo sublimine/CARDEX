@@ -79,7 +79,9 @@ Datos abiertos regionales/municipales bajo licencias CC BY o equivalentes nacion
 
 ## Cross-validation
 
-| Familia | Overlap | Único de J |
+> Hipótesis de diseño — porcentajes de overlap a validar empíricamente en primera ejecución de discovery completo.
+
+| Familia | Overlap hipotético | Único de J |
 |---|---|---|
 | A | ~70% (mayoría ya en registro federal) | J captura pequeños comercios con licencia municipal sin registro federal prominente |
 | B | ~80% | J añade contexto administrativo + fechas de licencia |

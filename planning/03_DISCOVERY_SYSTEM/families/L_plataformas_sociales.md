@@ -88,7 +88,9 @@ Dealers con perfil social pero sin website → candidatos prioritarios para Edge
 
 ## Cross-validation
 
-| Familia | Overlap | Único de L |
+> Hipótesis de diseño — porcentajes de overlap a validar empíricamente en primera ejecución de discovery completo.
+
+| Familia | Overlap hipotético | Único de L |
 |---|---|---|
 | A | ~70% | L captura dealers sin registro fácilmente localizable |
 | B | ~80% (geo coincide) | L aporta teléfono + reseñas + fotos (enriquecimiento) |

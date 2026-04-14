@@ -71,9 +71,11 @@ Dealer locators publicados por OEMs como servicio al consumidor, diseñados para
 
 ## Cross-validation
 
-| Familia | Overlap | Único de H |
+> Hipótesis de diseño — porcentajes de overlap a validar empíricamente. "~100% con A" es hipótesis fuerte (se asume que dealers OEM oficiales siempre están registrados), pero puede haber casos de registro con retraso o datos desactualizados.
+
+| Familia | Overlap hipotético | Único de H |
 |---|---|---|
-| A | ~100% | H aporta marca representada, categoría oficial |
+| A | ~90-100% (hipótesis) | H aporta marca representada, categoría oficial |
 | B | ~90% | H aporta dealer-ID canónico OEM + servicios específicos |
 | G | ~50% | H captura oficiales no asociados a trade body nacional |
 | F | ~70% | H captura oficiales no listados en aggregators independientes |
