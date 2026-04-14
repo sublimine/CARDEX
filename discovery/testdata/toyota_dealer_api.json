@@ -1,0 +1,28 @@
+{
+  "result": {
+    "dealers": [
+      {
+        "id": "NL-TOY-301",
+        "name": "Toyota Amsterdam",
+        "address": {
+          "street": "Amstelveenseweg 1",
+          "postalCode": "1066 AZ",
+          "city": "Amsterdam",
+          "countryCode": "NL"
+        },
+        "phone": "+31 20 100 0001"
+      },
+      {
+        "dealerId": "NL-TOY-302",
+        "name": "Toyota Utrecht",
+        "address": {
+          "street": "Vleutenseweg 10",
+          "zipCode": "3532 AD",
+          "city": "Utrecht",
+          "countryCode": "NL"
+        }
+      }
+    ]
+  },
+  "status": "OK"
+}
