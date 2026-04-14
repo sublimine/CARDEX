@@ -6,7 +6,13 @@
 
 ## Nota metodológica
 
-Las cifras de esta sección proceden de fuentes oficiales públicas disponibles hasta la fecha de corte de conocimiento del autor (agosto 2025). Las cifras exactas de años posteriores o de fuentes con acceso de pago se marcan `[PV]`. Las estimaciones derivadas se marcan `(est.)` con su metodología. Este documento es el punto de partida para P1 del roadmap, que debe verificar y actualizar estas cifras con las fuentes primarias.
+Las cifras de esta sección proceden de fuentes oficiales públicas disponibles hasta la fecha de corte de conocimiento del autor (agosto 2025). **Vigencia:** documento redactado en 2026-04-14; los datos de mercado reflejan años ~2023-2024 con las fuentes citadas. Los datos de 2026 en adelante requieren P1 del roadmap para actualización.
+
+Convenciones de anotación:
+- **`[PV]`** = Pending Verification — cifra razonablemente probable pero pendiente de acceso primario (fuentes de pago o requieren registro)
+- **`(est.)`** = estimación derivada de otras cifras, con metodología indicada
+- **`[fuente oficial: URL]`** = URL de fuente pública verificable
+- Las cifras de digitización (% dealers con web, DMS, etc.) son estimaciones cualitativas sin fuente primaria; se marcan `(est. sin fuente primaria — hipótesis cualitativa)`
 
 ---
 
@@ -27,9 +33,9 @@ Las cifras de esta sección proceden de fuentes oficiales públicas disponibles 
 - **Grupos dealer dominantes:** AVAG, Emil Frey (CH/DE), Hedin Automotive, Auto1 Group — [PV: top 10 = ~5-8% del mercado en volumen]
 
 ### Digitalización
-- **Dealers con web propia:** ~70-80% (est.) — DE tiene alta penetración digital B2B
-- **Dealers en mobile.de o AutoScout24:** ~90%+ de dealers con stock activo
-- **Dealers con DMS estructurado (feed):** ~40-60% (est. — DealerSocket, CDK, incadea prevalentes en DE)
+- **Dealers con web propia:** ~70-80% (est. sin fuente primaria — hipótesis cualitativa basada en alta penetración digital DE)
+- **Dealers en mobile.de o AutoScout24:** ~90%+ de dealers con stock activo (est. sin fuente primaria — hipótesis cualitativa)
+- **Dealers con DMS estructurado (feed):** ~40-60% (est. sin fuente primaria — DealerSocket, CDK, incadea mencionados en prensa sectorial)
 - **Dealers long-tail (<10 vehículos stock activo):** [PV: ~15.000-20.000 dealers]
 
 ### Plataformas dominantes
@@ -60,9 +66,9 @@ Las cifras de esta sección proceden de fuentes oficiales públicas disponibles 
 - **Grupos dominantes:** Sofida (Emil Frey FR), Amplitude Automotive, BYMYCAR, Aramisauto (Stellantis)
 
 ### Digitalización
-- **Dealers en leboncoin/lacentrale:** ~85%+ con stock activo
-- **Dealers con web propia:** ~55-65% (est.)
-- **Dealers con DMS feed estructurado:** ~35-50% (est.)
+- **Dealers en leboncoin/lacentrale:** ~85%+ con stock activo (est. sin fuente primaria — hipótesis cualitativa)
+- **Dealers con web propia:** ~55-65% (est. sin fuente primaria — hipótesis cualitativa)
+- **Dealers con DMS feed estructurado:** ~35-50% (est. sin fuente primaria — hipótesis cualitativa)
 - **Long-tail dealers (<10 vehículos):** [PV: ~10.000-15.000]
 
 ### Particularidades FR
@@ -94,9 +100,9 @@ Las cifras de esta sección proceden de fuentes oficiales públicas disponibles 
 - **Grupos dominantes:** Grupo Berge, Quadis, EMC España, Comauto (Volkswagen Group)
 
 ### Digitalización
-- **Dealers en Coches.net/Autocasion/Milanuncios:** ~80%+ con stock activo
-- **Dealers con web propia:** ~50-60% (est.)
-- **Dealers con DMS feed:** ~30-45% (est.)
+- **Dealers en Coches.net/Autocasion/Milanuncios:** ~80%+ con stock activo (est. sin fuente primaria — hipótesis cualitativa)
+- **Dealers con web propia:** ~50-60% (est. sin fuente primaria — hipótesis cualitativa)
+- **Dealers con DMS feed:** ~30-45% (est. sin fuente primaria — hipótesis cualitativa)
 - **Long-tail dealers (<10 vehículos):** [PV: ~8.000-12.000]
 
 ### Particularidades ES
@@ -125,7 +131,7 @@ Las cifras de esta sección proceden de fuentes oficiales públicas disponibles 
 - **Grupos dominantes:** D'Ieteren (VW Group BE), Bilia, ALD Automotive
 
 ### Digitalización
-- **Dealers en 2dehands.be / AutoScout24.be / AutoTrader.be:** ~75%+ con stock activo
+- **Dealers en 2dehands.be / AutoScout24.be / AutoTrader.be:** ~75%+ con stock activo (est. sin fuente primaria — hipótesis cualitativa)
 - Bilingüismo FR/NL — los listings están en uno o ambos idiomas; NLG de V19 debe detectar idioma del listing
 
 ### Fuentes primarias

@@ -13,19 +13,19 @@ El diseño de CARDEX está pensado para comenzar en un único VPS (S0) y escalar
 
 **Configuración:**
 ```
-1× Hetzner CX41 (4 vCPU, 16 GB RAM, 240 GB NVMe)
+1× Hetzner CX42 (4 vCPU, 16 GB RAM, 240 GB NVMe) — plan renombrado de CX41 en 2024
 Todo co-located: Discovery + Extraction + Quality + NLG + Index + API
 SQLite OLTP (WAL) + DuckDB OLAP
 NATS embedded
-OPEX: €22.25/mes
+OPEX: ~€22.25/mes (estimado — verificar precios actuales en hetzner.com/cloud)
 ```
 
-**Capacidad estimada:**
+**Capacidad estimada (hipótesis de diseño — a validar en S0 real):**
 - Dealers indexados: hasta ~15.000 ACTIVE
 - Vehículos ACTIVE: hasta ~100.000
-- Queries B2B: hasta ~500 req/min (DuckDB columnar muy eficiente)
-- NLG throughput: ~500-1.300 descripciones/noche (ventana 5.5h, 8-40s/desc)
-- Crawling: ~50.000 listings/día respetando rate limits
+- Queries B2B: hasta ~500 req/min (hipótesis — DuckDB columnar eficiente; a medir con carga real)
+- NLG throughput: ~500-1.300 descripciones/noche (hipótesis — ver 06_STACK_DECISIONS.md: ~2-8 tok/s en CX42)
+- Crawling: ~50.000 listings/día respetando rate limits (hipótesis — depende de distribución de rate limits por fuente)
 
 **Criterios de salida a S1 (CUALQUIERA de los siguientes):**
 ```
@@ -46,22 +46,22 @@ OPEX: €22.25/mes
 
 **Configuración:**
 ```
-VPS-A (Web + API):      Hetzner CX41 — API Service, SSE Gateway, Caddy, Manual Review UI
+VPS-A (Web + API):      Hetzner CX42 — API Service, SSE Gateway, Caddy, Manual Review UI
                         DuckDB OLAP read replica (parquet files copiados via rsync cada 5min)
-                        OPEX: €18/mes
+                        OPEX: ~€18/mes (estimado)
 
-VPS-B (Backend):        Hetzner CX51 (8 vCPU, 32 GB RAM) — Discovery, Extraction, Quality, NLG
+VPS-B (Backend):        Hetzner CX52 (8 vCPU, 32 GB RAM) — Discovery, Extraction, Quality, NLG
                         SQLite OLTP (WAL) escrituras
                         NATS broker (exposición TCP entre VPS via WireGuard VPN)
-                        OPEX: €32/mes
+                        OPEX: ~€32/mes (estimado — verificar en hetzner.com/cloud)
 
 Storage Box: 1 TB       Backup + parquet OLAP sync (rsync VPS-B → Storage Box → VPS-A)
-                        OPEX: €3/mes
+                        OPEX: ~€3/mes (estimado)
 
 WireGuard VPN:          Tunnel privado VPS-A ↔ VPS-B (cifrado, sin exposición pública)
                         10.10.0.1 (VPS-A) ↔ 10.10.0.2 (VPS-B)
 
-TOTAL OPEX S1: €53/mes
+TOTAL OPEX S1: ~€53/mes (estimado)
 ```
 
 **Cambios de arquitectura en S1:**
@@ -93,15 +93,15 @@ TOTAL OPEX S1: €53/mes
 
 **Configuración:**
 ```
-VPS-A (Web + API):      Hetzner CX41 — API Service, SSE Gateway, Caddy
-VPS-B (Pipelines):      Hetzner CX51 — Discovery, Extraction, Quality
+VPS-A (Web + API):      Hetzner CX42 — API Service, SSE Gateway, Caddy
+VPS-B (Pipelines):      Hetzner CX52 — Discovery, Extraction, Quality
 VPS-C (Data):           Hetzner EX44 (dedicated, 64 GB RAM, 2×512 GB NVMe)
                         - DuckDB OLAP queries (sin rsync lag — VPS-A conecta directo)
                         - PostgreSQL OLTP (migración desde SQLite)
                         - NATS JetStream cluster (2 nodes: VPS-B + VPS-C)
                         OPEX: €45/mes (bare metal)
 
-NLG: continúa en VPS-B (CX51, 32 GB)
+NLG: continúa en VPS-B (CX52, 32 GB)
 
 TOTAL OPEX S2: €98/mes
 ```
@@ -141,11 +141,11 @@ TOTAL OPEX S2: €98/mes
 ```
 K8s cluster (Hetzner Cloud Kubernetes o bare metal k3s):
   - 3 control plane nodes (CX31, €12/mes cada uno)
-  - 4-8 worker nodes (CX41, €18/mes cada uno, autoscaling)
+  - 4-8 worker nodes (CX42, €18/mes cada uno, autoscaling)
   - Load balancer Hetzner (€5/mes)
 
 Datos:
-  - PostgreSQL HA (Patroni cluster, 3 nodes CX41)
+  - PostgreSQL HA (Patroni cluster, 3 nodes CX42)
   - ClickHouse cluster (3 shards × 2 replicas, EX44 dedicated)
   - NATS cluster (3 nodes, JetStream, clustering nativo)
   - Redis cluster (sesiones API, cache de queries frecuentes)
@@ -154,7 +154,7 @@ Datos:
   discovery-DE, discovery-FR, discovery-ES, discovery-BE, discovery-NL, discovery-CH
   Cada pool: 2-4 pods, escala independientemente
 
-OPEX estimado S3: €400-800/mes (variable con escala)
+OPEX estimado S3: ~€400-800/mes (hipótesis — variable con escala y precios cloud vigentes en el momento)
 ```
 
 **Cambios de arquitectura en S3:**
@@ -183,11 +183,11 @@ Y/O descriptions pending >20% del total de vehículos ACTIVE
 
 **Opción 1 — Hetzner GEX44 (GPU dedicada)**
 ```
-Hardware:  Intel i9-13900 + RTX 3080 12 GB VRAM
-Precio:    €118/mes
-NLG boost: llama.cpp con CUDA → ~60-120 tokens/s vs ~2-8 tokens/s en CPU
-           → ~4-8s por descripción vs 15-60s → 10× throughput
-Capacidad: ~30.000-50.000 descripciones/noche
+Hardware:  Intel i9-13900 + RTX 3080 12 GB VRAM (verificar disponibilidad y specs actuales en hetzner.com)
+Precio:    ~€118/mes (estimado — verificar en hetzner.com/dedicated/gpu)
+NLG boost: llama.cpp con CUDA → ~60-120 tokens/s vs ~2-8 tokens/s en CPU (hipótesis, ver benchmarks llama.cpp)
+           → ~4-8s por descripción vs 15-60s → ~10× throughput (hipótesis)
+Capacidad: ~30.000-50.000 descripciones/noche (hipótesis)
 ```
 
 **Opción 2 — Hetzner EX44 + eGPU (experimental)**
@@ -228,11 +228,13 @@ Environment=CUDA_VISIBLE_DEVICES=0
 
 ## Costes por fase
 
-| Fase | Dealers estimados | OPEX/mes | Coste/dealer/mes |
+> Todos los OPEX y capacidades son estimaciones hipotéticas. Verificar precios actuales en hetzner.com/cloud antes de planificar presupuesto.
+
+| Fase | Dealers estimados (hipótesis) | OPEX/mes estimado | Coste/dealer/mes hipotético |
 |---|---|---|---|
-| S0 | 0-15.000 | €22 | €0.0015 |
-| S1 | 15.000-50.000 | €53 | €0.0011 |
-| S2 | 50.000-200.000 | €98 | €0.0005 |
-| S3 | 200.000+ | €400-800 | €0.0020-0.0040 |
+| S0 | 0-15.000 | ~€22 | ~€0.0015 |
+| S1 | 15.000-50.000 | ~€53 | ~€0.0011 |
+| S2 | 50.000-200.000 | ~€98 | ~€0.0005 |
+| S3 | 200.000+ | ~€400-800 | ~€0.0020-0.0040 |
 
 La eficiencia de coste por dealer mejora de S0 a S2 por economías de escala. S3 invierte la tendencia por el overhead de cluster, pero es justificable cuando el negocio tiene revenue proporcional.

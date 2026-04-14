@@ -23,7 +23,7 @@ La solución: **el recurso de refresh se asigna según el valor de negocio del v
 - Listing abierto en un terminal ahora mismo (presence detection via SSE)
 - Aparece en ≥3 search results recientes
 
-**Volumen esperado:** <5% del índice en cualquier momento (~0.5-2% típico).
+**Volumen esperado:** <5% del índice en cualquier momento (~0.5-2% típico). Hipótesis a validar en producción.
 
 **Frecuencia de re-check:** 5 min para listings actualmente abiertos, 15 min para el resto del tier.
 
@@ -35,14 +35,14 @@ La solución: **el recurso de refresh se asigna según el valor de negocio del v
 - Vehículos con ≥5 views acumuladas en los últimos 30 días
 - Vehículos en segmentos de alta rotación (premium <50k km, compacts <3 años, comerciales light)
 
-**Volumen esperado:** 15-25% del índice.
+**Volumen esperado:** 15-25% del índice. Hipótesis a validar en producción.
 
 **Frecuencia:** 60-120 min.
 
 ### Tier COLD — long-tail, refresh 4-8h
 **Qué entra:** el resto. Vehículos sin actividad reciente, stock antiguo, segmentos de baja rotación.
 
-**Volumen esperado:** 70-80% del índice.
+**Volumen esperado:** 70-80% del índice. Hipótesis a validar en producción.
 
 **Frecuencia:** 4-8h según carga del VPS (scheduler ajusta dinámicamente para respetar budget).
 
@@ -120,7 +120,7 @@ CREATE INDEX idx_refresh_job_tier_status ON refresh_job(tier, completed_at);
 
 ### Rate limit budget por tier
 
-Asignación total del VPS: ~150 requests/min efectivos cross-hosts (tras factoring rate limits per host).
+Asignación total del VPS: ~150 requests/min efectivos cross-hosts (hipótesis de diseño — cifra exacta depende de la distribución real de rate limits por fuente; a ajustar en S0).
 
 | Tier | Budget | Rationale |
 |---|---|---|
@@ -166,7 +166,7 @@ cardex_refresh_staleness_p99_seconds{tier} # freshness SLA por tier
 
 Si el VPS no puede sostener el budget total:
 1. Demote tier HOT → WARM temporalmente para los vehículos con menor activity score dentro de HOT
-2. Alert ColdTierStarved → operador evalúa upgrade a VPS CX51 (€32/mes) según criterios S1 del escalado
+2. Alert ColdTierStarved → operador evalúa upgrade a VPS CX52 (ex-CX51, ~€32/mes estimado) según criterios S1 del escalado
 3. Circuit breaker: si un host específico está emitiendo 429 repetidamente, scheduler pausa refresh para ese host, flag para investigación (posible cambio en rate limit source)
 
 ## Interacción con NLG batch (V19)
