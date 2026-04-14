@@ -8,7 +8,9 @@
 Cada decisión de stack se justifica en tres dimensiones:
 1. **Funcional:** ¿cumple los requisitos técnicos del caso de uso?
 2. **Operacional:** ¿puede ser mantenido por 1 persona sin conocimiento especializado?
-3. **Económico:** ¿tiene coste €0 de licencia y coste de recursos compatible con VPS CX41?
+3. **Económico:** ¿tiene coste €0 de licencia y coste de recursos compatible con VPS CX42?
+
+> **Nota:** Las métricas de rendimiento en este documento (tokens/s, req/s, imágenes/s, INSERT/s) son **hipótesis de diseño** basadas en benchmarks públicos y documentación de proyectos, salvo donde se indique una fuente primaria verificada. Deben validarse empíricamente en el hardware real post-aprovisionamiento.
 
 ---
 
@@ -41,7 +43,7 @@ Cada decisión de stack se justifica en tres dimensiones:
 - **Memory footprint:** YOLOv8n INT8 ~6 MB, MobileNetV3 INT8 ~2 MB, spaCy ONNX ~45 MB — caben en 500 MB total
 - **Razón de descarte PyTorch:** proceso Python separado con overhead IPC; torch completo >1 GB RAM; no necesitamos gradientes en inference
 - **Razón de descarte TFLite:** ecosistema Go incompleto; menos modelos disponibles en este formato
-- **Throughput estimado:** YOLOv8n INT8 en 4 vCPU AMD EPYC → ~15-25 imágenes/segundo (suficiente para pipeline asíncrono)
+- **Throughput estimado:** YOLOv8n INT8 en 4 vCPU AMD EPYC → ~15-25 imágenes/segundo. Hipótesis basada en benchmarks comunidad ONNX Runtime [pendiente verificación con benchmark propio post-aprovisionamiento]
 
 ---
 
@@ -56,7 +58,7 @@ Cada decisión de stack se justifica en tres dimensiones:
 - **Calidad:** Llama 3 8B Instruct (Meta, Apache 2.0) es el mejor modelo open-source <10B para instrucción en múltiples idiomas (ES/FR/DE/NL/EN/IT)
 - **Q4_K_M:** quantización 4-bit con método K-mean — mejor balance calidad/velocidad para CPU inference; 4.5 GB de VRAM/RAM
 - **llama.cpp:** implementación C++ optimizada para CPU (AVX2, NEON), bindings Go via CGO, activamente mantenida
-- **Throughput en CX41:** ~2-8 tokens/segundo en 4 vCPU → ~15-60 segundos por descripción de 120 palabras → ventana nocturna 5.5h → ~500-1300 descripciones/noche → suficiente para S0
+- **Throughput en CX42:** ~2-8 tokens/segundo en 4 vCPU (hipótesis — rango documentado en llama.cpp benchmarks para hardware comparable [pendiente verificación con benchmark propio]) → ~15-60s por descripción de 120 palabras → ventana nocturna 5.5h → ~500-1.300 descripciones/noche → suficiente para S0
 - **Razón de descarte GPT-4 API:** coste ~€0.02-0.06 por descripción; con 50.000 vehículos = €1.000-3.000 → incompatible con €0 OPEX
 - **Razón de descarte Phi-3 mini:** calidad en ES/FR inferior a Llama 3; multilingual peor documentado
 - **Template fallback:** cuando LLM no disponible o produce alucinación → `text/template` Go determinístico
@@ -70,7 +72,7 @@ Cada decisión de stack se justifica en tres dimensiones:
 | **Elección** | **SQLite 3 (WAL mode)** | PostgreSQL, MySQL, CockroachDB, BoltDB |
 
 **Justificación:**
-- **WAL mode:** Write-Ahead Logging permite readers concurrentes sin bloquear al writer; throughput de escritura >10.000 INSERT/s en NVMe
+- **WAL mode:** Write-Ahead Logging permite readers concurrentes sin bloquear al writer; throughput de escritura >10.000 INSERT/s en NVMe (hipótesis conservadora — benchmarks comunidad SQLite WAL en NVMe reportan 30-100k+ INSERT/s según workload; cifra exacta depende del hardware real)
 - **Sin proceso separado:** SQLite es una librería, no un daemon; sin overhead de networking, sin gestión de conexiones, sin pg_hba.conf
 - **Driver pure Go:** `modernc.org/sqlite` — sin CGO, compila en cualquier plataforma, sin dependencias de sistema
 - **Backup trivial:** `sqlite3 main.db ".backup main_backup.db"` — backup online sin locking aplicación
@@ -90,7 +92,7 @@ Cada decisión de stack se justifica en tres dimensiones:
 **Justificación:**
 - **DuckDB:** motor analítico embebido (librería Go, sin daemon), vectorizado, columnar — queries complejas de búsqueda B2B en <500ms sobre millones de registros
 - **Parquet:** formato columnar estándar, compresión ~10:1 sobre CSV, permite queries parciales (column pruning), portátil
-- **Queries B2B típicas:** `SELECT * FROM vehicles WHERE make='BMW' AND year BETWEEN 2018 AND 2022 AND price_eur < 25000 AND country='DE' ORDER BY confidence_score DESC LIMIT 50` — DuckDB ejecuta esto en <200ms con 500.000 registros
+- **Queries B2B típicas:** `SELECT * FROM vehicles WHERE make='BMW' AND year BETWEEN 2018 AND 2022 AND price_eur < 25000 AND country='DE' ORDER BY confidence_score DESC LIMIT 50` — hipótesis: DuckDB ejecuta esto en <200ms con 500.000 registros en NVMe (estimación basada en documentación DuckDB y benchmarks columnar; a validar con datos reales S0)
 - **Sin daemon:** DuckDB embebido en el binario Go del API service; sin proceso separado, sin configuración de red
 - **Razón de descarte Elasticsearch:** 512 MB+ RAM solo para JVM; configuración compleja de índices; sharding innecesario en S0; license cambiante (SSPL en versiones recientes)
 - **Razón de descarte ClickHouse:** excesivo para S0; requiere servidor separado; overhead de configuración
@@ -240,11 +242,13 @@ Cada decisión de stack se justifica en tres dimensiones:
 
 ## Resumen ejecutivo
 
-| Capa | Elección | RAM estimada | €/mes |
+> Las cifras de RAM son estimaciones de diseño (hipótesis). Validar con medición real post-aprovisionamiento.
+
+| Capa | Elección | RAM estimada (hipótesis) | €/mes |
 |---|---|---|---|
 | Lenguaje | Go 1.22+ | — | €0 |
-| ML Inference | ONNX Runtime INT8 | ~500 MB (modelos) | €0 |
-| NLG | llama.cpp Llama 3 8B Q4_K_M | 4.5 GB (nocturno) | €0 |
+| ML Inference | ONNX Runtime INT8 | ~500 MB (modelos en disco; runtime ~200 MB) | €0 |
+| NLG | llama.cpp Llama 3 8B Q4_K_M | ~4.5 GB (nocturno; 0 diurno si swap-out) | €0 |
 | OLTP | SQLite 3 WAL | <100 MB runtime | €0 |
 | OLAP | DuckDB + parquet | ~200 MB runtime | €0 |
 | Queue | NATS embedded | ~20 MB | €0 |
@@ -255,5 +259,5 @@ Cada decisión de stack se justifica en tres dimensiones:
 | Search Alt | SearXNG Docker | ~200 MB | €0 |
 | Observability | Prometheus + Grafana | ~768 MB | €0 |
 | CI/CD | Forgejo Docker | ~512 MB | €0 |
-| Backup | rsync + age | — | €3 (Storage Box) |
-| **TOTAL stack** | | **~7.2 GB peak (nocturno)** | **€3 licencias** |
+| Backup | rsync + age | — | ~€3 (Storage Box) |
+| **TOTAL stack** | | **~7.2 GB peak nocturno (hipótesis)** | **~€3 licencias** |

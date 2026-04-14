@@ -16,50 +16,55 @@
 
 ### Tabla comparativa
 
-| Vendor | Plan | CPU | RAM | SSD | Tráfico | Precio/mes | ISO 27001 | Nota |
+> **Nota:** Los precios en esta tabla son estimaciones en el momento de redacción del documento. **Verificar precios actuales en los portales de cada proveedor antes de aprovisionar.** Hetzner renombró el plan CX41 a CX42 en 2024 [verificado 2026-04-14].
+
+| Vendor | Plan | CPU | RAM | SSD | Tráfico | Precio/mes¹ | ISO 27001 | Nota |
 |---|---|---|---|---|---|---|---|---|
-| **Hetzner** | CX41 | 4 vCPU AMD EPYC | 16 GB | 240 GB NVMe | 20 TB | **€18** | ✓ | **RECOMENDADO** |
-| **Hetzner** | CX51 | 8 vCPU AMD EPYC | 32 GB | 360 GB NVMe | 20 TB | €32 | ✓ | Escalado vertical S1 |
-| **Hetzner** | EX44 (dedicated) | 4-Core i5-13500 | 64 GB | 2×512 GB NVMe | 20 TB | €45 | ✓ | Opción S2, bare metal |
-| **Contabo** | VPS S | 6 vCPU | 16 GB | 50 GB NVMe | unlimited | €6 | ✗ | Almacenamiento insuficiente — DESCARTAR |
-| **Contabo** | VPS M | 8 vCPU | 16 GB | 400 GB NVMe | unlimited | €15 | ✗ | Precio atractivo, sin ISO 27001, perf variable documentada |
-| **Scaleway** | DEV1-L | 4 vCPU | 8 GB | 80 GB NVMe | 200 GB | €20 | ✓ (parcial) | RAM insuficiente (8 GB) — DESCARTAR |
-| **OVH** | VPS-3 | 4 vCPU | 8 GB | 80 GB SSD | 250 GB/mo | €17 | ✓ | RAM insuficiente (8 GB) — DESCARTAR |
-| **IONOS** | VPS XL | 8 vCPU | 16 GB | 240 GB SSD | unlimited | €18 | ✓ | Sin NVMe confirmado, support peor reputación |
-| **DigitalOcean** | Premium AMD 4/16 | 4 vCPU | 16 GB | 200 GB NVMe | 6 TB | €72 | ✓ | Precio no competitivo — DESCARTAR |
+| **Hetzner** | **CX42** (ex-CX41) | 4 vCPU AMD EPYC | 16 GB | 240 GB NVMe | 20 TB | **~€18** | ✓ [ver nota 2] | **RECOMENDADO** |
+| **Hetzner** | CX52 (ex-CX51) | 8 vCPU AMD EPYC | 32 GB | 360 GB NVMe | 20 TB | ~€32 | ✓ | Escalado vertical S1 |
+| **Hetzner** | EX44 (dedicated) | 4-Core i5-13500 | 64 GB | 2×512 GB NVMe | 20 TB | ~€45 | ✓ | Opción S2, bare metal |
+| **Contabo** | VPS S | 6 vCPU | 16 GB | 50 GB NVMe | unlimited | ~€6 | ✗ | Almacenamiento insuficiente — DESCARTAR |
+| **Contabo** | VPS M | 8 vCPU | 16 GB | 400 GB NVMe | unlimited | ~€15 | ✗ | Sin ISO 27001; perf variable [benchmarks comunidad, hipótesis de overcrowding] |
+| **Scaleway** | DEV1-L | 4 vCPU | 8 GB | 80 GB NVMe | 200 GB | ~€20 | ✓ (parcial, verificar alcance) | RAM insuficiente (8 GB) — DESCARTAR |
+| **OVH** | VPS-3 | 4 vCPU | 8 GB | 80 GB SSD | 250 GB/mo | ~€17 | ✓ | RAM insuficiente (8 GB) — DESCARTAR |
+| **IONOS** | VPS XL | 8 vCPU | 16 GB | 240 GB SSD | unlimited | ~€18 | ✓ | Sin NVMe confirmado — verificar en contratación |
+| **DigitalOcean** | Premium AMD 4/16 | 4 vCPU | 16 GB | 200 GB NVMe | 6 TB | ~€72 | ✓ | Precio no competitivo — DESCARTAR |
 | **AWS EC2** | t3.xlarge | 4 vCPU | 16 GB | EBS 100 GB | ~pay-per-GB | ~€150 | ✓ | OPEX variable, vendor lock-in — DESCARTAR |
+
+¹ Precios aproximados en el momento de redacción; verificar en portales de cada vendor antes de contratar.
+² Hetzner ISO 27001: certificado para todos los DC europeos [pendiente verificación directa en hetzner.com/legal/certifications; requerimiento B2B crítico].
 
 ### Análisis de las 2 opciones finalistas
 
-#### Hetzner CX41 (RECOMENDADO)
-- **CPU:** AMD EPYC Rome 7003, rendimiento consistente y documentado en benchmarks públicos
-- **NVMe:** velocidades de escritura secuencial ~1.5 GB/s → DuckDB OLAP y SQLite WAL-intensive sin bottleneck
-- **Tráfico:** 20 TB incluidos (estimado CARDEX S0: ~3-5 TB/mes) → margen holgado
+#### Hetzner CX42 (RECOMENDADO, ex-CX41)
+- **CPU:** AMD EPYC — generación específica varía por DC y fecha de aprovisionamiento; verificar en hetzner.com/cloud al contratar
+- **NVMe:** velocidades de escritura secuencial ~1.5 GB/s (hipótesis basada en benchmarks comunidad Hetzner — verificar con benchmark propio post-aprovisionamiento) → DuckDB OLAP y SQLite WAL sin bottleneck en S0
+- **Tráfico:** 20 TB incluidos (estimado CARDEX S0: ~3-5 TB/mes → hipótesis a validar en primer mes) → margen holgado
 - **Red:** Nürnberg DC (baja latencia a DE/AT) o Helsinki (baja latencia a Nordics)
-- **ISO 27001:** certificado para todos los DCs, obligatorio para buyers corporativos B2B
-- **Panel:** API Hetzner Cloud para provisionamiento, snapshots automáticos
-- **Soporte:** documentación excelente, foro activo, SLA 99.9% uptime
-- **Contrapartida:** sin plan gratuito de outbound masivo a terceros (crawling intensivo) — verificar terms of service. El TOS permite bots si no son abusivos. CardexBot/1.0 con rate limiting por dominio cumple.
+- **ISO 27001:** pendiente verificación directa en hetzner.com/legal/certifications — obligatorio para buyers corporativos B2B
+- **Panel:** API Hetzner Cloud para provisionamiento, snapshots automáticos [verificado 2026-04-14 vía https://docs.hetzner.cloud/]
+- **Soporte:** SLA 99.9% uptime [pendiente verificación en Hetzner SLA document actual]
+- **Contrapartida:** verificar TOS para crawling. CardexBot/1.0 con rate limiting por dominio es razonable; Hetzner no prohíbe bots transparentes [hipótesis basada en TOS lectura general]
 
 #### Contabo VPS M (ALTERNATIVA DE EMERGENCIA)
-- Precio €15/mes — ahorro €3/mes sobre Hetzner
+- Precio ~€15/mes — ahorro ~€3/mes sobre Hetzner CX42
 - 8 vCPU vs 4 → ventaja en parallelismo NLG
-- **Contras:** sin ISO 27001, performance históricamente variable (overcrowding documentado en benchmarks comunidad), soporte lento, ubicación DE/US
-- Usar solo si Hetzner CX41 no está disponible en región objetivo
+- **Contras:** sin ISO 27001 (deal-breaker para B2B corporativos), performance variable (overcrowding reportado por comunidad en benchmarks — no datos oficiales), soporte históricamente lento según reseñas
+- Usar solo si Hetzner CX42 no está disponible en región objetivo
 
 ## Recomendación Final
 
-**Hetzner CX41 — CPX41 (AMD)** en Nürnberg (NBG1) o Falkenstein (FSN1)
+**Hetzner CX42** (renombrado de CX41 en 2024) en Nürnberg (NBG1) o Falkenstein (FSN1)
 
 ```
-Plan:           CX41 (AMD EPYC)
+Plan:           CX42 (AMD — ex-CX41, renombrado 2024)
 vCPU:           4 dedicadas
 RAM:            16 GB DDR4
 Storage:        240 GB NVMe SSD
 Tráfico:        20 TB/mes incluidos
-Precio:         €18/mes (sin IVA)
+Precio est.:    ~€18/mes (sin IVA) — verificar en hetzner.com/cloud antes de contratar
 Región:         Nürnberg NBG1 (primaria) / Helsinki HEL1 (backup)
-ISO 27001:      ✓ certificado
+ISO 27001:      pendiente verificación directa en hetzner.com/legal/certifications
 Proveedor DNI:  Hetzner Online GmbH, Industriestr. 25, 91710 Gunzenhausen, DE
 ```
 
@@ -237,12 +242,14 @@ Alerta:      email a operator en <2 minutos de downtime
 
 ## Coste Total Mensual (S0)
 
-| Concepto | Vendor | Coste/mes |
-|---|---|---|
-| VPS CX41 (4 vCPU, 16 GB RAM, 240 GB NVMe, 20 TB tráfico) | Hetzner | €18.00 |
-| Storage Box BX11 (1 TB, backups cifrados) | Hetzner | €3.00 |
-| Monitorización externa (HTTPS ping, alertas email) | UptimeRobot | €0.00 (free) |
-| Dominio cardex.io (amortizado mensual) | Namecheap | ~€1.25 |
-| **TOTAL OPEX mensual** | | **€22.25** |
+> Precios estimados en el momento de redacción. Verificar en portales de los vendors antes de aprovisionar.
 
-> Nota: todo el software (Go, Python, Llama, ONNX, DuckDB, SQLite, Prometheus, Grafana, Forgejo, SearXNG, Caddy, LanguageTool) es open-source sin coste de licencia. El coste real de infraestructura es €22.25/mes.
+| Concepto | Vendor | Coste/mes estimado |
+|---|---|---|
+| VPS CX42 (4 vCPU, 16 GB RAM, 240 GB NVMe, 20 TB tráfico) | Hetzner | ~€18.00 |
+| Storage Box BX11 (1 TB, backups cifrados) | Hetzner | ~€3.00 |
+| Monitorización externa (HTTPS ping, alertas email) | UptimeRobot | €0.00 (free tier) |
+| Dominio cardex.io (amortizado mensual) | Namecheap | ~€1.25 |
+| **TOTAL OPEX mensual estimado** | | **~€22.25** |
+
+> Todo el software (Go, Llama, ONNX, DuckDB, SQLite, Prometheus, Grafana, Forgejo, SearXNG, Caddy, LanguageTool) es open-source sin coste de licencia. El coste de infraestructura estimado es ~€22.25/mes.
