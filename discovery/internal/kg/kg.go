@@ -57,6 +57,18 @@ const (
 	// Value format: "{oem_brand}:{dealer_id}" to avoid cross-brand collisions.
 	// e.g. "VW:DE-12345", "BMW:DE-67890", "TOYOTA:DE-99001"
 	IdentifierOEMDealerID IdentifierType = "OEM_DEALER_ID" // OEM official dealer ID — deferred Sprint 7+
+
+	// ── Family I — inspection & certification network identifiers ─────────────
+	// Inspection stations are NOT dealer candidates (is_dealer_candidate=false).
+	// They are adjacent signals used to cross-reference dealer operators that also
+	// hold inspection authorisations.
+	IdentifierAPKStationID      IdentifierType = "APK_STATION_ID"       // RDW APK (NL) erkenningsnummer
+	IdentifierDEKRAStationID    IdentifierType = "DEKRA_STATION_ID"     // DEKRA station ID (DE/FR/…)
+	IdentifierTUVStationID      IdentifierType = "TUV_STATION_ID"       // TÜV station ID (DE, multiple orgs)
+	IdentifierITVStationID      IdentifierType = "ITV_STATION_ID"       // ITV station ID (ES)
+	IdentifierCTStationID       IdentifierType = "CT_STATION_ID"        // Contrôle Technique station ID (FR/BE)
+	IdentifierBoschCarServiceID IdentifierType = "BOSCH_CAR_SERVICE_ID" // Bosch Car Service partner ID (pan-EU)
+	IdentifierMFKStationID      IdentifierType = "MFK_STATION_ID"       // MFK station ID (CH)
 )
 
 // DealerEntity is the canonical representation of a B2B dealer operator.
