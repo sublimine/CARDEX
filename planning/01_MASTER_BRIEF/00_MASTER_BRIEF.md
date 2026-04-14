@@ -59,8 +59,8 @@ El resultado: anuncio impecable, sin un solo byte de copyright ajeno almacenado,
 ### R1 — Legalidad estricta
 Cero técnicas de evasión: ningún WAF bypass, ninguna TLS impersonation, ningún UA spoofing, ningún proxy residencial evasivo, ningún anti-fingerprinting. Todo acceso es transparente (UA identificable como CardexBot), respeta robots.txt y rate limits declarados, y opera bajo bases legales explícitas (open data, sitemap como licencia implícita, EU Data Act delegado por dealer, Schema.org como sindicación intencional).
 
-### R2 — Presupuesto €0 OPEX
-Single VPS objetivo. Stack 100% open-source, datasets públicos, procesamiento local. Ninguna API de pago. La arquitectura se diseña para una máquina, lo que impone disciplina de eficiencia. Camino de escalado horizontal previsto para cuando el negocio valide.
+### R2 — Presupuesto OPEX runtime mínimo
+Single VPS objetivo. Stack 100% open-source, datasets públicos, procesamiento local. Ninguna API de pago. La arquitectura se diseña para una máquina, lo que impone disciplina de eficiencia. **OPEX realista: ~€22/mes pre-launch; €60-150/mes en operación a escala** (batch NLG nocturno + tráfico + workers). Camino de escalado horizontal previsto para cuando el negocio valide.
 
 ### R3 — Calidad institucional zero-error
 Ningún registro publicado sin pasar las 20 validaciones V01-V20. Lo que no llega a estándar entra en cola de revisión humana, no se publica. Mejor 100k vehículos impecables que 500k con errores.

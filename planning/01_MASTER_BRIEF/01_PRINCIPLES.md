@@ -26,14 +26,19 @@ Cero técnicas de evasión técnica de medidas de protección. Todo acceso a dat
 ### Excepciones permitidas
 Ninguna. Si una fuente requiere evasión para ser accedida, se considera no accesible bajo este régimen. La cobertura no se mejora violando ley.
 
-## R2 — Presupuesto €0 OPEX runtime
+## R2 — Presupuesto OPEX runtime mínimo
 
 ### Enunciado
 Operación 100% sostenible sobre un único VPS de bajo coste mensual. Stack tecnológico íntegramente open-source y self-hosted. Ninguna dependencia de API de pago en runtime.
 
+**OPEX runtime realista: €60-150/mes en operación a escala documentada** (Common Crawl monthly processing >150GB + Llama batch nocturno + observability stack + backups). El target inicial de ~€22/mes es válido SOLO durante fase pre-launch con volumen reducido (sin batch NLG nocturno, sin Common Crawl, sin tráfico de buyers).
+
+Desglose pre-launch: €18 VPS + €3 Storage Box + ~€1.25 dominio = ~€22/mes.
+Desglose operación plena estimada: €18 VPS + €3 Storage Box + €1.25 dominio + €30-100 tráfico/egress + €10-30 VPS adicional worker batch = €62-152/mes.
+
 ### Implicaciones operacionales
 
-**Arquitectura.** VPS objetivo Hetzner CX41 (4 vCPU AMD, 16 GB RAM, 240 GB NVMe, 20 TB tráfico) o equivalente, ~€22/mes (€18 VPS + €3 Storage Box + ~€1.25 dominio). Stack:
+**Arquitectura.** VPS objetivo Hetzner CX41 (4 vCPU AMD, 16 GB RAM, 240 GB NVMe, 20 TB tráfico) o equivalente, ~€18/mes base (€18 VPS + €3 Storage Box + ~€1.25 dominio). Stack:
 
 - OS: Debian 12 minimal hardened
 - Lenguaje principal: Go (binarios estáticos, footprint <50 MB típico). Python solo para ML inference y PDF parsing
