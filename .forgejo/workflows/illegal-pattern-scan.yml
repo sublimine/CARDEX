@@ -115,6 +115,30 @@ puppeteer-extra-plugin-stealth|playwright-extra)" \
           echo "✓ CS-0-4 PASS — RobotsChecker wired"
           echo "  $CHECKER"
 
+  dependency-scan:
+    name: Dependency vulnerability scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with: { go-version: '1.22' }
+
+      - name: govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          cd discovery
+          govulncheck ./...
+
+      - name: pip-audit (Python deps si hay)
+        run: |
+          pip install pip-audit
+          for req in $(find . -name "requirements.txt"); do
+            pip-audit -r "$req" || true
+          done
+
       # ── Deleted files check: ensure purged files stay deleted ─────────
       - name: Purge guard · Ensure stealth files not re-introduced
         run: |
