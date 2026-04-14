@@ -13,14 +13,14 @@ Planificación completa bajo régimen institucional definido el 2026-04-14.
 
 | Directorio | Propósito | Estado |
 |---|---|---|
-| `00_AUDIT/` | Estado repo + plan purga + delta git | CREADO |
-| `01_MASTER_BRIEF/` | Brief, principios, criterios éxito | PENDING |
-| `02_MARKET_INTELLIGENCE/` | Censo mercado + competidores + tooling benchmarks | PENDING |
-| `03_DISCOVERY_SYSTEM/` | 15 familias de discovery dealer documentadas | PENDING |
-| `04_EXTRACTION_PIPELINE/` | Estrategias E1-E12 extracción catálogo | PENDING |
-| `05_QUALITY_PIPELINE/` | Validadores V01-V20 zero-error | PENDING |
-| `06_ARCHITECTURE/` | Arquitectura técnica + spec VPS | PENDING |
-| `07_ROADMAP/` | Plan ejecución por fases con criterios cuantitativos | PENDING |
+| `00_AUDIT/` | Estado repo + plan purga + delta git | DOCUMENTADO |
+| `01_MASTER_BRIEF/` | Brief, principios, criterios éxito | DOCUMENTADO |
+| `02_MARKET_INTELLIGENCE/` | Censo mercado + competidores + tooling + regulatorio + datasets | DOCUMENTADO |
+| `03_DISCOVERY_SYSTEM/` | 15 familias de discovery dealer documentadas | DOCUMENTADO |
+| `04_EXTRACTION_PIPELINE/` | Estrategias E1-E12 extracción catálogo | DOCUMENTADO |
+| `05_QUALITY_PIPELINE/` | Validadores V01-V20 zero-error | DOCUMENTADO |
+| `06_ARCHITECTURE/` | Arquitectura técnica + spec VPS | DOCUMENTADO |
+| `07_ROADMAP/` | Plan ejecución por fases con criterios cuantitativos | DOCUMENTADO |
 
 ## Workflow
 Documentos completados en orden numérico. Cada fase consume artefactos previos. No se inicia fase sin las anteriores cerradas.

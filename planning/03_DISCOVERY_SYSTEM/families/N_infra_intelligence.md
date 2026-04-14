@@ -119,5 +119,5 @@ Registrant info histórico → identificación de grupos dealer con múltiples d
 
 ## Iteración futura
 - Integración de ZoomEye, FOFA cuando free tiers estén disponibles para EU users
-- Análisis de fingerprints JARM/JA3 para clustering de dealers con mismo stack (sin evadir, solo fingerprint passive)
+- Análisis de fingerprints JARM/JA3 de los servidores observados para clustering de dealers con mismo stack tecnológico (análisis pasivo del TLS del servidor destino, NO uso de JA3 para evadir controles — uso que viola R1 y está en el blacklist de CI)
 - Monitoreo de cambios infra como señal de transición (dealer cambia de hosting → signal de cambio corporativo)

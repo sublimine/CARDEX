@@ -71,7 +71,7 @@ Continuo   — Quality pipeline (continuo)
 ```
 □ Rotación de secrets: API key salt, Grafana admin password (ver 09_SECURITY_HARDENING.md)
 □ Revisar scaling path: ¿algún criterio de S0→S1 está cerca del threshold?
-□ Revisar competidores (COMPETITIVE_LANDSCAPE.md): ¿nuevos entrants relevantes?
+□ Revisar competidores (02_COMPETITIVE_LANDSCAPE.md): ¿nuevos entrants relevantes?
 □ Revisar denominadores oficiales por país: ¿actualizados con datos del año corriente?
 □ Retrospectiva del trimestre: qué ha mejorado, qué ha degradado
 ```

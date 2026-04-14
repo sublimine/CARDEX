@@ -11,7 +11,7 @@ Todos los documentos: **DOCUMENTADO** — 2026-04-14
 | 02 | [02_CONTAINER_ARCHITECTURE.md](02_CONTAINER_ARCHITECTURE.md) | C4 Container: servicios Go/Python, data stores, colas, diagrama mermaid | DOCUMENTADO |
 | 03 | [03_COMPONENT_DETAIL.md](03_COMPONENT_DETAIL.md) | Componentes internos por servicio, interfaces Go exportadas, paquetes | DOCUMENTADO |
 | 04 | [04_DATA_FLOW.md](04_DATA_FLOW.md) | End-to-end flow discovery→extraction→quality→index→API, sequence diagrams | DOCUMENTADO |
-| 05 | [05_VPS_SPEC.md](05_VPS_SPEC.md) | Vendor comparison, recomendación Hetzner CX41, OS, particionado, backup, coste €21/mes | DOCUMENTADO |
+| 05 | [05_VPS_SPEC.md](05_VPS_SPEC.md) | Vendor comparison, recomendación Hetzner CX41, OS, particionado, backup, coste €22.25/mes | DOCUMENTADO |
 | 06 | [06_STACK_DECISIONS.md](06_STACK_DECISIONS.md) | Tooling matrix capa por capa con alternativas y justificación cuantitativa | DOCUMENTADO |
 | 07 | [07_DEPLOYMENT_TOPOLOGY.md](07_DEPLOYMENT_TOPOLOGY.md) | systemd units, Docker compose, Caddy reverse proxy, Unix sockets, secrets | DOCUMENTADO |
 | 08 | [08_OBSERVABILITY.md](08_OBSERVABILITY.md) | Catálogo Prometheus, dashboards Grafana, alerting rules, log schema, tracing | DOCUMENTADO |

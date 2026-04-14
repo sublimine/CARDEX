@@ -24,4 +24,4 @@ Las 15 familias de descubrimiento del sistema CARDEX. Cada una es un vector inde
 Empezar por A (universo legal base), luego B (georreferenciación), luego C (cartografía web), luego D y E (long-tail técnico). El resto añade redundancia y completitud.
 
 ## Estado global
-15/15 familias documentadas. Pendiente: `KNOWLEDGE_GRAPH_SCHEMA.md`, `CROSS_FERTILIZATION.md`, `SATURATION_PROTOCOL.md` en parent directory (Task 7).
+15/15 familias documentadas. `KNOWLEDGE_GRAPH_SCHEMA.md`, `CROSS_FERTILIZATION.md`, `SATURATION_PROTOCOL.md` — documentados en directorio padre.

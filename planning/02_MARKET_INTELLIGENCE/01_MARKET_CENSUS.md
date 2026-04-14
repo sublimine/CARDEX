@@ -144,7 +144,7 @@ Las cifras de esta sección proceden de fuentes oficiales públicas disponibles 
   - [fuente oficial: https://www.rdw.nl / https://www.bovag.nl]
 
 ### Mercado B2B
-- **Dealers profesionales registrados:** [PV: ~9.000-12.000] — KvK (Kamer van Koophandel) sector 45.1/45.2
+- **Dealers profesionales registrados:** [PV: ~9.000-12.000] — KvK (Kamer van Koophandel) SBI 4511/4519/4520
 - **Concesionarios OEM autorizados:** [PV: ~3.000-4.000]
 - **Independientes:** [PV: ~6.000-8.000]
 - **Long-tail dealers (<10 vehículos):** [PV: ~4.000-6.000] — NL tiene muchos micronegocios de vehículos

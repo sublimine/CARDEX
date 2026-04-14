@@ -27,9 +27,9 @@ Los 3 archivos del directorio `planning/02_MARKET_INTELLIGENCE/` (ver Task 12):
 
 | Entregable | Archivo | Contenido mínimo |
 |---|---|---|
-| Censo demográfico | `MARKET_CENSUS.md` | Denominadores por país con fuentes oficiales, segmentación por tipo de dealer, volumen de transacciones B2B |
-| Competidores | `COMPETITIVE_LANDSCAPE.md` | ≥20 competidores con modelo de negocio, cobertura geográfica, fortalezas/debilidades |
-| Benchmark herramientas | `TOOLING_BENCHMARK.md` | ≥3 herramientas por capa funcional con métricas comparativas cuantitativas |
+| Censo demográfico | `01_MARKET_CENSUS.md` | Denominadores por país con fuentes oficiales, segmentación por tipo de dealer, volumen de transacciones B2B |
+| Competidores | `02_COMPETITIVE_LANDSCAPE.md` | ≥20 competidores con modelo de negocio, cobertura geográfica, fortalezas/debilidades |
+| Benchmark herramientas | `03_TOOLING_BENCHMARK.md` | ≥3 herramientas por capa funcional con métricas comparativas cuantitativas |
 
 ## Criterios cuantitativos de salida
 
@@ -37,43 +37,46 @@ Los 3 archivos del directorio `planning/02_MARKET_INTELLIGENCE/` (ver Task 12):
 
 ```bash
 # Verificación manual (no hay query SQL hasta que el sistema esté running)
-# El criterio es: MARKET_CENSUS.md contiene para CADA uno de los 6 países:
+# El criterio es: 01_MARKET_CENSUS.md contiene para CADA uno de los 6 países:
 # - Número de dealers profesionales registrados (fuente oficial nombrada)
 # - Volumen de transacciones B2B/año (fuente: ACEA, KBA, ANTS, DGT, RDW, DIV, ASTRA)
 # - Segmentación: dealer independiente, dealer OEM autorizado, importador
+#
+# NOTA: el census usa secciones por país (## DE — Alemania), no filas de tabla.
+# Los greps de verificación usan la estructura real del archivo:
 
-grep -c "^| DE |" planning/02_MARKET_INTELLIGENCE/MARKET_CENSUS.md   # debe ser ≥1
-grep -c "^| FR |" planning/02_MARKET_INTELLIGENCE/MARKET_CENSUS.md   # debe ser ≥1
-grep -c "^| ES |" planning/02_MARKET_INTELLIGENCE/MARKET_CENSUS.md   # debe ser ≥1
-grep -c "^| BE |" planning/02_MARKET_INTELLIGENCE/MARKET_CENSUS.md   # debe ser ≥1
-grep -c "^| NL |" planning/02_MARKET_INTELLIGENCE/MARKET_CENSUS.md   # debe ser ≥1
-grep -c "^| CH |" planning/02_MARKET_INTELLIGENCE/MARKET_CENSUS.md   # debe ser ≥1
+grep -c "^## DE" planning/02_MARKET_INTELLIGENCE/01_MARKET_CENSUS.md   # debe ser ≥1
+grep -c "^## FR" planning/02_MARKET_INTELLIGENCE/01_MARKET_CENSUS.md   # debe ser ≥1
+grep -c "^## ES" planning/02_MARKET_INTELLIGENCE/01_MARKET_CENSUS.md   # debe ser ≥1
+grep -c "^## BE" planning/02_MARKET_INTELLIGENCE/01_MARKET_CENSUS.md   # debe ser ≥1
+grep -c "^## NL" planning/02_MARKET_INTELLIGENCE/01_MARKET_CENSUS.md   # debe ser ≥1
+grep -c "^## CH" planning/02_MARKET_INTELLIGENCE/01_MARKET_CENSUS.md   # debe ser ≥1
 ```
 
 ### CS-1-2: ≥20 competidores documentados
 
 ```bash
-# COMPETITIVE_LANDSCAPE.md debe contener entrada estructurada para ≥20 competidores
-grep -c "^## " planning/02_MARKET_INTELLIGENCE/COMPETITIVE_LANDSCAPE.md
+# 02_COMPETITIVE_LANDSCAPE.md debe contener entrada estructurada para ≥20 competidores
+grep -c "^## " planning/02_MARKET_INTELLIGENCE/02_COMPETITIVE_LANDSCAPE.md
 # Resultado esperado: ≥20
 ```
 
 ### CS-1-3: ≥3 herramientas benchmarkeadas por capa funcional
 
 ```bash
-# TOOLING_BENCHMARK.md debe cubrir todas las capas del stack
+# 03_TOOLING_BENCHMARK.md debe cubrir todas las capas del stack
 # Verificación: secciones existentes
-grep -c "^## " planning/02_MARKET_INTELLIGENCE/TOOLING_BENCHMARK.md
+grep -c "^## " planning/02_MARKET_INTELLIGENCE/03_TOOLING_BENCHMARK.md
 # Resultado esperado: ≥6 capas con ≥3 herramientas cada una
 ```
 
 ### CS-1-4: Fuentes primarias citadas y accesibles
 
 ```bash
-# Toda fuente en MARKET_CENSUS.md debe tener URL o referencia bibliográfica verificable
+# Toda fuente en 01_MARKET_CENSUS.md debe tener URL o referencia bibliográfica verificable
 # Verificación manual: revisión de todas las fuentes listadas
 # Criterio binario: 0 fuentes sin URL o referencia
-grep -c "^\[^source\]" planning/02_MARKET_INTELLIGENCE/MARKET_CENSUS.md  # adaptable
+grep -c "https://" planning/02_MARKET_INTELLIGENCE/01_MARKET_CENSUS.md  # debe ser ≥6 (1 por país)
 ```
 
 ### CS-1-5: Denominadores integrados en KG schema
@@ -93,7 +96,7 @@ AND source_url IS NOT NULL;
 | Métrica | Descripción | Objetivo |
 |---|---|---|
 | `countries_with_denominator` | Países con denominador oficial documentado | 6/6 |
-| `competitors_documented` | Competidores con ficha completa en COMPETITIVE_LANDSCAPE.md | ≥20 |
+| `competitors_documented` | Competidores con ficha completa en 02_COMPETITIVE_LANDSCAPE.md | ≥20 |
 | `tool_layers_benchmarked` | Capas funcionales con ≥3 herramientas comparadas | ≥6 |
 | `sources_verified` | Fuentes con URL verificable | 100% de fuentes citadas |
 
@@ -109,7 +112,7 @@ AND source_url IS NOT NULL;
 2. **Inventario de plataformas** — por país: cuáles son dominantes, qué robots.txt tienen, qué volumen de listings
 3. **Análisis competitivo** — documentar AutoScout24, mobile.de, leboncoin, Autovid, CARFAX EU, BCA, Manheim, CarNext, Autorola, Openlane, BilBanebi, EurotaxGlass's, Eurotax, DAT, DaltonMotor, CarGurus EU, Autohero, Heycar, Cazoo EU y otros con modelo de acceso B2B
 4. **Benchmark tooling** — evaluar alternativas a cada componente del stack CARDEX para validar las decisiones de `06_STACK_DECISIONS.md` con datos adicionales
-5. **Síntesis en MARKET_CENSUS.md** — tabla por país + interpretación estratégica para discovery
+5. **Síntesis en 01_MARKET_CENSUS.md** — tabla por país + interpretación estratégica para discovery
 
 ## Dependencias externas
 
@@ -122,7 +125,7 @@ AND source_url IS NOT NULL;
 | Riesgo | Probabilidad | Impacto | Mitigación |
 |---|---|---|---|
 | Denominadores oficiales no disponibles públicamente para todos los países | MEDIA | MEDIA | Usar denominadores proxy (VAT registrations + NACE codes para sector 45.1x/45.2x) cuando datos directos no estén disponibles |
-| Competidor no documentado que resulta relevante en fases posteriores | BAJA | BAJA | Actualización del COMPETITIVE_LANDSCAPE.md es posible post-P1; no es un criterio de cierre exhaustivo |
+| Competidor no documentado que resulta relevante en fases posteriores | BAJA | BAJA | Actualización del 02_COMPETITIVE_LANDSCAPE.md es posible post-P1; no es un criterio de cierre exhaustivo |
 | Tooling benchmark desactualizado en el momento de implementación | MEDIA | BAJA | El benchmark documenta el estado a fecha; las decisiones de stack ya están tomadas en 06_STACK_DECISIONS.md |
 
 ## Retrospectiva esperada

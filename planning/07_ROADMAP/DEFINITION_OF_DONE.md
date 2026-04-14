@@ -9,6 +9,8 @@ Este documento define cuándo CARDEX ha alcanzado el estado de **MVP institucion
 
 El MVP institucional no es un "producto mínimo" en el sentido de compromiso de calidad. Es el sistema completo operando en estándar institucional en los 6 mercados objetivo.
 
+> **Nota sobre tablas operacionales:** Las tablas `country_status_view`, `market_denominator`, `buyer_nps_survey`, `legal_incident_log`, `operations_log`, `ci_pipeline_log`, `legal_audit_findings` referenciadas en los criterios D-1 a D-9 no forman parte del Knowledge Graph definido en `03_DISCOVERY_SYSTEM/KNOWLEDGE_GRAPH_SCHEMA.md`. Son tablas operacionales que se definen e implementan en P5 (Infrastructure). Su schema exacto se documentará en `06_ARCHITECTURE/` durante P5.
+
 ---
 
 ## Criterios del MVP Institucional

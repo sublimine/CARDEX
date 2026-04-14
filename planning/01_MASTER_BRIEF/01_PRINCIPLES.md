@@ -33,7 +33,7 @@ Operación 100% sostenible sobre un único VPS de bajo coste mensual. Stack tecn
 
 ### Implicaciones operacionales
 
-**Arquitectura.** VPS objetivo Hetzner CX41 (4 vCPU AMD, 16 GB RAM, 240 GB NVMe, 20 TB tráfico) o equivalente, ~€20/mes. Stack:
+**Arquitectura.** VPS objetivo Hetzner CX41 (4 vCPU AMD, 16 GB RAM, 240 GB NVMe, 20 TB tráfico) o equivalente, ~€22/mes (€18 VPS + €3 Storage Box + ~€1.25 dominio). Stack:
 
 - OS: Debian 12 minimal hardened
 - Lenguaje principal: Go (binarios estáticos, footprint <50 MB típico). Python solo para ML inference y PDF parsing

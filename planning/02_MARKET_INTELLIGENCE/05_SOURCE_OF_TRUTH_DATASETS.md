@@ -202,15 +202,17 @@ EOF
 **Endpoints relevantes:**
 ```
 GET /api/v2/zoeken?handelsnaam={name}&sbi={code}&pagina={n}
-# SBI code 45.1 = handel in en reparatie van auto's
-# SBI code 45.2 = onderhoud en reparatie van motorvoertuigen
+# KvK usa códigos SBI de 4 dígitos (no 2.x):
+# SBI code 4511 = handel in en reparatie van personenauto's en lichte bedrijfsauto's
+# SBI code 4519 = handel in andere motorvoertuigen
+# SBI code 4520 = onderhoud en reparatie van motorvoertuigen
 
 GET /api/v2/basisprofielen/{kvkNummer}
 # Datos completos del registro: naam, adres, SBI, rechtsvorm, activiteiten, vestigingen
 ```
 
 **Uso en CARDEX:**
-- Familia A (Business Registry Discovery) usa la KvK API para descubrir dealers registrados con SBI 45.1/45.2 en NL.
+- Familia A (Business Registry Discovery) usa la KvK API para descubrir dealers registrados con SBI 4511/4519/4520 en NL.
 - Cross-validación de VAT numbers (BTW-nummer en NL) extraídos de anuncios con el registro KvK.
 - V08 (VAT validation) — el KvK BTW-nummer puede verificarse tanto via VIES como via KvK directamente.
 
