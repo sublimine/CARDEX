@@ -159,11 +159,13 @@ func TestConfidenceScore(t *testing.T) {
 		want     float64
 	}{
 		{[]string{"A"}, 0.35},
-		{[]string{"A", "A"}, 0.35},        // duplicate ignored
+		{[]string{"A", "A"}, 0.35},            // duplicate ignored
 		{[]string{}, 0.0},
 		{[]string{"B"}, 0.15},
-		{[]string{"A", "B"}, 0.50},        // Sprint 3: A=0.35 + B=0.15
-		{[]string{"A", "B", "C", "D"}, 0.50}, // C/D have no weight yet
+		{[]string{"C"}, 0.10},
+		{[]string{"A", "B"}, 0.50},            // Sprint 3: A=0.35 + B=0.15
+		{[]string{"A", "B", "C"}, 0.60},       // Sprint 4: + C=0.10
+		{[]string{"A", "B", "C", "D"}, 0.60},  // D has no weight yet
 	}
 	for _, tc := range tests {
 		got := kg.ComputeConfidence(tc.families)

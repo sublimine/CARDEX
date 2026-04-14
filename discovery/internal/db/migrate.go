@@ -5,10 +5,26 @@ import (
 	"fmt"
 )
 
-// Migrate applies the embedded schema.sql if the schema_version table is absent
-// (i.e., a brand-new database). Idempotent: CREATE TABLE IF NOT EXISTS guards
-// prevent double-application on subsequent starts.
+// incrementalMigrations are applied in version order after the base schema (v1).
+// Each migration is applied at most once — the schema_version table records which
+// versions have already been applied.
+var incrementalMigrations = []struct {
+	version     int
+	description string
+	sql         string
+}{
+	{
+		version:     2,
+		description: "dealer_web_presence.metadata_json — Sprint 4 Familia C web cartography",
+		sql:         `ALTER TABLE dealer_web_presence ADD COLUMN metadata_json TEXT`,
+	},
+}
+
+// Migrate applies the embedded base schema (v1) on a brand-new database, then
+// runs any incremental migrations that have not yet been applied.
+// The function is idempotent: re-running on an already-migrated database is safe.
 func Migrate(db *sql.DB) error {
+	// ── Step 1: Apply base schema if the database is brand-new ─────────────
 	var count int
 	row := db.QueryRow(
 		`SELECT COUNT(*) FROM sqlite_master
@@ -18,13 +34,33 @@ func Migrate(db *sql.DB) error {
 		return fmt.Errorf("migrate: checking schema_version: %w", err)
 	}
 
-	if count > 0 {
-		// Schema already applied at least once; nothing to do.
-		return nil
+	if count == 0 {
+		// First-ever open: apply full base schema (creates all tables + inserts v1).
+		if _, err := db.Exec(schemaSQL); err != nil {
+			return fmt.Errorf("migrate: applying base schema: %w", err)
+		}
 	}
 
-	if _, err := db.Exec(schemaSQL); err != nil {
-		return fmt.Errorf("migrate: applying schema: %w", err)
+	// ── Step 2: Apply incremental migrations not yet recorded ──────────────
+	for _, m := range incrementalMigrations {
+		var applied int
+		if err := db.QueryRow(
+			`SELECT COUNT(*) FROM schema_version WHERE version = ?`, m.version,
+		).Scan(&applied); err != nil {
+			return fmt.Errorf("migrate v%d: check: %w", m.version, err)
+		}
+		if applied > 0 {
+			continue // already applied
+		}
+		if _, err := db.Exec(m.sql); err != nil {
+			return fmt.Errorf("migrate v%d %q: %w", m.version, m.description, err)
+		}
+		if _, err := db.Exec(
+			`INSERT INTO schema_version(version, description) VALUES (?,?)`,
+			m.version, m.description,
+		); err != nil {
+			return fmt.Errorf("migrate v%d: record: %w", m.version, err)
+		}
 	}
 	return nil
 }

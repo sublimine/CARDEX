@@ -8,7 +8,8 @@ package kg
 var BaseWeights = map[string]float64{
 	"A": 0.35, // Registros mercantiles — legal-fiscal, high reliability
 	"B": 0.15, // Geocartografía (OSM + Wikidata) — geo-recon, medium reliability
-	// C–O: registered when implemented
+	"C": 0.10, // Cartografía web (Wayback + CT logs + passive DNS) — web-recon, low-medium reliability
+	// D–O: registered when implemented
 }
 
 // ComputeConfidence computes the confidence score for a dealer given the set of

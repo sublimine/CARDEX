@@ -36,6 +36,9 @@ const (
 	// Familia B — geocartografía
 	IdentifierOSMID       IdentifierType = "OSM_ID"       // OpenStreetMap element: "node/12345678" or "way/12345678"
 	IdentifierWikidataQID IdentifierType = "WIKIDATA_QID" // Wikidata entity: "Q12345"
+
+	// Familia C — cartografía web
+	IdentifierDomainCT IdentifierType = "DOMAIN_FROM_CT" // Domain discovered via Certificate Transparency logs
 )
 
 // DealerEntity is the canonical representation of a B2B dealer operator.
@@ -84,6 +87,20 @@ type DealerLocation struct {
 	SourceFamilies    string // comma-separated: "A,B,H"
 }
 
+// DealerWebPresence is a known web domain presence for a dealer entity,
+// backed by the dealer_web_presence table.
+type DealerWebPresence struct {
+	WebID                string
+	DealerID             string
+	Domain               string
+	URLRoot              string
+	PlatformType         *string
+	DMSProvider          *string
+	ExtractionStrategy   *string
+	DiscoveredByFamilies string
+	MetadataJSON         *string // nullable — added by Sprint 4 migration v2
+}
+
 // DiscoveryRecord is an audit entry linking a dealer to the family+sub-technique
 // that discovered it.
 type DiscoveryRecord struct {
@@ -121,4 +138,22 @@ type KnowledgeGraph interface {
 	// FindDealerByIdentifier returns the dealer_id for the given (type, value)
 	// pair, or ("", nil) if not found.
 	FindDealerByIdentifier(ctx context.Context, idType IdentifierType, idValue string) (string, error)
+
+	// ── Web presence ────────────────────────────────────────────────────────
+
+	// UpsertWebPresence adds or updates a dealer web presence entry.
+	// The domain column is the unique natural key.
+	UpsertWebPresence(ctx context.Context, wp *DealerWebPresence) error
+
+	// FindDealerIDByDomain returns the dealer_id for the given domain,
+	// or ("", nil) if no web presence entry exists for that domain.
+	FindDealerIDByDomain(ctx context.Context, domain string) (string, error)
+
+	// UpdateWebPresenceMetadata overwrites the metadata_json field for the
+	// given domain. Returns an error if the domain is not found.
+	UpdateWebPresenceMetadata(ctx context.Context, domain, metadataJSON string) error
+
+	// ListWebPresencesByCountry returns all web presence entries for dealers
+	// whose country_code matches the given ISO 3166-1 alpha-2 code.
+	ListWebPresencesByCountry(ctx context.Context, country string) ([]*DealerWebPresence, error)
 }
