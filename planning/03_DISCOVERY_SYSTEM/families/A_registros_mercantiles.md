@@ -30,32 +30,38 @@ Lista expandible. Familia debe ejecutar inclusive y filtrar a posteriori con sig
 
 ### Alemania (DE)
 
-#### A.DE.1 — Bundesanzeiger
+#### A.DE.1 — OffeneRegister.de (Sprint 2 — implementado)
+- URL base: https://offeneregister.de
+- Acceso: dump SQLite gratuito descargable (~2 GB comprimido) [verificado 2026-04-14 vía https://offeneregister.de]
+- Datos: razón social, objeto social (`Gegenstand`), dirección, número de registro, tribunal
+- **LIMITACIÓN CRÍTICA — códigos WZ/NACE:** OffeneRegister NO expone códigos WZ ni NACE-DE. El Handelsregister federal no incluye clasificación sectorial en los datos publicados [verificado Sprint 2 por implementación real]
+- Estrategia implementada: FTS5 keyword search sobre campo `Gegenstand` con términos: "Autohaus", "Fahrzeughandel", "Kfz-Handel", "Pkw-Handel", "Kraftfahrzeughandel", "Gebrauchtwagenhandel"
+- Precisión estimada: ~70–80% de verdaderos dealers sobre resultados FTS5. Hipótesis a validar empíricamente con primera ejecución real + R5 cross-validation Familia B/F/G
+- Dependencia R5: cross-validation con Familia B y F necesaria para eliminar falsos positivos (ej.: talleres puros que mencionan "Autohaus" en objeto social)
+- Rate limit: descarga one-shot, sin API paginada
+- Base legal: OffeneRegister.de republica datos del Handelsregister federal bajo licencia CC0 [verificado 2026-04-14 vía https://offeneregister.de/ueber/]
+- Módulo Go: `discovery/internal/families/familia_a/de_offeneregister/`
+
+#### A.DE.2 — Handelsregister federal (handelsregister.de) — DEFERRED Sprint 3+
+- URL base: https://www.handelsregister.de
+- Acceso: HTML, formularios búsqueda, sin API bulk pública
+- Datos: razón social, dirección, objeto social, capital, administradores, fecha constitución
+- Limitación: rate limit estricto (anti-bulk download), sin SBI/WZ filter
+- Estado: DEFERRED — cubierto por A.DE.1 OffeneRegister que republica los mismos datos en formato bulk
+
+#### A.DE.3 — Bundesanzeiger — DEFERRED Sprint 3+
 - URL base: https://www.bundesanzeiger.de
 - Acceso: HTML público + dataset JSON parcial
 - Datos: Jahresabschlüsse de empresas, incluidas pequeñas
-- Volumen estimado: cientos de miles de entidades, filtro NACE necesario
-- Rate limit: no documentado, conservador (1 req/s)
-- Base legal: registro público obligatorio
+- Estado: DEFERRED — complementa A.DE.1 para dealers con Jahresabschluss publicado, baja prioridad Sprint 2
 
-#### A.DE.2 — Handelsregister B (GmbH/AG/UG)
-- URL base: https://www.handelsregister.de
-- Acceso: HTML, formularios búsqueda
-- Datos: razón social, dirección, objeto social, capital, administradores, fecha constitución
-- Rate limit: estricto (anti-bulk download)
-- Base legal: registro público
-
-#### A.DE.3 — 16 Gewerbeämter regionales (Bundesländer)
-Listado por Bundesland:
-- Baden-Württemberg, Bayern, Berlin, Brandenburg, Bremen, Hamburg, Hessen, Mecklenburg-Vorpommern, Niedersachsen, Nordrhein-Westfalen, Rheinland-Pfalz, Saarland, Sachsen, Sachsen-Anhalt, Schleswig-Holstein, Thüringen.
+#### A.DE.4 — 16 Gewerbeämter regionales (Bundesländer) — DEFERRED Sprint 4+
+Listado por Bundesland: Baden-Württemberg, Bayern, Berlin, Brandenburg, Bremen, Hamburg, Hessen, Mecklenburg-Vorpommern, Niedersachsen, Nordrhein-Westfalen, Rheinland-Pfalz, Saarland, Sachsen, Sachsen-Anhalt, Schleswig-Holstein, Thüringen.
 - Cada uno con portal Gewerbeamt independiente
 - Acceso: variado por land — algunos open data, otros requieren consulta individual
 - Datos: Gewerbeanmeldungen (alta de actividad económica)
 - Cobertura: capta dealers que no aparecen en Handelsregister (autónomos, pequeñas estructuras)
-
-#### A.DE.4 — Wirtschaftszweig 45.11 dataset
-- Fuente: Statistisches Bundesamt (Destatis) — datasets agregados
-- Uso: validación cruzada del orden de magnitud
+- Estado: DEFERRED — heterogeneidad por land hace la implementación costosa, valor incremental bajo dado A.DE.1
 
 ### Francia (FR)
 
@@ -91,11 +97,21 @@ Listado por Bundesland:
 
 ### España (ES)
 
-#### A.ES.1 — BORME (Boletín Oficial del Registro Mercantil)
-- URL base: https://www.boe.es/diario_borme
-- Acceso: PDF/XML diario gratis
-- Datos: actos de inscripción registral mercantil
-- Estrategia: parser PDF acumulativo histórico + XML diario forward
+#### A.ES.1 — BORME datosabiertos API (Sprint 2 — implementado)
+- URL base API: `https://www.boe.es/datosabiertos/api/borme/sumario/YYYYMMDD` [verificado 2026-04-14 vía https://www.boe.es/datosabiertos/api/borme/]
+- Acceso: API REST pública, sin autenticación, Accept: application/xml [verificado 2026-04-14]
+- Datos disponibles en sumario: ID acto, nombre empresa, tipo acto, provincia, registro, URL PDF/XML del acto individual
+- **LIMITACIÓN CRÍTICA — códigos CNAE:** El sumario BORME Sección A NO incluye códigos CNAE ni clasificación sectorial [verificado Sprint 2 por implementación real]. Los códigos CNAE aparecerían en el acto individual (PDF/XML separado), lo que requeriría N+1 requests — DEFERRED Sprint 3
+- Estrategia implementada Sprint 2: ingestión completa de Sección A (Inscripciones del Registro Mercantil) sin filtro CNAE. Cross-filtrado posterior con Familia B/F/G para identificar dealers reales
+- Backfill: 7 días hábiles hacia atrás en cada ejecución (maneja fines de semana y festivos con 404 → skip)
+- Rate: 1 req / 2s (conservador para API pública) [verificado 2026-04-14 — no hay rate limit documentado, se aplica conservadoramente]
+- Base legal: BOE datos abiertos — acceso público gratuito, reutilización libre [verificado 2026-04-14 vía https://www.boe.es/datosabiertos/]
+- Módulo Go: `discovery/internal/families/familia_a/es_borme/`
+
+#### A.ES.1b — BORME actos individuales (parsing CNAE) — DEFERRED Sprint 3
+- Requiere GET por cada acto individual para extraer CNAE del XML/PDF
+- Volumen estimado: 50–200 actos/día en Sección A → N+1 requests sobre rate 1 req/2s → 100–400s/día adicionales
+- Hipótesis: cross-validation con Familia B tendrá mayor ROI que parsing por acto antes de validar cobertura Sprint 2
 
 #### A.ES.2 — Registro Mercantil Central
 - URL base: https://www.rmc.es
@@ -116,31 +132,50 @@ Listado por Bundesland:
 
 ### Países Bajos (NL)
 
-#### A.NL.1 — KvK (Kamer van Koophandel) Open API
-- URL base: https://api.kvk.nl
-- Acceso: API REST con auth (free tier)
-- Datos: KvK number, statutaire naam, SBI codes, adres, status
-- SBI 4511 — Handel in en reparatie van personenauto's en lichte bedrijfsauto's
-- Rate limit: free tier limitado (~100 req/dag)
-- Base legal: Handelsregisterwet 2007
+#### A.NL.1 — KvK Handelsregister (dual-path) (Sprint 2 — implementado)
 
-#### A.NL.2 — Handelsregister bulk export
-- KvK ofrece descarga periódica del registro completo
-- Acceso: paid pero no oneroso (~€50 single-shot)
-- Estrategia: bootstrap inicial con bulk + sync diario vía API
+**Path 1 — Bulk anoniem dataset (densidad geográfica)**
+- URL producto: https://www.kvk.nl/producten-en-diensten/kvk-data/bulk-anoniem/ [verificado 2026-04-14]
+- Acceso: descarga gratuita, sin registro. CSV comprimido con empresas registradas
+- Datos disponibles: gemeente (municipio), totals by activiteit — permite mapa de densidad
+- Uso en Sprint 2: calcular densidad de empresas por municipio para priorizar zonas de discovery
+- **LIMITACIÓN:** dataset anonimizado — no contiene KvK-nummer, naam ni adres individuales
 
-#### A.NL.3 — 12 provincies — registros locales
+**Path 2 — KvK Zoeken API v2 (keyword search)**
+- URL base: https://api.kvk.nl/api/v2/zoeken [verificado 2026-04-14 vía documentación KvK developer portal]
+- Acceso: API key gratuita tras registro en developer.kvk.nl
+- **LIMITACIÓN CRÍTICA — filtro SBI:** El free tier Zoeken API v2 **NO soporta parámetro de filtro SBI** [verificado Sprint 2 por implementación real]. No existe `?sbiCode=4511` o equivalente en el free tier
+- Estrategia implementada: keyword search por términos "autohandel", "autodealer", "autoverkoop", "occasion", "voertuighandel" → paginar resultados → cruzar con Familia B
+- Rate limit: ~100 req/dag en free tier [verificado Sprint 2 — tabla `rate_limit_state` SQLite, api_name='kvk', window_start diario]
+- Rate limit state: persistido en SQLite (`rate_limit_state` table) — survives restarts, reset al inicio de cada día
+- Base legal: Handelsregisterwet 2007 [verificado 2026-04-14 vía https://wetten.overheid.nl/BWBR0021777/]
+- Módulo Go: `discovery/internal/families/familia_a/nl_kvk/`
+- Dependencia cross-resolve: resultados de Path 1 + Path 2 necesitan cross-validation con Familia B para obtener KvK-nummer + adres completo
+
+#### A.NL.2 — KvK bulk dataset identificado (paid) — DEFERRED Sprint 3
+- KvK ofrece descarga del registro con KvK-nummers identificados
+- Acceso: pricing no confirmado públicamente — Hipótesis: ~€50 single-shot (no verificado)
+- Estado: DEFERRED — Path 2 gratuito suficiente para Sprint 2; bulk identificado aumentaría cobertura Sprint 3
+
+#### A.NL.3 — 12 provincies — registros locales — DEFERRED Sprint 4+
 - Noord-Holland, Zuid-Holland, Utrecht, Flevoland, Gelderland, Overijssel, Drenthe, Groningen, Friesland, Noord-Brabant, Limburg, Zeeland
 - Algunas con datos abiertos sectoriales
+- Estado: DEFERRED — valor incremental bajo dado A.NL.1 dual-path
 
 ### Bélgica (BE)
 
-#### A.BE.1 — BCE/KBO (Banque-Carrefour des Entreprises / Crossroads Bank)
-- URL base: https://kbopub.economie.fgov.be + https://economie.fgov.be/fr/themes/entreprises/banque-carrefour-des/services-pour-tous/donnees-publiques-en-libre
-- Acceso: descarga completa gratuita en CSV/XML — 3 GB total
-- Datos: número empresa, denominaciones, NACE codes, dirección, status, administradores
-- NACE BE: 45110, 45190, 45200
-- Base legal: acceso público garantizado por ley
+#### A.BE.1 — BCE/KBO Open Data (Sprint 2 — implementado)
+- URL portal: https://kbopub.economie.fgov.be/kbo-open-data [verificado 2026-04-14]
+- URL descarga: https://economie.fgov.be/fr/themes/entreprises/banque-carrefour-des/services-pour-tous/donnees-publiques-en-libre [verificado 2026-04-14]
+- **AUTENTICACIÓN REQUERIDA:** El portal KBO Open Data exige registro y credenciales para la descarga del dataset completo [verificado Sprint 2 por implementación real]
+  - Env vars: `KBO_USER` (login portal), `KBO_PASS` (contraseña)
+  - Flow: POST login form → cookie-jar → GET ZIP download endpoint
+- Datos: número empresa, denominaciones (ES/FR/NL), códigos NACE-BE, dirección, status, administradores
+- NACE-BE filtrado: 45110, 45190, 45200 [verificado 2026-04-14 — NACE 2008 revision, equivalentes a 45.11/45.19/45.20]
+- Formato: ZIP ~3 GB → 4 ficheros CSV principales (enterprise.csv, activity.csv, denomination.csv, address.csv)
+- Estrategia implementada: descarga a fichero temporal → `archive/zip.OpenReader` → parse CSV multi-pass con filtro NACE en activity.csv
+- Base legal: acceso público Open Data garantizado por Loi du 4 mai 2016 [verificado 2026-04-14 vía https://economie.fgov.be]
+- Módulo Go: `discovery/internal/families/familia_a/be_kbo/`
 
 #### A.BE.2 — 3 regiones (Vlaanderen, Wallonie, Brussels)
 - Cada región con base de datos regional complementaria
@@ -150,12 +185,25 @@ Listado por Bundesland:
 
 ### Suiza (CH)
 
-#### A.CH.1 — Zefix (Zentraler Firmenindex)
-- URL base: https://www.zefix.ch
-- Acceso: HTML público + API REST limitada
-- Datos: razón social, sede, NOGA codes (equivalente NACE suizo), administradores
-- NOGA 4511, 4519, 4520
-- Base legal: registro público
+#### A.CH.1 — opendata.swiss CKAN + Zefix HTML fallback (Sprint 2 — implementado, dual-path)
+
+**Path 1 — opendata.swiss CKAN (primary)**
+- URL API: https://opendata.swiss/api/3/action/package_search [verificado 2026-04-14 vía https://opendata.swiss/api/3/action/]
+- Acceso: API REST pública CKAN, sin autenticación
+- Datos: datasets con clasificación NOGA (equivalente NACE en Suiza), incluyendo firmas por actividad
+- Filtro NOGA: 4511 — búsqueda en recursos del dataset por código NOGA en metadatos o contenido CSV
+- Estrategia: GET package_search → extraer URLs de recursos descargables → filter NOGA 4511 → parse CSV → upsert
+
+**Path 2 — Zefix HTML fallback (si CKAN falla)**
+- URL HTML: https://www.zefix.ch/ZefixPublic/company/search.xhtml [verificado 2026-04-14]
+- Acceso HTML: público, sin autenticación
+- **LIMITACIÓN CRÍTICA — API REST:** La API REST de Zefix (`https://www.zefix.admin.ch/ZefixPublicREST/`) devuelve **HTTP 401 sin credenciales registradas** [verificado Sprint 2 por implementación real]. No hay NOGA codes disponibles sin auth
+- **LIMITACIÓN CRÍTICA — NOGA en HTML:** La interfaz HTML tampoco expone NOGA codes directamente — búsqueda por cantón + keyword, parse con goquery
+- Estrategia fallback: keyword search por cantón ("autohandel", "fahrzeughandel", "autoverkauf") → parse resultados con `github.com/PuerkitoBio/goquery`
+- 26 cantones cubiertos en fallback: Zürich, Bern, Luzern, Uri, Schwyz, Obwalden, Nidwalden, Glarus, Zug, Fribourg, Solothurn, Basel-Stadt, Basel-Landschaft, Schaffhausen, Appenzell Ausserrhoden, Appenzell Innerrhoden, St. Gallen, Graubünden, Aargau, Thurgau, Ticino, Vaud, Valais, Neuchâtel, Genève, Jura
+
+- Base legal: Zefix — registro público federal suizo [verificado 2026-04-14 vía https://www.zefix.ch]; opendata.swiss — plataforma datos abiertos Confederación [verificado 2026-04-14 vía https://opendata.swiss/about]
+- Módulo Go: `discovery/internal/families/familia_a/ch_zefix/`
 
 #### A.CH.2 — 26 cantones — Handelsregister cantonales
 - Zürich, Bern, Luzern, Uri, Schwyz, Obwalden, Nidwalden, Glarus, Zug, Fribourg, Solothurn, Basel-Stadt, Basel-Landschaft, Schaffhausen, Appenzell Ausserrhoden, Appenzell Innerrhoden, St. Gallen, Graubünden, Aargau, Thurgau, Ticino, Vaud, Valais, Neuchâtel, Genève, Jura
@@ -195,20 +243,25 @@ Acceso transparente, identificable como CardexBot, respeto a rate limits.
 
 ## Cross-validation con otras familias
 
-| Otra familia | Overlap esperado | Discovery único de A |
+Hipótesis a validar empíricamente tras primera ejecución de discovery completo. Los porcentajes de overlap son estimaciones de diseño basadas en razonamiento sobre fuentes; no hay datos empíricos pre-launch.
+
+| Otra familia | Overlap hipotético | Discovery único de A |
 |---|---|---|
-| B (geo) | ~60% | A captura empresas registradas sin POI físico aparente |
-| C (web) | ~50% | A captura empresas sin presencia web identificada |
-| F (aggregators) | ~30% | A captura long-tail invisible en marketplaces |
-| G (asociaciones) | ~80% para miembros | A captura no-miembros (mayoría del long-tail) |
-| H (OEM) | ~25% | A captura independientes y multi-marca |
+| B (geo) | ~60% (hipótesis) | A captura empresas registradas sin POI físico aparente |
+| C (web) | ~50% (hipótesis) | A captura empresas sin presencia web identificada |
+| F (aggregators) | ~30% (hipótesis) | A captura long-tail invisible en marketplaces |
+| G (asociaciones) | ~80% para miembros (hipótesis) | A captura no-miembros (mayoría del long-tail) |
+| H (OEM) | ~25% (hipótesis) | A captura independientes y multi-marca |
 
 ## Riesgos y mitigaciones
 
-- **R-A1:** API rate limits restrictivos (NL KvK, FR Sirene). Mitigación: cache permanente, sync incremental, retry con backoff.
-- **R-A2:** Cambios de estructura en formatos PDF/XML (ES BORME, BE BCE). Mitigación: tests de regresión sobre samples archivados.
-- **R-A3:** Datos parciales en algunos cantones suizos. Mitigación: marcar entidad con flag `coverage:partial` y compensar con familia B/C.
-- **R-A4:** Empresas con NACE asignado erróneamente que no son dealers reales. Mitigación: validación cruzada con familia M (signals operativos VAT activo).
+- **R-A1:** API rate limits restrictivos (NL KvK free tier ~100 req/dag, FR Sirene 30 req/min). Mitigación: `rate_limit_state` SQLite persistido, sync incremental, retry con backoff exponencial.
+- **R-A2:** Cambios de estructura en formatos XML (ES BORME sumario). Mitigación: tests de regresión sobre fixtures archivados en `testdata/`.
+- **R-A3:** Datos parciales en algunos cantones suizos (CH Zefix HTML estructura variable por cantón). Mitigación: marcar entidad con flag `coverage:partial` y compensar con Familia B/C.
+- **R-A4:** Alta tasa de falsos positivos en DE (FTS5 keyword search sin NACE). Mitigación: cross-validation R5 con Familia B/F obligatoria antes de cualquier uso en producción. Hipótesis: ~20-30% falsos positivos — a medir en primera ejecución.
+- **R-A5:** Credenciales KBO (BE) caducan o el portal cambia su formulario de login. Mitigación: tests de integración con servidor mock; alertas si cookie-jar flow falla.
+- **R-A6:** opendata.swiss CKAN no tiene dataset con NOGA 4511 en el momento de ejecución (CH). Mitigación: fallback automático a Zefix HTML implementado en `ch_zefix.go`.
+- **R-A7:** BORME sumario tiene 0 actos Sección A algún día hábil (festivos nacionales no marcados como fin de semana). Mitigación: 404 → skip implementado; no cuenta como error.
 
 ## Iteración futura
 
