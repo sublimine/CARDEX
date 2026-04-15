@@ -82,6 +82,20 @@ type Config struct {
 	// Default: false
 	SkipFamilyI bool
 
+	// SkipFamilyD, when true, bypasses Familia D (CMS fingerprinting) entirely.
+	// Useful when crawl rate limits for dealer homepages need to be preserved.
+	// Default: false
+	SkipFamilyD bool
+
+	// SkipFamilyL, when true, bypasses Familia L (social profiles) entirely.
+	// Default: false
+	SkipFamilyL bool
+
+	// YouTubeAPIKey is the YouTube Data API v3 key used by L.3.
+	// When empty, L.3 is silently skipped (no error).
+	// Obtain a free key at console.cloud.google.com -> APIs & Services -> YouTube Data API v3.
+	YouTubeAPIKey string
+
 	// SkipBrowser, when true, skips browser (Playwright) initialisation.
 	// All browser-dependent sub-techniques (F.2, G.FR.1, H.VWG) will be silently
 	// skipped. Useful in CI environments without Playwright installed.
@@ -143,6 +157,16 @@ func LoadFromEnv() (*Config, error) {
 	if os.Getenv("DISCOVERY_SKIP_FAMILY_M") == "true" {
 		c.SkipFamilyM = true
 	}
+
+	if os.Getenv("DISCOVERY_SKIP_FAMILY_D") == "true" {
+		c.SkipFamilyD = true
+	}
+
+	if os.Getenv("DISCOVERY_SKIP_FAMILY_L") == "true" {
+		c.SkipFamilyL = true
+	}
+
+	c.YouTubeAPIKey = os.Getenv("YOUTUBE_API_KEY")
 
 	if os.Getenv("DISCOVERY_SKIP_BROWSER") == "true" {
 		c.SkipBrowser = true

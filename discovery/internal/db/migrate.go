@@ -17,17 +17,17 @@ var incrementalMigrations = []struct {
 }{
 	{
 		version:     2,
-		description: "dealer_web_presence.metadata_json — Sprint 4 Familia C web cartography",
+		description: "dealer_web_presence.metadata_json -- Sprint 4 Familia C web cartography",
 		sqls:        []string{`ALTER TABLE dealer_web_presence ADD COLUMN metadata_json TEXT`},
 	},
 	{
 		version:     3,
-		description: "dealer_location.phone — Sprint 5 Familia F phone number storage",
+		description: "dealer_location.phone -- Sprint 5 Familia F phone number storage",
 		sqls:        []string{`ALTER TABLE dealer_location ADD COLUMN phone TEXT`},
 	},
 	{
 		version:     4,
-		description: "dealer_entity VAT validation fields — Sprint 11 Familia M",
+		description: "dealer_entity VAT validation fields -- Sprint 11 Familia M",
 		sqls: []string{
 			`ALTER TABLE dealer_entity ADD COLUMN vat_validated_at TEXT`,
 			`ALTER TABLE dealer_entity ADD COLUMN vat_valid_status TEXT`,
@@ -35,12 +35,21 @@ var incrementalMigrations = []struct {
 	},
 	{
 		version:     5,
-		description: "processing_state key-value store — Sprint 11 Familia K SearXNG checkpoint",
+		description: "processing_state key-value store -- Sprint 11 Familia K SearXNG checkpoint",
 		sqls: []string{`CREATE TABLE IF NOT EXISTS processing_state (
   key        TEXT PRIMARY KEY,
   value      TEXT NOT NULL,
   updated_at TEXT NOT NULL
 )`},
+	},
+	{
+		version:     6,
+		description: "dealer_web_presence CMS fingerprint + extraction hints -- Sprint 12 Familia D",
+		sqls: []string{
+			`ALTER TABLE dealer_web_presence ADD COLUMN cms_fingerprint_json TEXT`,
+			`ALTER TABLE dealer_web_presence ADD COLUMN cms_scanned_at TEXT`,
+			`ALTER TABLE dealer_web_presence ADD COLUMN extraction_hints_json TEXT`,
+		},
 	},
 }
 
@@ -48,7 +57,7 @@ var incrementalMigrations = []struct {
 // runs any incremental migrations that have not yet been applied.
 // The function is idempotent: re-running on an already-migrated database is safe.
 func Migrate(db *sql.DB) error {
-	// ── Step 1: Apply base schema if the database is brand-new ─────────────
+	// -- Step 1: Apply base schema if the database is brand-new ----------------
 	var count int
 	row := db.QueryRow(
 		`SELECT COUNT(*) FROM sqlite_master
@@ -65,7 +74,7 @@ func Migrate(db *sql.DB) error {
 		}
 	}
 
-	// ── Step 2: Apply incremental migrations not yet recorded ──────────────
+	// -- Step 2: Apply incremental migrations not yet recorded -----------------
 	for _, m := range incrementalMigrations {
 		var applied int
 		if err := db.QueryRow(

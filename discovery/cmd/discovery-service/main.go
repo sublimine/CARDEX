@@ -1,11 +1,11 @@
-// discovery-service — Phase 2 Sprint 11
+// discovery-service -- Phase 2 Sprint 12
 //
 // Startup sequence:
 //  1. Load config from environment variables.
 //  2. Open (or create) the SQLite Knowledge Graph and apply migrations.
 //  3. Initialise the Playwright browser (unless DISCOVERY_SKIP_BROWSER=true).
 //  4. Start Prometheus /metrics HTTP endpoint.
-//  5. Run a discovery cycle for each configured country (Family A, B, C, F, G, H, I, K, M).
+//  5. Run a discovery cycle for each configured country (Family A, B, C, D, F, G, H, I, K, L, M).
 //     (continuous daemon mode blocks until SIGINT/SIGTERM)
 //
 // Environment variables:
@@ -17,15 +17,18 @@
 //   KVK_API_KEY               KvK Zoeken API key                (optional; Path 2 skipped if absent)
 //   KBO_USER                  KBO Open Data portal username     (required for BE)
 //   KBO_PASS                  KBO Open Data portal password     (required for BE)
+//   YOUTUBE_API_KEY           YouTube Data API v3 key           (optional; L.3 skipped if absent)
 //   DISCOVERY_ONE_SHOT        "true" = run once and exit        (default: false)
 //   DISCOVERY_COUNTRIES       comma-separated ISO-3166-1 codes  (default: FR)
 //   DISCOVERY_SKIP_BROWSER    "true" = skip Playwright init     (default: false)
 //   DISCOVERY_SKIP_FAMILY_C   "true" = skip Family C entirely   (default: false)
+//   DISCOVERY_SKIP_FAMILY_D   "true" = skip Family D entirely   (default: false)
 //   DISCOVERY_SKIP_FAMILY_F   "true" = skip Family F entirely   (default: false)
 //   DISCOVERY_SKIP_FAMILY_G   "true" = skip Family G entirely   (default: false)
 //   DISCOVERY_SKIP_FAMILY_H   "true" = skip Family H entirely   (default: false)
 //   DISCOVERY_SKIP_FAMILY_I   "true" = skip Family I entirely   (default: false)
 //   DISCOVERY_SKIP_FAMILY_K   "true" = skip Family K entirely   (default: false)
+//   DISCOVERY_SKIP_FAMILY_L   "true" = skip Family L entirely   (default: false)
 //   DISCOVERY_SKIP_FAMILY_M   "true" = skip Family M entirely   (default: false)
 package main
 
@@ -39,7 +42,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	_ "modernc.org/sqlite" // SQLite driver — pure Go, no CGO
+	_ "modernc.org/sqlite" // SQLite driver -- pure Go, no CGO
 
 	"cardex.eu/discovery/internal/browser"
 	"cardex.eu/discovery/internal/config"
@@ -47,11 +50,13 @@ import (
 	"cardex.eu/discovery/internal/families/familia_a"
 	"cardex.eu/discovery/internal/families/familia_b"
 	"cardex.eu/discovery/internal/families/familia_c"
+	"cardex.eu/discovery/internal/families/familia_d"
 	"cardex.eu/discovery/internal/families/familia_f"
 	"cardex.eu/discovery/internal/families/familia_g"
 	"cardex.eu/discovery/internal/families/familia_h"
 	"cardex.eu/discovery/internal/families/familia_i"
 	"cardex.eu/discovery/internal/families/familia_k"
+	"cardex.eu/discovery/internal/families/familia_l"
 	"cardex.eu/discovery/internal/families/familia_m"
 	"cardex.eu/discovery/internal/kg"
 	_ "cardex.eu/discovery/internal/metrics" // register Prometheus metrics
@@ -69,7 +74,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// ── Database ───────────────────────────────────────────────────────────
+	// -- Database --------------------------------------------------------------
 	database, err := db.Open(cfg.DBPath)
 	if err != nil {
 		log.Error("db.Open failed", "path", cfg.DBPath, "err", err)
@@ -80,7 +85,7 @@ func main() {
 
 	graph := kg.NewSQLiteGraph(database)
 
-	// ── Browser (Playwright) ───────────────────────────────────────────────
+	// -- Browser (Playwright) --------------------------------------------------
 	// browser.Browser is nil when SkipBrowser=true or Playwright unavailable.
 	// All browser-dependent sub-techniques (F.2 AutoScout24, G.FR.1 Mobilians,
 	// H.VWG) skip gracefully when b is nil.
@@ -105,7 +110,7 @@ func main() {
 		log.Info("browser skipped (DISCOVERY_SKIP_BROWSER=true)")
 	}
 
-	// ── Prometheus metrics server ──────────────────────────────────────────
+	// -- Prometheus metrics server ---------------------------------------------
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -120,7 +125,7 @@ func main() {
 		}
 	}()
 
-	// ── Discovery run ──────────────────────────────────────────────────────
+	// -- Discovery run ---------------------------------------------------------
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -143,6 +148,10 @@ func main() {
 	if !cfg.SkipFamilyC {
 		families = append(families, familia_c.New(graph, database))
 	}
+	if !cfg.SkipFamilyD {
+		// D runs after initial discovery families so there are web presences to classify.
+		families = append(families, familia_d.New(graph))
+	}
 	if !cfg.SkipFamilyF {
 		families = append(families, familia_f.New(graph, database, b))
 	}
@@ -157,6 +166,11 @@ func main() {
 	}
 	if !cfg.SkipFamilyK {
 		families = append(families, familia_k.New(graph))
+	}
+	if !cfg.SkipFamilyL {
+		// L runs after D (web presences classified) and K (YouTube channel URLs may
+		// have been discovered by K.1 SearXNG).
+		families = append(families, familia_l.New(graph, cfg.YouTubeAPIKey))
 	}
 	if !cfg.SkipFamilyM {
 		// M runs last: enriches entities discovered by all preceding families.

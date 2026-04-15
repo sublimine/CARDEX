@@ -14,8 +14,10 @@ var BaseWeights = map[string]float64{
 	"H": 0.25, // OEM dealer networks — OEM official = maximum authority, highest reliability
 	"I": 0.05, // Inspection & certification networks — adjacent signal, low primary weight
 	"K": 0.05, // Alternative search engines (SearXNG/Marginalia) — low primary, confirmation signal
-	"M": 0.00, // Fiscal signal enrichment (VIES/UID) — enrichment only, uses consistency_multiplier
-	// D–E, J, L, N–O: registered when implemented
+	"M": 0.00, // Fiscal signal enrichment (VIES/UID) -- enrichment only, uses consistency_multiplier
+	"D": 0.00, // CMS fingerprinting -- capacity/routing classification, not primary discovery
+	"L": 0.10, // Social profiles (YouTube active, LinkedIn/Google Maps deferred) -- medium reliability
+	// E, J, N-O: registered when implemented
 }
 
 // ComputeConfidence computes the confidence score for a dealer given the set of

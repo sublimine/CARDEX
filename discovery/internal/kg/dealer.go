@@ -270,3 +270,112 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
 	}
 	return nil
 }
+
+// -- Family D -- CMS fingerprinting -------------------------------------------
+
+// ListWebPresencesForCMSScan returns web presences for the given country where
+// cms_scanned_at IS NULL or older than staleDays days.
+func (g *SQLiteGraph) ListWebPresencesForCMSScan(
+	ctx context.Context,
+	country string,
+	staleDays, limit int,
+) ([]*DealerWebPresence, error) {
+	const q = `
+SELECT wp.web_id, wp.dealer_id, wp.domain, wp.url_root,
+       wp.platform_type, wp.dms_provider, wp.extraction_strategy,
+       wp.discovered_by_families, wp.metadata_json,
+       wp.cms_fingerprint_json, wp.cms_scanned_at, wp.extraction_hints_json
+FROM dealer_web_presence wp
+JOIN dealer_entity de ON de.dealer_id = wp.dealer_id
+WHERE de.country_code = ?
+  AND (wp.cms_scanned_at IS NULL
+       OR wp.cms_scanned_at < datetime('now', '-' || ? || ' days'))
+ORDER BY wp.web_id
+LIMIT ?`
+
+	rows, err := g.db.QueryContext(ctx, q, country, staleDays, limit)
+	if err != nil {
+		return nil, fmt.Errorf("kg.ListWebPresencesForCMSScan: %w", err)
+	}
+	defer rows.Close()
+
+	var out []*DealerWebPresence
+	for rows.Next() {
+		wp := &DealerWebPresence{}
+		var scannedAt sql.NullString
+		if err := rows.Scan(
+			&wp.WebID, &wp.DealerID, &wp.Domain, &wp.URLRoot,
+			&wp.PlatformType, &wp.DMSProvider, &wp.ExtractionStrategy,
+			&wp.DiscoveredByFamilies, &wp.MetadataJSON,
+			&wp.CMSFingerprintJSON, &scannedAt, &wp.ExtractionHintsJSON,
+		); err != nil {
+			return nil, fmt.Errorf("kg.ListWebPresencesForCMSScan scan: %w", err)
+		}
+		if scannedAt.Valid {
+			t, _ := time.Parse("2006-01-02T15:04:05Z", scannedAt.String)
+			wp.CMSScannedAt = &t
+		}
+		out = append(out, wp)
+	}
+	return out, rows.Err()
+}
+
+// UpsertWebTechnology stores CMS fingerprint and extraction hints for a domain.
+// Sets cms_scanned_at to the current UTC timestamp.
+func (g *SQLiteGraph) UpsertWebTechnology(
+	ctx context.Context,
+	domain, cmsFingerprintJSON, extractionHintsJSON string,
+) error {
+	const q = `
+UPDATE dealer_web_presence
+SET cms_fingerprint_json  = ?,
+    cms_scanned_at        = ?,
+    extraction_hints_json = ?
+WHERE domain = ?`
+	_, err := g.db.ExecContext(ctx, q,
+		cmsFingerprintJSON,
+		time.Now().UTC().Format("2006-01-02T15:04:05Z"),
+		extractionHintsJSON,
+		domain,
+	)
+	if err != nil {
+		return fmt.Errorf("kg.UpsertWebTechnology %q: %w", domain, err)
+	}
+	return nil
+}
+
+// -- Family L -- social profiles ----------------------------------------------
+
+// UpsertSocialProfile inserts or updates a social profile record.
+// Conflict key: (dealer_id, platform, external_id) when external_id is set,
+// or (dealer_id, platform, profile_url) otherwise.
+func (g *SQLiteGraph) UpsertSocialProfile(
+	ctx context.Context,
+	p *DealerSocialProfile,
+) error {
+	const q = `
+INSERT INTO dealer_social_profile
+  (profile_id, dealer_id, platform, profile_url, external_id,
+   rating, review_count, last_activity_detected, metadata_json)
+VALUES (?,?,?,?,?,?,?,?,?)
+ON CONFLICT(profile_id) DO UPDATE SET
+  profile_url           = excluded.profile_url,
+  rating                = excluded.rating,
+  review_count          = excluded.review_count,
+  last_activity_detected = excluded.last_activity_detected,
+  metadata_json         = excluded.metadata_json`
+
+	var lastActivity *string
+	if p.LastActivityDetected != nil {
+		s := p.LastActivityDetected.UTC().Format("2006-01-02T15:04:05Z")
+		lastActivity = &s
+	}
+	_, err := g.db.ExecContext(ctx, q,
+		p.ProfileID, p.DealerID, p.Platform, p.ProfileURL, p.ExternalID,
+		p.Rating, p.ReviewCount, lastActivity, p.MetadataJSON,
+	)
+	if err != nil {
+		return fmt.Errorf("kg.UpsertSocialProfile %q/%s: %w", p.DealerID, p.Platform, err)
+	}
+	return nil
+}

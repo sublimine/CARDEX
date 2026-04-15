@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// ── Core domain types ───────────────────────────────────────────────────────
+// -- Core domain types -------------------------------------------------------
 
 // DealerStatus represents the lifecycle state of a dealer entity.
 type DealerStatus string
@@ -23,59 +23,65 @@ const (
 type IdentifierType string
 
 const (
-	IdentifierVAT            IdentifierType = "VIES_VAT"
-	IdentifierSIRET          IdentifierType = "SIRET"
-	IdentifierSIREN          IdentifierType = "SIREN"
-	IdentifierKvK            IdentifierType = "KVK"
-	IdentifierBCE            IdentifierType = "BCE"
-	IdentifierZefix          IdentifierType = "ZEFIX_UID"
+	IdentifierVAT             IdentifierType = "VIES_VAT"
+	IdentifierSIRET           IdentifierType = "SIRET"
+	IdentifierSIREN           IdentifierType = "SIREN"
+	IdentifierKvK             IdentifierType = "KVK"
+	IdentifierBCE             IdentifierType = "BCE"
+	IdentifierZefix           IdentifierType = "ZEFIX_UID"
 	IdentifierHandelsregister IdentifierType = "HANDELSREGISTER"
-	IdentifierBORMEAct        IdentifierType = "BORME_ACT"  // BORME announcement ID: BORME-A-YYYY-NNN-NN
-	IdentifierKBO             IdentifierType = "KBO_BCE"    // Belgian KBO/BCE enterprise number: NNNN.NNN.NNN
+	IdentifierBORMEAct        IdentifierType = "BORME_ACT" // BORME announcement ID: BORME-A-YYYY-NNN-NN
+	IdentifierKBO             IdentifierType = "KBO_BCE"   // Belgian KBO/BCE enterprise number: NNNN.NNN.NNN
 
-	// Familia B — geocartografía
+	// Familia B -- geocartografia
 	IdentifierOSMID       IdentifierType = "OSM_ID"       // OpenStreetMap element: "node/12345678" or "way/12345678"
 	IdentifierWikidataQID IdentifierType = "WIKIDATA_QID" // Wikidata entity: "Q12345"
 
-	// Familia C — cartografía web
+	// Familia C -- cartografia web
 	IdentifierDomainCT IdentifierType = "DOMAIN_FROM_CT" // Domain discovered via Certificate Transparency logs
 
-	// ── Family F — aggregator marketplace identifiers ────────────────────────
-	IdentifierMobileDeID      IdentifierType = "MOBILE_DE_ID"       // mobile.de dealer profile slug/ID
-	IdentifierLaCentraleProID IdentifierType = "LACENTRALE_PRO_ID"  // La Centrale garage/pro directory ID
-	IdentifierAutoScout24ID   IdentifierType = "AUTOSCOUT24_ID"     // AutoScout24 dealer account ID (pan-EU)
+	// -- Family F -- aggregator marketplace identifiers ------------------------
+	IdentifierMobileDeID      IdentifierType = "MOBILE_DE_ID"      // mobile.de dealer profile slug/ID
+	IdentifierLaCentraleProID IdentifierType = "LACENTRALE_PRO_ID" // La Centrale garage/pro directory ID
+	IdentifierAutoScout24ID   IdentifierType = "AUTOSCOUT24_ID"    // AutoScout24 dealer account ID (pan-EU)
 
-	// ── Family G — sectoral association member identifiers ───────────────────
-	IdentifierMemberBOVAG   IdentifierType = "MEMBER_BOVAG"    // BOVAG (NL) member number or slug
-	IdentifierMemberZDK     IdentifierType = "MEMBER_ZDK"      // ZDK (DE) member ID — deferred Sprint 7+
-	IdentifierMemberMobilians IdentifierType = "MEMBER_MOBILIANS" // Mobilians (FR) member ID — deferred Sprint 7+
-	IdentifierMemberFaconauto IdentifierType = "MEMBER_FACONAUTO" // FACONAUTO (ES) member ID — deferred Sprint 7+
-	IdentifierMemberTraxio  IdentifierType = "MEMBER_TRAXIO"   // TRAXIO (BE) member ID — deferred Sprint 7+
-	IdentifierMemberAGVS    IdentifierType = "MEMBER_AGVS_UPSA" // AGVS-UPSA (CH) member ID — deferred Sprint 7+
+	// -- Family G -- sectoral association member identifiers -------------------
+	IdentifierMemberBOVAG    IdentifierType = "MEMBER_BOVAG"     // BOVAG (NL) member number or slug
+	IdentifierMemberZDK      IdentifierType = "MEMBER_ZDK"       // ZDK (DE) member ID -- deferred Sprint 7+
+	IdentifierMemberMobilians IdentifierType = "MEMBER_MOBILIANS" // Mobilians (FR) member ID -- deferred Sprint 7+
+	IdentifierMemberFaconauto IdentifierType = "MEMBER_FACONAUTO" // FACONAUTO (ES) member ID -- deferred Sprint 7+
+	IdentifierMemberTraxio   IdentifierType = "MEMBER_TRAXIO"    // TRAXIO (BE) member ID -- deferred Sprint 7+
+	IdentifierMemberAGVS     IdentifierType = "MEMBER_AGVS_UPSA" // AGVS-UPSA (CH) member ID -- deferred Sprint 7+
 
-	// ── Family H — OEM dealer network identifiers ────────────────────────────
+	// -- Family H -- OEM dealer network identifiers ---------------------------
 	// Value format: "{oem_brand}:{dealer_id}" to avoid cross-brand collisions.
 	// e.g. "VW:DE-12345", "BMW:DE-67890", "TOYOTA:DE-99001"
-	IdentifierOEMDealerID IdentifierType = "OEM_DEALER_ID" // OEM official dealer ID — deferred Sprint 7+
+	IdentifierOEMDealerID IdentifierType = "OEM_DEALER_ID" // OEM official dealer ID -- deferred Sprint 7+
 
-	// ── Family K — alternative search engine identifiers ─────────────────────
-	IdentifierDomainFromSearch IdentifierType = "DOMAIN_FROM_SEARCH" // domain discovered via SearXNG/Marginalia
-
-	// ── Family M — fiscal signal identifiers ──────────────────────────────────
-	IdentifierVATValidatedVIES IdentifierType = "VAT_VALIDATED_VIES" // VIES-confirmed VAT number
-	IdentifierUIDValidatedCH   IdentifierType = "UID_VALIDATED_CH"   // Swiss UID-Register confirmed UID
-
-	// ── Family I — inspection & certification network identifiers ─────────────
+	// -- Family I -- inspection & certification network identifiers -----------
 	// Inspection stations are NOT dealer candidates (is_dealer_candidate=false).
 	// They are adjacent signals used to cross-reference dealer operators that also
 	// hold inspection authorisations.
 	IdentifierAPKStationID      IdentifierType = "APK_STATION_ID"       // RDW APK (NL) erkenningsnummer
-	IdentifierDEKRAStationID    IdentifierType = "DEKRA_STATION_ID"     // DEKRA station ID (DE/FR/…)
-	IdentifierTUVStationID      IdentifierType = "TUV_STATION_ID"       // TÜV station ID (DE, multiple orgs)
+	IdentifierDEKRAStationID    IdentifierType = "DEKRA_STATION_ID"     // DEKRA station ID (DE/FR/...)
+	IdentifierTUVStationID      IdentifierType = "TUV_STATION_ID"       // TUV station ID (DE, multiple orgs)
 	IdentifierITVStationID      IdentifierType = "ITV_STATION_ID"       // ITV station ID (ES)
-	IdentifierCTStationID       IdentifierType = "CT_STATION_ID"        // Contrôle Technique station ID (FR/BE)
+	IdentifierCTStationID       IdentifierType = "CT_STATION_ID"        // Controle Technique station ID (FR/BE)
 	IdentifierBoschCarServiceID IdentifierType = "BOSCH_CAR_SERVICE_ID" // Bosch Car Service partner ID (pan-EU)
 	IdentifierMFKStationID      IdentifierType = "MFK_STATION_ID"       // MFK station ID (CH)
+
+	// -- Family K -- alternative search engine identifiers --------------------
+	IdentifierDomainFromSearch IdentifierType = "DOMAIN_FROM_SEARCH" // domain discovered via SearXNG/Marginalia
+
+	// -- Family M -- fiscal signal identifiers --------------------------------
+	IdentifierVATValidatedVIES IdentifierType = "VAT_VALIDATED_VIES" // VIES-confirmed VAT number
+	IdentifierUIDValidatedCH   IdentifierType = "UID_VALIDATED_CH"   // Swiss UID-Register confirmed UID
+
+	// -- Family L -- social profile identifiers --------------------------------
+	// Value format: platform-native ID or handle.
+	IdentifierLinkedInCompanyID IdentifierType = "LINKEDIN_COMPANY_ID" // LinkedIn company slug or numeric ID
+	IdentifierYouTubeChannelID  IdentifierType = "YOUTUBE_CHANNEL_ID"  // YouTube channel ID (UC...)
+	IdentifierGooglePlaceID     IdentifierType = "GOOGLE_PLACE_ID"     // Google Maps Place ID (ChIJ...)
 )
 
 // DealerVATCandidate is a lightweight projection of dealer_entity used for
@@ -119,21 +125,21 @@ type DealerIdentifier struct {
 
 // DealerLocation is a physical location associated with a dealer.
 type DealerLocation struct {
-	LocationID        string
-	DealerID          string
-	IsPrimary         bool
-	AddressLine1      *string
-	AddressLine2      *string
-	PostalCode        *string
-	City              *string
-	Region            *string
-	CountryCode       string
-	Lat               *float64
-	Lon               *float64
-	H3Index           *string // Sprint 1: nil stub; computed in Sprint 2
-	OpeningHoursJSON  *string
-	Phone             *string // optional phone number — added by Sprint 5 migration v3
-	SourceFamilies    string  // comma-separated: "A,B,H"
+	LocationID       string
+	DealerID         string
+	IsPrimary        bool
+	AddressLine1     *string
+	AddressLine2     *string
+	PostalCode       *string
+	City             *string
+	Region           *string
+	CountryCode      string
+	Lat              *float64
+	Lon              *float64
+	H3Index          *string // Sprint 1: nil stub; computed in Sprint 2
+	OpeningHoursJSON *string
+	Phone            *string // optional phone number -- added by Sprint 5 migration v3
+	SourceFamilies   string  // comma-separated: "A,B,H"
 }
 
 // DealerWebPresence is a known web domain presence for a dealer entity,
@@ -147,24 +153,48 @@ type DealerWebPresence struct {
 	DMSProvider          *string
 	ExtractionStrategy   *string
 	DiscoveredByFamilies string
-	MetadataJSON         *string // nullable — added by Sprint 4 migration v2
+	MetadataJSON         *string // nullable -- added by Sprint 4 migration v2
+	// Sprint 12 -- Family D CMS fingerprinting (migration v6)
+	CMSFingerprintJSON  *string // {"cms":"wordpress","version":"6.4","confidence":0.85}
+	CMSScannedAt        *time.Time
+	ExtractionHintsJSON *string // {"endpoints":[...],"plugins":["vehicle-manager"]}
+}
+
+// DealerSocialProfile is a social media or directory profile linked to a dealer.
+// Backed by the dealer_social_profile table.
+type DealerSocialProfile struct {
+	ProfileID            string
+	DealerID             string
+	Platform             string // "youtube", "linkedin", "google_maps"
+	ProfileURL           string
+	ExternalID           *string
+	Rating               *float64
+	ReviewCount          *int
+	LastActivityDetected *time.Time
+	MetadataJSON         *string
 }
 
 // DiscoveryRecord is an audit entry linking a dealer to the family+sub-technique
 // that discovered it.
 type DiscoveryRecord struct {
-	RecordID             string
-	DealerID             string
-	Family               string
-	SubTechnique         string
-	SourceURL            *string
-	SourceRecordID       *string
+	RecordID              string
+	DealerID              string
+	Family                string
+	SubTechnique          string
+	SourceURL             *string
+	SourceRecordID        *string
 	ConfidenceContributed float64
-	DiscoveredAt         time.Time
-	LastReconfirmedAt    *time.Time
+	DiscoveredAt          time.Time
+	LastReconfirmedAt     *time.Time
 }
 
-// ── Interface ───────────────────────────────────────────────────────────────
+// WebPresence is a minimal web-domain projection used by Family K UpsertDomainCandidate.
+type WebPresence struct {
+	Domain   string
+	DealerID string
+}
+
+// -- Interface ----------------------------------------------------------------
 
 // KnowledgeGraph is the read/write interface over the dealer Knowledge Graph.
 // The production implementation is SQLiteGraph (see dealer.go).
@@ -188,7 +218,7 @@ type KnowledgeGraph interface {
 	// pair, or ("", nil) if not found.
 	FindDealerByIdentifier(ctx context.Context, idType IdentifierType, idValue string) (string, error)
 
-	// ── Web presence ────────────────────────────────────────────────────────
+	// -- Web presence ----------------------------------------------------------
 
 	// UpsertWebPresence adds or updates a dealer web presence entry.
 	// The domain column is the unique natural key.
@@ -206,7 +236,24 @@ type KnowledgeGraph interface {
 	// whose country_code matches the given ISO 3166-1 alpha-2 code.
 	ListWebPresencesByCountry(ctx context.Context, country string) ([]*DealerWebPresence, error)
 
-	// ── Family M — VAT validation ────────────────────────────────────────────
+	// -- Family D -- CMS fingerprinting ----------------------------------------
+
+	// ListWebPresencesForCMSScan returns web presences for the given country
+	// where cms_scanned_at IS NULL or older than staleDays days. Limit caps
+	// the batch size.
+	ListWebPresencesForCMSScan(ctx context.Context, country string, staleDays, limit int) ([]*DealerWebPresence, error)
+
+	// UpsertWebTechnology stores CMS fingerprint and extraction hints for a
+	// domain. Sets cms_scanned_at = now(). Identified by domain (unique key).
+	UpsertWebTechnology(ctx context.Context, domain, cmsFingerprintJSON, extractionHintsJSON string) error
+
+	// -- Family L -- social profiles -------------------------------------------
+
+	// UpsertSocialProfile inserts or updates a social profile record.
+	// Identified by (dealer_id, platform, external_id).
+	UpsertSocialProfile(ctx context.Context, profile *DealerSocialProfile) error
+
+	// -- Family M -- VAT validation --------------------------------------------
 
 	// FindDealersForVATValidation returns dealers that have a primary_vat set
 	// and whose VAT validation is either missing or older than staleDays days.
@@ -222,7 +269,7 @@ type KnowledgeGraph interface {
 	// Used by M.1/M.2 to bump score when VAT is confirmed valid.
 	UpdateConfidenceScore(ctx context.Context, dealerID string, score float64) error
 
-	// ── Family K — search signal / state ────────────────────────────────────
+	// -- Family K -- search signal / state ------------------------------------
 
 	// GetProcessingState returns the value stored under key, or ("", nil) if absent.
 	GetProcessingState(ctx context.Context, key string) (string, error)
