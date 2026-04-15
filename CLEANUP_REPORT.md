@@ -111,14 +111,68 @@
 
 ---
 
-## Directories NOT deleted (flagged for operator decision)
+## Round 2 deletions (Task 43 — 2026-04-15)
 
-| Directory | Files | Reason kept |
-|-----------|-------|-------------|
-| `services/` | ~150 files | Future full-stack microservices. Not deployed. Flag: recommend deletion if full SPEC.md vision will be re-scaffolded from scratch. |
-| `scrapers/` | ~85 files | Python marketplace scrapers (cleaned, CardexBot UA). Not wired to current pipeline. Flag: may represent future marketplace-indexing strategy. |
-| `ingestion/` | ~15 files | Go crawlers (cleaned, CardexBot UA). Not in go.work. Flag: same as scrapers. |
-| `vision/` | ~5 files | Standalone image processing Go module. Not in go.work. Flag: could be merged into quality/ V16 extension. |
-| `apps/web/` | ~30 files | Next.js 15 marketplace frontend. Not deployed. Flag: future consumer interface. |
-| `extensions/chrome/` | ~10 files | Chrome dealer listing overlay. Not deployed. Flag: future consumer product. |
-| `e2e/` | 3 files | E2E tests for OLD architecture. `go.mod` replace directives point to wrong paths. Flag: should be replaced with E2E tests for discovery/extraction/quality. |
+### 11. `services/` (9 Go modules, ~150 files)
+
+**Modules:** alpha, api, census, forensics, frontier, gateway, imgproxy, legal, pipeline, scheduler.
+
+**Reason:** None of these modules are imported by or deployed by discovery/extraction/quality/deploy. The `go.work` listed them but `GOWORK=off` is used for all production builds. These represent the ambitious full-stack vision from `SPEC.md` (3-node AX102) but that architecture has not been built and the current MVP deliberately uses a simpler stack. They are not "future components waiting to be wired up" — they are a different architectural era. If the full vision is ever revived, these should be re-scaffolded fresh with updated dependencies (most use Go 1.22–1.24, now at Go 1.25).
+
+**Cross-reference check:** Zero imports from discovery/, extraction/, quality/, deploy/. False-positive grep matches were URL strings containing "/services/" as a path component in dealer website URLs.
+
+---
+
+### 12. `scrapers/` (~85 Python files)
+
+**Reason:** Python marketplace scrapers for AutoScout24, mobile.de, AutoHero, Marktplaats, La Centrale, etc. Cleaned in P0 purge (CardexBot UA, no stealth). NOT wired to the current extraction/ pipeline (which targets individual dealer websites, not marketplace aggregators). No Go module dependency. No reference from active modules. Represents an entirely different data acquisition strategy (marketplace scraping) vs. what extraction/ does (direct dealer site extraction via E01–E12). Per SPEC.md V6: "No scraping: All data from licensed B2B feeds" — so even honest marketplace scraping is out of scope for the institutional regime.
+
+---
+
+### 13. `ingestion/` (~15 files — Go module + compiled binaries)
+
+**Reason:** `api_crawler` and `sitemap_vacuum` — H3-based crawler for mobile.de and sitemap vacuum tool. Cleaned in P0 purge. Go 1.21 module, NOT in go.work. Not referenced by any active module. Compiled `.exe` binaries already gitignored. Completely superseded by the discovery/extraction pipeline.
+
+---
+
+### 14. `vision/` (~5 files — Go module)
+
+**Reason:** Standalone image processing module (`github.com/cardex/vision`, Go 1.25). Uses `goimagehash` + Redis worker for image pHash. NOT in go.work. Not referenced by any active module. The same `goimagehash` functionality is already implemented in `quality/internal/validator/v16_photo_phash/` as part of the quality pipeline. Having a separate standalone service for this is premature.
+
+---
+
+### 15. `e2e/` (3 files — Go module)
+
+**Reason:** E2E tests for the OLD architecture: imports `github.com/cardex/alpha`, `github.com/cardex/forensics`, `github.com/cardex/gateway`, `github.com/cardex/pipeline` — all of which have been deleted. The `go.mod` replace directives pointed to `../alpha`, `../forensics`, etc. (wrong paths — they were under `services/`). These tests do not cover discovery, extraction, or quality. They cannot build now that `services/` is deleted. No value in keeping broken tests for a deleted architecture.
+
+---
+
+### 16. `apps/` (Next.js 15 web app)
+
+**Reason:** `apps/web/` — marketplace frontend with deck.gl maps, CRM pages, analytics, MeiliSearch integration. NOT deployed. Requires PostgreSQL, MeiliSearch, Redis — none of which exist in the current MVP. The project is API-only in its current state. Future frontend work should be started fresh when the API layer (services/) is built out, not carried as dead weight now.
+
+---
+
+### 17. `extensions/` (Chrome extension)
+
+**Reason:** Chrome Manifest V3 extension — car listing overlay. NOT deployed. No build system, no tests. Consumer product feature for a future phase. Deleting doesn't affect any current functionality.
+
+---
+
+### 18. `scripts/` (6 files — SQL + shell init scripts)
+
+**Reason:** PostgreSQL schema (`init-pg.sql`, 46KB), ClickHouse schema (`init-ch.sql`), MeiliSearch indices (`init-meili.sh`), Redis config (`init-redis.sh`), demo seed (`seed-demo.sql`, `seed-vehicles.py`). ALL for the old architecture stack. The current MVP uses SQLite (no init scripts needed; schema created by `modernc.org/sqlite` at startup). The `deploy/` scripts are completely separate (`deploy/scripts/`). Having PostgreSQL init scripts in the repo with no PostgreSQL in the deployment is actively misleading.
+
+---
+
+### 19. `go.work` — updated
+
+Removed `./e2e` and all `./services/*` entries (now deleted). Retained: `./discovery`, `./extraction`, `./internal/shared`, `./quality`.
+
+---
+
+## Final state
+
+**Total files before Task 42+43:** 714  
+**Total files after Task 42+43:** 425 (before go.work update staged)  
+**Deleted:** ~289 files across 8 directories + 11 binary blob PDFs untracked

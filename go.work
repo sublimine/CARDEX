@@ -4,18 +4,7 @@ toolchain go1.25.0
 
 use (
 	./discovery
-	./e2e
 	./extraction
 	./internal/shared
 	./quality
-	./services/alpha
-	./services/api
-	./services/census
-	./services/forensics
-	./services/frontier
-	./services/imgproxy
-	./services/gateway
-	./services/legal
-	./services/pipeline
-	./services/scheduler
 )
