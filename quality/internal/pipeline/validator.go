@@ -1,0 +1,52 @@
+// Package pipeline defines the core interfaces for the quality validation pipeline.
+package pipeline
+
+import "context"
+
+// Severity classifies validation failures.
+type Severity string
+
+const (
+	SeverityCritical Severity = "CRITICAL" // blocks publication
+	SeverityWarning  Severity = "WARNING"  // flag but allow
+	SeverityInfo     Severity = "INFO"     // metadata only
+)
+
+// Validator defines a specific validation technique (V01–V20).
+type Validator interface {
+	ID() string
+	Name() string
+	Severity() Severity
+	Validate(ctx context.Context, vehicle *Vehicle) (*ValidationResult, error)
+}
+
+// Vehicle is the canonical vehicle record passed through the quality pipeline.
+type Vehicle struct {
+	InternalID    string
+	VIN           string
+	Make          string
+	Model         string
+	Year          int
+	Mileage       int
+	Fuel          string
+	Transmission  string
+	PriceEUR      int
+	PhotoURLs     []string
+	SourceURL     string
+	DealerID      string
+	SourceCountry string
+	Title         string // raw title from extraction source
+	Metadata      map[string]string
+}
+
+// ValidationResult is the outcome of a single validator run on one vehicle.
+type ValidationResult struct {
+	ValidatorID string
+	VehicleID   string
+	Pass        bool
+	Severity    Severity
+	Issue       string             // human-readable description of the issue
+	Confidence  float64            // 0.0–1.0
+	Suggested   map[string]string  // suggested corrections (field → corrected value)
+	Evidence    map[string]string  // raw evidence (e.g., NHTSA decoded fields)
+}
