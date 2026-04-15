@@ -111,6 +111,16 @@ type Config struct {
 	// Default: false
 	SkipFamilyN bool
 
+	// SkipFamilyO, when true, bypasses Familia O (press archives) entirely.
+	// Useful when GDELT query budget or RSS fetch rate limits need to be preserved.
+	// Default: false
+	SkipFamilyO bool
+
+	// SkipFamilyE, when true, bypasses Familia E (DMS infrastructure mapping) entirely.
+	// Useful when dealer homepage crawl rate limits need to be preserved.
+	// Default: false
+	SkipFamilyE bool
+
 	// CensysAPIID and CensysAPISecret are the Censys v2 API credentials used by N.1.
 	// When either is empty, N.1 is silently skipped.
 	// Obtain at censys.io -> Account -> API Access.
@@ -206,6 +216,12 @@ func LoadFromEnv() (*Config, error) {
 
 	if os.Getenv("DISCOVERY_SKIP_FAMILY_N") == "true" {
 		c.SkipFamilyN = true
+	}
+	if os.Getenv("DISCOVERY_SKIP_FAMILY_O") == "true" {
+		c.SkipFamilyO = true
+	}
+	if os.Getenv("DISCOVERY_SKIP_FAMILY_E") == "true" {
+		c.SkipFamilyE = true
 	}
 	c.CensysAPIID = os.Getenv("CENSYS_API_ID")
 	c.CensysAPISecret = os.Getenv("CENSYS_API_SECRET")

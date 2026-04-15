@@ -1,11 +1,11 @@
-// discovery-service -- Phase 2 Sprint 13
+// discovery-service -- Phase 2 Sprint 14
 //
 // Startup sequence:
 //  1. Load config from environment variables.
 //  2. Open (or create) the SQLite Knowledge Graph and apply migrations.
 //  3. Initialise the Playwright browser (unless DISCOVERY_SKIP_BROWSER=true).
 //  4. Start Prometheus /metrics HTTP endpoint.
-//  5. Run a discovery cycle for each configured country (Family A-N).
+//  5. Run a discovery cycle for each configured country (Family A-O).
 //     (continuous daemon mode blocks until SIGINT/SIGTERM)
 //
 // Environment variables:
@@ -28,6 +28,7 @@
 //   DISCOVERY_SKIP_BROWSER    "true" = skip Playwright init     (default: false)
 //   DISCOVERY_SKIP_FAMILY_C   "true" = skip Family C entirely   (default: false)
 //   DISCOVERY_SKIP_FAMILY_D   "true" = skip Family D entirely   (default: false)
+//   DISCOVERY_SKIP_FAMILY_E   "true" = skip Family E entirely   (default: false)
 //   DISCOVERY_SKIP_FAMILY_F   "true" = skip Family F entirely   (default: false)
 //   DISCOVERY_SKIP_FAMILY_G   "true" = skip Family G entirely   (default: false)
 //   DISCOVERY_SKIP_FAMILY_H   "true" = skip Family H entirely   (default: false)
@@ -37,6 +38,7 @@
 //   DISCOVERY_SKIP_FAMILY_L   "true" = skip Family L entirely   (default: false)
 //   DISCOVERY_SKIP_FAMILY_M   "true" = skip Family M entirely   (default: false)
 //   DISCOVERY_SKIP_FAMILY_N   "true" = skip Family N entirely   (default: false)
+//   DISCOVERY_SKIP_FAMILY_O   "true" = skip Family O entirely   (default: false)
 package main
 
 import (
@@ -62,11 +64,13 @@ import (
 	"cardex.eu/discovery/internal/families/familia_g"
 	"cardex.eu/discovery/internal/families/familia_h"
 	"cardex.eu/discovery/internal/families/familia_i"
+	"cardex.eu/discovery/internal/families/familia_e"
 	"cardex.eu/discovery/internal/families/familia_j"
 	"cardex.eu/discovery/internal/families/familia_k"
 	"cardex.eu/discovery/internal/families/familia_l"
 	"cardex.eu/discovery/internal/families/familia_m"
 	"cardex.eu/discovery/internal/families/familia_n"
+	"cardex.eu/discovery/internal/families/familia_o"
 	"cardex.eu/discovery/internal/kg"
 	_ "cardex.eu/discovery/internal/metrics" // register Prometheus metrics
 	"cardex.eu/discovery/internal/runner"
@@ -193,6 +197,17 @@ func main() {
 			cfg.ShodanAPIKey,
 			cfg.ViewDNSAPIKey,
 		))
+	}
+	if !cfg.SkipFamilyO {
+		// O discovers dealer events from press archives (GDELT + RSS feeds).
+		// Runs after A-N so cross-validation has the full KG to match against.
+		families = append(families, familia_o.New(graph))
+	}
+	if !cfg.SkipFamilyE {
+		// E maps DMS hosting infrastructure.
+		// Runs after D (CMS fingerprinted, dms hints in extraction_hints_json) and
+		// N (Censys/Shodan host IPs populated for E.3 IP clustering).
+		families = append(families, familia_e.New(graph))
 	}
 	if !cfg.SkipFamilyM {
 		// M runs last: enriches entities discovered by all preceding families.
