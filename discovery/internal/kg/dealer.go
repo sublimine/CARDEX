@@ -379,3 +379,95 @@ ON CONFLICT(profile_id) DO UPDATE SET
 	}
 	return nil
 }
+
+// -- Family J -- sub-jurisdiction / regional enrichment -----------------------
+
+// ListDealersByCountry returns a lightweight province-candidate projection for
+// all dealers in the given country.
+func (g *SQLiteGraph) ListDealersByCountry(
+	ctx context.Context,
+	country string,
+) ([]*DealerProvinceCandidate, error) {
+	const q = `
+SELECT de.dealer_id, dl.postal_code, dl.city, de.country_code
+FROM dealer_entity de
+LEFT JOIN dealer_location dl ON dl.dealer_id = de.dealer_id AND dl.is_primary = 1
+WHERE de.country_code = ?
+ORDER BY de.dealer_id`
+
+	rows, err := g.db.QueryContext(ctx, q, country)
+	if err != nil {
+		return nil, fmt.Errorf("kg.ListDealersByCountry: %w", err)
+	}
+	defer rows.Close()
+
+	var out []*DealerProvinceCandidate
+	for rows.Next() {
+		c := &DealerProvinceCandidate{}
+		if err := rows.Scan(&c.DealerID, &c.PostalCode, &c.City, &c.CountryCode); err != nil {
+			return nil, fmt.Errorf("kg.ListDealersByCountry scan: %w", err)
+		}
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}
+
+// UpdateDealerSubRegion sets the region column on the primary location row for
+// the given dealer. region is a province/state/gewest name (e.g. "Noord-Holland").
+func (g *SQLiteGraph) UpdateDealerSubRegion(ctx context.Context, dealerID, subRegion string) error {
+	const q = `
+UPDATE dealer_location SET region = ?
+WHERE dealer_id = ? AND is_primary = 1`
+	_, err := g.db.ExecContext(ctx, q, subRegion, dealerID)
+	if err != nil {
+		return fmt.Errorf("kg.UpdateDealerSubRegion %q: %w", dealerID, err)
+	}
+	return nil
+}
+
+// -- Family N -- infrastructure intelligence ----------------------------------
+
+// ListWebPresencesForInfraScan returns all web presences for the given country
+// up to limit rows, ordered by web_id (stable pagination).
+func (g *SQLiteGraph) ListWebPresencesForInfraScan(
+	ctx context.Context,
+	country string,
+	limit int,
+) ([]*DealerWebPresence, error) {
+	const q = `
+SELECT wp.web_id, wp.dealer_id, wp.domain, wp.url_root,
+       wp.platform_type, wp.dms_provider, wp.extraction_strategy,
+       wp.discovered_by_families, wp.metadata_json,
+       wp.cms_fingerprint_json, wp.cms_scanned_at, wp.extraction_hints_json
+FROM dealer_web_presence wp
+JOIN dealer_entity de ON de.dealer_id = wp.dealer_id
+WHERE de.country_code = ?
+ORDER BY wp.web_id
+LIMIT ?`
+
+	rows, err := g.db.QueryContext(ctx, q, country, limit)
+	if err != nil {
+		return nil, fmt.Errorf("kg.ListWebPresencesForInfraScan: %w", err)
+	}
+	defer rows.Close()
+
+	var out []*DealerWebPresence
+	for rows.Next() {
+		wp := &DealerWebPresence{}
+		var scannedAt sql.NullString
+		if err := rows.Scan(
+			&wp.WebID, &wp.DealerID, &wp.Domain, &wp.URLRoot,
+			&wp.PlatformType, &wp.DMSProvider, &wp.ExtractionStrategy,
+			&wp.DiscoveredByFamilies, &wp.MetadataJSON,
+			&wp.CMSFingerprintJSON, &scannedAt, &wp.ExtractionHintsJSON,
+		); err != nil {
+			return nil, fmt.Errorf("kg.ListWebPresencesForInfraScan scan: %w", err)
+		}
+		if scannedAt.Valid {
+			t, _ := time.Parse("2006-01-02T15:04:05Z", scannedAt.String)
+			wp.CMSScannedAt = &t
+		}
+		out = append(out, wp)
+	}
+	return out, rows.Err()
+}

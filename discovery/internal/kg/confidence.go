@@ -16,8 +16,10 @@ var BaseWeights = map[string]float64{
 	"K": 0.05, // Alternative search engines (SearXNG/Marginalia) — low primary, confirmation signal
 	"M": 0.00, // Fiscal signal enrichment (VIES/UID) -- enrichment only, uses consistency_multiplier
 	"D": 0.00, // CMS fingerprinting -- capacity/routing classification, not primary discovery
+	"J": 0.05, // Sub-jurisdiction registries (regional long-tail extension of A) -- low-medium reliability
 	"L": 0.10, // Social profiles (YouTube active, LinkedIn/Google Maps deferred) -- medium reliability
-	// E, J, N-O: registered when implemented
+	"N": 0.05, // Infrastructure intelligence (Censys/Shodan/DNS enum) -- signal complement to C+E
+	// E, O: registered when implemented
 }
 
 // ComputeConfidence computes the confidence score for a dealer given the set of

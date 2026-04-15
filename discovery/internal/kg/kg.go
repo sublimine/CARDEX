@@ -82,6 +82,14 @@ const (
 	IdentifierLinkedInCompanyID IdentifierType = "LINKEDIN_COMPANY_ID" // LinkedIn company slug or numeric ID
 	IdentifierYouTubeChannelID  IdentifierType = "YOUTUBE_CHANNEL_ID"  // YouTube channel ID (UC...)
 	IdentifierGooglePlaceID     IdentifierType = "GOOGLE_PLACE_ID"     // Google Maps Place ID (ChIJ...)
+
+	// -- Family J -- sub-jurisdiction / regional registry identifiers ----------
+	IdentifierPappersID IdentifierType = "PAPPERS_ID" // Pappers.fr company ID (SIREN/SIRET enriched)
+
+	// -- Family N -- infrastructure intelligence identifiers -------------------
+	IdentifierCensysHostID      IdentifierType = "CENSYS_HOST_ID"       // Censys host IPv4/v6 address
+	IdentifierShodanHostID      IdentifierType = "SHODAN_HOST_ID"       // Shodan host IP address
+	IdentifierDNSDumpsterDomain IdentifierType = "DNSDUMPSTER_DOMAIN"   // subdomain discovered via DNSDumpster
 )
 
 // DealerVATCandidate is a lightweight projection of dealer_entity used for
@@ -188,6 +196,15 @@ type DiscoveryRecord struct {
 	LastReconfirmedAt     *time.Time
 }
 
+// DealerProvinceCandidate is a lightweight projection used by Family J province/
+// gewest classifiers. It carries only the fields needed to derive sub-region.
+type DealerProvinceCandidate struct {
+	DealerID    string
+	PostalCode  *string // primary location postal code (may be nil)
+	City        *string // primary location city
+	CountryCode string
+}
+
 // WebPresence is a minimal web-domain projection used by Family K UpsertDomainCandidate.
 type WebPresence struct {
 	Domain   string
@@ -276,4 +293,20 @@ type KnowledgeGraph interface {
 
 	// SetProcessingState upserts the value for key with the current timestamp.
 	SetProcessingState(ctx context.Context, key, value string) error
+
+	// -- Family J -- sub-jurisdiction / regional enrichment -------------------
+
+	// ListDealersByCountry returns a lightweight projection of all dealers for the
+	// given country, used by J.NL.1 and J.BE.1 province/gewest classifiers.
+	ListDealersByCountry(ctx context.Context, country string) ([]*DealerProvinceCandidate, error)
+
+	// UpdateDealerSubRegion writes the sub_region field on dealer_location rows
+	// belonging to the given dealer. Used by J.NL.1/J.BE.1 classifiers.
+	UpdateDealerSubRegion(ctx context.Context, dealerID, subRegion string) error
+
+	// -- Family N -- infrastructure intelligence ------------------------------
+
+	// ListWebPresencesForInfraScan returns web presences for the given country
+	// ordered by web_id. Limit caps the batch size.
+	ListWebPresencesForInfraScan(ctx context.Context, country string, limit int) ([]*DealerWebPresence, error)
 }
