@@ -151,3 +151,84 @@ func (s *SQLiteStorage) ListPendingVehicles(ctx context.Context, limit int) ([]*
 	}
 	return vehicles, rows.Err()
 }
+
+// GetVehiclesByVIN returns all vehicle records sharing the given VIN, used by V12 dedup.
+// Returns nil (not an error) if the vehicle_raw table does not exist yet.
+func (s *SQLiteStorage) GetVehiclesByVIN(ctx context.Context, vin string) ([]vehicleRef, error) {
+	var exists int
+	err := s.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='vehicle_raw'`,
+	).Scan(&exists)
+	if err != nil || exists == 0 {
+		return nil, nil
+	}
+
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT id, vin, source_url, dealer_id FROM vehicle_raw WHERE vin = ?`, vin)
+	if err != nil {
+		return nil, fmt.Errorf("get vehicles by vin: %w", err)
+	}
+	defer rows.Close()
+
+	var refs []vehicleRef
+	for rows.Next() {
+		var r vehicleRef
+		var (
+			sourceURL sql.NullString
+			dealerID  sql.NullString
+		)
+		if err := rows.Scan(&r.InternalID, &r.VIN, &sourceURL, &dealerID); err != nil {
+			return nil, fmt.Errorf("scan vehicle ref: %w", err)
+		}
+		r.SourceURL = sourceURL.String
+		r.DealerID = dealerID.String
+		refs = append(refs, r)
+	}
+	return refs, rows.Err()
+}
+
+// vehicleRef is a minimal vehicle entry used for VIN cross-referencing.
+type vehicleRef struct {
+	InternalID string
+	VIN        string
+	SourceURL  string
+	DealerID   string
+}
+
+// GetDealerByID returns the trust record for a dealer, used by V15.
+// Returns nil (not an error) if the dealer_entity table does not exist yet.
+func (s *SQLiteStorage) GetDealerByID(ctx context.Context, dealerID string) (*dealerRecord, error) {
+	var exists int
+	err := s.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='dealer_entity'`,
+	).Scan(&exists)
+	if err != nil || exists == 0 {
+		return nil, nil
+	}
+
+	var d dealerRecord
+	var name sql.NullString
+	var score sql.NullFloat64
+	var sources sql.NullInt64
+	err = s.db.QueryRowContext(ctx,
+		`SELECT id, name, confidence_score, data_sources FROM dealer_entity WHERE id = ?`, dealerID,
+	).Scan(&d.ID, &name, &score, &sources)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get dealer by id: %w", err)
+	}
+	d.Name = name.String
+	d.ConfidenceScore = score.Float64
+	d.DataSources = int(sources.Int64)
+	return &d, nil
+}
+
+// dealerRecord holds trust data for a dealer entity.
+type dealerRecord struct {
+	ID              string
+	Name            string
+	ConfidenceScore float64
+	DataSources     int
+}

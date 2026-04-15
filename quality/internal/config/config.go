@@ -65,6 +65,21 @@ type Config struct {
 	// SkipV10, when true, disables the Source URL Liveness validator.
 	SkipV10 bool
 
+	// SkipV11, when true, disables the NLG Description Quality validator.
+	SkipV11 bool
+
+	// SkipV12, when true, disables the Cross-Source Deduplication validator.
+	SkipV12 bool
+
+	// SkipV13, when true, disables the Metadata Completeness validator.
+	SkipV13 bool
+
+	// SkipV14, when true, disables the Freshness validator.
+	SkipV14 bool
+
+	// SkipV15, when true, disables the Dealer Trust validator.
+	SkipV15 bool
+
 	// ImageHeadTimeoutMs is the timeout for V05 HEAD requests per photo URL. Default: 3000 ms.
 	ImageHeadTimeoutMs int
 
@@ -131,6 +146,21 @@ func Load() (*Config, error) {
 	}
 	if os.Getenv("QUALITY_SKIP_V10") == "true" {
 		c.SkipV10 = true
+	}
+	if os.Getenv("QUALITY_SKIP_V11") == "true" {
+		c.SkipV11 = true
+	}
+	if os.Getenv("QUALITY_SKIP_V12") == "true" {
+		c.SkipV12 = true
+	}
+	if os.Getenv("QUALITY_SKIP_V13") == "true" {
+		c.SkipV13 = true
+	}
+	if os.Getenv("QUALITY_SKIP_V14") == "true" {
+		c.SkipV14 = true
+	}
+	if os.Getenv("QUALITY_SKIP_V15") == "true" {
+		c.SkipV15 = true
 	}
 
 	if raw := os.Getenv("IMAGE_HEAD_TIMEOUT_MS"); raw != "" {

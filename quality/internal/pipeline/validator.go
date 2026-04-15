@@ -1,7 +1,10 @@
 // Package pipeline defines the core interfaces for the quality validation pipeline.
 package pipeline
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // Severity classifies validation failures.
 type Severity string
@@ -36,6 +39,8 @@ type Vehicle struct {
 	DealerID      string
 	SourceCountry string
 	Title         string // raw title from extraction source
+	Description   string // full listing description (raw or NLG-generated)
+	ExtractedAt   time.Time // when this record was extracted/scraped
 	Metadata      map[string]string
 }
 

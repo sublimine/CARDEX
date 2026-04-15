@@ -1,9 +1,9 @@
-// quality-service — Phase 4 Sprint 20 (10/20 validators)
+// quality-service — Phase 4 Sprint 21 (15/20 validators)
 //
 // Startup sequence:
 //  1. Load config from environment variables.
 //  2. Open the shared SQLite Knowledge Graph.
-//  3. Register validators V01–V10 (Sprint 20).
+//  3. Register validators V01–V15 (Sprint 21).
 //  4. Start Prometheus /metrics HTTP endpoint.
 //  5. Run validation cycles over pending vehicles.
 //     (continuous daemon mode blocks until SIGINT/SIGTERM)
@@ -56,6 +56,11 @@ import (
 	"cardex.eu/quality/internal/validator/v08_mileage_sanity"
 	"cardex.eu/quality/internal/validator/v09_year_consistency"
 	"cardex.eu/quality/internal/validator/v10_source_url_liveness"
+	"cardex.eu/quality/internal/validator/v11_nlg_quality"
+	"cardex.eu/quality/internal/validator/v12_cross_source_dedup"
+	"cardex.eu/quality/internal/validator/v13_completeness"
+	"cardex.eu/quality/internal/validator/v14_freshness"
+	"cardex.eu/quality/internal/validator/v15_dealer_trust"
 )
 
 // ensure metrics is initialised (init() registers counters).
@@ -120,6 +125,23 @@ func main() {
 			},
 			time.Duration(cfg.URLLivenessCacheTTLHours)*time.Hour,
 		))
+	}
+	if !cfg.SkipV11 {
+		validators = append(validators, v11_nlg_quality.New())
+	}
+	if !cfg.SkipV12 {
+		// V12 uses a no-op store by default; wired to real KG in Phase 5.
+		validators = append(validators, v12_cross_source_dedup.New())
+	}
+	if !cfg.SkipV13 {
+		validators = append(validators, v13_completeness.New())
+	}
+	if !cfg.SkipV14 {
+		validators = append(validators, v14_freshness.New())
+	}
+	if !cfg.SkipV15 {
+		// V15 uses a no-op store by default; wired to real KG in Phase 5.
+		validators = append(validators, v15_dealer_trust.New())
 	}
 
 	if len(validators) == 0 {
