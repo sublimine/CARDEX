@@ -1,11 +1,11 @@
-// discovery-service -- Phase 2 Sprint 12
+// discovery-service -- Phase 2 Sprint 13
 //
 // Startup sequence:
 //  1. Load config from environment variables.
 //  2. Open (or create) the SQLite Knowledge Graph and apply migrations.
 //  3. Initialise the Playwright browser (unless DISCOVERY_SKIP_BROWSER=true).
 //  4. Start Prometheus /metrics HTTP endpoint.
-//  5. Run a discovery cycle for each configured country (Family A, B, C, D, F, G, H, I, K, L, M).
+//  5. Run a discovery cycle for each configured country (Family A-N).
 //     (continuous daemon mode blocks until SIGINT/SIGTERM)
 //
 // Environment variables:
@@ -18,6 +18,11 @@
 //   KBO_USER                  KBO Open Data portal username     (required for BE)
 //   KBO_PASS                  KBO Open Data portal password     (required for BE)
 //   YOUTUBE_API_KEY           YouTube Data API v3 key           (optional; L.3 skipped if absent)
+//   PAPPERS_API_KEY           Pappers.fr API token              (optional; J.FR.1 uses free tier if absent)
+//   CENSYS_API_ID             Censys v2 API ID                  (optional; N.1 skipped if absent)
+//   CENSYS_API_SECRET         Censys v2 API secret              (optional; N.1 skipped if absent)
+//   SHODAN_API_KEY            Shodan API key                    (optional; N.2 skipped if absent)
+//   VIEWDNS_API_KEY           ViewDNS.info API key              (optional; N.4 skipped if absent)
 //   DISCOVERY_ONE_SHOT        "true" = run once and exit        (default: false)
 //   DISCOVERY_COUNTRIES       comma-separated ISO-3166-1 codes  (default: FR)
 //   DISCOVERY_SKIP_BROWSER    "true" = skip Playwright init     (default: false)
@@ -27,9 +32,11 @@
 //   DISCOVERY_SKIP_FAMILY_G   "true" = skip Family G entirely   (default: false)
 //   DISCOVERY_SKIP_FAMILY_H   "true" = skip Family H entirely   (default: false)
 //   DISCOVERY_SKIP_FAMILY_I   "true" = skip Family I entirely   (default: false)
+//   DISCOVERY_SKIP_FAMILY_J   "true" = skip Family J entirely   (default: false)
 //   DISCOVERY_SKIP_FAMILY_K   "true" = skip Family K entirely   (default: false)
 //   DISCOVERY_SKIP_FAMILY_L   "true" = skip Family L entirely   (default: false)
 //   DISCOVERY_SKIP_FAMILY_M   "true" = skip Family M entirely   (default: false)
+//   DISCOVERY_SKIP_FAMILY_N   "true" = skip Family N entirely   (default: false)
 package main
 
 import (
@@ -55,9 +62,11 @@ import (
 	"cardex.eu/discovery/internal/families/familia_g"
 	"cardex.eu/discovery/internal/families/familia_h"
 	"cardex.eu/discovery/internal/families/familia_i"
+	"cardex.eu/discovery/internal/families/familia_j"
 	"cardex.eu/discovery/internal/families/familia_k"
 	"cardex.eu/discovery/internal/families/familia_l"
 	"cardex.eu/discovery/internal/families/familia_m"
+	"cardex.eu/discovery/internal/families/familia_n"
 	"cardex.eu/discovery/internal/kg"
 	_ "cardex.eu/discovery/internal/metrics" // register Prometheus metrics
 	"cardex.eu/discovery/internal/runner"
@@ -171,6 +180,19 @@ func main() {
 		// L runs after D (web presences classified) and K (YouTube channel URLs may
 		// have been discovered by K.1 SearXNG).
 		families = append(families, familia_l.New(graph, cfg.YouTubeAPIKey))
+	}
+	if !cfg.SkipFamilyJ {
+		// J classifies sub-region metadata on dealers already discovered by A.
+		families = append(families, familia_j.New(graph, cfg.PappersAPIKey))
+	}
+	if !cfg.SkipFamilyN {
+		// N enriches web presences with infrastructure intelligence signals.
+		// Runs after C (web presences populated) and D (CMS fingerprinted).
+		families = append(families, familia_n.New(graph,
+			cfg.CensysAPIID, cfg.CensysAPISecret,
+			cfg.ShodanAPIKey,
+			cfg.ViewDNSAPIKey,
+		))
 	}
 	if !cfg.SkipFamilyM {
 		// M runs last: enriches entities discovered by all preceding families.

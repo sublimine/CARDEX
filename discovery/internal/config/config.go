@@ -96,6 +96,37 @@ type Config struct {
 	// Obtain a free key at console.cloud.google.com -> APIs & Services -> YouTube Data API v3.
 	YouTubeAPIKey string
 
+	// SkipFamilyJ, when true, bypasses Familia J (sub-jurisdiction registries) entirely.
+	// Useful when Pappers.fr rate limits need to be preserved.
+	// Default: false
+	SkipFamilyJ bool
+
+	// PappersAPIKey is the Pappers.fr API token used by J.FR.1.
+	// When empty, unauthenticated calls are made (rate limit: 50 req/h).
+	// Obtain at pappers.fr/api.
+	PappersAPIKey string
+
+	// SkipFamilyN, when true, bypasses Familia N (infrastructure intelligence) entirely.
+	// Useful when Censys/Shodan/ViewDNS rate limits need to be preserved.
+	// Default: false
+	SkipFamilyN bool
+
+	// CensysAPIID and CensysAPISecret are the Censys v2 API credentials used by N.1.
+	// When either is empty, N.1 is silently skipped.
+	// Obtain at censys.io -> Account -> API Access.
+	CensysAPIID     string
+	CensysAPISecret string
+
+	// ShodanAPIKey is the Shodan API key used by N.2.
+	// When empty, N.2 is silently skipped.
+	// Obtain at account.shodan.io.
+	ShodanAPIKey string
+
+	// ViewDNSAPIKey is the ViewDNS.info API key used by N.4.
+	// When empty, N.4 is silently skipped.
+	// Obtain at viewdns.info/api.
+	ViewDNSAPIKey string
+
 	// SkipBrowser, when true, skips browser (Playwright) initialisation.
 	// All browser-dependent sub-techniques (F.2, G.FR.1, H.VWG) will be silently
 	// skipped. Useful in CI environments without Playwright installed.
@@ -167,6 +198,19 @@ func LoadFromEnv() (*Config, error) {
 	}
 
 	c.YouTubeAPIKey = os.Getenv("YOUTUBE_API_KEY")
+
+	if os.Getenv("DISCOVERY_SKIP_FAMILY_J") == "true" {
+		c.SkipFamilyJ = true
+	}
+	c.PappersAPIKey = os.Getenv("PAPPERS_API_KEY")
+
+	if os.Getenv("DISCOVERY_SKIP_FAMILY_N") == "true" {
+		c.SkipFamilyN = true
+	}
+	c.CensysAPIID = os.Getenv("CENSYS_API_ID")
+	c.CensysAPISecret = os.Getenv("CENSYS_API_SECRET")
+	c.ShodanAPIKey = os.Getenv("SHODAN_API_KEY")
+	c.ViewDNSAPIKey = os.Getenv("VIEWDNS_API_KEY")
 
 	if os.Getenv("DISCOVERY_SKIP_BROWSER") == "true" {
 		c.SkipBrowser = true
