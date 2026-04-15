@@ -232,3 +232,50 @@ type dealerRecord struct {
 	ConfidenceScore float64
 	DataSources     int
 }
+
+// GetValidationResultsByVehicle returns all stored validation results for a vehicle,
+// used by V20 to compute the composite quality score.
+// Returns nil (not an error) if the validation_result table does not exist yet.
+func (s *SQLiteStorage) GetValidationResultsByVehicle(ctx context.Context, vehicleID string) ([]*pipeline.ValidationResult, error) {
+	var exists int
+	err := s.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='validation_result'`,
+	).Scan(&exists)
+	if err != nil || exists == 0 {
+		return nil, nil
+	}
+
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT validator_id, vehicle_id, pass, severity, issue, confidence
+		 FROM validation_result WHERE vehicle_id = ?
+		 ORDER BY validated_at DESC`, vehicleID)
+	if err != nil {
+		return nil, fmt.Errorf("get validation results by vehicle: %w", err)
+	}
+	defer rows.Close()
+
+	// Track only the latest result per validator (ORDER BY validated_at DESC).
+	seen := make(map[string]struct{})
+	var results []*pipeline.ValidationResult
+	for rows.Next() {
+		r := &pipeline.ValidationResult{
+			Suggested: make(map[string]string),
+			Evidence:  make(map[string]string),
+		}
+		var issue sql.NullString
+		var confidence sql.NullFloat64
+		var severityStr string
+		if err := rows.Scan(&r.ValidatorID, &r.VehicleID, &r.Pass, &severityStr, &issue, &confidence); err != nil {
+			return nil, fmt.Errorf("scan validation result row: %w", err)
+		}
+		if _, already := seen[r.ValidatorID]; already {
+			continue // keep only the latest per validator
+		}
+		seen[r.ValidatorID] = struct{}{}
+		r.Severity = pipeline.Severity(severityStr)
+		r.Issue = issue.String
+		r.Confidence = confidence.Float64
+		results = append(results, r)
+	}
+	return results, rows.Err()
+}

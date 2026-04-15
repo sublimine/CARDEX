@@ -80,6 +80,21 @@ type Config struct {
 	// SkipV15, when true, disables the Dealer Trust validator.
 	SkipV15 bool
 
+	// SkipV16, when true, disables the Photo pHash Deduplication validator.
+	SkipV16 bool
+
+	// SkipV17, when true, disables the Sold/Withdrawn Detection validator.
+	SkipV17 bool
+
+	// SkipV18, when true, disables the Language Consistency validator.
+	SkipV18 bool
+
+	// SkipV19, when true, disables the Currency/EUR Consistency validator.
+	SkipV19 bool
+
+	// SkipV20, when true, disables the Composite Quality Score validator.
+	SkipV20 bool
+
 	// ImageHeadTimeoutMs is the timeout for V05 HEAD requests per photo URL. Default: 3000 ms.
 	ImageHeadTimeoutMs int
 
@@ -161,6 +176,21 @@ func Load() (*Config, error) {
 	}
 	if os.Getenv("QUALITY_SKIP_V15") == "true" {
 		c.SkipV15 = true
+	}
+	if os.Getenv("QUALITY_SKIP_V16") == "true" {
+		c.SkipV16 = true
+	}
+	if os.Getenv("QUALITY_SKIP_V17") == "true" {
+		c.SkipV17 = true
+	}
+	if os.Getenv("QUALITY_SKIP_V18") == "true" {
+		c.SkipV18 = true
+	}
+	if os.Getenv("QUALITY_SKIP_V19") == "true" {
+		c.SkipV19 = true
+	}
+	if os.Getenv("QUALITY_SKIP_V20") == "true" {
+		c.SkipV20 = true
 	}
 
 	if raw := os.Getenv("IMAGE_HEAD_TIMEOUT_MS"); raw != "" {

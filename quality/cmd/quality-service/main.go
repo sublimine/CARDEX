@@ -1,9 +1,9 @@
-// quality-service — Phase 4 Sprint 21 (15/20 validators)
+// quality-service — Phase 4 Sprint 22 (20/20 validators — Phase 4 complete)
 //
 // Startup sequence:
 //  1. Load config from environment variables.
 //  2. Open the shared SQLite Knowledge Graph.
-//  3. Register validators V01–V15 (Sprint 21).
+//  3. Register validators V01–V20 (Sprint 22 — Phase 4 complete).
 //  4. Start Prometheus /metrics HTTP endpoint.
 //  5. Run validation cycles over pending vehicles.
 //     (continuous daemon mode blocks until SIGINT/SIGTERM)
@@ -25,6 +25,16 @@
 //   QUALITY_SKIP_V08              "true" = skip Mileage Sanity         (default: false)
 //   QUALITY_SKIP_V09              "true" = skip Year Consistency       (default: false)
 //   QUALITY_SKIP_V10              "true" = skip Source URL Liveness    (default: false)
+//   QUALITY_SKIP_V11              "true" = skip NLG Description Quality (default: false)
+//   QUALITY_SKIP_V12              "true" = skip Cross-Source Dedup     (default: false)
+//   QUALITY_SKIP_V13              "true" = skip Metadata Completeness  (default: false)
+//   QUALITY_SKIP_V14              "true" = skip Freshness              (default: false)
+//   QUALITY_SKIP_V15              "true" = skip Dealer Trust           (default: false)
+//   QUALITY_SKIP_V16              "true" = skip Photo pHash Dedup      (default: false)
+//   QUALITY_SKIP_V17              "true" = skip Sold/Withdrawn         (default: false)
+//   QUALITY_SKIP_V18              "true" = skip Language Consistency   (default: false)
+//   QUALITY_SKIP_V19              "true" = skip Currency/EUR           (default: false)
+//   QUALITY_SKIP_V20              "true" = skip Composite Score        (default: false)
 //   IMAGE_HEAD_TIMEOUT_MS         HEAD timeout per photo URL           (default: 3000)
 //   URL_LIVENESS_CACHE_TTL_HOURS  cache TTL for liveness checks        (default: 24)
 package main
@@ -61,6 +71,11 @@ import (
 	"cardex.eu/quality/internal/validator/v13_completeness"
 	"cardex.eu/quality/internal/validator/v14_freshness"
 	"cardex.eu/quality/internal/validator/v15_dealer_trust"
+	"cardex.eu/quality/internal/validator/v16_photo_phash"
+	"cardex.eu/quality/internal/validator/v17_sold_status"
+	"cardex.eu/quality/internal/validator/v18_language_consistency"
+	"cardex.eu/quality/internal/validator/v19_currency"
+	"cardex.eu/quality/internal/validator/v20_composite"
 )
 
 // ensure metrics is initialised (init() registers counters).
@@ -142,6 +157,26 @@ func main() {
 	if !cfg.SkipV15 {
 		// V15 uses a no-op store by default; wired to real KG in Phase 5.
 		validators = append(validators, v15_dealer_trust.New())
+	}
+	if !cfg.SkipV16 {
+		validators = append(validators, v16_photo_phash.NewWithClient(
+			&http.Client{Timeout: 15 * time.Second},
+		))
+	}
+	if !cfg.SkipV17 {
+		validators = append(validators, v17_sold_status.NewWithClient(
+			&http.Client{Timeout: 15 * time.Second},
+		))
+	}
+	if !cfg.SkipV18 {
+		validators = append(validators, v18_language_consistency.New())
+	}
+	if !cfg.SkipV19 {
+		validators = append(validators, v19_currency.New())
+	}
+	if !cfg.SkipV20 {
+		// V20 uses a no-op store by default; wired to real KG in Phase 5.
+		validators = append(validators, v20_composite.New())
 	}
 
 	if len(validators) == 0 {
