@@ -1,0 +1,49 @@
+# /etc/systemd/system/cardex-extraction.service
+# CARDEX Extraction Service — E01-E12 (Phase 3 complete)
+#
+# Install: sudo systemctl enable --now cardex-extraction
+# Logs:    journalctl -u cardex-extraction -f
+# Metrics: http://localhost:9102/metrics
+
+[Unit]
+Description=CARDEX Extraction Service — E01-E12
+Documentation=https://github.com/cardex/cardex/blob/main/extraction/README.md
+After=network-online.target cardex-discovery.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cardex
+Group=cardex
+WorkingDirectory=/srv/cardex
+
+ExecStart=/usr/local/bin/cardex-extraction
+Restart=on-failure
+RestartSec=30s
+TimeoutStartSec=90s
+TimeoutStopSec=60s
+
+# Playwright/Chromium strategies need more memory
+MemoryMax=1G
+CPUQuota=150%
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/srv/cardex/db /tmp/cardex-playwright
+SystemCallFilter=@system-service
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cardex-extraction
+
+Environment=EXTRACTION_DB_PATH=/srv/cardex/db/discovery.db
+Environment=EXTRACTION_METRICS_ADDR=:9102
+Environment=EXTRACTION_BATCH_SIZE=20
+Environment=EXTRACTION_WORKERS=4
+Environment=EXTRACTION_ONE_SHOT=false
+Environment=PLAYWRIGHT_BROWSERS_PATH=/usr/local/share/playwright
+
+[Install]
+WantedBy=multi-user.target

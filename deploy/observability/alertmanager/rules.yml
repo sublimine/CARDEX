@@ -1,0 +1,161 @@
+# rules.yml — CARDEX Prometheus alerting rules
+# Loaded by Prometheus (rule_files: [/etc/prometheus/rules.yml])
+# Alerts fire to Alertmanager which sends email to operator.
+
+groups:
+
+  # ── Service availability ──────────────────────────────────────────
+  - name: cardex_availability
+    interval: 60s
+    rules:
+
+      - alert: ServiceDown
+        expr: up{job=~"cardex_.*"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "CARDEX service {{ $labels.job }} is DOWN"
+          description: >
+            {{ $labels.job }} has been unreachable for >5 minutes.
+            Check: systemctl status cardex-{{ $labels.service }}
+            Logs:  journalctl -u cardex-{{ $labels.service }} -n 100
+
+      - alert: ServiceRestartingFrequently
+        expr: |
+          increase(process_start_time_seconds{job=~"cardex_.*"}[1h]) > 3
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} restarted >3 times in 1h"
+          description: "Possible crash loop. Check logs immediately."
+
+  # ── Error rates ───────────────────────────────────────────────────
+  - name: cardex_errors
+    interval: 60s
+    rules:
+
+      - alert: DiscoveryErrorRateHigh
+        expr: |
+          rate(discovery_scrape_errors_total[15m])
+          /
+          (rate(discovery_scrape_requests_total[15m]) + 0.001) > 0.10
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Discovery error rate >10% sustained 15min"
+          description: >
+            Current error rate: {{ $value | humanizePercentage }}.
+            Check scraper logs for failing families.
+
+      - alert: ExtractionErrorRateHigh
+        expr: |
+          rate(extraction_errors_total[15m])
+          /
+          (rate(extraction_attempts_total[15m]) + 0.001) > 0.10
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Extraction error rate >10% sustained 15min"
+          description: "Current: {{ $value | humanizePercentage }}. Review E-strategy logs."
+
+      - alert: QualityValidationCriticalSpike
+        expr: |
+          rate(cardex_validation_total{result="fail",severity="CRITICAL"}[30m])
+          /
+          (rate(cardex_validation_total[30m]) + 0.001) > 0.20
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: ">20% of quality validations failing CRITICAL"
+          description: "Possible data source issue or VIN/price data corruption."
+
+  # ── Queue depths ──────────────────────────────────────────────────
+  - name: cardex_queues
+    interval: 120s
+    rules:
+
+      - alert: ExtractionQueueUnbounded
+        expr: extraction_queue_depth > 10000
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Extraction queue depth > 10,000 for 30min"
+          description: >
+            Current depth: {{ $value }}.
+            Extraction may be falling behind discovery output.
+            Check extraction workers: EXTRACTION_WORKERS env var.
+
+      - alert: QualityQueueUnbounded
+        expr: quality_pending_vehicles > 5000
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Quality backlog > 5,000 vehicles for 30min"
+          description: "Current: {{ $value }} pending. Increase QUALITY_WORKERS or QUALITY_BATCH_SIZE."
+
+  # ── Disk space ────────────────────────────────────────────────────
+  - name: cardex_disk
+    interval: 300s
+    rules:
+
+      - alert: DiskSpaceLow
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/srv"}
+           / node_filesystem_size_bytes{mountpoint="/srv"}) < 0.20
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "/srv disk space <20% remaining"
+          description: >
+            Available: {{ $value | humanizePercentage }}.
+            /srv/cardex/db may be growing. Check DuckDB parquet sizes.
+
+      - alert: DiskSpaceCritical
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/srv"}
+           / node_filesystem_size_bytes{mountpoint="/srv"}) < 0.10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "/srv disk space <10% — CRITICAL"
+          description: "Immediate action required. Risk of service failure."
+
+  # ── SQLite WAL ────────────────────────────────────────────────────
+  - name: cardex_database
+    interval: 300s
+    rules:
+
+      - alert: SQLiteWALSizeHigh
+        expr: cardex_sqlite_wal_size_bytes > 524288000  # 500 MB
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "SQLite WAL file >500 MB"
+          description: >
+            WAL file at {{ $value | humanize1024 }}B.
+            Run: sqlite3 /srv/cardex/db/discovery.db "PRAGMA wal_checkpoint(TRUNCATE);"
+
+  # ── Backup freshness ──────────────────────────────────────────────
+  - name: cardex_backup
+    interval: 3600s
+    rules:
+
+      - alert: BackupStale
+        expr: |
+          time() - cardex_last_backup_timestamp_seconds > 90000  # 25 hours
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Last backup is >25h old"
+          description: "Check: journalctl -u cardex-backup -n 50"

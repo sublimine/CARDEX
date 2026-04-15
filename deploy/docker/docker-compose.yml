@@ -1,0 +1,193 @@
+# docker-compose.yml — CARDEX local development & staging
+# Boots the full stack: 3 core services + observability + reverse proxy
+#
+# Usage:
+#   cp .env.example .env          # fill in secrets
+#   docker compose up -d
+#   docker compose logs -f
+#
+# Ports exposed on localhost:
+#   80/443  → Caddy (API + health)
+#   9091    → Grafana (admin UI)
+#   9090    → Prometheus (internal metrics, not exposed externally)
+#   8888    → SearXNG (meta-search, loopback only)
+
+networks:
+  cardex-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+volumes:
+  cardex-db:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  alertmanager-data:
+    driver: local
+
+services:
+  # ── Core: Discovery ──────────────────────────────────────────────
+  discovery:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.discovery
+    image: cardex/discovery:dev
+    container_name: cardex-discovery
+    restart: unless-stopped
+    networks:
+      - cardex-net
+    volumes:
+      - cardex-db:/srv/cardex/db
+    environment:
+      DISCOVERY_DB_PATH:          /srv/cardex/db/discovery.db
+      DISCOVERY_METRICS_ADDR:     :9101
+      DISCOVERY_CYCLE_INTERVAL:   6h
+      DISCOVERY_COUNTRIES:        ${DISCOVERY_COUNTRIES:-DE,FR,ES,BE,NL,CH,AT,IT}
+    ports:
+      - "127.0.0.1:9101:9101"     # metrics (Prometheus scrape)
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ── Core: Extraction ─────────────────────────────────────────────
+  extraction:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.extraction
+    image: cardex/extraction:dev
+    container_name: cardex-extraction
+    restart: unless-stopped
+    networks:
+      - cardex-net
+    volumes:
+      - cardex-db:/srv/cardex/db
+    environment:
+      EXTRACTION_DB_PATH:           /srv/cardex/db/discovery.db
+      EXTRACTION_METRICS_ADDR:      :9102
+      EXTRACTION_BATCH_SIZE:        ${EXTRACTION_BATCH_SIZE:-20}
+      EXTRACTION_WORKERS:           ${EXTRACTION_WORKERS:-4}
+      EXTRACTION_ONE_SHOT:          ${EXTRACTION_ONE_SHOT:-false}
+    ports:
+      - "127.0.0.1:9102:9102"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      discovery:
+        condition: service_healthy
+
+  # ── Core: Quality ────────────────────────────────────────────────
+  quality:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.quality
+    image: cardex/quality:dev
+    container_name: cardex-quality
+    restart: unless-stopped
+    networks:
+      - cardex-net
+    volumes:
+      - cardex-db:/srv/cardex/db
+    environment:
+      QUALITY_DB_PATH:          /srv/cardex/db/discovery.db
+      QUALITY_METRICS_ADDR:     :9103
+      QUALITY_BATCH_SIZE:       ${QUALITY_BATCH_SIZE:-100}
+      QUALITY_WORKERS:          ${QUALITY_WORKERS:-4}
+      QUALITY_ONE_SHOT:         ${QUALITY_ONE_SHOT:-false}
+    ports:
+      - "127.0.0.1:9103:9103"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      extraction:
+        condition: service_healthy
+
+  # ── Observability: Prometheus ─────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v3.0.1
+    container_name: cardex-prometheus
+    restart: unless-stopped
+    networks:
+      - cardex-net
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ../observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../observability/alertmanager/rules.yml:/etc/prometheus/rules.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=30d'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    mem_limit: 512m
+
+  # ── Observability: Alertmanager ───────────────────────────────────
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: cardex-alertmanager
+    restart: unless-stopped
+    networks:
+      - cardex-net
+    ports:
+      - "127.0.0.1:9093:9093"
+    volumes:
+      - alertmanager-data:/alertmanager
+    mem_limit: 128m
+
+  # ── Observability: Grafana ────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.5.0
+    container_name: cardex-grafana
+    restart: unless-stopped
+    networks:
+      - cardex-net
+    ports:
+      - "127.0.0.1:3001:3000"     # loopback only — access via SSH tunnel in prod
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ../observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../observability/grafana:/var/lib/grafana/dashboards:ro
+    environment:
+      GF_SECURITY_ADMIN_USER:       admin
+      GF_SECURITY_ADMIN_PASSWORD:   ${GRAFANA_ADMIN_PASSWORD:-changeme}
+      GF_SERVER_ROOT_URL:           http://localhost:3001
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP:       "false"
+    mem_limit: 256m
+
+  # ── Reverse proxy: Caddy ──────────────────────────────────────────
+  caddy:
+    image: caddy:2.9-alpine
+    container_name: cardex-caddy
+    restart: unless-stopped
+    networks:
+      - cardex-net
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-certs:/config
+    environment:
+      CARDEX_DOMAIN: ${CARDEX_DOMAIN:-localhost}
+    mem_limit: 128m
+
+volumes:
+  caddy-data:
+  caddy-certs:

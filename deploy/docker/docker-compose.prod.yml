@@ -1,0 +1,112 @@
+# docker-compose.prod.yml — CARDEX production override
+# Used on the Hetzner CX42 VPS (single-node deployment)
+#
+# Usage (on VPS):
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Differences from base docker-compose.yml:
+#   - Images pulled from registry instead of built locally
+#   - Grafana NOT exposed externally (access via SSH tunnel: ssh -L 3001:localhost:3001 cardex@vps)
+#   - Resource limits tighter (16 GB shared across all services)
+#   - Logging via journald (picked up by systemd)
+#   - SQLite DB mounted from /srv/cardex/db on host (persistent NVMe storage)
+#   - Restart policy: always (not unless-stopped)
+
+services:
+  discovery:
+    image: ${REGISTRY:-ghcr.io/cardex}/discovery:${IMAGE_TAG:-latest}
+    build: !reset null
+    restart: always
+    volumes:
+      - /srv/cardex/db:/srv/cardex/db
+    logging:
+      driver: journald
+      options:
+        tag: "cardex-discovery"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
+  extraction:
+    image: ${REGISTRY:-ghcr.io/cardex}/extraction:${IMAGE_TAG:-latest}
+    build: !reset null
+    restart: always
+    volumes:
+      - /srv/cardex/db:/srv/cardex/db
+    logging:
+      driver: journald
+      options:
+        tag: "cardex-extraction"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.5"
+
+  quality:
+    image: ${REGISTRY:-ghcr.io/cardex}/quality:${IMAGE_TAG:-latest}
+    build: !reset null
+    restart: always
+    volumes:
+      - /srv/cardex/db:/srv/cardex/db
+    logging:
+      driver: journald
+      options:
+        tag: "cardex-quality"
+    deploy:
+      resources:
+        limits:
+          memory: 700M
+          cpus: "2.0"
+
+  prometheus:
+    restart: always
+    volumes:
+      - /srv/cardex/prometheus:/prometheus   # persistent on host NVMe
+    logging:
+      driver: journald
+      options:
+        tag: "cardex-prometheus"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  grafana:
+    restart: always
+    ports: !reset []             # remove port mapping — access via SSH tunnel only
+    volumes:
+      - /srv/cardex/grafana:/var/lib/grafana
+    logging:
+      driver: journald
+      options:
+        tag: "cardex-grafana"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  alertmanager:
+    restart: always
+    volumes:
+      - /srv/cardex/alertmanager:/alertmanager
+    logging:
+      driver: journald
+      options:
+        tag: "cardex-alertmanager"
+
+  caddy:
+    restart: always
+    volumes:
+      - /srv/cardex/caddy/data:/data
+      - /srv/cardex/caddy/config:/config
+    logging:
+      driver: journald
+      options:
+        tag: "cardex-caddy"
+    deploy:
+      resources:
+        limits:
+          memory: 128M

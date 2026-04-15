@@ -1,0 +1,136 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {"type": "grafana", "id": "grafana", "name": "Grafana", "version": "11.0.0"},
+    {"type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0"}
+  ],
+  "annotations": {"list": []},
+  "description": "CARDEX Extraction Service — E01-E12 strategy metrics",
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Service Status",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}},
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {"options": {"0": {"color": "red", "text": "DOWN"}, "1": {"color": "green", "text": "UP"}}, "type": "value"}
+          ]
+        }
+      },
+      "targets": [{"expr": "up{job=\"cardex_extraction\"}", "legendFormat": "Extraction"}]
+    },
+    {
+      "id": 2,
+      "title": "Vehicles Extracted (Last 24h)",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
+      "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["sum"]}},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [{"expr": "increase(extraction_vehicles_extracted_total[24h])", "legendFormat": "Vehicles"}]
+    },
+    {
+      "id": 3,
+      "title": "Success Rate (Last 1h)",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
+      "options": {"colorMode": "background", "reduceOptions": {"calcs": ["lastNotNull"]}},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": 0}, {"color": "yellow", "value": 0.8}, {"color": "green", "value": 0.95}]}
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(extraction_vehicles_extracted_total[1h]) / (rate(extraction_attempts_total[1h]) + 0.001)",
+          "legendFormat": "Success rate"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Queue Depth",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
+      "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"]}},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": 0}, {"color": "yellow", "value": 5000}, {"color": "red", "value": 10000}]}
+        }
+      },
+      "targets": [{"expr": "extraction_queue_depth", "legendFormat": "Queue depth"}]
+    },
+    {
+      "id": 5,
+      "title": "Vehicles Extracted per Strategy",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "options": {"tooltip": {"mode": "multi"}},
+      "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 2}}},
+      "targets": [
+        {
+          "expr": "rate(extraction_vehicles_extracted_total[5m])",
+          "legendFormat": "{{strategy}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Error Rate by Strategy",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "fieldConfig": {"defaults": {"unit": "percentunit"}},
+      "targets": [
+        {
+          "expr": "rate(extraction_errors_total[5m]) / (rate(extraction_attempts_total[5m]) + 0.001)",
+          "legendFormat": "{{strategy}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Extraction Duration p50/p95 by Strategy",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+      "fieldConfig": {"defaults": {"unit": "s"}},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(extraction_duration_seconds_bucket[5m]))",
+          "legendFormat": "p50 {{strategy}}"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(extraction_duration_seconds_bucket[5m]))",
+          "legendFormat": "p95 {{strategy}}"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Queue Depth Over Time",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {"fillOpacity": 20}
+        }
+      },
+      "targets": [{"expr": "extraction_queue_depth", "legendFormat": "Queue depth"}]
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": ["cardex", "extraction"],
+  "time": {"from": "now-24h", "to": "now"},
+  "timezone": "browser",
+  "title": "CARDEX — Extraction",
+  "uid": "cardex-extraction",
+  "version": 1
+}

@@ -1,0 +1,160 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {"type": "grafana", "id": "grafana", "name": "Grafana", "version": "11.0.0"},
+    {"type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0"}
+  ],
+  "annotations": {"list": []},
+  "description": "CARDEX Quality Pipeline — V01-V20 validation metrics and composite score distribution",
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Service Status",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}},
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {"options": {"0": {"color": "red", "text": "DOWN"}, "1": {"color": "green", "text": "UP"}}, "type": "value"}
+          ]
+        }
+      },
+      "targets": [{"expr": "up{job=\"cardex_quality\"}", "legendFormat": "Quality"}]
+    },
+    {
+      "id": 2,
+      "title": "Vehicles Validated (Last 24h)",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
+      "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["sum"]}},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [{"expr": "increase(cardex_vehicles_validated_total[24h])", "legendFormat": "Validated"}]
+    },
+    {
+      "id": 3,
+      "title": "Critical Failures (Last 1h)",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
+      "options": {"colorMode": "background", "graphMode": "area", "reduceOptions": {"calcs": ["sum"]}},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": 0}, {"color": "yellow", "value": 10}, {"color": "red", "value": 50}]}
+        }
+      },
+      "targets": [{"expr": "increase(cardex_critical_failures_total[1h])", "legendFormat": "{{validator_id}}"}]
+    },
+    {
+      "id": 4,
+      "title": "Pending Vehicles",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
+      "options": {"colorMode": "value", "reduceOptions": {"calcs": ["lastNotNull"]}},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": 0}, {"color": "yellow", "value": 1000}, {"color": "red", "value": 5000}]}
+        }
+      },
+      "targets": [{"expr": "quality_pending_vehicles", "legendFormat": "Pending"}]
+    },
+    {
+      "id": 5,
+      "title": "Publication Decisions (Last 24h)",
+      "type": "piechart",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 4},
+      "options": {"pieType": "pie", "tooltip": {"mode": "single"}},
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "PUBLISH"}, "properties": [{"id": "color", "value": {"fixedColor": "green", "mode": "fixed"}}]},
+          {"matcher": {"id": "byName", "options": "MANUAL_REVIEW"}, "properties": [{"id": "color", "value": {"fixedColor": "yellow", "mode": "fixed"}}]},
+          {"matcher": {"id": "byName", "options": "REJECT"}, "properties": [{"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}}]}
+        ]
+      },
+      "targets": [
+        {
+          "expr": "increase(cardex_validation_total{validator_id=\"V20\"}[24h])",
+          "legendFormat": "{{result}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Validation Results by Validator (Pass/Fail Rate)",
+      "type": "bargauge",
+      "gridPos": {"h": 8, "w": 16, "x": 8, "y": 4},
+      "options": {
+        "orientation": "horizontal",
+        "reduceOptions": {"calcs": ["mean"]},
+        "displayMode": "gradient"
+      },
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1}},
+      "targets": [
+        {
+          "expr": "rate(cardex_validation_total{result=\"pass\"}[1h]) / (rate(cardex_validation_total[1h]) + 0.001)",
+          "legendFormat": "{{validator_id}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Critical Failures by Validator (Last 1h)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+      "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 2}}},
+      "targets": [
+        {
+          "expr": "increase(cardex_critical_failures_total[5m])",
+          "legendFormat": "{{validator_id}}"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Validation Duration p95 by Validator",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "fieldConfig": {"defaults": {"unit": "ms"}},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(cardex_validation_duration_seconds_bucket[5m])) * 1000",
+          "legendFormat": "p95 {{validator_id}}"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "V20 Composite Score Distribution (Last 1h)",
+      "type": "histogram",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+      "fieldConfig": {"defaults": {"unit": "percentunit"}},
+      "targets": [
+        {
+          "expr": "cardex_composite_score_bucket",
+          "legendFormat": "Score {{le}}"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Vehicles Validated per Minute",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+      "fieldConfig": {"defaults": {"unit": "short", "custom": {"fillOpacity": 20}}},
+      "targets": [{"expr": "rate(cardex_vehicles_validated_total[1m]) * 60", "legendFormat": "Vehicles/min"}]
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": ["cardex", "quality"],
+  "time": {"from": "now-24h", "to": "now"},
+  "timezone": "browser",
+  "title": "CARDEX — Quality Pipeline",
+  "uid": "cardex-quality",
+  "version": 1
+}
