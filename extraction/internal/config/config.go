@@ -50,6 +50,15 @@ type Config struct {
 	// SkipE04, when true, disables the RSS/Atom feeds strategy.
 	SkipE04 bool
 
+	// SkipE05, when true, disables the DMS Hosted API strategy.
+	SkipE05 bool
+
+	// SkipE06, when true, disables the Microdata/RDFa strategy.
+	SkipE06 bool
+
+	// SkipE07, when true, disables the Playwright XHR strategy.
+	SkipE07 bool
+
 	// RateLimitMs is the default inter-request sleep within a single dealer.
 	// Strategies may override this per-dealer. Default: 2000 ms.
 	RateLimitMs int
@@ -105,6 +114,15 @@ func Load() (*Config, error) {
 	}
 	if os.Getenv("EXTRACTION_SKIP_E04") == "true" {
 		c.SkipE04 = true
+	}
+	if os.Getenv("EXTRACTION_SKIP_E05") == "true" {
+		c.SkipE05 = true
+	}
+	if os.Getenv("EXTRACTION_SKIP_E06") == "true" {
+		c.SkipE06 = true
+	}
+	if os.Getenv("EXTRACTION_SKIP_E07") == "true" {
+		c.SkipE07 = true
 	}
 
 	if raw := os.Getenv("EXTRACTION_COUNTRIES"); raw != "" {

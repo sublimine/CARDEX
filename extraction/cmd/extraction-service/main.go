@@ -1,9 +1,9 @@
-// extraction-service -- Phase 3 Sprint 16
+// extraction-service -- Phase 3 Sprint 17
 //
 // Startup sequence:
 //  1. Load config from environment variables.
 //  2. Open the shared SQLite Knowledge Graph.
-//  3. Register extraction strategies E01 + E02 + E03 + E04 (Sprint 16).
+//  3. Register extraction strategies E01–E07 (Sprint 17).
 //  4. Start Prometheus /metrics HTTP endpoint.
 //  5. Run extraction cycles for each configured country.
 //     (continuous daemon mode blocks until SIGINT/SIGTERM)
@@ -16,10 +16,13 @@
 //   EXTRACTION_RATE_LIMIT_MS    ms between requests per dealer(default: 2000)
 //   EXTRACTION_ONE_SHOT         "true" = run once and exit    (default: false)
 //   EXTRACTION_COUNTRIES        comma-separated ISO codes     (default: FR)
-//   EXTRACTION_SKIP_E01         "true" = skip JSON-LD strategy(default: false)
-//   EXTRACTION_SKIP_E02         "true" = skip CMS REST strategy(default: false)
-//   EXTRACTION_SKIP_E03         "true" = skip Sitemap XML strategy(default: false)
-//   EXTRACTION_SKIP_E04         "true" = skip RSS/Atom strategy(default: false)
+//   EXTRACTION_SKIP_E01         "true" = skip JSON-LD strategy        (default: false)
+//   EXTRACTION_SKIP_E02         "true" = skip CMS REST strategy        (default: false)
+//   EXTRACTION_SKIP_E03         "true" = skip Sitemap XML strategy     (default: false)
+//   EXTRACTION_SKIP_E04         "true" = skip RSS/Atom strategy        (default: false)
+//   EXTRACTION_SKIP_E05         "true" = skip DMS API strategy         (default: false)
+//   EXTRACTION_SKIP_E06         "true" = skip Microdata/RDFa strategy  (default: false)
+//   EXTRACTION_SKIP_E07         "true" = skip Playwright XHR strategy  (default: false)
 package main
 
 import (
@@ -40,6 +43,9 @@ import (
 	"cardex.eu/extraction/internal/extractor/e02_cms_rest"
 	"cardex.eu/extraction/internal/extractor/e03_sitemap"
 	"cardex.eu/extraction/internal/extractor/e04_rss"
+	"cardex.eu/extraction/internal/extractor/e05_dms_api"
+	"cardex.eu/extraction/internal/extractor/e06_microdata"
+	"cardex.eu/extraction/internal/extractor/e07_playwright_xhr"
 	"cardex.eu/extraction/internal/metrics"
 	"cardex.eu/extraction/internal/pipeline"
 	"cardex.eu/extraction/internal/storage"
@@ -87,6 +93,23 @@ func main() {
 			&http.Client{Timeout: 15 * time.Second},
 			cfg.RateLimitMs,
 		))
+	}
+	if !cfg.SkipE05 {
+		strategies = append(strategies, e05_dms_api.NewWithClient(
+			&http.Client{Timeout: 15 * time.Second},
+			cfg.RateLimitMs,
+		))
+	}
+	if !cfg.SkipE06 {
+		strategies = append(strategies, e06_microdata.NewWithClient(
+			&http.Client{Timeout: 15 * time.Second},
+			cfg.RateLimitMs,
+		))
+	}
+	if !cfg.SkipE07 {
+		// E07 uses a no-op XHR interceptor by default.
+		// Inject a real PlaywrightBrowser interceptor to enable SPA extraction.
+		strategies = append(strategies, e07_playwright_xhr.New())
 	}
 
 	if len(strategies) == 0 {
