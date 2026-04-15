@@ -1,24 +1,32 @@
-// quality-service — Phase 4 Sprint 19
+// quality-service — Phase 4 Sprint 20 (10/20 validators)
 //
 // Startup sequence:
 //  1. Load config from environment variables.
 //  2. Open the shared SQLite Knowledge Graph.
-//  3. Register validators V01–V04 (Sprint 19).
+//  3. Register validators V01–V10 (Sprint 20).
 //  4. Start Prometheus /metrics HTTP endpoint.
 //  5. Run validation cycles over pending vehicles.
 //     (continuous daemon mode blocks until SIGINT/SIGTERM)
 //
 // Environment variables:
-//   QUALITY_DB_PATH        path to shared SQLite KG    (default: ./data/discovery.db)
-//   QUALITY_METRICS_ADDR   Prometheus bind addr         (default: :9092)
-//   QUALITY_BATCH_SIZE     vehicles per cycle           (default: 100)
-//   QUALITY_WORKERS        concurrent workers           (default: 4)
-//   QUALITY_ONE_SHOT       "true" = run once and exit   (default: false)
-//   QUALITY_COUNTRIES      comma-separated ISO codes    (default: all)
-//   QUALITY_SKIP_V01       "true" = skip VIN Checksum   (default: false)
-//   QUALITY_SKIP_V02       "true" = skip NHTSA vPIC     (default: false)
-//   QUALITY_SKIP_V03       "true" = skip DAT Codes      (default: false)
-//   QUALITY_SKIP_V04       "true" = skip NLP Make/Model (default: false)
+//   QUALITY_DB_PATH               path to shared SQLite KG            (default: ./data/discovery.db)
+//   QUALITY_METRICS_ADDR          Prometheus bind addr                 (default: :9092)
+//   QUALITY_BATCH_SIZE            vehicles per cycle                   (default: 100)
+//   QUALITY_WORKERS               concurrent workers                   (default: 4)
+//   QUALITY_ONE_SHOT              "true" = run once and exit           (default: false)
+//   QUALITY_COUNTRIES             comma-separated ISO codes            (default: all)
+//   QUALITY_SKIP_V01              "true" = skip VIN Checksum           (default: false)
+//   QUALITY_SKIP_V02              "true" = skip NHTSA vPIC             (default: false)
+//   QUALITY_SKIP_V03              "true" = skip DAT Codes              (default: false)
+//   QUALITY_SKIP_V04              "true" = skip NLP Make/Model         (default: false)
+//   QUALITY_SKIP_V05              "true" = skip Image Quality          (default: false)
+//   QUALITY_SKIP_V06              "true" = skip Photo Count            (default: false)
+//   QUALITY_SKIP_V07              "true" = skip Price Sanity           (default: false)
+//   QUALITY_SKIP_V08              "true" = skip Mileage Sanity         (default: false)
+//   QUALITY_SKIP_V09              "true" = skip Year Consistency       (default: false)
+//   QUALITY_SKIP_V10              "true" = skip Source URL Liveness    (default: false)
+//   IMAGE_HEAD_TIMEOUT_MS         HEAD timeout per photo URL           (default: 3000)
+//   URL_LIVENESS_CACHE_TTL_HOURS  cache TTL for liveness checks        (default: 24)
 package main
 
 import (
@@ -42,6 +50,12 @@ import (
 	"cardex.eu/quality/internal/validator/v02_nhtsa_vpic"
 	"cardex.eu/quality/internal/validator/v03_dat_codes"
 	"cardex.eu/quality/internal/validator/v04_nlp_makemodel"
+	"cardex.eu/quality/internal/validator/v05_image_quality"
+	"cardex.eu/quality/internal/validator/v06_photo_count"
+	"cardex.eu/quality/internal/validator/v07_price_sanity"
+	"cardex.eu/quality/internal/validator/v08_mileage_sanity"
+	"cardex.eu/quality/internal/validator/v09_year_consistency"
+	"cardex.eu/quality/internal/validator/v10_source_url_liveness"
 )
 
 // ensure metrics is initialised (init() registers counters).
@@ -77,6 +91,35 @@ func main() {
 	}
 	if !cfg.SkipV04 {
 		validators = append(validators, v04_nlp_makemodel.New())
+	}
+	if !cfg.SkipV05 {
+		validators = append(validators, v05_image_quality.NewWithClient(
+			&http.Client{Timeout: time.Duration(cfg.ImageHeadTimeoutMs) * time.Millisecond},
+			500,
+		))
+	}
+	if !cfg.SkipV06 {
+		validators = append(validators, v06_photo_count.New())
+	}
+	if !cfg.SkipV07 {
+		validators = append(validators, v07_price_sanity.New())
+	}
+	if !cfg.SkipV08 {
+		validators = append(validators, v08_mileage_sanity.New())
+	}
+	if !cfg.SkipV09 {
+		validators = append(validators, v09_year_consistency.New())
+	}
+	if !cfg.SkipV10 {
+		validators = append(validators, v10_source_url_liveness.NewWithClient(
+			&http.Client{
+				Timeout: 10 * time.Second,
+				CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+					return http.ErrUseLastResponse
+				},
+			},
+			time.Duration(cfg.URLLivenessCacheTTLHours)*time.Hour,
+		))
 	}
 
 	if len(validators) == 0 {

@@ -46,15 +46,41 @@ type Config struct {
 
 	// SkipV04, when true, disables the NLP Make/Model validator.
 	SkipV04 bool
+
+	// SkipV05, when true, disables the Image Quality validator.
+	SkipV05 bool
+
+	// SkipV06, when true, disables the Photo Count validator.
+	SkipV06 bool
+
+	// SkipV07, when true, disables the Price Sanity validator.
+	SkipV07 bool
+
+	// SkipV08, when true, disables the Mileage Sanity validator.
+	SkipV08 bool
+
+	// SkipV09, when true, disables the Year Consistency validator.
+	SkipV09 bool
+
+	// SkipV10, when true, disables the Source URL Liveness validator.
+	SkipV10 bool
+
+	// ImageHeadTimeoutMs is the timeout for V05 HEAD requests per photo URL. Default: 3000 ms.
+	ImageHeadTimeoutMs int
+
+	// URLLivenessCacheTTLHours is the cache TTL for V10 source URL liveness checks. Default: 24 h.
+	URLLivenessCacheTTLHours int
 }
 
 // Load builds a Config from environment variables.
 func Load() (*Config, error) {
 	c := &Config{
-		DBPath:      getEnv("QUALITY_DB_PATH", "./data/discovery.db"),
-		MetricsAddr: getEnv("QUALITY_METRICS_ADDR", ":9092"),
-		BatchSize:   100,
-		WorkerCount: 4,
+		DBPath:                   getEnv("QUALITY_DB_PATH", "./data/discovery.db"),
+		MetricsAddr:              getEnv("QUALITY_METRICS_ADDR", ":9092"),
+		BatchSize:                100,
+		WorkerCount:              4,
+		ImageHeadTimeoutMs:       3000,
+		URLLivenessCacheTTLHours: 24,
 	}
 
 	if raw := os.Getenv("QUALITY_BATCH_SIZE"); raw != "" {
@@ -87,6 +113,40 @@ func Load() (*Config, error) {
 	}
 	if os.Getenv("QUALITY_SKIP_V04") == "true" {
 		c.SkipV04 = true
+	}
+	if os.Getenv("QUALITY_SKIP_V05") == "true" {
+		c.SkipV05 = true
+	}
+	if os.Getenv("QUALITY_SKIP_V06") == "true" {
+		c.SkipV06 = true
+	}
+	if os.Getenv("QUALITY_SKIP_V07") == "true" {
+		c.SkipV07 = true
+	}
+	if os.Getenv("QUALITY_SKIP_V08") == "true" {
+		c.SkipV08 = true
+	}
+	if os.Getenv("QUALITY_SKIP_V09") == "true" {
+		c.SkipV09 = true
+	}
+	if os.Getenv("QUALITY_SKIP_V10") == "true" {
+		c.SkipV10 = true
+	}
+
+	if raw := os.Getenv("IMAGE_HEAD_TIMEOUT_MS"); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil || n <= 0 {
+			return nil, fmt.Errorf("config: IMAGE_HEAD_TIMEOUT_MS must be a positive integer, got %q", raw)
+		}
+		c.ImageHeadTimeoutMs = n
+	}
+
+	if raw := os.Getenv("URL_LIVENESS_CACHE_TTL_HOURS"); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil || n <= 0 {
+			return nil, fmt.Errorf("config: URL_LIVENESS_CACHE_TTL_HOURS must be a positive integer, got %q", raw)
+		}
+		c.URLLivenessCacheTTLHours = n
 	}
 
 	if raw := os.Getenv("QUALITY_COUNTRIES"); raw != "" {
