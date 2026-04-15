@@ -66,11 +66,6 @@ planning/            All specs and architecture docs (primary reference)
 internal/shared/     Shared Go utilities
 SPEC.md              Original 924-page consolidated specification (vision doc)
 CONTEXT_FOR_AI.md    AI onboarding: what is real, what is planned
----
-services/            Not currently deployed — future full-stack microservices
-scrapers/            Not currently deployed — Python marketplace scrapers (cleaned)
-apps/web/            Not currently deployed — Next.js marketplace frontend
-extensions/chrome/   Not currently deployed — Chrome dealer listing overlay
 ```
 
 ## Build rules

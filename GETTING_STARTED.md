@@ -104,4 +104,3 @@ When starting work on a module, read these in order:
 - **V02 (NHTSA)** makes external HTTP calls to api.nhtsa.dot.gov. Skip with `QUALITY_SKIP_V02=true` in offline environments.
 - **V03 (DAT)** requires DAT credentials. Skip with `QUALITY_SKIP_V03=true`.
 - **Family K (SearXNG)** requires a running SearXNG instance. Skip with `DISCOVERY_SKIP_FAMILIA_K=true`.
-- The `e2e/` module tests the OLD architecture (services/*) and is not currently in sync with discovery/extraction/quality.
