@@ -90,6 +90,10 @@ const (
 	IdentifierCensysHostID      IdentifierType = "CENSYS_HOST_ID"       // Censys host IPv4/v6 address
 	IdentifierShodanHostID      IdentifierType = "SHODAN_HOST_ID"       // Shodan host IP address
 	IdentifierDNSDumpsterDomain IdentifierType = "DNSDUMPSTER_DOMAIN"   // subdomain discovered via DNSDumpster
+
+	// -- Family O -- press archive identifiers ---------------------------------
+	IdentifierGDELTArticleID IdentifierType = "GDELT_ARTICLE_ID" // GDELT article URL (event evidence)
+	IdentifierRSSItemID      IdentifierType = "RSS_ITEM_ID"      // RSS feed item URL (event evidence)
 )
 
 // DealerVATCandidate is a lightweight projection of dealer_entity used for
@@ -194,6 +198,26 @@ type DiscoveryRecord struct {
 	ConfidenceContributed float64
 	DiscoveredAt          time.Time
 	LastReconfirmedAt     *time.Time
+}
+
+// DealerPressSignal is a press article mention linked to a dealer entity.
+// Backed by the dealer_press_signal table (migration v7).
+type DealerPressSignal struct {
+	SignalID     string
+	DealerID     string
+	EventType    string    // "OPENING", "CLOSING", "MERGER", "SALE", "MENTION"
+	ArticleURL   string
+	ArticleTitle string
+	SourceFamily string    // sub-technique ID: "O.1" or "O.2"
+	DetectedAt   time.Time
+}
+
+// HostIPCluster groups dealer IDs sharing the same IPv4/IPv6 host address,
+// as discovered by N.1 (Censys) or N.2 (Shodan). Used by E.3 DMS clustering.
+type HostIPCluster struct {
+	HostIP    string
+	DealerIDs []string
+	Source    string // "CENSYS_HOST_ID" or "SHODAN_HOST_ID"
 }
 
 // DealerProvinceCandidate is a lightweight projection used by Family J province/
@@ -309,4 +333,28 @@ type KnowledgeGraph interface {
 	// ListWebPresencesForInfraScan returns web presences for the given country
 	// ordered by web_id. Limit caps the batch size.
 	ListWebPresencesForInfraScan(ctx context.Context, country string, limit int) ([]*DealerWebPresence, error)
+
+	// -- Family O -- press archive signals ------------------------------------
+
+	// RecordPressSignal inserts a press article mention for a dealer.
+	// Idempotent: duplicate signal_id is silently ignored.
+	RecordPressSignal(ctx context.Context, sig *DealerPressSignal) error
+
+	// FindDealersByName returns dealer IDs whose normalized_name exactly matches
+	// the given string for the given country. Used by the O NER pipeline.
+	FindDealersByName(ctx context.Context, normalizedName, country string) ([]string, error)
+
+	// -- Family E -- DMS infrastructure mapping --------------------------------
+
+	// SetDMSProvider writes the dms_provider field on dealer_web_presence.
+	// Identified by domain (unique key).
+	SetDMSProvider(ctx context.Context, domain, provider string) error
+
+	// ListWebPresencesByDMSProvider returns all web presences with the given
+	// dms_provider value. Used by E.2 directory mining and E.3 IP clustering.
+	ListWebPresencesByDMSProvider(ctx context.Context, provider string) ([]*DealerWebPresence, error)
+
+	// ListHostIPClusters returns groups where at least minDealers dealers share
+	// the same CENSYS_HOST_ID or SHODAN_HOST_ID. Used by E.3 DMS clustering.
+	ListHostIPClusters(ctx context.Context, minDealers int) ([]*HostIPCluster, error)
 }

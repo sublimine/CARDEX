@@ -51,6 +51,19 @@ var incrementalMigrations = []struct {
 			`ALTER TABLE dealer_web_presence ADD COLUMN extraction_hints_json TEXT`,
 		},
 	},
+	{
+		version:     7,
+		description: "dealer_press_signal table -- Sprint 14 Familia O press archives",
+		sqls: []string{`CREATE TABLE IF NOT EXISTS dealer_press_signal (
+  signal_id     TEXT PRIMARY KEY,
+  dealer_id     TEXT NOT NULL REFERENCES dealer_entity(dealer_id),
+  event_type    TEXT NOT NULL,
+  article_url   TEXT,
+  article_title TEXT,
+  source_family TEXT NOT NULL,
+  detected_at   TEXT NOT NULL
+)`},
+	},
 }
 
 // Migrate applies the embedded base schema (v1) on a brand-new database, then

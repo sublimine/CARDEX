@@ -425,7 +425,139 @@ WHERE dealer_id = ? AND is_primary = 1`
 	return nil
 }
 
-// -- Family N -- infrastructure intelligence ----------------------------------
+// -- Family O -- press archive signals ---------------------------------------
+
+// RecordPressSignal inserts a press article mention for a dealer.
+// Idempotent: duplicate signal_id is silently dropped.
+func (g *SQLiteGraph) RecordPressSignal(ctx context.Context, sig *DealerPressSignal) error {
+	const q = `
+INSERT OR IGNORE INTO dealer_press_signal
+  (signal_id, dealer_id, event_type, article_url, article_title,
+   source_family, detected_at)
+VALUES (?,?,?,?,?,?,?)`
+	_, err := g.db.ExecContext(ctx, q,
+		sig.SignalID, sig.DealerID, sig.EventType, sig.ArticleURL, sig.ArticleTitle,
+		sig.SourceFamily, sig.DetectedAt.UTC().Format("2006-01-02T15:04:05Z"),
+	)
+	if err != nil {
+		return fmt.Errorf("kg.RecordPressSignal %q: %w", sig.SignalID, err)
+	}
+	return nil
+}
+
+// FindDealersByName returns dealer IDs whose normalized_name exactly matches the
+// given string for the given country. Returns nil when not found.
+func (g *SQLiteGraph) FindDealersByName(
+	ctx context.Context,
+	normalizedName, country string,
+) ([]string, error) {
+	const q = `
+SELECT dealer_id FROM dealer_entity
+WHERE normalized_name = ? AND country_code = ?
+LIMIT 5`
+	rows, err := g.db.QueryContext(ctx, q, normalizedName, country)
+	if err != nil {
+		return nil, fmt.Errorf("kg.FindDealersByName %q: %w", normalizedName, err)
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("kg.FindDealersByName scan: %w", err)
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
+// -- Family E -- DMS infrastructure mapping ----------------------------------
+
+// SetDMSProvider writes the dms_provider column on dealer_web_presence for domain.
+func (g *SQLiteGraph) SetDMSProvider(ctx context.Context, domain, provider string) error {
+	const q = `UPDATE dealer_web_presence SET dms_provider = ? WHERE domain = ?`
+	_, err := g.db.ExecContext(ctx, q, provider, domain)
+	if err != nil {
+		return fmt.Errorf("kg.SetDMSProvider %q: %w", domain, err)
+	}
+	return nil
+}
+
+// ListWebPresencesByDMSProvider returns all web presences with the given dms_provider.
+func (g *SQLiteGraph) ListWebPresencesByDMSProvider(
+	ctx context.Context,
+	provider string,
+) ([]*DealerWebPresence, error) {
+	const q = `
+SELECT web_id, dealer_id, domain, url_root,
+       platform_type, dms_provider, extraction_strategy,
+       discovered_by_families, metadata_json,
+       cms_fingerprint_json, cms_scanned_at, extraction_hints_json
+FROM dealer_web_presence
+WHERE dms_provider = ?
+ORDER BY domain`
+
+	rows, err := g.db.QueryContext(ctx, q, provider)
+	if err != nil {
+		return nil, fmt.Errorf("kg.ListWebPresencesByDMSProvider: %w", err)
+	}
+	defer rows.Close()
+
+	var out []*DealerWebPresence
+	for rows.Next() {
+		wp := &DealerWebPresence{}
+		var scannedAt sql.NullString
+		if err := rows.Scan(
+			&wp.WebID, &wp.DealerID, &wp.Domain, &wp.URLRoot,
+			&wp.PlatformType, &wp.DMSProvider, &wp.ExtractionStrategy,
+			&wp.DiscoveredByFamilies, &wp.MetadataJSON,
+			&wp.CMSFingerprintJSON, &scannedAt, &wp.ExtractionHintsJSON,
+		); err != nil {
+			return nil, fmt.Errorf("kg.ListWebPresencesByDMSProvider scan: %w", err)
+		}
+		if scannedAt.Valid {
+			t, _ := time.Parse("2006-01-02T15:04:05Z", scannedAt.String)
+			wp.CMSScannedAt = &t
+		}
+		out = append(out, wp)
+	}
+	return out, rows.Err()
+}
+
+// ListHostIPClusters returns groups of dealers sharing the same host IP address
+// (from CENSYS_HOST_ID or SHODAN_HOST_ID) where the group has at least
+// minDealers members. Used by E.3 DMS clustering.
+func (g *SQLiteGraph) ListHostIPClusters(
+	ctx context.Context,
+	minDealers int,
+) ([]*HostIPCluster, error) {
+	const q = `
+SELECT identifier_type, identifier_value, GROUP_CONCAT(dealer_id, ',')
+FROM dealer_identifier
+WHERE identifier_type IN ('CENSYS_HOST_ID', 'SHODAN_HOST_ID')
+GROUP BY identifier_type, identifier_value
+HAVING COUNT(*) >= ?`
+
+	rows, err := g.db.QueryContext(ctx, q, minDealers)
+	if err != nil {
+		return nil, fmt.Errorf("kg.ListHostIPClusters: %w", err)
+	}
+	defer rows.Close()
+
+	var out []*HostIPCluster
+	for rows.Next() {
+		var idType, hostIP, dealersCsv string
+		if err := rows.Scan(&idType, &hostIP, &dealersCsv); err != nil {
+			return nil, fmt.Errorf("kg.ListHostIPClusters scan: %w", err)
+		}
+		out = append(out, &HostIPCluster{
+			HostIP:    hostIP,
+			DealerIDs: strings.Split(dealersCsv, ","),
+			Source:    idType,
+		})
+	}
+	return out, rows.Err()
+}
 
 // ListWebPresencesForInfraScan returns all web presences for the given country
 // up to limit rows, ordered by web_id (stable pagination).

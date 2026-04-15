@@ -19,7 +19,8 @@ var BaseWeights = map[string]float64{
 	"J": 0.05, // Sub-jurisdiction registries (regional long-tail extension of A) -- low-medium reliability
 	"L": 0.10, // Social profiles (YouTube active, LinkedIn/Google Maps deferred) -- medium reliability
 	"N": 0.05, // Infrastructure intelligence (Censys/Shodan/DNS enum) -- signal complement to C+E
-	// E, O: registered when implemented
+	"E": 0.05, // DMS infrastructure mapping -- routing/capacity signal; enriches C+D, not primary discovery
+	"O": 0.05, // Press archives (GDELT + RSS feeds) -- event signal; qualitative cross-validation
 }
 
 // ComputeConfidence computes the confidence score for a dealer given the set of
