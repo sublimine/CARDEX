@@ -59,6 +59,25 @@ type Config struct {
 	// SkipE07, when true, disables the Playwright XHR strategy.
 	SkipE07 bool
 
+	// SkipE08, when true, disables the PDF Catalog strategy.
+	SkipE08 bool
+
+	// SkipE09, when true, disables the Excel/CSV Feeds strategy.
+	SkipE09 bool
+
+	// SkipE10, when true, disables the Email Inventory strategy (stub).
+	SkipE10 bool
+
+	// SkipE11, when true, disables the Manual Review Queue strategy.
+	SkipE11 bool
+
+	// SkipE12, when true, disables the Edge Dealer Push strategy.
+	SkipE12 bool
+
+	// EdgeGRPCPort is the port on which the gRPC edge push server listens.
+	// Default: 50051
+	EdgeGRPCPort int
+
 	// RateLimitMs is the default inter-request sleep within a single dealer.
 	// Strategies may override this per-dealer. Default: 2000 ms.
 	RateLimitMs int
@@ -67,13 +86,14 @@ type Config struct {
 // Load builds a Config from environment variables.
 func Load() (*Config, error) {
 	c := &Config{
-		DBPath:      getEnv("EXTRACTION_DB_PATH", "./data/discovery.db"),
-		MetricsAddr: getEnv("EXTRACTION_METRICS_ADDR", ":9091"),
-		BatchSize:   50,
-		WorkerCount: 4,
-		Countries:   []string{"FR"},
-		CardexBotUA: "CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu)",
-		RateLimitMs: 2000,
+		DBPath:       getEnv("EXTRACTION_DB_PATH", "./data/discovery.db"),
+		MetricsAddr:  getEnv("EXTRACTION_METRICS_ADDR", ":9091"),
+		BatchSize:    50,
+		WorkerCount:  4,
+		Countries:    []string{"FR"},
+		CardexBotUA:  "CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu)",
+		RateLimitMs:  2000,
+		EdgeGRPCPort: 50051,
 	}
 
 	if raw := os.Getenv("EXTRACTION_BATCH_SIZE"); raw != "" {
@@ -123,6 +143,29 @@ func Load() (*Config, error) {
 	}
 	if os.Getenv("EXTRACTION_SKIP_E07") == "true" {
 		c.SkipE07 = true
+	}
+	if os.Getenv("EXTRACTION_SKIP_E08") == "true" {
+		c.SkipE08 = true
+	}
+	if os.Getenv("EXTRACTION_SKIP_E09") == "true" {
+		c.SkipE09 = true
+	}
+	if os.Getenv("EXTRACTION_SKIP_E10") == "true" {
+		c.SkipE10 = true
+	}
+	if os.Getenv("EXTRACTION_SKIP_E11") == "true" {
+		c.SkipE11 = true
+	}
+	if os.Getenv("EXTRACTION_SKIP_E12") == "true" {
+		c.SkipE12 = true
+	}
+
+	if raw := os.Getenv("EDGE_GRPC_PORT"); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil || n <= 0 || n > 65535 {
+			return nil, fmt.Errorf("config: EDGE_GRPC_PORT must be a valid port number, got %q", raw)
+		}
+		c.EdgeGRPCPort = n
 	}
 
 	if raw := os.Getenv("EXTRACTION_COUNTRIES"); raw != "" {

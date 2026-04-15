@@ -1,9 +1,9 @@
-// extraction-service -- Phase 3 Sprint 17
+// extraction-service -- Phase 3 Sprint 18 (12/12 strategies — Phase 3 complete)
 //
 // Startup sequence:
 //  1. Load config from environment variables.
 //  2. Open the shared SQLite Knowledge Graph.
-//  3. Register extraction strategies E01–E07 (Sprint 17).
+//  3. Register extraction strategies E01–E12 (Sprint 18).
 //  4. Start Prometheus /metrics HTTP endpoint.
 //  5. Run extraction cycles for each configured country.
 //     (continuous daemon mode blocks until SIGINT/SIGTERM)
@@ -16,13 +16,19 @@
 //   EXTRACTION_RATE_LIMIT_MS    ms between requests per dealer(default: 2000)
 //   EXTRACTION_ONE_SHOT         "true" = run once and exit    (default: false)
 //   EXTRACTION_COUNTRIES        comma-separated ISO codes     (default: FR)
-//   EXTRACTION_SKIP_E01         "true" = skip JSON-LD strategy        (default: false)
-//   EXTRACTION_SKIP_E02         "true" = skip CMS REST strategy        (default: false)
-//   EXTRACTION_SKIP_E03         "true" = skip Sitemap XML strategy     (default: false)
-//   EXTRACTION_SKIP_E04         "true" = skip RSS/Atom strategy        (default: false)
-//   EXTRACTION_SKIP_E05         "true" = skip DMS API strategy         (default: false)
-//   EXTRACTION_SKIP_E06         "true" = skip Microdata/RDFa strategy  (default: false)
-//   EXTRACTION_SKIP_E07         "true" = skip Playwright XHR strategy  (default: false)
+//   EXTRACTION_SKIP_E01         "true" = skip JSON-LD strategy         (default: false)
+//   EXTRACTION_SKIP_E02         "true" = skip CMS REST strategy         (default: false)
+//   EXTRACTION_SKIP_E03         "true" = skip Sitemap XML strategy      (default: false)
+//   EXTRACTION_SKIP_E04         "true" = skip RSS/Atom strategy         (default: false)
+//   EXTRACTION_SKIP_E05         "true" = skip DMS API strategy          (default: false)
+//   EXTRACTION_SKIP_E06         "true" = skip Microdata/RDFa strategy   (default: false)
+//   EXTRACTION_SKIP_E07         "true" = skip Playwright XHR strategy   (default: false)
+//   EXTRACTION_SKIP_E08         "true" = skip PDF Catalog strategy       (default: false)
+//   EXTRACTION_SKIP_E09         "true" = skip Excel/CSV Feeds strategy   (default: false)
+//   EXTRACTION_SKIP_E10         "true" = skip Email Inventory strategy   (default: false)
+//   EXTRACTION_SKIP_E11         "true" = skip Manual Review Queue        (default: false)
+//   EXTRACTION_SKIP_E12         "true" = skip Edge Dealer Push strategy  (default: false)
+//   EDGE_GRPC_PORT              gRPC listen port for edge push           (default: 50051)
 package main
 
 import (
@@ -46,6 +52,11 @@ import (
 	"cardex.eu/extraction/internal/extractor/e05_dms_api"
 	"cardex.eu/extraction/internal/extractor/e06_microdata"
 	"cardex.eu/extraction/internal/extractor/e07_playwright_xhr"
+	"cardex.eu/extraction/internal/extractor/e08_pdf"
+	"cardex.eu/extraction/internal/extractor/e09_excel"
+	"cardex.eu/extraction/internal/extractor/e10_email"
+	"cardex.eu/extraction/internal/extractor/e11_manual"
+	"cardex.eu/extraction/internal/extractor/e12_edge"
 	"cardex.eu/extraction/internal/metrics"
 	"cardex.eu/extraction/internal/pipeline"
 	"cardex.eu/extraction/internal/storage"
@@ -110,6 +121,31 @@ func main() {
 		// E07 uses a no-op XHR interceptor by default.
 		// Inject a real PlaywrightBrowser interceptor to enable SPA extraction.
 		strategies = append(strategies, e07_playwright_xhr.New())
+	}
+	if !cfg.SkipE08 {
+		strategies = append(strategies, e08_pdf.NewWithClient(
+			&http.Client{Timeout: 30 * time.Second},
+			cfg.RateLimitMs,
+		))
+	}
+	if !cfg.SkipE09 {
+		strategies = append(strategies, e09_excel.NewWithClient(
+			&http.Client{Timeout: 30 * time.Second},
+			cfg.RateLimitMs,
+		))
+	}
+	if !cfg.SkipE10 {
+		// E10 is a stub: IMAP reader not wired until Phase 4.
+		strategies = append(strategies, e10_email.New())
+	}
+	if !cfg.SkipE11 {
+		// E11 enqueues dealers for manual human review (last-resort fallback).
+		strategies = append(strategies, e11_manual.New())
+	}
+	if !cfg.SkipE12 {
+		// E12 receives inventory pushed from dealer-installed edge clients.
+		// Priority 1500 — checked first to honour dealer-trusted source.
+		strategies = append(strategies, e12_edge.New())
 	}
 
 	if len(strategies) == 0 {
