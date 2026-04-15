@@ -44,6 +44,12 @@ type Config struct {
 	// SkipE02, when true, disables the CMS REST endpoint strategy.
 	SkipE02 bool
 
+	// SkipE03, when true, disables the Sitemap XML strategy.
+	SkipE03 bool
+
+	// SkipE04, when true, disables the RSS/Atom feeds strategy.
+	SkipE04 bool
+
 	// RateLimitMs is the default inter-request sleep within a single dealer.
 	// Strategies may override this per-dealer. Default: 2000 ms.
 	RateLimitMs int
@@ -93,6 +99,12 @@ func Load() (*Config, error) {
 	}
 	if os.Getenv("EXTRACTION_SKIP_E02") == "true" {
 		c.SkipE02 = true
+	}
+	if os.Getenv("EXTRACTION_SKIP_E03") == "true" {
+		c.SkipE03 = true
+	}
+	if os.Getenv("EXTRACTION_SKIP_E04") == "true" {
+		c.SkipE04 = true
 	}
 
 	if raw := os.Getenv("EXTRACTION_COUNTRIES"); raw != "" {

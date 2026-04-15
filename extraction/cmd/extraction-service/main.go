@@ -1,9 +1,9 @@
-// extraction-service -- Phase 3 Sprint 15
+// extraction-service -- Phase 3 Sprint 16
 //
 // Startup sequence:
 //  1. Load config from environment variables.
 //  2. Open the shared SQLite Knowledge Graph.
-//  3. Register extraction strategies E01 + E02 (Sprint 15).
+//  3. Register extraction strategies E01 + E02 + E03 + E04 (Sprint 16).
 //  4. Start Prometheus /metrics HTTP endpoint.
 //  5. Run extraction cycles for each configured country.
 //     (continuous daemon mode blocks until SIGINT/SIGTERM)
@@ -18,6 +18,8 @@
 //   EXTRACTION_COUNTRIES        comma-separated ISO codes     (default: FR)
 //   EXTRACTION_SKIP_E01         "true" = skip JSON-LD strategy(default: false)
 //   EXTRACTION_SKIP_E02         "true" = skip CMS REST strategy(default: false)
+//   EXTRACTION_SKIP_E03         "true" = skip Sitemap XML strategy(default: false)
+//   EXTRACTION_SKIP_E04         "true" = skip RSS/Atom strategy(default: false)
 package main
 
 import (
@@ -36,6 +38,8 @@ import (
 	"cardex.eu/extraction/internal/config"
 	"cardex.eu/extraction/internal/extractor/e01_jsonld"
 	"cardex.eu/extraction/internal/extractor/e02_cms_rest"
+	"cardex.eu/extraction/internal/extractor/e03_sitemap"
+	"cardex.eu/extraction/internal/extractor/e04_rss"
 	"cardex.eu/extraction/internal/metrics"
 	"cardex.eu/extraction/internal/pipeline"
 	"cardex.eu/extraction/internal/storage"
@@ -70,6 +74,18 @@ func main() {
 		strategies = append(strategies, e02_cms_rest.NewWithClient(
 			&http.Client{Timeout: 15 * time.Second},
 			cfg.RateLimitMs/2, // E02 is cheaper; use shorter inter-page sleep
+		))
+	}
+	if !cfg.SkipE03 {
+		strategies = append(strategies, e03_sitemap.NewWithClient(
+			&http.Client{Timeout: 15 * time.Second},
+			cfg.RateLimitMs,
+		))
+	}
+	if !cfg.SkipE04 {
+		strategies = append(strategies, e04_rss.NewWithClient(
+			&http.Client{Timeout: 15 * time.Second},
+			cfg.RateLimitMs,
 		))
 	}
 

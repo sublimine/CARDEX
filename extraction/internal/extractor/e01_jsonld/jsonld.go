@@ -258,6 +258,12 @@ func (e *JSONLD) fetchAndExtract(ctx context.Context, pageURL, baseURL string) (
 	return extractFromHTML(body, baseURL)
 }
 
+// ParseVehiclesFromHTML is the exported entry-point for other extractors (E03, E04)
+// that have already fetched an HTML page and want JSON-LD vehicle extraction.
+func ParseVehiclesFromHTML(html []byte, baseURL string) ([]*pipeline.VehicleRaw, error) {
+	return extractFromHTML(html, baseURL)
+}
+
 // extractFromHTML parses HTML and extracts Vehicle records from all JSON-LD blocks.
 func extractFromHTML(html []byte, baseURL string) ([]*pipeline.VehicleRaw, error) {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(string(html)))
