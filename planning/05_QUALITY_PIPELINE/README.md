@@ -1,5 +1,7 @@
 # Pipeline de Calidad — 05_QUALITY_PIPELINE
 
+> **IMPLEMENTATION NOTE (2026-04-15):** The `quality/` Go module is fully implemented with 20 validators (V01–V20), but uses a **different validator assignment** than this spec. This spec was written as the design target; the implementation made different choices during sprint execution. Do NOT use this spec as the reference for what the code does — see `quality/internal/validator/` for the actual implemented validators, and `CONTEXT_FOR_AI.md` for the authoritative mapping. This spec remains useful as the original design intent.
+
 ## Propósito
 Especificación institucional del pipeline de calidad de datos V01-V20. Es el gateway obligatorio entre extraction y el índice live de CARDEX. Ningún `vehicle_record` se publica sin pasar todos los validators BLOCKING y sin documentar todos los WARNING.
 

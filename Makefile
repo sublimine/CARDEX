@@ -1,173 +1,144 @@
 # =============================================================================
-# CARDEX Makefile — levanta todo con 'make dev'
+# CARDEX Makefile — Phase 2-5 MVP (discovery / extraction / quality)
+# =============================================================================
+#
+# Core commands:
+#   make build        Build all three Go services
+#   make test         Run all tests (GOWORK=off per module)
+#   make dev          Start full local stack via Docker Compose
+#   make smoke        Run local smoke tests
+#   make deploy       Deploy to VPS (requires HOST env var)
+#
 # =============================================================================
 
-.PHONY: all dev up down clean logs build test lint scrape gen-keys help \
-        build-api build-scheduler build-gateway build-pipeline
+.PHONY: all build test lint dev smoke deploy secrets help \
+        build-discovery build-extraction build-quality \
+        test-discovery test-extraction test-quality \
+        lint-discovery lint-extraction lint-quality
 
 # ---------------------------------------------------------------------------
 # Variables
 # ---------------------------------------------------------------------------
-COMPOSE        = docker compose
-GO_SERVICES    = api scheduler gateway pipeline
-SCRAPER_TARGET ?= autoscout24_de   # override: make scrape TARGET=mobile_de
+COMPOSE     = docker compose
+COMPOSE_DEV = $(COMPOSE) -f deploy/docker/docker-compose.yml
+HOST        ?= cardex@cardex.io
 
 # ---------------------------------------------------------------------------
-# dev — primer arranque completo (genera claves JWT si no existen, luego up)
+# build — compile all three services (GOWORK=off per module)
 # ---------------------------------------------------------------------------
-dev: gen-keys
-	$(COMPOSE) up -d --build
-	@echo ""
-	@echo "  ✓ CARDEX dev environment running"
-	@echo ""
-	@echo "  Web app   →  http://localhost:3001"
-	@echo "  API       →  http://localhost:8080"
-	@echo "  Gateway   →  http://localhost:8090"
-	@echo "  Grafana   →  http://localhost:3000   (admin / cardex_dev_only)"
-	@echo "  Prometheus→  http://localhost:9090"
-	@echo "  MeiliSearch→ http://localhost:7700"
-	@echo "  ClickHouse→  http://localhost:8123"
-	@echo "  PostgreSQL→  localhost:5432"
-	@echo "  Redis     →  localhost:6379"
-	@echo ""
-	@echo "  Para scraper: make scrape TARGET=mobile_de"
-	@echo "  Para logs:    make logs SERVICE=api"
+build: build-discovery build-extraction build-quality
+
+build-discovery:
+	@echo "Building discovery..."
+	cd discovery && GOWORK=off go build -ldflags="-s -w" -o ../bin/discovery-service ./cmd/discovery-service/
+	@echo "  -> bin/discovery-service"
+
+build-extraction:
+	@echo "Building extraction..."
+	cd extraction && GOWORK=off go build -ldflags="-s -w" -o ../bin/extraction-service ./cmd/extraction-service/
+	@echo "  -> bin/extraction-service"
+
+build-quality:
+	@echo "Building quality..."
+	cd quality && GOWORK=off go build -ldflags="-s -w" -o ../bin/quality-service ./cmd/quality-service/
+	@echo "  -> bin/quality-service"
 
 # ---------------------------------------------------------------------------
-# up / down / clean
+# test — run tests for all three modules (GOWORK=off per module)
 # ---------------------------------------------------------------------------
-up:
-	$(COMPOSE) up -d
+test: test-discovery test-extraction test-quality
+
+test-discovery:
+	@echo "Testing discovery..."
+	cd discovery && GOWORK=off go test -race -count=1 ./...
+
+test-extraction:
+	@echo "Testing extraction..."
+	cd extraction && GOWORK=off go test -race -count=1 ./...
+
+test-quality:
+	@echo "Testing quality..."
+	cd quality && GOWORK=off go test -race -count=1 ./...
+
+# ---------------------------------------------------------------------------
+# lint — run golangci-lint on all three modules
+# ---------------------------------------------------------------------------
+lint: lint-discovery lint-extraction lint-quality
+
+lint-discovery:
+	cd discovery && GOWORK=off golangci-lint run --timeout=5m ./...
+
+lint-extraction:
+	cd extraction && GOWORK=off golangci-lint run --timeout=5m ./...
+
+lint-quality:
+	cd quality && GOWORK=off golangci-lint run --timeout=5m ./...
+
+# ---------------------------------------------------------------------------
+# dev — local Docker Compose stack (all 3 services + observability)
+# ---------------------------------------------------------------------------
+dev:
+	$(COMPOSE_DEV) up -d --build
+	@echo ""
+	@echo "  Discovery  ->  http://localhost:8080"
+	@echo "  Extraction ->  http://localhost:8081"
+	@echo "  Quality    ->  http://localhost:8082"
+	@echo "  Prometheus ->  http://localhost:9090"
+	@echo "  Grafana    ->  http://localhost:3001"
+	@echo ""
+	@echo "  Run: make smoke  (smoke tests)"
 
 down:
-	$(COMPOSE) down
+	$(COMPOSE_DEV) down
 
 clean:
-	$(COMPOSE) down -v --remove-orphans
-	rm -rf secrets/
+	$(COMPOSE_DEV) down -v --remove-orphans
 
-restart:
-	$(COMPOSE) restart $(SERVICE)
-
-# ---------------------------------------------------------------------------
-# logs — make logs SERVICE=api
-# ---------------------------------------------------------------------------
 logs:
-	$(COMPOSE) logs -f $(SERVICE)
-
-logs-all:
-	$(COMPOSE) logs -f
+	$(COMPOSE_DEV) logs -f $(SERVICE)
 
 # ---------------------------------------------------------------------------
-# gen-keys — genera par RSA-4096 para JWT si no existe ya
+# smoke — run local smoke tests
 # ---------------------------------------------------------------------------
-gen-keys:
-	@if [ ! -f secrets/jwt_private.pem ]; then \
-		echo "Generando claves JWT RS256..."; \
-		mkdir -p secrets; \
-		openssl genrsa -out secrets/jwt_private.pem 4096 2>/dev/null; \
-		openssl rsa -in secrets/jwt_private.pem -pubout -out secrets/jwt_public.pem 2>/dev/null; \
-		echo "  ✓ secrets/jwt_private.pem"; \
-		echo "  ✓ secrets/jwt_public.pem"; \
-		echo "  ⚠  Nunca subas estos archivos a git (están en .gitignore)"; \
-	else \
-		echo "  ✓ Claves JWT ya existen (secrets/)"; \
-	fi
+smoke:
+	./deploy/scripts/test-deploy-local.sh
 
 # ---------------------------------------------------------------------------
-# scrape — lanza un scraper concreto
-# Uso: make scrape TARGET=mobile_de
-#      make scrape TARGET=coches_net
-#      make scrape TARGET=discovery_es
+# secrets — generate age + TLS + SSH secrets for local dev
 # ---------------------------------------------------------------------------
-scrape:
-	$(COMPOSE) run --rm \
-		-e SCRAPER_TARGET=$(SCRAPER_TARGET) \
-		scraper
-
-# scrape-all — lanza todos los scrapers en paralelo (uno por país + portal)
-scrape-all:
-	@echo "Lanzando todos los scrapers..."
-	@for t in autoscout24_de mobile_de kleinanzeigen_de heycar_de pkw_de automobile_de \
-	           autoscout24_es coches_net wallapop milanuncios autocasion motor_es coches_com flexicar \
-	           autoscout24_fr leboncoin lacentrale paruvendu largus_fr caradisiac_fr \
-	           autoscout24_nl marktplaats autotrack gaspedaal \
-	           autoscout24_be 2dehands gocar \
-	           autoscout24_ch tutti comparis; do \
-		$(COMPOSE) run -d --rm -e SCRAPER_TARGET=$$t scraper & \
-	done; wait
-	@echo "  ✓ Todos los scrapers lanzados"
+secrets:
+	./deploy/scripts/secrets-generate.sh
 
 # ---------------------------------------------------------------------------
-# Build (servicios Go)
+# deploy — idempotent deploy to VPS
+# Usage: make deploy HOST=cardex@1.2.3.4
 # ---------------------------------------------------------------------------
-build: $(addprefix build-,$(GO_SERVICES))
-
-build-%:
-	@echo "Building services/$*..."
-	cd services/$* && go build -o ../../bin/$* ./cmd/$*/
+deploy:
+	./deploy/scripts/deploy.sh $(HOST) production
 
 # ---------------------------------------------------------------------------
-# Test
+# backup — trigger manual backup on VPS
 # ---------------------------------------------------------------------------
-test: $(addprefix test-,$(GO_SERVICES))
-
-test-%:
-	@echo "Testing services/$*..."
-	cd services/$* && go test -race -count=1 -coverprofile=coverage.out ./...
+backup:
+	./deploy/scripts/test-backup-restore.sh
 
 # ---------------------------------------------------------------------------
-# Lint
-# ---------------------------------------------------------------------------
-lint: $(addprefix lint-,$(GO_SERVICES))
-
-lint-%:
-	cd services/$* && golangci-lint run --timeout=5m ./...
-
-# ---------------------------------------------------------------------------
-# Integration (requiere 'make dev' previamente)
-# ---------------------------------------------------------------------------
-integration:
-	@echo "Verificando PostgreSQL..."
-	@docker exec cardex-pg psql -U cardex -d cardex -c \
-		"SELECT count(*) AS tablas FROM pg_tables WHERE schemaname='public';"
-	@echo "Verificando ClickHouse..."
-	@docker exec cardex-ch clickhouse-client \
-		--query "SELECT count() AS tablas FROM system.tables WHERE database='cardex'"
-	@echo "Verificando Redis..."
-	@docker exec cardex-redis redis-cli PING
-	@echo "Verificando API..."
-	@curl -sf http://localhost:8080/healthz | python3 -m json.tool
-	@echo "  ✓ Todo OK"
-
-# ---------------------------------------------------------------------------
-# Load test (datos sintéticos)
-# ---------------------------------------------------------------------------
-loadtest:
-	@echo "Generando 10.000 vehículos sintéticos..."
-	cd scripts && go run loadgen.go -count=10000
-
-# ---------------------------------------------------------------------------
-# Help
+# help
 # ---------------------------------------------------------------------------
 help:
 	@echo ""
-	@echo "CARDEX — Comandos disponibles:"
+	@echo "CARDEX — Phase 2-5 MVP"
 	@echo ""
-	@echo "  make dev              Arranca todo (genera claves JWT + docker compose up)"
-	@echo "  make up               Docker compose up -d"
-	@echo "  make down             Docker compose down"
-	@echo "  make clean            Destruye volúmenes y secretos"
-	@echo "  make restart SERVICE= Reinicia un servicio concreto"
-	@echo "  make logs SERVICE=    Logs de un servicio (ej: make logs SERVICE=api)"
-	@echo "  make logs-all         Logs de todos los servicios"
+	@echo "  make build           Build discovery + extraction + quality binaries"
+	@echo "  make test            Run all tests (GOWORK=off per module)"
+	@echo "  make lint            Run golangci-lint on all three modules"
 	@echo ""
-	@echo "  make scrape TARGET=   Lanza un scraper (ej: make scrape TARGET=mobile_de)"
-	@echo "  make scrape-all       Lanza todos los scrapers en paralelo"
+	@echo "  make dev             Start local Docker Compose stack"
+	@echo "  make down            Stop local stack"
+	@echo "  make clean           Stop + remove volumes"
+	@echo "  make logs SERVICE=   Follow logs for a service"
+	@echo "  make smoke           Run smoke tests against local stack"
 	@echo ""
-	@echo "  make gen-keys         Genera claves RSA-4096 para JWT en secrets/"
-	@echo "  make build            Compila todos los servicios Go"
-	@echo "  make test             Tests unitarios"
-	@echo "  make lint             Linter"
-	@echo "  make integration      Tests de integración (requiere dev running)"
+	@echo "  make secrets         Generate age + TLS + SSH secrets"
+	@echo "  make deploy          Deploy to VPS (HOST=cardex@ip)"
 	@echo ""

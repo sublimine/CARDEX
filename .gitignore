@@ -1,4 +1,4 @@
-﻿**/node_modules/
+**/node_modules/
 **/.next/
 bin/
 *.exe
@@ -10,6 +10,27 @@ bin/
 .claude/
 !.env.example
 
-# JWT keys (generated locally by 'make gen-keys')
+# Compiled Go binaries
+*/cmd/*/discovery-service
+*/cmd/*/extraction-service
+*/cmd/*/quality-service
+
+# JWT keys and certificates
 secrets/
 *.pem
+
+# PDF files (binary blobs — use external document storage)
+*.pdf
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Go test artifacts
+*.test
+coverage.out
+coverage.html
+
+# Temporary audit files
+TEMP_AUDIT.md

@@ -1,5 +1,9 @@
 # CARDEX — Estado del repositorio
 
+> **SNAPSHOT HISTÓRICO — SUPERSEDED (2026-04-15).** Este documento fue escrito el 2026-04-14 antes de la implementación de las Fases 2–5 (discovery 15 familias, extraction 12 estrategias, quality 20 validators, deploy). El contenido es históricamente preciso para ese momento pero no refleja el estado actual. Para el estado actual del repo, ver `CONTEXT_FOR_AI.md` y `CHANGELOG.md`.
+>
+> Cambios principales desde esta auditoría: (1) discovery/, extraction/, quality/ implementados completos; (2) deploy/ creado con infra completa para CX42; (3) Purga P0 completada (curl_cffi eliminado, UA spoofing eliminado, CI blocker activo); (4) nginx/, monitoring/, docker-compose.yml raíz eliminados; (5) PDFs eliminados del tracking de git; (6) README.md, ARCHITECTURE.md, Makefile reemplazados con contenido correcto.
+
 ## Fecha de auditoría
 2026-04-14 01:23 CET — HEAD `4bd6536` (rama `claude/objective-wilbur`)
 

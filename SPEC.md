@@ -6,6 +6,8 @@
 **Destinatario:** Ingeniero senior con acceso exclusivo a este documento y un IDE (Cursor/Aider)  
 **Régimen de verdad:** Cuando V6 contradice versiones anteriores, V6 prevalece. V2 prevalece en lógica de negocio. V5 prevalece en runbooks cuando V6 no los redefine. V4 queda purgado de elementos ilegales; solo se conservan sus contribuciones técnicas legítimas.
 
+> **NOTA DE IMPLEMENTACIÓN (2026-04-15):** Este documento describe la visión completa y ambiciosa de CARDEX (3× Hetzner AX102, PostgreSQL 16, ClickHouse, stack completo de microservicios). Las Fases 2–5 implementadas en `claude/objective-wilbur` son un **MVP deliberadamente más simple**: un único servidor CX42 (~€22/mes), SQLite, tres servicios Go (discovery/extraction/quality), sin PostgreSQL ni ClickHouse. El MVP es el punto de partida hacia la visión completa descrita aquí. Para el estado actual de implementación, ver `CONTEXT_FOR_AI.md`.
+
 ---
 
 ## CONTRADICCIONES RESUELTAS ENTRE VERSIONES (REGISTRO INMUTABLE)

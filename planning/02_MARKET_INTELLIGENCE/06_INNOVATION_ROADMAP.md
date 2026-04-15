@@ -1,7 +1,9 @@
 # 06 — Innovation Roadmap: 5 Game-Changers
-**Estado:** ACTIVO  
+**Estado:** ACTIVO — ROADMAP FUTURO, NADA IMPLEMENTADO  
 **Fecha:** 2026-04-14  
 **Scope:** Tecnologías de diferenciación competitiva — horizonte 12 meses post-MVP
+
+> **IMPORTANTE:** Ninguna de las 5 tecnologías descritas en este documento está implementada. Son el roadmap post-MVP. El MVP (discovery/extraction/quality — Fases 2–5) está completo. Las 5 game-changers son el siguiente horizonte. No confundir con funcionalidad existente.
 
 ---
 
