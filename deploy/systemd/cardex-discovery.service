@@ -24,8 +24,14 @@ TimeoutStartSec=60s
 TimeoutStopSec=30s
 
 # Resource limits (CX42: 4 vCPU, 16 GB RAM)
-MemoryMax=512M
-CPUQuota=80%
+# MemoryMax=6G: Playwright/Chromium can use ~300 MB per instance.
+# With up to 3 concurrent browser instances (DISCOVERY_PLAYWRIGHT_MAX=3)
+# plus Go runtime overhead, 6 G is a safe ceiling that leaves 10 G for
+# extraction, quality, Prometheus/Grafana, and OS buffers.
+# Without this cap the OOM killer terminates the process silently.
+MemoryMax=6G
+MemorySwapMax=0
+CPUQuota=200%
 
 # Security hardening
 NoNewPrivileges=yes
@@ -48,6 +54,13 @@ Environment=DISCOVERY_DB_PATH=/srv/cardex/db/discovery.db
 Environment=DISCOVERY_METRICS_ADDR=:9101
 Environment=DISCOVERY_CYCLE_INTERVAL=6h
 Environment=DISCOVERY_COUNTRIES=DE,FR,ES,BE,NL,CH,AT,IT
+# Concurrency: default 8 (was 20). Each Playwright instance uses ~300 MB.
+# At 8 concurrent workers with max 3 browser instances, peak RAM ~1.5 GB.
+# Increase only after verifying memory headroom in Grafana.
+Environment=SPIDER_CONCURRENCY=8
+# Hard cap on simultaneous Playwright/Chromium browser instances.
+# This is the key OOM guard: independent of SPIDER_CONCURRENCY.
+Environment=DISCOVERY_PLAYWRIGHT_MAX=3
 
 # Secrets via systemd-creds (encrypted at rest)
 # Provisioned with: systemd-creds encrypt --name=kv-api-key - /etc/cardex/credentials/kv-api-key
