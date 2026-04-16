@@ -1,4 +1,7 @@
 // Package metrics registers Prometheus metrics for the extraction pipeline.
+//
+// Naming convention: Namespace="cardex", Subsystem="extraction"
+// → all metric names are "cardex_extraction_<name>".
 package metrics
 
 import (
@@ -7,30 +10,35 @@ import (
 )
 
 var (
-	// ExtractionTotal counts successful extraction cycles by strategy and country.
+	// ExtractionTotal counts completed extraction cycles by strategy, country,
+	// and result ("success"|"partial"|"failure").
 	ExtractionTotal = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "cardex_extraction",
+		Namespace: "cardex",
+		Subsystem: "extraction",
 		Name:      "total",
 		Help:      "Total extraction cycles completed, by strategy and country.",
 	}, []string{"strategy", "country", "result"})
 
 	// VehiclesExtracted counts vehicles extracted per strategy and country.
 	VehiclesExtracted = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "cardex_extraction",
+		Namespace: "cardex",
+		Subsystem: "extraction",
 		Name:      "vehicles_extracted_total",
 		Help:      "Total vehicles extracted, by strategy and country.",
 	}, []string{"strategy", "country"})
 
 	// VehiclesPersisted counts vehicle records written to the KG.
 	VehiclesPersisted = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "cardex_extraction",
+		Namespace: "cardex",
+		Subsystem: "extraction",
 		Name:      "vehicles_persisted_total",
 		Help:      "Total vehicle records persisted to the knowledge graph.",
 	}, []string{"country"})
 
 	// ExtractionDuration observes extraction latency per strategy.
 	ExtractionDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: "cardex_extraction",
+		Namespace: "cardex",
+		Subsystem: "extraction",
 		Name:      "duration_seconds",
 		Help:      "Extraction duration per strategy.",
 		Buckets:   []float64{0.1, 0.5, 1, 2, 5, 10, 30, 60, 120},
@@ -38,7 +46,8 @@ var (
 
 	// CascadeDepth observes how many strategies were attempted before success.
 	CascadeDepth = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: "cardex_extraction",
+		Namespace: "cardex",
+		Subsystem: "extraction",
 		Name:      "cascade_depth",
 		Help:      "Number of strategies attempted before success or dead-letter.",
 		Buckets:   []float64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12},
@@ -46,22 +55,34 @@ var (
 
 	// DeadLetterTotal counts dealers entering the dead-letter queue.
 	DeadLetterTotal = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "cardex_extraction",
+		Namespace: "cardex",
+		Subsystem: "extraction",
 		Name:      "dead_letter_total",
 		Help:      "Dealers for which all strategies failed (routed to E11/E12).",
 	}, []string{"country"})
 
 	// StrategyApplicableRate tracks how often each strategy passes Applicable().
 	StrategyApplicableRate = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "cardex_extraction",
+		Namespace: "cardex",
+		Subsystem: "extraction",
 		Name:      "strategy_applicable_total",
 		Help:      "How many times each strategy passed the Applicable() check.",
 	}, []string{"strategy"})
 
 	// ParseErrors counts JSON-LD / XML / JSON parse errors by strategy.
 	ParseErrors = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "cardex_extraction",
+		Namespace: "cardex",
+		Subsystem: "extraction",
 		Name:      "parse_errors_total",
 		Help:      "Parse errors encountered during extraction.",
 	}, []string{"strategy", "error_code"})
+
+	// QueueDepth is the current number of dealers pending extraction.
+	// Updated after each batch dequeue. Used by the ExtractionQueueUnbounded alert.
+	QueueDepth = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: "cardex",
+		Subsystem: "extraction",
+		Name:      "queue_depth",
+		Help:      "Current number of dealers pending extraction.",
+	})
 )
