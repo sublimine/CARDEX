@@ -359,6 +359,7 @@ func runShow(db *sql.DB, id string) error {
 			styleDim.Render(fmt.Sprintf("  [model: %s, lang: %s]", aiModel, aiLang))
 	}
 
+
 	// ── Detail panel ──
 	fmt.Println()
 	fmt.Println(styleBorder.Render(

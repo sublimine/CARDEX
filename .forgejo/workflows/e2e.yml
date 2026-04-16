@@ -1,0 +1,76 @@
+name: E2E Pipeline Test
+
+# Validates the full Discovery → Extraction → Quality → storage pipeline
+# using three real dealer HTML fixtures (DE, FR, ES) with no external network calls.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["main", "develop"]
+
+jobs:
+  e2e:
+    name: E2E pipeline (DE + FR + ES fixtures)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-e2e-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-e2e-
+
+      - name: Sync workspace dependencies
+        run: go work sync
+
+      - name: Build e2e test binary
+        run: go test -tags=e2e -run=^$ ./tests/e2e/...
+
+      - name: Run e2e tests
+        run: go test ./tests/e2e/... -tags=e2e -v -timeout=5m
+        env:
+          CGO_ENABLED: 0
+
+  unit:
+    name: Unit tests (all modules)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-unit-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-unit-
+
+      - name: discovery — unit tests
+        run: cd discovery && GOWORK=off go test -race ./...
+
+      - name: extraction — unit tests
+        run: cd extraction && GOWORK=off go test -race ./...
+
+      - name: quality — unit tests
+        run: cd quality && GOWORK=off go test -race ./...
+
+      - name: cli — build
+        run: cd frontend/terminal && GOWORK=off go build ./cmd/cardex/

@@ -5,6 +5,8 @@ toolchain go1.26.2
 use (
 	./discovery
 	./extraction
+	./frontend/terminal
 	./internal/shared
 	./quality
+	./tests/e2e
 )

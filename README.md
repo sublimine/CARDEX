@@ -10,6 +10,7 @@ Pan-European vehicle intelligence platform. Discovers, extracts, and validates u
 | `extraction/` | P3 | Extracts vehicle listings using 12 strategies (JSON-LD, CMS REST, Playwright, PDF, RSS, etc.) | **Complete** |
 | `quality/` | P4 | Validates listings against 20 rules (VIN, NHTSA, price, photo hash, sold-check, composite score) | **Complete** |
 | `deploy/` | P5 | Single-VPS deploy infra: systemd units, Caddy, Prometheus, Grafana, encrypted backups | **Complete** |
+| `frontend/terminal/` | P5+ | Terminal buyer CLI (`cardex search/show/stats`) reading from the shared SQLite | **Complete** |
 
 ## Quick start
 
@@ -30,6 +31,26 @@ cd quality    && GOWORK=off go build -o quality-service    ./cmd/quality-service
 docker compose -f deploy/docker/docker-compose.yml up -d
 ./deploy/scripts/test-deploy-local.sh
 ```
+
+## Terminal CLI
+
+```bash
+# Build
+cd frontend/terminal && GOWORK=off go build -o ../../bin/cardex-cli ./cmd/cardex/
+# or: make cli
+
+# Search listings (9 filters)
+./bin/cardex-cli search --make BMW --model 320d --year-min 2018 --price-max 30000
+./bin/cardex-cli search --country DE --score 80 --limit 20
+
+# Show listing detail + validator breakdown
+./bin/cardex-cli show <listing-id>
+
+# Aggregate stats
+./bin/cardex-cli stats
+```
+
+Set `CARDEX_DB_PATH` to point to the SQLite database (default: `./data/discovery.db`).
 
 ## Deploy to production (Hetzner CX42, ~€22/month)
 

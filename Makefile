@@ -11,7 +11,7 @@
 #
 # =============================================================================
 
-.PHONY: all build test lint dev smoke deploy secrets help \
+.PHONY: all build test lint dev smoke deploy secrets help cli e2e \
         build-discovery build-extraction build-quality \
         test-discovery test-extraction test-quality \
         lint-discovery lint-extraction lint-quality
@@ -121,6 +121,19 @@ deploy:
 # ---------------------------------------------------------------------------
 backup:
 	./deploy/scripts/test-backup-restore.sh
+
+# ---------------------------------------------------------------------------
+# cli — build the terminal buyer CLI (cardex-cli)
+# ---------------------------------------------------------------------------
+cli:
+	cd frontend/terminal && GOWORK=off go build -o ../../bin/cardex-cli ./cmd/cardex/
+	@echo "Built: bin/cardex-cli"
+
+# ---------------------------------------------------------------------------
+# e2e — run end-to-end pipeline integration tests (no external network)
+# ---------------------------------------------------------------------------
+e2e:
+	go test ./tests/e2e/... -tags=e2e -v -timeout=5m
 
 # ---------------------------------------------------------------------------
 # help
