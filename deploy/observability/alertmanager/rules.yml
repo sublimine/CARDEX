@@ -1,6 +1,11 @@
 # rules.yml — CARDEX Prometheus alerting rules
 # Loaded by Prometheus (rule_files: [/etc/prometheus/rules.yml])
 # Alerts fire to Alertmanager which sends email to operator.
+#
+# All metric names use the canonical cardex_<subsystem>_<name> convention:
+#   cardex_discovery_*   → discovery service (port 9101)
+#   cardex_extraction_*  → extraction service (port 9102)
+#   cardex_quality_*     → quality service    (port 9103)
 
 groups:
 
@@ -37,10 +42,12 @@ groups:
     rules:
 
       - alert: DiscoveryErrorRateHigh
+        # Fix #1+#2: was discovery_scrape_errors_total / discovery_scrape_requests_total
+        # Now uses cardex_discovery_scrape_errors_total / cardex_discovery_scrape_requests_total
         expr: |
-          rate(discovery_scrape_errors_total[15m])
+          rate(cardex_discovery_scrape_errors_total[15m])
           /
-          (rate(discovery_scrape_requests_total[15m]) + 0.001) > 0.10
+          (rate(cardex_discovery_scrape_requests_total[15m]) + 0.001) > 0.10
         for: 15m
         labels:
           severity: warning
@@ -51,10 +58,12 @@ groups:
             Check scraper logs for failing families.
 
       - alert: ExtractionErrorRateHigh
+        # Fix #3+#4: was extraction_errors_total / extraction_attempts_total
+        # Now uses cardex_extraction_parse_errors_total / cardex_extraction_total
         expr: |
-          rate(extraction_errors_total[15m])
+          rate(cardex_extraction_parse_errors_total[15m])
           /
-          (rate(extraction_attempts_total[15m]) + 0.001) > 0.10
+          (rate(cardex_extraction_total[15m]) + 0.001) > 0.10
         for: 15m
         labels:
           severity: warning
@@ -63,10 +72,11 @@ groups:
           description: "Current: {{ $value | humanizePercentage }}. Review E-strategy logs."
 
       - alert: QualityValidationCriticalSpike
+        # Fix #5: was cardex_validation_total → cardex_quality_validation_total
         expr: |
-          rate(cardex_validation_total{result="fail",severity="CRITICAL"}[30m])
+          rate(cardex_quality_validation_total{result="fail",severity="CRITICAL"}[30m])
           /
-          (rate(cardex_validation_total[30m]) + 0.001) > 0.20
+          (rate(cardex_quality_validation_total[30m]) + 0.001) > 0.20
         for: 30m
         labels:
           severity: warning
@@ -80,7 +90,8 @@ groups:
     rules:
 
       - alert: ExtractionQueueUnbounded
-        expr: extraction_queue_depth > 10000
+        # Fix #6: was extraction_queue_depth → cardex_extraction_queue_depth
+        expr: cardex_extraction_queue_depth > 10000
         for: 30m
         labels:
           severity: warning
@@ -92,7 +103,8 @@ groups:
             Check extraction workers: EXTRACTION_WORKERS env var.
 
       - alert: QualityQueueUnbounded
-        expr: quality_pending_vehicles > 5000
+        # Fix #7: was quality_pending_vehicles → cardex_quality_pending_vehicles
+        expr: cardex_quality_pending_vehicles > 5000
         for: 30m
         labels:
           severity: warning
@@ -135,7 +147,8 @@ groups:
     rules:
 
       - alert: SQLiteWALSizeHigh
-        expr: cardex_sqlite_wal_size_bytes > 524288000  # 500 MB
+        # Fix #9: was cardex_sqlite_wal_size_bytes → cardex_discovery_sqlite_wal_size_bytes
+        expr: cardex_discovery_sqlite_wal_size_bytes > 524288000  # 500 MB
         for: 10m
         labels:
           severity: warning
@@ -151,8 +164,9 @@ groups:
     rules:
 
       - alert: BackupStale
+        # Fix #8: was cardex_last_backup_timestamp_seconds → cardex_discovery_last_backup_timestamp_seconds
         expr: |
-          time() - cardex_last_backup_timestamp_seconds > 90000  # 25 hours
+          time() - cardex_discovery_last_backup_timestamp_seconds > 90000  # 25 hours
         for: 0m
         labels:
           severity: warning
