@@ -20,12 +20,15 @@ WorkingDirectory=/srv/cardex
 ExecStart=/usr/local/bin/cardex-extraction
 Restart=on-failure
 RestartSec=30s
+StartLimitBurst=5
+StartLimitIntervalSec=60s
 TimeoutStartSec=90s
 TimeoutStopSec=60s
 
 # Playwright/Chromium strategies need more memory
 MemoryMax=1G
 CPUQuota=150%
+LimitNOFILE=65536
 
 NoNewPrivileges=yes
 PrivateTmp=yes

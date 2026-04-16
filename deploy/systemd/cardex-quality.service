@@ -20,6 +20,8 @@ WorkingDirectory=/srv/cardex
 ExecStart=/usr/local/bin/cardex-quality
 Restart=on-failure
 RestartSec=15s
+StartLimitBurst=5
+StartLimitIntervalSec=60s
 TimeoutStartSec=60s
 TimeoutStopSec=30s
 
@@ -28,6 +30,7 @@ WatchdogSec=60s
 
 MemoryMax=700M
 CPUQuota=200%
+LimitNOFILE=65536
 
 NoNewPrivileges=yes
 PrivateTmp=yes
