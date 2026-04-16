@@ -1,35 +1,40 @@
 // Package familia_i implements Family I — Inspection & certification networks.
 //
-// Sprint 10 establishes the Family I skeleton with one active sub-technique
-// (I.NL.1 RDW APK via Open Data API) and six deferred skeletons.
+// Sprint 10 established the Family I skeleton with one active sub-technique
+// (I.NL.1 RDW APK via Open Data API) and seven deferred skeletons.
 //
-// Inspection stations are adjacent signals — they confirm that an entity holds
-// a valid inspection authorisation, which is highly correlated with automotive
-// dealer operations. They are stored with MetadataJSON.is_dealer_candidate=false
-// and a reduced confidence weight (0.05).
+// Sprint 27 activates:
+//   - I.FR.2 — UTAC/data.economie.gouv.fr open data (all French CT centres)
+//   - I.CH.1 — 26 Swiss cantonal SVA offices (static registry)
+//   - I.ES.1 — DGT ITV ArcGIS fetcher (BLOCKER: URL not yet configured)
+//   - I.BE.1 — AUTOSÉCURITÉ + GOCA dual-network fetcher (BLOCKER: URLs not yet configured)
 //
 // Active sub-techniques:
 //
 //   - I.NL.1 — RDW APK inspection stations (NL) via SODA Open Data API
+//   - I.FR.2 — French CT centres via UTAC/data.economie.gouv.fr open data
+//   - I.CH.1 — Swiss cantonal SVA offices (static, 26 records)
 //
-// Deferred (Sprint 11+):
+// Partially active (fetcher ready, URL is a BLOCKER):
+//
+//   - I.ES.1 — DGT ITV ArcGIS FeatureServer (blocker: service URL unknown)
+//   - I.BE.1 — AUTOSÉCURITÉ + GOCA CT stations (blocker: JSON API URLs unknown)
+//
+// Still deferred:
 //
 //   - I.DE.1 — DEKRA stations (DE) — Nuxt.js SPA; API endpoint unknown
-//   - I.DE.2 — TÜV stations (DE)  — multi-org (Rheinland/SÜD/NORD/Thüringen/GTÜ)
-//   - I.FR.1 — DEKRA/CT centres (FR) — SPA API endpoint unknown
-//   - I.ES.1 — ITV stations (ES) — DGT ArcGIS service URL unknown
-//   - I.BE.1 — CT stations (BE) — dual-network (AUTOSÉCURITÉ + GOCA); APIs unknown
-//   - I.CH.1 — MFK stations (CH) — cantonal; no unified API
+//   - I.DE.2 — TÜV stations (DE) — multi-org (Rheinland/SÜD/NORD/Thüringen/GTÜ)
+//   - I.FR.1 — DEKRA Autocite France — SPA API endpoint unknown (I.FR.2 supersedes for coverage)
 //   - I.XX.1 — Bosch Car Service (pan-EU) — React SPA; API unknown
 //
 // Country → sub-technique mapping:
 //
-//	NL → I.NL.1 (RDW APK) + I.XX.1 (Bosch Car Service, deferred)
+//	NL → I.NL.1 (RDW APK) + I.XX.1 (Bosch, deferred)
 //	DE → I.DE.1 (DEKRA, deferred) + I.DE.2 (TÜV, deferred) + I.XX.1 (Bosch, deferred)
-//	FR → I.FR.1 (DEKRA/CT, deferred) + I.XX.1 (Bosch, deferred)
-//	ES → I.ES.1 (ITV, deferred) + I.XX.1 (Bosch, deferred)
-//	BE → I.BE.1 (CT, deferred) + I.XX.1 (Bosch, deferred)
-//	CH → I.CH.1 (MFK, deferred) + I.XX.1 (Bosch, deferred)
+//	FR → I.FR.2 (UTAC open data, ACTIVE) + I.FR.1 (DEKRA, deferred) + I.XX.1 (Bosch, deferred)
+//	ES → I.ES.1 (ITV ArcGIS, BLOCKER) + I.XX.1 (Bosch, deferred)
+//	BE → I.BE.1 (CT dual-network, BLOCKER) + I.XX.1 (Bosch, deferred)
+//	CH → I.CH.1 (MFK/SVA static, ACTIVE) + I.XX.1 (Bosch, deferred)
 package familia_i
 
 import (
@@ -46,6 +51,7 @@ import (
 	"cardex.eu/discovery/internal/families/familia_i/mfk_ch"
 	"cardex.eu/discovery/internal/families/familia_i/rdw_apk"
 	"cardex.eu/discovery/internal/families/familia_i/tuv_de"
+	"cardex.eu/discovery/internal/families/familia_i/utac_fr"
 	"cardex.eu/discovery/internal/kg"
 	"cardex.eu/discovery/internal/metrics"
 	"cardex.eu/discovery/internal/runner"
@@ -58,15 +64,16 @@ const (
 
 // FamilyI orchestrates all I inspection-network sub-techniques.
 type FamilyI struct {
-	rdwAPK       *rdw_apk.RDWAPK
-	dekraDE      *dekra_de.DekraDE
-	tuvDE        *tuv_de.TuvDE
-	bosch        *bosch_car_service.BoschCarService
-	dekraFR      *dekra_fr.DekraFR
-	itvES        *itv_es.ITVES
-	ctBE         *ct_be.CTBE
-	mfkCH        *mfk_ch.MFKCH
-	log          *slog.Logger
+	rdwAPK  *rdw_apk.RDWAPK
+	dekraDE *dekra_de.DekraDE
+	tuvDE   *tuv_de.TuvDE
+	bosch   *bosch_car_service.BoschCarService
+	dekraFR *dekra_fr.DekraFR
+	utacFR  *utac_fr.UTACFR
+	itvES   *itv_es.ITVES
+	ctBE    *ct_be.CTBE
+	mfkCH   *mfk_ch.MFKCH
+	log     *slog.Logger
 }
 
 // New constructs a FamilyI with all registered sub-techniques.
@@ -77,6 +84,7 @@ func New(graph kg.KnowledgeGraph) *FamilyI {
 		tuvDE:   tuv_de.New(graph),
 		bosch:   bosch_car_service.New(graph),
 		dekraFR: dekra_fr.New(graph),
+		utacFR:  utac_fr.New(graph),
 		itvES:   itv_es.New(graph),
 		ctBE:    ct_be.New(graph),
 		mfkCH:   mfk_ch.New(graph),
@@ -127,25 +135,27 @@ func (f *FamilyI) Run(ctx context.Context, country string) (*runner.FamilyResult
 		collect(res3, err3, "bosch_car_service")
 
 	case "FR":
-		res, err := f.dekraFR.Run(ctx)
-		collect(res, err, "dekra_fr")
-		res2, err2 := f.bosch.Run(ctx, country)
-		collect(res2, err2, "bosch_car_service")
+		res, err := f.utacFR.Run(ctx) // I.FR.2 — ACTIVE (supersedes dekra_fr for coverage)
+		collect(res, err, "utac_fr")
+		res2, err2 := f.dekraFR.Run(ctx) // I.FR.1 — deferred (DEKRA-specific, future)
+		collect(res2, err2, "dekra_fr")
+		res3, err3 := f.bosch.Run(ctx, country)
+		collect(res3, err3, "bosch_car_service")
 
 	case "ES":
-		res, err := f.itvES.Run(ctx)
+		res, err := f.itvES.Run(ctx) // I.ES.1 — BLOCKER until ArcGIS URL configured
 		collect(res, err, "itv_es")
 		res2, err2 := f.bosch.Run(ctx, country)
 		collect(res2, err2, "bosch_car_service")
 
 	case "BE":
-		res, err := f.ctBE.Run(ctx)
+		res, err := f.ctBE.Run(ctx) // I.BE.1 — BLOCKER until API URLs configured
 		collect(res, err, "ct_be")
 		res2, err2 := f.bosch.Run(ctx, country)
 		collect(res2, err2, "bosch_car_service")
 
 	case "CH":
-		res, err := f.mfkCH.Run(ctx)
+		res, err := f.mfkCH.Run(ctx) // I.CH.1 — ACTIVE (static 26 cantonal SVAs)
 		collect(res, err, "mfk_ch")
 		res2, err2 := f.bosch.Run(ctx, country)
 		collect(res2, err2, "bosch_car_service")
@@ -166,7 +176,7 @@ func (f *FamilyI) Run(ctx context.Context, country string) (*runner.FamilyResult
 }
 
 // HealthCheck verifies that the RDW Open Data endpoint is reachable (proxy for
-// Family I health; all other sub-techniques are deferred skeletons).
+// Family I health).
 func (f *FamilyI) HealthCheck(ctx context.Context) error {
 	if err := f.rdwAPK.HealthCheck(ctx); err != nil {
 		metrics.HealthCheckStatus.WithLabelValues(familyID).Set(0)
