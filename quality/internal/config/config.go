@@ -95,6 +95,13 @@ type Config struct {
 	// SkipV20, when true, disables the Composite Quality Score validator.
 	SkipV20 bool
 
+	// SkipV21, when true, disables the Multilingual Entity Resolution validator.
+	SkipV21 bool
+
+	// V21Threshold is the cosine similarity threshold for entity resolution.
+	// Default: 0.85
+	V21Threshold float32
+
 	// ImageHeadTimeoutMs is the timeout for V05 HEAD requests per photo URL. Default: 3000 ms.
 	ImageHeadTimeoutMs int
 
@@ -191,6 +198,16 @@ func Load() (*Config, error) {
 	}
 	if os.Getenv("QUALITY_SKIP_V20") == "true" {
 		c.SkipV20 = true
+	}
+	if os.Getenv("QUALITY_SKIP_V21") == "true" {
+		c.SkipV21 = true
+	}
+	if raw := os.Getenv("QUALITY_V21_THRESHOLD"); raw != "" {
+		f, err := strconv.ParseFloat(raw, 32)
+		if err != nil || f <= 0 || f > 1 {
+			return nil, fmt.Errorf("config: QUALITY_V21_THRESHOLD must be a float in (0,1], got %q", raw)
+		}
+		c.V21Threshold = float32(f)
 	}
 
 	if raw := os.Getenv("IMAGE_HEAD_TIMEOUT_MS"); raw != "" {

@@ -159,22 +159,28 @@ func main() {
 
 	orch := pipeline.New(store, strategies...)
 
-	// Start Prometheus metrics endpoint.
+	// Start Prometheus metrics endpoint with graceful shutdown.
+	metricsMux := http.NewServeMux()
+	metricsMux.Handle("/metrics", promhttp.Handler())
+	metricsMux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+	metricsSrv := &http.Server{Addr: cfg.MetricsAddr, Handler: metricsMux}
 	go func() {
-		mux := http.NewServeMux()
-		mux.Handle("/metrics", promhttp.Handler())
-		mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("ok"))
-		})
 		log.Info("metrics server starting", "addr", cfg.MetricsAddr)
-		if err := http.ListenAndServe(cfg.MetricsAddr, mux); err != nil {
+		if err := metricsSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Error("metrics server error", "err", err)
 		}
 	}()
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
+	defer func() {
+		shutCtx, shutCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer shutCancel()
+		_ = metricsSrv.Shutdown(shutCtx)
+	}()
 
 	for {
 		if ctx.Err() != nil {

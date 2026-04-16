@@ -30,6 +30,8 @@
         X-XSS-Protection          "1; mode=block"
         Referrer-Policy           "strict-origin-when-cross-origin"
         Permissions-Policy        "geolocation=(), camera=(), microphone=()"
+        # CSP: backend API — no scripts/styles served directly (#36)
+        Content-Security-Policy   "default-src 'none'; frame-ancestors 'none'"
         -Server
     }
 

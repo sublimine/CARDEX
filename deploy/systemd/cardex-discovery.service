@@ -20,6 +20,8 @@ WorkingDirectory=/srv/cardex
 ExecStart=/usr/local/bin/cardex-discovery
 Restart=on-failure
 RestartSec=30s
+StartLimitBurst=5
+StartLimitIntervalSec=60s
 TimeoutStartSec=60s
 TimeoutStopSec=30s
 
@@ -32,6 +34,7 @@ TimeoutStopSec=30s
 MemoryMax=6G
 MemorySwapMax=0
 CPUQuota=200%
+LimitNOFILE=65536
 
 # Security hardening
 NoNewPrivileges=yes
@@ -41,8 +44,7 @@ ProtectHome=yes
 ReadWritePaths=/srv/cardex/db
 ReadOnlyPaths=/srv/cardex/data
 SystemCallFilter=@system-service
-CapabilityBoundingSet=CAP_NET_BIND_SERVICE
-AmbientCapabilities=CAP_NET_BIND_SERVICE
+# CAP_NET_BIND_SERVICE removed: metrics on :9101 (unprivileged port) — no capability needed (#39)
 
 # Logging
 StandardOutput=journal

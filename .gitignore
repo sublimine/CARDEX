@@ -32,5 +32,8 @@ __pycache__/
 coverage.out
 coverage.html
 
+# Go workspace sum file (auto-generated, not needed in VCS)
+go.work.sum
+
 # Temporary audit files
 TEMP_AUDIT.md

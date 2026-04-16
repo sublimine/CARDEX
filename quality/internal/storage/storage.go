@@ -58,6 +58,10 @@ func New(path string) (*SQLiteStorage, error) {
 // Close releases the database connection.
 func (s *SQLiteStorage) Close() error { return s.db.Close() }
 
+// DB exposes the underlying *sql.DB for validators that need direct access
+// (e.g. V21 entity resolution for its embedding index).
+func (s *SQLiteStorage) DB() *sql.DB { return s.db }
+
 // PersistValidation inserts one validation result row.
 func (s *SQLiteStorage) PersistValidation(ctx context.Context, r *pipeline.ValidationResult) error {
 	suggested, err := json.Marshal(r.Suggested)
@@ -231,6 +235,22 @@ type dealerRecord struct {
 	Name            string
 	ConfidenceScore float64
 	DataSources     int
+}
+
+// CountReviewQueuePending returns the number of review_queue rows with status='PENDING'.
+// Returns 0 (not an error) if the review_queue table does not exist yet.
+func (s *SQLiteStorage) CountReviewQueuePending(ctx context.Context) (int, error) {
+	var exists int
+	if err := s.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='review_queue'`,
+	).Scan(&exists); err != nil || exists == 0 {
+		return 0, nil
+	}
+	var n int
+	err := s.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM review_queue WHERE status = 'PENDING'`,
+	).Scan(&n)
+	return n, err
 }
 
 // GetValidationResultsByVehicle returns all stored validation results for a vehicle,
