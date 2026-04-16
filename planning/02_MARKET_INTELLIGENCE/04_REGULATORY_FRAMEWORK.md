@@ -86,15 +86,29 @@ CARDEX es un sistema de datos B2B — los sujetos de datos son empresas (dealers
 
 **Referencia:** Reglamento (UE) 2022/2065 del Parlamento Europeo y del Consejo, de 19 de octubre de 2022, relativo a un mercado único de servicios digitales.
 
-**Aplicación a CARDEX:**
-- DSA aplica a "servicios intermediarios" — proveedores de servicios de la sociedad de la información que almacenan información de terceros (hosting providers, plataformas en línea, motores de búsqueda).
-- CARDEX es un **motor de búsqueda** (Art. 45 DSA), no una plataforma de alojamiento de contenidos de terceros. Almacena únicamente punteros (URLs), no los listados en sí.
-- Obligaciones aplicables a CARDEX como motor de búsqueda de tamaño no "muy grande" (<45M usuarios mensuales con mucho margen):
-  - Transparencia sobre parámetros de ranking (Art. 27).
-  - Informe anual de contenido moderado (Art. 42) — no aplica a CARDEX en fase MVP.
-  - Punto de contacto para autoridades (Art. 11) — aplica, debe existir un email de contacto oficial.
+**Clasificación de CARDEX bajo DSA:**
+- DSA aplica a "servicios intermediarios" — proveedores de servicios de la sociedad de la información que incluyen servicios de mera transmisión, caché, alojamiento, motores de búsqueda en línea y plataformas en línea.
+- CARDEX califica como **motor de búsqueda en línea** (Art. 2(g) DSA: servicio que permite a los usuarios buscar en sitios web basándose en consultas, mediante un índice construido previamente), no como plataforma de alojamiento de contenidos de terceros.
+- **Corrección de referencia:** Art. 45 DSA regula los códigos de conducta voluntarios para VLOPs/VLOSEs a fin de mitigar riesgos sistémicos — NO es la base de las obligaciones básicas de motores de búsqueda. Las obligaciones aplicables a CARDEX derivan de los artículos siguientes.
 
-**Riesgo DSA:** BAJO — CARDEX no es plataforma de alojamiento de contenidos de terceros; es un índice B2B especializado.
+**Tier DSA de CARDEX:** Motor de búsqueda en línea de tamaño reducido, B2B, muy por debajo del umbral VLOSE (45 M usuarios activos mensuales en la UE). No aplican las obligaciones adicionales de VLOPs/VLOSEs.
+
+**Obligaciones aplicables a CARDEX (Art. 2(g) + Arts. 9, 11, 14, 27):**
+
+| Artículo DSA | Contenido | Acción CARDEX |
+|---|---|---|
+| Art. 9 | Órdenes de las autoridades de actuación contra contenidos ilícitos: CARDEX debe tener canal para recibir órdenes de autoridades competentes | Mantener email legal@cardex.io (o equivalente) publicado y operativo en <48h |
+| Art. 11 | Punto de contacto único para autoridades de los Estados miembros, la Comisión y el Comité | Publicar punto de contacto oficial en la API y en el website |
+| Art. 14 | T&Cs claras y accesibles: qué restricciones se aplican al contenido, cómo se toman decisiones | Publicar Terms of Service con restricciones de uso, política de indexación y canal de opt-out |
+| Art. 27 | Transparencia sobre sistemas de recomendación: parámetros principales de ranking y cómo los usuarios pueden modificarlos | Documentar públicamente los factores del ranking (confidence_score, freshness, price) en la API docs |
+
+**Obligaciones que no aplican a CARDEX en fase MVP:**
+- Art. 16 (Notice & Action para contenidos ilegales): aplica a hosting providers, no a motores de búsqueda en la misma medida.
+- Art. 24-36 (Obligaciones específicas de VLOPs/VLOSEs): CARDEX << 45M MAU.
+- Art. 42 (Informes de transparencia anuales para VLOPs): no aplica hasta alcanzar el umbral VLOSE.
+- Art. 45 (Códigos de conducta para riesgos sistémicos): solo para VLOPs/VLOSEs designados.
+
+**Riesgo DSA:** BAJO — CARDEX no es plataforma de alojamiento de contenidos de terceros; es un índice B2B especializado con obligaciones básicas limitadas (Arts. 9, 11, 14, 27).
 
 ---
 
@@ -115,16 +129,29 @@ CARDEX es un sistema de datos B2B — los sujetos de datos son empresas (dealers
 
 **Referencia:** Reglamento (UE) 2023/2854 del Parlamento Europeo y del Consejo, de 13 de diciembre de 2023, relativo a normas armonizadas sobre acceso equitativo a los datos y su utilización.
 
-**Artículo relevante para CARDEX:**
-- **Art. 4 — Obligación del fabricante de hacer los datos accesibles al usuario:** El fabricante de un producto conectado debe garantizar que los datos generados por el producto sean directamente accesibles al usuario. En el contexto de vehículos conectados, el dealer (usuario del vehículo) tiene derecho a los datos que el vehículo genera.
-- **Art. 5 — Puesta a disposición de los datos a terceros:** El usuario puede exigir al fabricante que ponga los datos a disposición de un tercero designado (como CARDEX) en condiciones justas, razonables y no discriminatorias.
+**Scope del Data Act (corrección Wave 2 — 2026-04-14):**
 
-**Estrategia E11 (Edge Client):**
-El Edge Client de CARDEX, cuando está instalado en el DMS del dealer con consentimiento del dealer, actúa como el "tercero designado" por el usuario (dealer) bajo Art. 5 del Data Act. El dealer ejerce su derecho de portabilidad de datos de su propio inventario hacia CARDEX.
+El Data Act (en aplicación desde 12 septiembre 2025) se orienta principalmente a productos conectados IoT/hardware (Recital 14: dispositivos que se conectan a internet y generan datos sobre su desempeño o entorno). El alcance incluye:
+- **Vehículos conectados** — los datos telemáticos que el vehículo genera son cobertura directa del Art. 4.
+- **Dispositivos IoT** — sensores, maquinaria, electrodomésticos conectados.
+- **Sistemas DMS como software instalado** — posible cobertura expansiva, bajo debate jurídico.
 
-**Aplicación territorial:** Data Act aplica en la UE — los 5 países UE (DE/FR/ES/BE/NL) se benefician de esta posición. CH queda fuera (ver §II.6 — nDSG).
+**Alcance que NO cubre el Data Act:**
+- Datos generados por el dealer al interactuar con una plataforma web de terceros (mobile.de, AutoScout24): los listings publicados en plataformas web no son "datos generados por un producto conectado" en el sentido del Art. 2(5) Data Act.
 
-**Riesgo Data Act:** N/A como riesgo — es una oportunidad positiva para CARDEX en su estrategia E11.
+**Artículo relevante — vehículos conectados (Art. 4/5):**
+- **Art. 4:** El fabricante del vehículo conectado debe garantizar que los datos telemáticos generados por el vehículo sean accesibles al usuario (dealer/propietario).
+- **Art. 5:** El usuario puede designar a un tercero (potencialmente CARDEX en el futuro) para recibir esos datos de telemetría vehicular.
+
+**Estrategia E11 — base legal correcta:**
+E11 (Edge Client) se apoya en consentimiento contractual explícito del dealer (GDPR Art. 6(1)(a)/(b)), no en el Data Act. Ver §IV.5 para el análisis completo de la base legal de E11.
+
+**El Data Act como contexto favorable, no como base legal primaria:**
+El Data Act crea un marco normativo que refuerza el principio de portabilidad de datos, lo que apoya política y filosóficamente la existencia de servicios como CARDEX. Sin embargo, su aplicación directa como base legal de E11 para datos de inventario de plataformas web es insegura jurídicamente.
+
+**Aplicación territorial:** Data Act aplica en la UE. CH queda fuera (ver §II.6 — nDSG).
+
+**Riesgo Data Act:** BAJO como riesgo directo — no es la base legal de E11 (que usa GDPR Art. 6(1)(a)/(b)). Oportunidad futura si datos telemáticos vehiculares se integran en el pipeline.
 
 ---
 
@@ -268,6 +295,11 @@ El Edge Client de CARDEX, cuando está instalado en el DMS del dealer con consen
 - Los compradores B2B que acceden a la URL original a través de CARDEX están en el mismo público que ya podía acceder al listado directamente.
 - **Límite:** si CARDEX indexara contenido detrás de un paywall o área de acceso restringido, la doctrina Svensson no aplicaría.
 
+**Jurisprudencia posterior — VG Bild-Kunst v Stiftung Preußischer Kulturbesitz (C-392/19, 9 marzo 2021):**
+El TJUE matizó Svensson: el *framing* (incrustación via iframe) de una obra que el titular ha protegido con medidas tecnológicas anti-framing SÍ constituye comunicación al público. Cuando el titular adopta medidas técnicas para impedir el framing, el consentimiento al acceso libre no se extiende automáticamente a terceros que incrusten la obra vía iframe.
+
+**Impacto CARDEX:** CARDEX solo almacena URLs como punteros textuales — no usa iframes ni embeds de contenido de terceros. Riesgo nulo para el modelo actual. **Restricción permanente de producto:** cualquier futura funcionalidad de "preview" o "visor" de listados originales vía iframe está prohibida.
+
 ---
 
 ### III.3 — Innoweb v Wegener (C-202/12)
@@ -383,21 +415,39 @@ El Edge Client de CARDEX, cuando está instalado en el DMS del dealer con consen
 
 ---
 
-### IV.5 — EU Data Act Art. 4/5 — Posición E11
+### IV.5 — Base Legal E11 — Consentimiento Contractual (GDPR Art. 6(1)(a) y (b))
 
-**Regla:**
-- El Art. 4 Data Act otorga al usuario de un producto conectado (el dealer) el derecho a acceder a los datos generados por el producto (el vehículo o el sistema DMS).
-- El Art. 5 Data Act permite al usuario exigir que esos datos sean transmitidos a un tercero (CARDEX a través del Edge Client E11) en condiciones técnicas accesibles.
+**Corrección de base legal (Wave 2 Fix — 2026-04-14):**
 
-**Restricciones del Art. 4/5:**
-- El tercero designado no puede usar los datos para perfilado de consumidores (Art. 6(2)(a) Data Act).
-- El tercero no puede compartir los datos con otros sin consentimiento del usuario (Art. 6(2)(b)).
-- En CH: no aplica (no es UE). La estrategia E11 en CH requiere acuerdo contractual explícito con el dealer.
+El EU Data Act (Reg. 2023/2854) fue diseñado para productos conectados IoT/hardware (Art. 2(5): "producto conectado" = producto que obtiene, genera o recopila datos y se comunica mediante red de comunicaciones electrónicas — Recital 14 confirma: IoT devices, maquinaria, vehículos conectados). El Data Act **no aplica** a datos generados por el dealer al interactuar con plataformas web de terceros (mobile.de, AutoScout24). Por tanto, los Arts. 4 y 5 del Data Act no constituyen base legal para que E11 justifique la transmisión del inventario del dealer desde su DMS hacia CARDEX en el contexto de plataformas web.
+
+**Base legal correcta de E11 — doble ancla GDPR:**
+
+| Base legal | Artículo | Condición | Cobertura territorial |
+|---|---|---|---|
+| **Consentimiento explícito** | GDPR Art. 6(1)(a) | El dealer acepta los Terms of Service de CARDEX y el Data Sharing Agreement (DSA) antes de instalar el Edge Client | UE (DE/FR/ES/BE/NL) + CH (nDSG Art. 6(6)) |
+| **Ejecución contractual** | GDPR Art. 6(1)(b) | La transmisión de inventario es necesaria para ejecutar el contrato de servicio entre CARDEX y el dealer (sin datos de inventario, el servicio de indexación contratado no se puede prestar) | UE + CH |
+
+**Flujo de consent capture (obligatorio pre-instalación E11):**
+
+1. **Presentación del DSA:** Antes de la instalación del Edge Client, se muestra al dealer el Data Sharing Agreement completo en el idioma del dealer (DE/FR/ES/NL).
+2. **Checkbox de consentimiento explícito:** El dealer marca activamente: *"Acepto compartir mi inventario de vehículos con CARDEX según los términos del DSA."*
+3. **Timestamping + IP logging:** El sistema registra timestamp ISO-8601 + IP del dealer + versión del DSA aceptada en la tabla `dealer_consent_log`.
+4. **Especificación del scope:** El DSA enumera exactamente qué campos se comparten (inventario de vehículos: VIN, precio, km, año, fotos — **sin** datos de clientes, sin datos financieros del dealer).
+5. **Derecho de revocación:** El Edge Client incluye botón "Pausar indexación" y "Dar de baja de CARDEX" — ambos con efecto inmediato (TTL de vehículos expirados en ≤24h post-revocación).
+6. **Evidencia durable:** La `dealer_consent_log` se archiva durante el período de relación comercial + 3 años (Art. 17 GDPR plazo de supresión diferida).
 
 **Implementación E11:**
-- El Edge Client (Tauri/Rust) se instala en el entorno del dealer con consentimiento explícito del dealer.
-- El Edge Client exporta datos del DMS (inventario, especificaciones) directamente a CARDEX API de ingesta.
-- El dealer mantiene control total: puede revocar en cualquier momento (UI de revocación en el Edge Client).
+- El Edge Client (Tauri/Rust) se instala en el entorno del dealer tras completar el flujo de consent capture descrito arriba.
+- El Edge Client exporta datos del DMS (inventario, especificaciones) directamente a CARDEX API de ingesta via HTTPS firmado con la clave privada del dealer.
+- El dealer mantiene control total: puede revocar en cualquier momento (UI de revocación en el Edge Client + endpoint API `/api/v1/dealer/{id}/revoke`).
+
+**Referencia al Data Act como contexto favorble (sin ser base legal primaria):**
+El Data Act (desde septiembre 2025) crea un marco normativo favorable que reconoce la portabilidad de datos de usuarios como principio de política pública de la UE. Esto apoya el argumento de que el dealer tiene interés legítimo en compartir sus propios datos de inventario, pero **no** es la base legal directa de E11 — el consentimiento GDPR y el contrato son suficientes y más sólidos.
+
+**Cobertura territorial de E11:**
+- **UE (DE/FR/ES/BE/NL):** GDPR Art. 6(1)(a)/(b). El Data Act puede citarse como contexto, no como base.
+- **CH (Suiza):** nDSG Art. 6(6) — consentimiento válido bajo nDSG, estructura análoga a GDPR. **Sin invocación del Data Act** (CH fuera de la UE).
 
 ---
 
@@ -422,14 +472,16 @@ Las siguientes prácticas están **absolutamente prohibidas** en CARDEX independ
 
 ## VI. Tabla Resumen por País
 
-| País | Norma sui generis DB | Equivalente UWG | GDPR / Equiv. | Open Data VIN | E11 Data Act |
+| País | Norma sui generis DB | Equivalente UWG | GDPR / Equiv. | Open Data VIN | E11 base legal |
 |---|---|---|---|---|---|
-| DE | § 87a-87e UrhG | UWG § 4 Nr. 4 | GDPR (DSGVO) | No | Sí |
-| FR | Arts. L341-L343 CPI | Code Commerce | GDPR | No | Sí |
-| ES | Arts. 133-137 LPI | LCD | GDPR (LOPD-GDD) | No | Sí |
-| BE | Databankenwet 1998 / Loi DB | CDE Art. IV.95 | GDPR | No | Sí |
-| NL | Databankenwet 1999 | Oneerlijke Handel | GDPR | **Sí (RDW CC0)** | Sí |
-| CH | URG + UWG CH | UWG CH Art. 2/5 | nDSG (no GDPR) | No | **No** |
+| DE | § 87a-87e UrhG | UWG § 4 Nr. 4 | GDPR (DSGVO) | No | GDPR Art. 6(1)(a)/(b) |
+| FR | Arts. L341-L343 CPI | Code Commerce | GDPR | No | GDPR Art. 6(1)(a)/(b) |
+| ES | Arts. 133-137 LPI | LCD | GDPR (LOPD-GDD) | No | GDPR Art. 6(1)(a)/(b) |
+| BE | Databankenwet 1998 / Loi DB | CDE Art. IV.95 | GDPR | No | GDPR Art. 6(1)(a)/(b) |
+| NL | Databankenwet 1999 | Oneerlijke Handel | GDPR | **Sí (RDW CC0)** | GDPR Art. 6(1)(a)/(b) |
+| CH | URG + UWG CH | UWG CH Art. 2/5 | nDSG (no GDPR) | No | **nDSG Art. 6(6) consentimiento** |
+
+*Nota: La columna "E11 base legal" refleja la corrección Wave 2 (2026-04-14). La base legal de E11 es el consentimiento contractual GDPR/nDSG, no el Data Act (Reg. 2023/2854), cuyo scope se limita a productos conectados IoT/hardware y no cubre datos de plataformas web de terceros.*
 
 ---
 

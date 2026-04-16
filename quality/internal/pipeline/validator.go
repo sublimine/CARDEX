@@ -4,6 +4,8 @@ package pipeline
 import (
 	"context"
 	"time"
+
+	"cardex.eu/quality/internal/nlg"
 )
 
 // Severity classifies validation failures.
@@ -42,6 +44,12 @@ type Vehicle struct {
 	Description   string // full listing description (raw or NLG-generated)
 	ExtractedAt   time.Time // when this record was extracted/scraped
 	Metadata      map[string]string
+
+	// AIGeneratedMeta must be populated when Description was produced by a
+	// local LLM. Nil means the description is human-authored or sourced
+	// verbatim from the original listing. Non-nil enables AI Act Art. 50(2)
+	// machine-readable disclosure in all API responses.
+	AIGeneratedMeta *nlg.AIGeneratedMetadata
 }
 
 // ValidationResult is the outcome of a single validator run on one vehicle.
