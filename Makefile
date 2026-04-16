@@ -14,7 +14,9 @@
 .PHONY: all build test lint dev smoke deploy secrets help cli e2e \
         build-discovery build-extraction build-quality \
         test-discovery test-extraction test-quality \
-        lint-discovery lint-extraction lint-quality
+        lint-discovery lint-extraction lint-quality \
+        gnn-setup gnn-train gnn-serve gnn-test \
+        layoutlm-setup layoutlm-fixtures layoutlm-test
 
 # ---------------------------------------------------------------------------
 # Variables
@@ -136,6 +138,64 @@ e2e:
 	go test ./tests/e2e/... -tags=e2e -v -timeout=5m
 
 # ---------------------------------------------------------------------------
+# gnn-setup — install GNN Python dependencies (CPU-only)
+# ---------------------------------------------------------------------------
+gnn-setup:
+	@echo "Installing GNN CPU-only dependencies..."
+	pip install torch --index-url https://download.pytorch.org/whl/cpu
+	pip install torch_geometric flask scikit-learn numpy
+	@echo "Attempting optional torch_scatter/torch_sparse (may fail on some platforms):"
+	pip install pyg_lib torch_scatter torch_sparse \
+	    -f https://data.pyg.org/whl/torch-$$(python -c "import torch; v=torch.__version__; print(v.split('+')[0])")+cpu.html \
+	    || echo "WARNING: torch_scatter/torch_sparse not installed — DGL fallback available"
+	@echo "GNN setup complete."
+
+# ---------------------------------------------------------------------------
+# gnn-train — train the GraphSAGE dealer link prediction model
+# ---------------------------------------------------------------------------
+gnn-train:
+	cd innovation/gnn_dealer_inference && \
+	    python train.py --db ../../data/discovery.db --output model.pt \
+	    --epochs 100 --lr 0.005
+
+# ---------------------------------------------------------------------------
+# gnn-serve — start the GNN inference server (port 8501)
+# ---------------------------------------------------------------------------
+gnn-serve:
+	cd innovation/gnn_dealer_inference && \
+	    GNN_DB_PATH=../../data/discovery.db \
+	    GNN_MODEL_PATH=model.pt \
+	    python serve.py
+
+# ---------------------------------------------------------------------------
+# gnn-test — run GNN pytest suite
+# ---------------------------------------------------------------------------
+gnn-test:
+	cd innovation/gnn_dealer_inference && python -m pytest tests/ -v
+
+# ---------------------------------------------------------------------------
+# layoutlm-setup — install LayoutLMv3 dependencies (CPU-only)
+# ---------------------------------------------------------------------------
+layoutlm-setup:
+	@echo "Installing LayoutLMv3 CPU-only dependencies..."
+	pip install torch --index-url https://download.pytorch.org/whl/cpu
+	pip install transformers Pillow pdf2image pytesseract
+	@echo "NOTE: also install system packages:"
+	@echo "  apt-get install poppler-utils tesseract-ocr tesseract-ocr-deu tesseract-ocr-fra tesseract-ocr-spa"
+
+# ---------------------------------------------------------------------------
+# layoutlm-fixtures — generate test PDF fixtures
+# ---------------------------------------------------------------------------
+layoutlm-fixtures:
+	cd innovation/layoutlm_pdf && python fixtures/generate_fixtures.py
+
+# ---------------------------------------------------------------------------
+# layoutlm-test — run LayoutLMv3 pytest suite
+# ---------------------------------------------------------------------------
+layoutlm-test:
+	cd innovation/layoutlm_pdf && python -m pytest tests/ -v
+
+# ---------------------------------------------------------------------------
 # help
 # ---------------------------------------------------------------------------
 help:
@@ -151,6 +211,15 @@ help:
 	@echo "  make clean           Stop + remove volumes"
 	@echo "  make logs SERVICE=   Follow logs for a service"
 	@echo "  make smoke           Run smoke tests against local stack"
+	@echo ""
+	@echo "  make gnn-setup       Install GNN CPU-only dependencies (PyG/DGL)"
+	@echo "  make gnn-train       Train GraphSAGE dealer link model"
+	@echo "  make gnn-serve       Start GNN inference server (port 8501)"
+	@echo "  make gnn-test        Run GNN pytest suite"
+	@echo ""
+	@echo "  make layoutlm-setup    Install LayoutLMv3 CPU-only dependencies"
+	@echo "  make layoutlm-fixtures Generate test PDF fixtures (DE/FR/ES)"
+	@echo "  make layoutlm-test     Run LayoutLMv3 pytest suite"
 	@echo ""
 	@echo "  make secrets         Generate age + TLS + SSH secrets"
 	@echo "  make deploy          Deploy to VPS (HOST=cardex@ip)"

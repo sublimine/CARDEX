@@ -2,6 +2,42 @@
 
 All significant implementation milestones for CARDEX Phases 2–5.
 
+## [Unreleased] — Sprint 29: GNN Dealer Inference + LayoutLMv3 PDF Extraction (2026-04-17)
+
+**Branch:** `sprint/29-gnn-layoutlm`
+
+### GNN Dealer Inference (`innovation/gnn_dealer_inference/`)
+- GraphSAGE 2-layer model: SAGEConv(9→64→32) encoder + link predictor MLP + node classifier (WHOLESALE/RETAIL/BROKER/FLEET)
+- 9-dim node features: listing volume, avg price/mileage (log-normalised), brand entropy, country, dealer age, V15 trust score, V21 cluster size, is_active
+- Temporal split anti-leakage: edges sorted by `first_observed` timestamp; test=most recent 10%, val=next 10%
+- CPU-only viable: <100K nodes ~200 MB RAM, batch inference <500ms
+- PyTorch Geometric primary backend; DGL fallback documented for ARM64/Alpine
+- Flask server: `POST /predict-links`, `GET /health`, `GET /metrics` (Prometheus text) on port 8501
+- Checkpoint format: `{model_state, model_config, dealer_ids, backend, val_auc, test_auc}`
+- 12 pytest cases: output shape, no-NaN, eval determinism, link probability range, node classifier shape, top-K count/order/range, training smoke
+- 7 data loader tests: empty DB, node count, feature dim, unit range, dealer IDs, edges from VINs, temporal split leakage guard
+
+### LayoutLMv3 PDF Extraction (`innovation/layoutlm_pdf/`)
+- `extract_entities()` with fallback chain: LayoutLMv3ForTokenClassification → regex heuristics → PyMuPDF+heuristics
+- Heuristic coverage: DE HRB/HRA, FR SIREN (9-digit), ES NIF (letter+digits), company suffixes (GmbH/AG/SA/SARL/SL), legal representatives, registered address
+- Three fixture PDFs (DE Handelsregister, FR Extrait Kbis, ES Nota Simple) via reportlab or raw PDF fallback
+- Go subprocess contract: valid JSON to stdout, exit 0 on success
+- 11 pytest cases (no system deps): 9 heuristic entity tests, 2 ExtractionResult schema tests, 1 subprocess stdout-is-JSON test
+
+### Go Integration (`discovery/internal/families/a_registries/`)
+- `GNNClient`: `PredictLinks(ctx, dealerID)` → `[]PredictedLink`; env vars `GNN_SERVICE_URL`, `GNN_TOP_K`, `GNN_TIMEOUT_MS`, `GNN_SKIP`
+- `dealer_predicted_links` SQLite table with `UNIQUE(dealer_a, dealer_b)` and `ON CONFLICT DO UPDATE` upsert
+- Prometheus metrics: `cardex_gnn_predictions_total{result}`, `cardex_gnn_latency_seconds`, `cardex_gnn_links_stored_total`
+- `EnrichDealer(ctx, db, client, dealerID)` — async-safe enrichment entry point
+- 10 Go tests (race detector): schema idempotency, insert/upsert/empty persist, HTTP success/503/empty/skip, E2E with probability ordering
+
+### Infrastructure
+- Makefile: `gnn-setup`, `gnn-train`, `gnn-serve`, `gnn-test`, `layoutlm-setup`, `layoutlm-fixtures`, `layoutlm-test`
+- `innovation/gnn_dealer_inference/Dockerfile` — Python 3.11-slim, CPU-only torch+PyG, graceful torch_scatter fallback
+- Planning doc: `planning/02_MARKET_INTELLIGENCE/INNOVATION_GNN.md`
+
+---
+
 ## [Unreleased] — Sprint 24: E2E integration test + terminal CLI (2026-04-16)
 
 **Branch:** `sprint/24-e2e-terminal`
