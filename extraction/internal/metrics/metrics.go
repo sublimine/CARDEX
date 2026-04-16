@@ -86,29 +86,32 @@ var (
 		Help:      "Current number of dealers pending extraction.",
 	})
 
-	// E13Requests counts VLM vision API calls by result ("success"|"error"|"timeout").
+	// E13Requests counts VLM inference calls made by E13, by outcome.
+	// Labels: status = "success" | "error" | "timeout"
 	E13Requests = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "cardex",
 		Subsystem: "extraction",
 		Name:      "e13_requests_total",
-		Help:      "Total E13 VLM vision API requests, by result.",
-	}, []string{"result"})
+		Help:      "Total VLM inference requests made by E13, by status.",
+	}, []string{"status"})
 
-	// E13Latency observes VLM vision API round-trip latency.
+	// E13Latency observes per-image VLM inference latency in seconds.
+	// On Hetzner CX42 CPU with Phi-3.5-vision Q4_K_M: expected p50 ≈ 45 s.
 	E13Latency = promauto.NewHistogram(prometheus.HistogramOpts{
 		Namespace: "cardex",
 		Subsystem: "extraction",
 		Name:      "e13_latency_seconds",
-		Help:      "E13 VLM vision API round-trip latency in seconds.",
-		Buckets:   []float64{0.5, 1, 2, 5, 10, 20, 30, 60},
+		Help:      "Per-image VLM inference latency for E13.",
+		Buckets:   []float64{5, 10, 20, 30, 45, 60, 90, 120, 180},
 	})
 
-	// E13FieldsExtracted tracks the running average of fields extracted per vehicle by E13.
+	// E13FieldsExtracted tracks the average number of vehicle fields successfully
+	// extracted per image in the most recent E13 dealer run.
 	E13FieldsExtracted = promauto.NewGauge(prometheus.GaugeOpts{
 		Namespace: "cardex",
 		Subsystem: "extraction",
-		Name:      "e13_fields_extracted_avg",
-		Help:      "Running average of structured fields extracted per vehicle by E13 VLM.",
+		Name:      "e13_fields_extracted",
+		Help:      "Average vehicle fields extracted per image in the last E13 run.",
 	})
 )
 

@@ -1,34 +1,41 @@
-// extraction-service -- Phase 3 Sprint 18 (12/12 strategies — Phase 3 complete)
+// extraction-service — Phase 3 Sprint 18 (12/12 strategies) + Sprint 26 E13 VLM Vision
 //
 // Startup sequence:
 //  1. Load config from environment variables.
 //  2. Open the shared SQLite Knowledge Graph.
-//  3. Register extraction strategies E01–E12 (Sprint 18).
+//  3. Register extraction strategies E01–E13.
 //  4. Start Prometheus /metrics HTTP endpoint.
 //  5. Run extraction cycles for each configured country.
 //     (continuous daemon mode blocks until SIGINT/SIGTERM)
 //
 // Environment variables:
-//   EXTRACTION_DB_PATH          path to shared SQLite KG     (default: ./data/discovery.db)
-//   EXTRACTION_METRICS_ADDR     Prometheus bind addr          (default: :9091)
-//   EXTRACTION_BATCH_SIZE       dealers per cycle             (default: 50)
-//   EXTRACTION_WORKERS          concurrent workers            (default: 4)
-//   EXTRACTION_RATE_LIMIT_MS    ms between requests per dealer(default: 2000)
-//   EXTRACTION_ONE_SHOT         "true" = run once and exit    (default: false)
-//   EXTRACTION_COUNTRIES        comma-separated ISO codes     (default: FR)
-//   EXTRACTION_SKIP_E01         "true" = skip JSON-LD strategy         (default: false)
-//   EXTRACTION_SKIP_E02         "true" = skip CMS REST strategy         (default: false)
-//   EXTRACTION_SKIP_E03         "true" = skip Sitemap XML strategy      (default: false)
-//   EXTRACTION_SKIP_E04         "true" = skip RSS/Atom strategy         (default: false)
-//   EXTRACTION_SKIP_E05         "true" = skip DMS API strategy          (default: false)
-//   EXTRACTION_SKIP_E06         "true" = skip Microdata/RDFa strategy   (default: false)
-//   EXTRACTION_SKIP_E07         "true" = skip Playwright XHR strategy   (default: false)
-//   EXTRACTION_SKIP_E08         "true" = skip PDF Catalog strategy       (default: false)
-//   EXTRACTION_SKIP_E09         "true" = skip Excel/CSV Feeds strategy   (default: false)
-//   EXTRACTION_SKIP_E10         "true" = skip Email Inventory strategy   (default: false)
-//   EXTRACTION_SKIP_E11         "true" = skip Edge Dealer Push strategy         (default: false)
+//   EXTRACTION_DB_PATH          path to shared SQLite KG      (default: ./data/discovery.db)
+//   EXTRACTION_METRICS_ADDR     Prometheus bind addr           (default: :9091)
+//   EXTRACTION_BATCH_SIZE       dealers per cycle              (default: 50)
+//   EXTRACTION_WORKERS          concurrent workers             (default: 4)
+//   EXTRACTION_RATE_LIMIT_MS    ms between requests per dealer (default: 2000)
+//   EXTRACTION_ONE_SHOT         "true" = run once and exit     (default: false)
+//   EXTRACTION_COUNTRIES        comma-separated ISO codes      (default: FR)
+//   EXTRACTION_SKIP_E01         "true" = skip JSON-LD strategy          (default: false)
+//   EXTRACTION_SKIP_E02         "true" = skip CMS REST strategy          (default: false)
+//   EXTRACTION_SKIP_E03         "true" = skip Sitemap XML strategy       (default: false)
+//   EXTRACTION_SKIP_E04         "true" = skip RSS/Atom strategy          (default: false)
+//   EXTRACTION_SKIP_E05         "true" = skip DMS API strategy           (default: false)
+//   EXTRACTION_SKIP_E06         "true" = skip Microdata/RDFa strategy    (default: false)
+//   EXTRACTION_SKIP_E07         "true" = skip Playwright XHR strategy    (default: false)
+//   EXTRACTION_SKIP_E08         "true" = skip PDF Catalog strategy        (default: false)
+//   EXTRACTION_SKIP_E09         "true" = skip Excel/CSV Feeds strategy    (default: false)
+//   EXTRACTION_SKIP_E10         "true" = skip Email Inventory strategy    (default: false)
+//   EXTRACTION_SKIP_E11         "true" = skip Edge Dealer Push strategy   (default: false)
 //   EXTRACTION_SKIP_E12         "true" = skip Manual Review Queue         (default: false)
-//   EDGE_GRPC_PORT              gRPC listen port for edge push           (default: 50051)
+//   EXTRACTION_SKIP_E13         "true" = skip VLM Screenshot Vision       (default: false)
+//   EDGE_GRPC_PORT              gRPC listen port for edge push            (default: 50051)
+//   VLM_ENABLED                 "true" = enable E13 VLM strategy          (default: false)
+//   VLM_BACKEND                 "ollama"|"mock"                           (default: ollama)
+//   VLM_MODEL                   model tag in ollama                       (default: phi3.5-vision:latest)
+//   VLM_ENDPOINT                ollama base URL                           (default: http://localhost:11434)
+//   VLM_TIMEOUT                 per-image inference timeout               (default: 120s)
+//   VLM_MAX_RETRIES             retries on transient VLM error            (default: 2)
 package main
 
 import (
@@ -147,10 +154,6 @@ func main() {
 		// Priority 0 — only runs when all automated strategies are exhausted.
 		strategies = append(strategies, e12_manual.New())
 	}
-
-	// TODO(CF-04,E13): E13 VLM screenshot extraction — roadmap Phase 5+.
-	// Will use vision-language model to extract vehicle data from dealer page screenshots.
-	// Not implemented; add here when the strategy package is available.
 
 	if len(strategies) == 0 {
 		log.Error("all strategies disabled — nothing to do")

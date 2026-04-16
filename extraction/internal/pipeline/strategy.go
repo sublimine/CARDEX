@@ -18,6 +18,7 @@ import "context"
 //	E09 (400)  Excel/CSV feeds
 //	E08 (300)  PDF catalog parsing
 //	E10 (200)  Email-based inventory
+//	E13 (100)  VLM Screenshot Vision (last automated, opt-in)
 //	E12 (0)    Manual review queue (last resort)
 const (
 	PriorityE11 = 1500 // Edge push (Tauri client) — dealer-signed, highest trust
@@ -31,10 +32,11 @@ const (
 	PriorityE09 = 400  // CSV/Excel feeds
 	PriorityE08 = 300  // PDF catalog parsing
 	PriorityE10 = 200  // Email-based inventory
+	PriorityE13 = 100  // VLM Screenshot Vision (last automated, before E12 manual)
 	PriorityE12 = 0    // Manual review queue (last resort)
 )
 
-// ExtractionStrategy is the interface all strategies E01-E12 must implement.
+// ExtractionStrategy is the interface all strategies E01-E13 must implement.
 // The orchestrator operates exclusively through this interface, enabling
 // strategy composition without modification of orchestrator code.
 type ExtractionStrategy interface {

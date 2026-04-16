@@ -126,7 +126,8 @@ type DealerEntity struct {
 }
 
 // allowedCountryCodes is the set of ISO 3166-1 alpha-2 codes supported by the
-// CARDEX discovery pipeline (configured via DISCOVERY_COUNTRIES env var).
+// CARDEX discovery pipeline (DE,FR,ES,BE,NL,CH,AT,IT — configured via
+// DISCOVERY_COUNTRIES environment variable).
 var allowedCountryCodes = map[string]struct{}{
 	"DE": {}, "FR": {}, "ES": {}, "BE": {},
 	"NL": {}, "CH": {}, "AT": {}, "IT": {},

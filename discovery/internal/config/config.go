@@ -144,10 +144,13 @@ type Config struct {
 	// Default: false
 	SkipBrowser bool
 
-	// FamilyRateLimitOverrides allows operators to tune per-request delays per
-	// family without recompiling. Keys are upper-case family IDs ("B", "C", …).
+	// FamilyRateLimitOverrides allows operators to tune inter-request delays per
+	// family without recompiling. Keys are upper-case family IDs ("B", "C", "F", …).
 	// Populated from DISCOVERY_RATE_LIMIT_<FAMILY>_MS environment variables.
-	// Absent entries keep family built-in defaults.
+	//
+	// Example: DISCOVERY_RATE_LIMIT_B_MS=15000 slows Overpass queries to 15 s.
+	//
+	// Absent entries leave family built-in defaults unchanged.
 	FamilyRateLimitOverrides map[string]time.Duration
 }
 

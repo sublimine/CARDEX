@@ -68,8 +68,8 @@ func (v *VehicleRaw) IsCritical() bool {
 		len(v.ImageURLs) > 0
 }
 
-// Validate checks that the minimum required fields are present and plausible.
-// Call before persisting to avoid storing malformed records.
+// Validate checks that the minimum required fields are present and within
+// acceptable ranges. Call before persisting to avoid storing junk records.
 func (v *VehicleRaw) Validate() error {
 	if v.SourceURL == "" {
 		return fmt.Errorf("VehicleRaw: SourceURL is required")

@@ -77,7 +77,7 @@ type cacheEntry struct {
 // NHTSAValidator implements pipeline.Validator for V02.
 type NHTSAValidator struct {
 	client  *http.Client
-	baseURL string           // overrideable in tests
+	baseURL string // overrideable in tests
 	now     func() time.Time // injectable for deterministic tests
 	mu      sync.Mutex
 	cache   map[string]*cacheEntry
