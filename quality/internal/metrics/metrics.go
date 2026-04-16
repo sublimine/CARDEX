@@ -47,6 +47,16 @@ var (
 		Name:      "vehicles_validated_total",
 		Help:      "Total vehicles that have been through the full validation pipeline.",
 	})
+
+	// PendingVehicles is the current number of vehicles awaiting quality
+	// validation. Updated after each batch dequeue.
+	// Used by the QualityQueueUnbounded alert.
+	PendingVehicles = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "cardex",
+		Subsystem: "quality",
+		Name:      "pending_vehicles",
+		Help:      "Current number of vehicles awaiting quality validation.",
+	})
 )
 
 func init() {
@@ -55,5 +65,6 @@ func init() {
 		ValidationDuration,
 		CriticalFailures,
 		VehiclesValidated,
+		PendingVehicles,
 	)
 }
