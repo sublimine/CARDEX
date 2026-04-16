@@ -2,6 +2,38 @@
 
 All significant implementation milestones for CARDEX Phases 2–5.
 
+## [Sprint 30] — Local RAG Search: nomic-embed-text + FAISS + Llama 3.2 (2026-04-17)
+
+**Branch:** `sprint/30-rag-search`
+
+### RAG search service (`innovation/rag_search/`)
+- `config.py` — central config: model, paths, FAISS params, API port, rate-limit; all params env-overridable
+- `indexer.py` — SQLite `vehicle_record` -> nomic-embed-text-v1.5 (768 dims, L2-normalised, `search_document:` prefix) -> FAISS IVF-Flat (nlist=100; Flat fallback for small datasets); `--incremental` skips known IDs
+- `query_engine.py` — query embed (`search_query:` prefix) -> FAISS top-50 ANN -> hard filters (country, price, km, year, fuel) -> top-20 `SearchResult` list
+- `llm_reranker.py` — opt-in Llama 3.2 3B Q4 reranker via llama-cpp-python (~2 GB RAM, 5-10s/query); parses JSON score array; falls back to cosine order on error
+- `serve.py` — FastAPI :8502: `POST /search`, `GET /health`, `POST /reload`; 100 req/min rate limit (slowapi)
+
+### Python packaging
+- `requirements.txt` — faiss-cpu, sentence-transformers, torch, fastapi, uvicorn, pydantic, slowapi
+- `Dockerfile` — Python 3.11-slim, pre-downloads nomic model at build time; data + models volumes
+
+### Go CLI: `cardex search-natural`
+- New subcommand wired into `newRootCmd()`; calls `POST /search` on RAG server; renders ANSI table
+- Flags: `--country`, `--price-min/max`, `--km-max`, `--year-min/max`, `--fuel`, `--top`, `--rerank`
+- SQL keyword fallback (LIKE on make/model) when RAG server unavailable; `CARDEX_RAG_URL` env var
+
+### Makefile
+- `make cli` — build `bin/cardex-cli`
+- `make rag-index` / `rag-index-incremental` / `rag-serve` / `rag-test`
+
+### Tests (mocked embedding model — no GPU, no network required)
+- `test_indexer.py` (5 tests) — index size == 10 fixtures, id_map coverage, persistence, incremental no-op
+- `test_query.py` (6 tests) — FAISS search, BMW DE in top-5, country/price/km filters, empty index guard
+- `test_reranker.py` (7 tests) — reorder by LLM scores, count, empty input, bad output fallback, score parsing
+
+### Planning
+- `planning/02_MARKET_INTELLIGENCE/INNOVATION_RAG.md` — architecture, component docs, RAM budget, cron schedule
+
 ## [Sprint 29] — GNN Dealer Inference + LayoutLMv3 PDF Extraction (2026-04-17)
 
 **Branch:** `sprint/29-gnn-layoutlm`
