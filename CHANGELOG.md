@@ -2,6 +2,32 @@
 
 All significant implementation milestones for CARDEX Phases 2–5.
 
+## [Unreleased] — Sprint 24: E2E integration test + terminal CLI (2026-04-16)
+
+**Branch:** `sprint/24-e2e-terminal`
+
+### E2E integration test (`tests/e2e/pipeline_test.go`)
+- Full pipeline test: seed 3 dealers (DE/FR/ES) → E01 JSON-LD extraction → V01–V19 quality validators → SQLite persistence
+- Three HTML fixtures committed at `tests/fixtures/e2e/` (BMW 320d DE, Renault Mégane FR, SEAT León ES)
+- Valid ISO 3779 VINs with correct check digits; deterministic; no external network
+- Assertions: listings > 0, V01 VIN pass, V07 price sanity pass, composite score ≥ 60%, Prometheus counter incremented
+- Thin public facade packages (`discovery/run`, `extraction/run`, `quality/run`) expose internal types via Go type aliases
+- Invoke: `go test ./tests/e2e/... -tags=e2e -v` or `make e2e`
+- All 3 dealers pass at 90.9% composite score (MANUAL_REVIEW)
+
+### Terminal buyer CLI (`frontend/terminal/`)
+- Module `cardex.eu/cli`; binary `cardex-cli`; build via `make cli`
+- `cardex search` — 9 filters (country, make, model, year-min/max, price-min/max, km-max, score, limit, page)
+- `cardex show <id>` — listing detail panel + per-validator pass/fail breakdown
+- `cardex stats` — aggregate counts, country breakdown, avg quality score
+- ANSI table rendering via `charmbracelet/lipgloss v1.1.0`; CLI framework `spf13/cobra v1.9.1`; reads shared SQLite (`modernc.org/sqlite`)
+- `CARDEX_DB_PATH` env var or `./data/discovery.db` default
+
+### CI
+- Forgejo workflow `e2e.yml` added: `e2e` job (go work sync + e2e test) and `unit` job (all modules + CLI build)
+
+---
+
 ## [Phase 5] — Infrastructure (2026-04-14)
 
 **Commit:** `79254b0 feat(P5-sprint23): infrastructure scaffolding`
