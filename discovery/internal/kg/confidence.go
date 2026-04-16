@@ -3,8 +3,9 @@ package kg
 // BaseWeights maps each family ID to its contribution weight.
 // Sprint 1 — only Family A is wired. Additional families are registered here
 // as they are implemented.
-// Full formula (TODO Sprint 3): Bayesian combination with source independence
-// adjustment.  Current implementation: plain sum, clamped to [0.0, 1.0].
+// Full formula (TODO #cf-13 — roadmap Phase 5): replace plain sum with Bayesian
+// combination accounting for source dependency (correlated sources inflate score).
+// Current implementation: plain sum, clamped to [0.0, 1.0].
 var BaseWeights = map[string]float64{
 	"A": 0.35, // Registros mercantiles — legal-fiscal, high reliability
 	"B": 0.15, // Geocartografía (OSM + Wikidata) — geo-recon, medium reliability
@@ -27,7 +28,7 @@ var BaseWeights = map[string]float64{
 // family IDs that have independently confirmed it.
 //
 // Current formula: sum of base weights for each distinct confirming family,
-// clamped to 1.0. This is the Sprint 1 approximation; Sprint 3 will replace
+// clamped to 1.0. This is the Sprint 1 approximation; Phase 5 will replace
 // it with a proper Bayesian combination that accounts for source dependency.
 func ComputeConfidence(confirmedByFamilies []string) float64 {
 	seen := make(map[string]bool, len(confirmedByFamilies))

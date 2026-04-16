@@ -26,8 +26,8 @@ CARDEX is a three-stage pipeline: **Discover** dealers → **Extract** their lis
 │  H. OEM dealer locators   E08 PDF extraction       V08 Mileage range    │
 │  I. Inspection networks   E09 Excel/CSV            V09 Year range       │
 │  J. Sub-jurisdictions     E10 Email/EDI            V10 URL liveness     │
-│  K. SearXNG meta-search   E11 Manual queue         V11 NLG quality      │
-│  L. Social profiles       E12 Edge stub            V12 Cross-source dedup│
+│  K. SearXNG meta-search   E11 Edge push (Tauri)    V11 NLG quality      │
+│  L. Social profiles       E12 Manual queue         V12 Cross-source dedup│
 │  M. VAT/UID registries                             V13 Completeness     │
 │  N. Infra intel                                    V14 Freshness        │
 │  O. Press archives                                 V15 Dealer trust     │
@@ -162,7 +162,7 @@ earned_pts / max_pts ≥ 0.60  OR   critical_count == 1  →  MANUAL_REVIEW
 otherwise                                               →  REJECT
 ```
 
-Validator weights (total: 176 pts): V01=20, V12=15, V17=15, V05=15, V07=10, V08=10, V06=10, V02=10, V14=10, V15=12, V03=5, V04=5, V13=8, V09=8, V10=8, V11=8, V16=5, V18=5, V19=8, V20=0.
+Validator weights (total: 176 pts): V01=15, V02=12, V03=10, V04=10, V05=10, V06=8, V07=12, V08=10, V09=10, V10=8, V11=8, V12=12, V13=10, V14=8, V15=10, V16=5, V17=8, V18=4, V19=6. (Source: quality/internal/validator/v20_composite/v20.go)
 
 ---
 

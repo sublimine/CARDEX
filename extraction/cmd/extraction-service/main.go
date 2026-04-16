@@ -144,9 +144,13 @@ func main() {
 	}
 	if !cfg.SkipE12 {
 		// E12 is the last-resort fallback: enqueues dealers for manual review.
-		// Priority 1500 — checked first to honour dealer-trusted source.
+		// Priority 0 — only runs when all automated strategies are exhausted.
 		strategies = append(strategies, e12_manual.New())
 	}
+
+	// TODO(CF-04,E13): E13 VLM screenshot extraction — roadmap Phase 5+.
+	// Will use vision-language model to extract vehicle data from dealer page screenshots.
+	// Not implemented; add here when the strategy package is available.
 
 	if len(strategies) == 0 {
 		log.Error("all strategies disabled — nothing to do")
