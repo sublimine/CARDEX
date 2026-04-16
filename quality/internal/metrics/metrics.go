@@ -57,6 +57,27 @@ var (
 		Name:      "pending_vehicles",
 		Help:      "Current number of vehicles awaiting quality validation.",
 	})
+
+	// ReviewQueuePending is the current number of listings awaiting human review.
+	// Updated after each validation cycle by querying review_queue WHERE status='PENDING'.
+	ReviewQueuePending = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "cardex",
+		Subsystem: "quality",
+		Name:      "review_queue_pending",
+		Help:      "Current number of vehicle listings pending manual review.",
+	})
+
+	// ReviewQueueResolved counts review queue items resolved (approved or rejected).
+	// Labels: action ("approved"|"rejected").
+	ReviewQueueResolved = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "cardex",
+			Subsystem: "quality",
+			Name:      "review_queue_resolved_total",
+			Help:      "Total review queue items resolved, by action (approved or rejected).",
+		},
+		[]string{"action"},
+	)
 )
 
 func init() {
@@ -66,5 +87,19 @@ func init() {
 		CriticalFailures,
 		VehiclesValidated,
 		PendingVehicles,
+		ReviewQueuePending,
+		ReviewQueueResolved,
 	)
+}
+
+// SanitizeValidatorID returns the validator_id label value if it is a known
+// V-code (V01–V20), or "unknown" otherwise. Call this before WithLabelValues
+// to prevent unbounded Prometheus cardinality from unexpected values.
+func SanitizeValidatorID(v string) string {
+	switch v {
+	case "V01", "V02", "V03", "V04", "V05", "V06", "V07", "V08", "V09", "V10",
+		"V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18", "V19", "V20":
+		return v
+	}
+	return "unknown"
 }

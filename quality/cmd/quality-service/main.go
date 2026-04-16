@@ -76,6 +76,7 @@ import (
 	"cardex.eu/quality/internal/validator/v18_language_consistency"
 	"cardex.eu/quality/internal/validator/v19_currency"
 	"cardex.eu/quality/internal/validator/v20_composite"
+	"cardex.eu/quality/internal/validator/v21_entity_resolution"
 )
 
 // ensure metrics is initialised (init() registers counters).
@@ -178,6 +179,22 @@ func main() {
 		// V20 uses a no-op store by default; wired to real KG in Phase 5.
 		validators = append(validators, v20_composite.New())
 	}
+	if !cfg.SkipV21 {
+		// V21 entity resolution: TFIDFEmbedder by default (pure Go, no Python needed).
+		// Set QUALITY_V21_PYTHON=python3 to enable the mpnet subprocess embedder.
+		v21cfg := v21_entity_resolution.Config{Threshold: cfg.V21Threshold}
+		if python := os.Getenv("QUALITY_V21_PYTHON"); python != "" {
+			v21cfg.Embedder = v21_entity_resolution.NewSubprocessEmbedder(python)
+		}
+		v21, err := v21_entity_resolution.NewWithDB(store.DB(), v21cfg)
+		if err != nil {
+			log.Warn("V21 entity resolution init failed — running without",
+				"err", err,
+			)
+		} else {
+			validators = append(validators, v21)
+		}
+	}
 
 	if len(validators) == 0 {
 		log.Error("all validators disabled — nothing to do")
@@ -235,6 +252,11 @@ func runCycle(
 		return err
 	}
 	log.Info("validation cycle starting", "vehicles", len(vehicles))
+
+	// Refresh review queue pending gauge so the Prometheus metric stays current.
+	if n, err := store.CountReviewQueuePending(ctx); err == nil {
+		metrics.ReviewQueuePending.Set(float64(n))
+	}
 
 	for _, v := range vehicles {
 		if ctx.Err() != nil {
