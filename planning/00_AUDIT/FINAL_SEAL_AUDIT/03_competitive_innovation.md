@@ -1,7 +1,8 @@
 # CARDEX — AUDITORÍA ÉLITE TRACK 3: COMPETITIVE & INNOVATION VIABILITY
-**Versión:** 1.0 · **Fecha:** 2026-04-16 · **Autorización:** Salman · **Política:** R1 — cero superficialidad  
+**Versión:** 1.1 · **Fecha:** 2026-04-16 · **Autorización:** Salman · **Política:** R1 — cero superficialidad  
 **Hardware de referencia:** Hetzner CX42 — 4 vCPU AMD EPYC (shared), 16 GB DDR4, 240 GB NVMe, 20 TB/mo · ~€18/mes  
-**Fuentes:** `planning/02_MARKET_INTELLIGENCE/02_COMPETITIVE_LANDSCAPE.md`, `06_INNOVATION_ROADMAP.md`, `06_ARCHITECTURE/05_VPS_SPEC.md`, benchmarks llama.cpp community, HuggingFace model cards, web research (ver notas por competidor)
+**Fuentes:** `planning/02_MARKET_INTELLIGENCE/02_COMPETITIVE_LANDSCAPE.md`, `06_INNOVATION_ROADMAP.md`, `06_ARCHITECTURE/05_VPS_SPEC.md`, benchmarks llama.cpp community, HuggingFace model cards, web research verificada (Teneo/PitchBook, EU-Startups, Amazon Science blog, arXiv 2510.15821, AM Online, Motor Trader, AIM Group, Future Mobility Media, PyPI)  
+**v1.1 — Correcciones post-verificación web:** 7 correcciones materiales integradas en secciones correspondientes (marcadas `[WEB-VERIFIED]`).
 
 ---
 
@@ -84,8 +85,9 @@ Cada competidor ha sido evaluado en cuatro dimensiones: (1) estado operacional a
 - **Diferenciación CARDEX:** BCA es canal de transacción (subasta). CARDEX es canal de descubrimiento de stock en lote del dealer, no en subasta. Los stocks son distintos. **Amenaza: BAJA-MEDIA. Complementario más que sustituto.**
 
 #### C15 — CarOnSale (DE)
-- **Estado:** OPERACIONAL `[PV — web caronline.de]`. Subasta B2B online enfocada en DE/AT. Sin expansión pan-EU reportada.
-- **Diferenciación CARDEX:** Canal de transacción, no discovery. **Amenaza: BAJA.**
+- **Estado:** `[WEB-VERIFIED — EU-Startups, julio 2025]` **OPERACIONAL y en expansión activa.** Levantaron **€70M Series C en julio 2025** para expandir su marketplace B2B pan-europeo, con objetivo declarado de 1 millón de ventas anuales de coches de ocasión. Planes concretos de entrada en nuevos países EU y ampliación de infraestructura de transacciones cross-border digitales.
+- **Corrección:** La evaluación original "sin expansión pan-EU reportada" era incorrecta. CarOnSale es ahora un competidor pan-EU en fase de scale-up agresivo.
+- **Diferenciación CARDEX:** CarOnSale es canal de transacción (subasta entre dealers). CARDEX es índice de discovery. La audiencia se solapa pero el producto es distinto. Sin embargo, con €70M y objetivo de 1M ventas, CarOnSale podría añadir funcionalidades de discovery. **Amenaza: MEDIA (revisada al alza desde BAJA). Monitorizar trimestralmente.**
 
 #### C16 — Manheim / Manheim Express (Cox Automotive)
 - **Estado:** OPERACIONAL. Cox Automotive (privada, Atlanta) mantiene Manheim EU activa. En 2024 lanzaron "Manheim Digital" EU — plataforma de subastas virtuales con acceso para dealers europeos acreditados.
@@ -111,18 +113,18 @@ Cada competidor ha sido evaluado en cuatro dimensiones: (1) estado operacional a
 - **Estado:** OPERACIONAL con reducción de scope. Heycar redujo operaciones en FR en 2024 por pérdidas (estimado €100M+ quemados desde 2018 `[PV — prensa Automotive News Europe]`). Sigue activo en DE y parcialmente en ES. VW Group evalúa el futuro de Heycar.
 - **Diferenciación CARDEX:** Heycar es marketplace de coches certificados (solo dealers OEM). Sin long-tail por diseño. **Amenaza: BAJA. Podría cerrarse antes de 2028.**
 
-#### D21 — CarGurus (US, EU expansion)
-- **Estado:** OPERACIONAL. CarGurus cotiza en NASDAQ (CARG). En 2024 reportaron pérdidas en la división EU y ralentizaron la expansión. Su producto "CarOffer" (wholesale B2B, US) no ha llegado a EU.
-- **Cambio material:** CarGurus adquirió CarOffer en US para cubrir wholesale B2B. Si trasladan CarOffer a EU sería el competidor directo más peligroso de CARDEX — es exactamente el mismo modelo (índice B2B de stock wholesale para compradores). Probabilidad de expansión EU en 2026-2028: **MEDIA-ALTA.**
-- **Diferenciación CARDEX:** Por ahora, CarGurus EU es B2C sin API. CarOffer (US only) sería el competidor. **Amenaza actual: MEDIA. Amenaza potencial 2027-2028: ALTA si traen CarOffer a EU.**
+#### D21 — CarGurus (US, EU presence)
+- **Estado:** `[WEB-VERIFIED — Motor Trader]` **PRESENCIA EU MUY REDUCIDA.** CarGurus **salió de Alemania, España e Italia en abril 2020** y no ha re-entrado en ninguno de esos mercados. Su presencia EU activa es esencialmente UK. No hay anuncio de nuevo HQ EU ni expansión a DE/FR confirmada para 2025-2026.
+- **Corrección crítica:** La evaluación anterior ("expansión EU en curso", "amenaza MEDIA") era incorrecta. CarGurus no opera en 4 de los 6 países objetivo de CARDEX. Su producto CarOffer (wholesale B2B) sigue siendo US-only.
+- **Diferenciación CARDEX:** CarGurus EU = UK B2C marketplace. Sin solapamiento con CARDEX en DE/FR/ES/BE/NL. **Amenaza actualizada: BAJA para los 6 mercados CARDEX. Amenaza hipotética (CarOffer EU): MEDIA si entran, pero sin señales activas.**
 
 #### D22 — Autohero (Auto1 Group)
 - **Estado:** OPERACIONAL. Auto1 Group cotiza en Frankfurt (AG1). En 2024 alcanzó break-even operativo. Autohero crece en DE/FR/ES/NL. Auto1 Group compra >50.000 coches/mes en EU — tienen el mayor dataset de **precios de transacción reales** de Europa.
 - **Amenaza latente:** Si Auto1 monetiza sus datos de transacción como "Auto1 Market Intelligence" (precios reales, no listing prices), superaría en calidad de dato a CARDEX y a todos los competidores. No lo han anunciado pero tienen el activo. **Amenaza ALTA si pivotan a data monetization. Por ahora: BAJA.**
 
-#### D23 — Cazoo (UK)
-- **Estado: CERRADO.** Cazoo se declaró en bancarrota (Chapter 11 US equivalent) en junio 2023. Las operaciones EU se vendieron o cerraron. La marca persiste como shell en UK en forma limitada. **No es un competidor activo. Eliminar de la lista o marcar como INACTIVO.**
-- **Diferenciación CARDEX:** N/A.
+#### D23 — Cazoo (UK) — ❌ LIQUIDADO
+- **Estado: LIQUIDADO.** `[WEB-VERIFIED — Teneo (liquidador), PitchBook]` Cazoo Group Ltd entró en administración voluntaria mayo 2024 y aprobó liquidación voluntaria el 2 de julio de 2024. Deuda >£260M; acción perdió >99% desde su pico SPAC. El negocio de marketplace fue adquirido por Motors.co.uk el 27 de junio de 2024. **La marca ya no opera como retailer.** La fecha de cierre real es julio 2024, no junio 2023 como constaba en la versión anterior.
+- **Diferenciación CARDEX:** N/A — empresa liquidada.
 
 #### D24 — CarSpring / Wirkaufendeinauto (Autobid/Wallapop Group)
 - **Estado:** Wirkaufendeinauto.de (WKD) sigue operativo como canal de compra al consumidor. Autobid (subasta B2B) activo en DE `[PV]`. Sin cambios materiales.
@@ -132,28 +134,29 @@ Cada competidor ha sido evaluado en cuatro dimensiones: (1) estado operacional a
 
 ### NUEVOS ENTRANTES 2025-2026 (no en lista original)
 
-#### NEW-01 — Motorway (UK → EU)
-- **Descripción:** Marketplace wholesale B2B que conecta dealers UK compradores con vendedores. Modelo: vehículo sale en subasta instantánea (buy-now) entre dealers. Similar a CarOffer (US) en concepto.
-- **Estado:** Operacional UK. Levantaron Series C £ 90M en 2022. En 2024-2025, exploraron expansión a DE y NL `[fuente: Motorway blog, press releases — PV]`.
-- **Relevancia CARDEX:** Si Motorway entra en EU, compite directamente en el segmento wholesale B2B. Su diferencia con CARDEX: Motorway es plataforma de transacción (el dealer vende el coche en Motorway), CARDEX es índice de discovery. Pero la audiencia objetivo (dealers B2B) es la misma.
-- **Amenaza:** ALTA potencial si entran EU. **Monitorizar mensualmente.**
+#### NEW-01 — Motorway (UK)
+- **Descripción:** Marketplace wholesale B2B UK que conecta dealers compradores con vendedores vía subasta instantánea (buy-now). `[WEB-VERIFIED — AM Online, Car Dealer Magazine]`
+- **Estado real:** Revenue 2025 ~£78M (+18% YoY), pérdidas reduciéndose, objetivo de rentabilidad a mediados de 2026. Hasta 2.000 coches subastados/día, 7.500+ dealers verificados. **Roadmap 2026 enteramente UK-focused** (verificación AI de vendedores, nuevo sistema de condición, datos enriquecidos). **Sin expansión EU anunciada.**
+- **Corrección:** La evaluación "ALTA potencial si entran EU" era prematura. Motorway está enfocado en alcanzar break-even en UK. No hay señales de expansión EU en 2026.
+- **Amenaza revisada: BAJA a corto plazo. MEDIA si alcanzan rentabilidad UK y buscan expansión 2027+. Monitorizar anualmente.**
 
-#### NEW-02 — Kavak (México → España)
-- **Descripción:** Unicornio mexicano ($8.7B valuación en 2021) de compra/venta de coches. Abrió operaciones en España en 2022-2023 como test de mercado EU.
-- **Estado abril 2026:** Kavak ES redujo operaciones significativamente en 2024 tras recortes globales `[PV — prensa española]`. No es un competidor activo en el espacio B2B wholesale. Su modelo (B2C con inventario propio) difiere del de CARDEX.
-- **Amenaza:** BAJA. No compite en B2B discovery.
+#### NEW-02 — Kavak (México / Turquía)
+- **Descripción:** Unicornio mexicano. `[WEB-VERIFIED — Descubre VC, Silicon Valley Investclub]` **Kavak NO entró en España ni en ningún mercado de Europa Occidental.** Su primera expansión fuera de Latinoamérica fue Turquía. En febrero 2026 levantaron $300M Series F. Cerraron 2025 con ~120.000 transacciones, crecimiento ~40% YoY, y su primer mes consolidado rentable (diciembre 2025). Foco total en LATAM + Turquía.
+- **Corrección:** La referencia a "operaciones en España" era incorrecta. No hay presencia confirmada en ninguno de los 6 países CARDEX.
+- **Amenaza:** NULA en los 6 mercados objetivo.
 
-#### NEW-03 — Spoticar (Stellantis)
-- **Descripción:** Red de distribución de ocasión certificada de Stellantis (Peugeot, Citroën, Opel, Fiat, etc.). No es un marketplace abierto — es un canal de distribución internal de Stellantis.
-- **Estado:** Operacional en FR/ES/IT/DE. Sin API pública, sin producto B2B para compradores externos.
-- **Relevancia CARDEX:** Spoticar no indexa stock de terceros — solo stock Stellantis-certified. No es un competidor en el espacio de discovery pan-European. Sin embargo, los vehículos Spoticar son parte del universo que CARDEX debería indexar.
-- **Amenaza:** BAJA directamente. Relevante como **fuente de datos** (ver plan de cobertura), no como competidor.
+#### NEW-03 — Spoticar Trade (Stellantis) — ⚠️ COMPETIDOR DIRECTO SUBESTIMADO
+- **Descripción:** `[WEB-VERIFIED — AIM Group julio 2024, Future Mobility Media dic. 2025]` Stellantis lanzó **Spoticar Trade** en 2024 como plataforma B2B de vehículos de ocasión — no solo canal certificado, sino **marketplace B2B abierto** cubriendo 9 marcas (Alfa Romeo, DS, Lancia, Abarth, Jeep, Peugeot, Citroën, Fiat, Opel) en **8 países europeos (FR, IT, DE, ES, PT, NL, BE, AT)**. Objetivo 2025: **400.000 ventas B2B**.
+- **Cambio material diciembre 2025:** Stellantis firmó alianza estratégica long-term con **Cox Automotive Europe** para transformar Spoticar Trade de marketplace en ecosistema digital de remarketing full-scale. Cox Automotive gestiona Manheim (subasta) + ADESA/Openlane + incadea (DMS) + Manheim Express — la integración crea una capa de datos B2B con alcance muy superior al de CARDEX en el segmento Stellantis.
+- **Corrección crítica:** La evaluación "BAJA — solo canal interno" era **incorrecta**. Spoticar Trade es un marketplace B2B operativo en 8 países EU con 400K unidades anuales objetivo y respaldo de Cox Automotive.
+- **Limitación estructural de Spoticar Trade:** solo cubre marcas Stellantis (no VW Group, BMW, Toyota, etc.). CARDEX es multi-marca, multi-fuente. Esta es la diferenciación clave.
+- **Amenaza revisada: ALTA en el segmento Stellantis dentro de los 6 países. MEDIA para el mercado B2B total (cobertura de marca limitada).** Monitorizar mensualmente; la alianza Cox puede extender el alcance de marcas.
 
-#### NEW-04 — CarWow (UK → EU wholesale)
-- **Descripción:** CarWow nació como plataforma de configuración/comparación de coches nuevos. En 2023-2024 pivotó hacia el mercado de ocasión con un componente de subasta B2B entre dealers (UK principalmente).
-- **Estado:** Levantaron €40M en 2024 para expansión EU `[fuente: CarWow press, TechCrunch — PV]`. Operacional en UK; entrada en DE y FR en progreso.
-- **Relevancia CARDEX:** CarWow B2B wholesale (dealers vendiendo entre sí) es el modelo más similar a CARDEX en filosofía. La diferencia: CarWow es plataforma de transacción (cobra comisión), CARDEX es índice (cobra suscripción de acceso). Pero sirven a los mismos dealers.
-- **Amenaza:** MEDIA-ALTA. Si CarWow entra en DE/FR con producto wholesale B2B en 2026, compite por la misma audiencia. **Monitorizar trimestralmente.**
+#### NEW-04 — CarWow (UK)
+- **Descripción:** Plataforma de configuración/comparación de coches nuevos con componente de subasta consumer-to-dealer para ocasión. `[WEB-VERIFIED — Motor Trader ene. 2025, AM Online]`
+- **Estado real:** Lanzó modelo de suscripción para dealers en enero 2025. Integró NextGear Capital (financiación de inventario para dealers) en su plataforma de subastas. Revenue 2025 aproximándose a £100M. **Sin B2B wholesale (dealer-to-dealer) confirmado.** El flujo es consumer → dealer, no dealer → dealer.
+- **Corrección:** La evaluación "MEDIA-ALTA, modelo más similar a CARDEX en filosofía" era incorrecta. CarWow conecta consumidores privados con dealers, no dealers entre sí. El modelo es C2B, no B2B.
+- **Amenaza revisada: BAJA. El modelo es estructuralmente distinto al de CARDEX.**
 
 #### NEW-05 — Kyte / Kouto (AI-native EU startups, segmento EV fleet remarketing)
 - **Descripción:** Categoría emergente: startups AI-native especializadas en remarketing de vehículos eléctricos de flota. Vehículos EV de primera generación (2019-2022) empiezan a salir de leasing en 2024-2026, creando un mercado especializado de EV used B2B.
@@ -358,29 +361,36 @@ Con Llama 3.1 8B el sistema funciona pero los 4.2 GB libres son margen escaso si
 
 **Verificación de disponibilidad:**
 
-El repositorio original es `amazon-science/chronos-forecasting` en GitHub. A agosto 2025 (límite del conocimiento base), el paquete `chronos-forecasting` en PyPI incluía modelos T5 hasta la variante "large". La denominación "Chronos-2" en el planning doc puede referirse a una versión 2 del paquete o a mejoras post-paper. `[PV — verificar github.com/amazon-science/chronos-forecasting releases > v1.0]`
+`[WEB-VERIFIED — PyPI, Amazon Science blog, arXiv 2510.15821]` **Chronos-2 fue lanzado oficialmente el 20 de octubre de 2025.** Versión actual en PyPI: **2.2.2** (17 diciembre 2025). El nombre en PyPI es `chronos-forecasting`, misma dependencia que Chronos v1. No es un paquete separado.
 
-**Si "Chronos-2" no está disponible con ese nombre exacto en PyPI a la fecha de implementación:** usar `chronos-t5-small` (versión confirmada disponible) con resultados equivalentes para el caso de uso de forecast de precios vehiculares.
+**Corrección arquitectural crítica:** Chronos-2 **NO usa arquitectura T5**. Es un modelo **encoder-only** inspirado en el encoder de T5. Los tamaños del planning doc ("46M small") corresponden a Chronos v1 (T5-based), que sigue disponible en la rama v1.x. Chronos-2 tiene dos variantes:
 
-**Análisis técnico Chronos-T5 small (46M params):**
+| Variante | Parámetros | Throughput (A10G GPU) | Capacidades nuevas vs v1 |
+|---|---|---|---|
+| **mini** | **28M** | 300+ forecasts/s | Multivariado, covariables |
+| **base** | **120M** | ~150 forecasts/s | Igual + mayor precisión |
 
-| Parámetro | Chronos-T5 small | Chronos-T5 large |
+Chronos-2 añade soporte para **forecasting multivariado** y **covariables exógenas** — relevante para CARDEX donde el precio de un segmento es función del precio del petróleo, tipo de cambio EUR/GBP, etc.
+
+**Análisis técnico Chronos-2 mini (28M params) — target recomendado:**
+
+| Parámetro | Chronos-2 mini | Chronos-2 base |
 |---|---|---|
-| Parámetros | 46M | 710M |
-| RAM float32 | ~185 MB | ~2.85 GB |
-| RAM float16 | ~93 MB | ~1.43 GB |
-| RAM int8 | ~47 MB | ~715 MB |
-| Latencia inferencia (100 timesteps) | <50ms CPU `[paper original]` | ~200ms CPU |
-| Horizon forecast | 30/60/90 días configurable | Igual |
+| Parámetros | 28M | 120M |
+| RAM float32 | ~112 MB | ~480 MB |
+| RAM float16 | ~56 MB | ~240 MB |
+| Latencia CPU (100 timesteps, 1 serie) | <20ms estimado `[extrapolado desde GPU + scaling]` | <100ms estimado |
+| Horizon forecast | Configurable | Configurable |
+| Covariables | ✓ (nuevo en v2) | ✓ |
 
-**Chronos-T5 small en CX42: trivialmente viable.** El modelo es tan pequeño que no tiene impacto material en el presupuesto de RAM. El cuello de botella no es el modelo sino la calidad de los datos históricos de precios.
+**Chronos-2 mini en CX42: trivialmente viable.** El modelo ocupa <120 MB RAM. El cuello de botella es exclusivamente la acumulación de datos históricos, no el hardware.
 
-**Prerequisito crítico (no hardware):** El planning doc correctamente identifica que Chronos necesita ≥6 meses de datos históricos de precios. Sin ese histórico, el modelo no puede producir forecasts fiables (MAPE >30% en cold-start). Este es el **único bloqueante real** de este game-changer — no la viabilidad hardware, sino la acumulación de datos.
+**Corrección al planning doc:** cambiar "Chronos-2 small (46M params)" por "Chronos-2 mini (28M params) o base (120M)". Los 46M corresponden a Chronos v1.x T5-small, que ya es una versión anterior. Usar v2.
 
 **Veredicto #4: ✅ VIABLE**
-- Hardware: trivialmente cómodo. Chronos-T5 small ocupa <200 MB RAM.
-- **Único riesgo: la denominación "Chronos-2" debe verificarse en PyPI antes de escribir el código de dependencias. Si no existe ese nombre exacto, usar `chronos-t5-small` de `chronos-forecasting`.**
-- Prerequisito invariable: ≥6 meses de datos de precios antes de activar el servicio de forecasting para usuarios.
+- Hardware: trivialmente cómodo. Chronos-2 mini ocupa <120 MB RAM.
+- **Chronos-2 es real, disponible en PyPI v2.2.2.** Sin riesgo de dependencia.
+- Prerequisito invariable: ≥6 meses de datos de precios antes de activar el servicio.
 
 ---
 
@@ -427,7 +437,7 @@ TOTAL:                      ~2.75 GB ✓
 | 1 | GNN + LayoutLMv3 | ✅ **VIABLE** | ~3.75 GB | GNN <50ms batch; LayoutLMv3 ~3s/pág | Mezcla errónea de dos modelos distintos | Separar en dos sub-módulos con pipelines distintos |
 | 2 | VLM Phi-3.5 Vision | ⚠️ **MARGINAL** | ~4.5-5 GB | **35-65s/imagen** (no 4-8s) | Latencia CPU 5-8x subestimada | Usar Moondream2 (15s) para near-realtime; Phi-3.5 solo para batch offline |
 | 3 | RAG Llama + FAISS | ✅ **VIABLE** | ~8.8-11.8 GB | ~12-28s/query | "Llama 3.2 7B" no existe | Cambiar a Llama 3.2 3B o Llama 3.1 8B; FAISS escala a CX52 >2M listings |
-| 4 | Chronos-2 Forecasting | ✅ **VIABLE** | ~200 MB | <50ms/forecast | Nombre "Chronos-2" a verificar | Confirmar nombre en PyPI; prerequisito 6 meses datos históricos |
+| 4 | Chronos-2 Forecasting | ✅ **VIABLE** | ~120 MB (mini) | <20ms/forecast | Parámetros eran de v1 (46M→28M mini); arquitectura cambia de T5 a encoder-only | Actualizar a Chronos-2 mini/base; mismo paquete PyPI `chronos-forecasting` v2.2.2 |
 | 5 | BGE-M3 Entity Resolution | ✅ **VIABLE** | ~2.75 GB | ~100ms/entidad | — | Ninguna. Desplegar primero (menor riesgo técnico) |
 
 **Veredicto global:** 4/5 innovaciones son viables en CX42. La VLM (#2) es marginal con Phi-3.5 — corregir el modelo o la expectativa de latencia. **Ninguna innovación es no-viable en hardware**, pero el presupuesto de RAM exige que nunca corran más de 2-3 componentes ML pesados simultáneamente. La secuenciación del planning doc (VLM → BGE → GNN → Chronos → RAG) es correcta precisamente porque cada uno puede desplegarse y operar sin los otros.
@@ -523,11 +533,13 @@ Auto1 compra >600.000 coches/año en EU. Tienen el mayor dataset de **precios de
 
 **Señales:** contratación de CDO o "Head of Data Products", registro de patentes de data assets, comunicados sobre B2B data.
 
-### Amenaza #3 — CarOffer (Cox Automotive) entra en EU [PROBABILIDAD: MEDIA 40%]
+### Amenaza #3 — Spoticar Trade + Cox Automotive Europe escalan a multi-marca [PROBABILIDAD: MEDIA 35%]
 
-CarGurus adquirió CarOffer (wholesale marketplace B2B) en US. CarOffer automatiza la compra/venta B2B dealer-to-dealer con instant pricing. Si Cox/CarGurus traen este modelo a EU en 2026-2027, combinado con la distribución de CarGurus EU, sería el competidor más directo de CARDEX en el segmento wholesale.
+`[WEB-VERIFIED]` Spoticar Trade está operativo en 8 países EU con 400K ventas B2B objetivo en 2025, respaldado por la alianza estratégica con Cox Automotive Europe (diciembre 2025). Cox gestiona Manheim + ADESA/Openlane + incadea (DMS) + Manheim Express. Si Stellantis + Cox extienden Spoticar Trade para incluir marcas no-Stellantis (via Manheim's multi-brand auction infrastructure), el producto resultante sería un competidor directo pan-EU con respaldo financiero e infraestructura de Cox.
 
-**Mitigación:** CarOffer requiere adaptación legal (regulación de intermediación en cada país EU), gestión de IVA cross-border, y cobertura de transportistas. Barreras de entrada altas. La posición de CARDEX como índice (sin gestionar transacciones) evita estas complejidades.
+**Señal de alerta inmediata:** la alianza Cox-Stellantis ya existe. El movimiento de multi-marca no requiere nueva financiación — solo decisión estratégica.
+
+**Mitigación:** Stellantis tiene incentivos para mantener Spoticar Trade exclusivo a sus marcas (sinergia con su red de dealers). Abrir a marcas competidoras crea conflicto de interés. CARDEX es neutral (multi-marca, multi-fuente) — ventaja estructural.
 
 ### Amenaza #4 — OEM Data Marketplaces [PROBABILIDAD: BAJA-MEDIA 25%]
 
@@ -570,16 +582,18 @@ Un startup con €5-15M de seed/SeriesA, equipo EU-nativo, y stack AI moderno (G
 ## RESUMEN EJECUTIVO — TRACK 3
 
 **Competidores re-verificados:** 24 originales + 5 nuevos = **29 total**.  
-**Inactivos detectados:** 1 (Cazoo — cerrado 2023, debe eliminarse).  
+**Inactivos detectados:** 1 (Cazoo — **liquidado julio 2024**, brand adquirida por Motors.co.uk).  
 **Innovaciones NO-VIABLE:** 0. Las 5 son implementables en CX42.  
 **Innovaciones MARGINAL:** 1 (VLM #2 — latencia 5-8x subestimada; cambio de modelo o expectativa requerido).  
 **Errores factuales en planning doc:** 2 críticos ("Llama 3.2 7B" inexistente; "4-8s VLM" incorrecto) + 1 arquitectural (GNN ≠ LayoutLMv3).  
 **Budget declarado vs. real:** €22.25 vs. ~€25.33 (+13.8% — dentro de margen).  
 
-**Top 3 amenazas competitivas 2026-2028 (ordenadas por probabilidad × impacto):**
-1. **Scout24 "Buyer Intelligence"** — probabilidad 65%, impacto existencial si lo ejecutan. Mitigación: long-tail y Edge fleet son el moat que Scout24 no puede replicar.
-2. **CarOffer (Cox/CarGurus) EU** — probabilidad 40%, impacto alto. Mitigación: CARDEX es índice (sin transacción), barreras de entrada regulatorias frenan a CarOffer.
-3. **Motorway EU expansion** — probabilidad 35%, impacto alto. Mitigación: Motorway es plataforma de transacción, CARDEX es índice. Pero compiten por la misma audiencia de dealers.
+**Top 3 amenazas competitivas 2026-2028 (ordenadas por probabilidad × impacto) — post-verificación web:**
+1. **Scout24 "Buyer Intelligence"** — probabilidad 65%, impacto existencial si lo ejecutan. Mitigación: long-tail y Edge fleet son el moat que Scout24 no puede replicar. Sin cambios post-verificación.
+2. **Spoticar Trade + Cox Automotive escalando a multi-marca** — probabilidad 35%, impacto alto en segmento Stellantis y potencialmente multi-marca. `[WEB-VERIFIED — alianza Cox-Stellantis dic. 2025 confirmada]`. Mitigación: CARDEX es neutral multi-marca; Stellantis tiene incentivos para mantener Spoticar cerrado a sus marcas.
+3. **CarOnSale expansión pan-EU** — probabilidad 50%, impacto medio. `[WEB-VERIFIED — €70M Series C, objetivo 1M ventas]`. CarOnSale tiene capital para escalar agresivamente. Mitigación: es plataforma de transacción (subasta), CARDEX es índice — modelos complementarios más que sustitutos.
+
+**Amenaza deprioritizada:** Motorway EU (UK-only, no expansion announced), CarGurus EU (salió de DE/ES/IT en 2020), Kavak (foco LATAM + Turquía — no en 6 mercados CARDEX).
 
 ---
 
