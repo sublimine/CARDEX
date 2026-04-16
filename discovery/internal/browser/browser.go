@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"regexp"
 	"strings"
 	"time"
@@ -44,6 +45,7 @@ type PlaywrightBrowser struct {
 	rateLimiter *HostRateLimiter
 	cfg         *BrowserConfig
 	log         *slog.Logger
+	httpClient  *http.Client // used for lightweight direct HTTP requests (RetryTransport)
 }
 
 // New initialises Playwright, launches Chromium headlessly, and returns a ready
@@ -90,6 +92,10 @@ func New(cfg *BrowserConfig, db *sql.DB) (*PlaywrightBrowser, error) {
 		rateLimiter: rl,
 		cfg:         cfg,
 		log:         slog.Default().With("component", "browser"),
+		httpClient: &http.Client{
+			Transport: defaultRetryTransport(),
+			Timeout:   cfg.DefaultTimeout,
+		},
 	}, nil
 }
 
