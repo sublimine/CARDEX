@@ -4,14 +4,17 @@
 //
 //  1. Generic-phrase blacklist: "lorem ipsum", "describe vehicle here", "tbd", "todo",
 //     "placeholder" → CRITICAL (unfilled template marker)
-//  2. Description length < 50 chars → WARNING (too short to be informative)
-//  3. Sentence repetition: any sentence appearing > 2× → WARNING (NLG loop artifact)
-//  4. Language consistency: inferred language vs SourceCountry expected language → WARNING
-//  5. Make/model mention: description should reference the vehicle's make and model → WARNING
+//  2. AI Act Art. 50(2) compliance: if Description is non-empty and AIGeneratedMeta
+//     is non-nil, the metadata must be valid (is_ai_generated=true, model, generated_at,
+//     language) → CRITICAL (missing required disclosure)
+//  3. Description length < 50 chars → WARNING (too short to be informative)
+//  4. Sentence repetition: any sentence appearing > 2× → WARNING (NLG loop artifact)
+//  5. Language consistency: inferred language vs SourceCountry expected language → WARNING
+//  6. Make/model mention: description should reference the vehicle's make and model → WARNING
 //
 // Empty description is treated as INFO (nothing to check; V13 completeness handles missing fields).
 //
-// Severity: CRITICAL for template markers; WARNING for quality issues.
+// Severity: CRITICAL for template markers and AI Act violations; WARNING for quality issues.
 package v11_nlg_quality
 
 import (
@@ -114,20 +117,38 @@ func (v *NLGQuality) Validate(_ context.Context, vehicle *pipeline.Vehicle) (*pi
 		}
 	}
 
+	// 2. AI Act Art. 50(2) compliance check.
+	// When the description was produced by an LLM (AIGeneratedMeta != nil),
+	// the metadata must be fully populated to satisfy the machine-readable
+	// disclosure requirement before 2 August 2026.
+	if vehicle.AIGeneratedMeta != nil {
+		if err := vehicle.AIGeneratedMeta.Validate(); err != nil {
+			result.Pass = false
+			result.Severity = pipeline.SeverityCritical
+			result.Issue = fmt.Sprintf("AI Act Art.50(2) disclosure incomplete: %s", err)
+			result.Confidence = 1.0
+			result.Suggested["AIGeneratedMeta"] = "populate all required fields: is_ai_generated=true, model, generated_at, language"
+			result.Evidence["ai_act_error"] = err.Error()
+			return result, nil
+		}
+		result.Evidence["ai_generated_model"] = vehicle.AIGeneratedMeta.Model
+		result.Evidence["ai_generated_lang"] = vehicle.AIGeneratedMeta.Language
+	}
+
 	var warnings []string
 
-	// 2. Length check.
+	// 4. Length check.
 	if len(desc) < minDescLen {
 		warnings = append(warnings, fmt.Sprintf("description too short: %d chars (min %d)", len(desc), minDescLen))
 	}
 
-	// 3. Sentence repetition.
+	// 5. Sentence repetition.
 	if rep := findRepetition(desc); rep != "" {
 		warnings = append(warnings, fmt.Sprintf("repeated sentence (NLG artifact): %q", rep))
 		result.Evidence["repeated_sentence"] = rep
 	}
 
-	// 4. Language consistency.
+	// 6. Language consistency.
 	if vehicle.SourceCountry != "" {
 		expectedLang := countryToLang[strings.ToUpper(vehicle.SourceCountry)]
 		if expectedLang != "" {
@@ -141,7 +162,7 @@ func (v *NLGQuality) Validate(_ context.Context, vehicle *pipeline.Vehicle) (*pi
 		}
 	}
 
-	// 5. Make/model mention.
+	// 7. Make/model mention.
 	if vehicle.Make != "" || vehicle.Model != "" {
 		makePresent := vehicle.Make == "" || strings.Contains(descLower, strings.ToLower(vehicle.Make))
 		modelPresent := vehicle.Model == "" || strings.Contains(descLower, strings.ToLower(vehicle.Model))
