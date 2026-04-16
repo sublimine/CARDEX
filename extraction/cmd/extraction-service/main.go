@@ -26,8 +26,8 @@
 //   EXTRACTION_SKIP_E08         "true" = skip PDF Catalog strategy       (default: false)
 //   EXTRACTION_SKIP_E09         "true" = skip Excel/CSV Feeds strategy   (default: false)
 //   EXTRACTION_SKIP_E10         "true" = skip Email Inventory strategy   (default: false)
-//   EXTRACTION_SKIP_E11         "true" = skip Manual Review Queue        (default: false)
-//   EXTRACTION_SKIP_E12         "true" = skip Edge Dealer Push strategy  (default: false)
+//   EXTRACTION_SKIP_E11         "true" = skip Edge Dealer Push strategy         (default: false)
+//   EXTRACTION_SKIP_E12         "true" = skip Manual Review Queue         (default: false)
 //   EDGE_GRPC_PORT              gRPC listen port for edge push           (default: 50051)
 package main
 
@@ -55,8 +55,8 @@ import (
 	"cardex.eu/extraction/internal/extractor/e08_pdf"
 	"cardex.eu/extraction/internal/extractor/e09_excel"
 	"cardex.eu/extraction/internal/extractor/e10_email"
-	"cardex.eu/extraction/internal/extractor/e11_manual"
-	"cardex.eu/extraction/internal/extractor/e12_edge"
+	"cardex.eu/extraction/internal/extractor/e11_edge"
+	"cardex.eu/extraction/internal/extractor/e12_manual"
 	"cardex.eu/extraction/internal/metrics"
 	"cardex.eu/extraction/internal/pipeline"
 	"cardex.eu/extraction/internal/storage"
@@ -139,14 +139,18 @@ func main() {
 		strategies = append(strategies, e10_email.New())
 	}
 	if !cfg.SkipE11 {
-		// E11 enqueues dealers for manual human review (last-resort fallback).
-		strategies = append(strategies, e11_manual.New())
+		// E11 receives inventory pushed from dealer-installed edge clients (priority 1500).
+		strategies = append(strategies, e11_edge.New())
 	}
 	if !cfg.SkipE12 {
-		// E12 receives inventory pushed from dealer-installed edge clients.
-		// Priority 1500 — checked first to honour dealer-trusted source.
-		strategies = append(strategies, e12_edge.New())
+		// E12 is the last-resort fallback: enqueues dealers for manual review.
+		// Priority 0 — only runs when all automated strategies are exhausted.
+		strategies = append(strategies, e12_manual.New())
 	}
+
+	// TODO(CF-04,E13): E13 VLM screenshot extraction — roadmap Phase 5+.
+	// Will use vision-language model to extract vehicle data from dealer page screenshots.
+	// Not implemented; add here when the strategy package is available.
 
 	if len(strategies) == 0 {
 		log.Error("all strategies disabled — nothing to do")

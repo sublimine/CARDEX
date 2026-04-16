@@ -1,8 +1,8 @@
 # E11 — Dealer Edge onboarding (cliente Tauri gratuito)
 
 ## Identificador
-- ID: E11, Nombre: Dealer Edge onboarding, Categoría: Active-onboarding
-- Prioridad: 100
+- ID: E11, Nombre: Edge Push (Tauri client), Categoría: Edge-Push
+- Prioridad: 1500 (máxima — fuente firmada por el dealer)
 - Fecha: 2026-04-14, Estado: DOCUMENTADO
 
 ## Propósito y rationale

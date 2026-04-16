@@ -1,10 +1,10 @@
-package e12_edge_test
+package e11_edge_test
 
 import (
 	"context"
 	"testing"
 
-	"cardex.eu/extraction/internal/extractor/e12_edge"
+	"cardex.eu/extraction/internal/extractor/e11_edge"
 	"cardex.eu/extraction/internal/pipeline"
 )
 
@@ -22,18 +22,18 @@ func (m *mockEdgeStore) MarkConsumed(_ context.Context, _ string) error {
 	return nil
 }
 
-// TestE12_Priority verifies E12 has the highest priority (1500).
-func TestE12_Priority(t *testing.T) {
-	strategy := e12_edge.New()
+// TestE11_Priority verifies E11 has the highest priority (1500).
+func TestE11_Priority(t *testing.T) {
+	strategy := e11_edge.New()
 	if got := strategy.Priority(); got != 1500 {
 		t.Errorf("want Priority=1500 (highest), got %d", got)
 	}
 }
 
-// TestE12_Applicable_EdgeHint verifies that Applicable returns true only for
+// TestE11_Applicable_EdgeHint verifies that Applicable returns true only for
 // dealers with the "edge_client_registered" extraction hint.
-func TestE12_Applicable_EdgeHint(t *testing.T) {
-	strategy := e12_edge.New()
+func TestE11_Applicable_EdgeHint(t *testing.T) {
+	strategy := e11_edge.New()
 
 	withHint := pipeline.Dealer{ID: "D1", ExtractionHints: []string{"edge_client_registered"}}
 	if !strategy.Applicable(withHint) {
@@ -46,9 +46,9 @@ func TestE12_Applicable_EdgeHint(t *testing.T) {
 	}
 }
 
-// TestE12_PendingPush_ReturnsVehicles verifies that vehicles from a pending
+// TestE11_PendingPush_ReturnsVehicles verifies that vehicles from a pending
 // edge push are returned and the push is marked consumed.
-func TestE12_PendingPush_ReturnsVehicles(t *testing.T) {
+func TestE11_PendingPush_ReturnsVehicles(t *testing.T) {
 	make_ := "BMW"
 	model := "320d"
 	yr := 2022
@@ -58,7 +58,7 @@ func TestE12_PendingPush_ReturnsVehicles(t *testing.T) {
 			{Make: &make_, Model: &model, Year: &yr},
 		},
 	}
-	strategy := e12_edge.NewWithStore(store)
+	strategy := e11_edge.NewWithStore(store)
 	dealer := pipeline.Dealer{
 		ID:              "D3",
 		ExtractionHints: []string{"edge_client_registered"},
@@ -74,16 +74,16 @@ func TestE12_PendingPush_ReturnsVehicles(t *testing.T) {
 	if !store.consumed {
 		t.Error("want push marked consumed after extraction, got false")
 	}
-	if result.Strategy != "E12" {
-		t.Errorf("want strategy E12, got %q", result.Strategy)
+	if result.Strategy != "E11" {
+		t.Errorf("want strategy E11, got %q", result.Strategy)
 	}
 }
 
-// TestE12_NoPendingPush verifies that when there is no pending push,
-// E12 returns an empty result without errors.
-func TestE12_NoPendingPush(t *testing.T) {
+// TestE11_NoPendingPush verifies that when there is no pending push,
+// E11 returns an empty result without errors.
+func TestE11_NoPendingPush(t *testing.T) {
 	store := &mockEdgeStore{vehicles: nil}
-	strategy := e12_edge.NewWithStore(store)
+	strategy := e11_edge.NewWithStore(store)
 	dealer := pipeline.Dealer{
 		ID:              "D4",
 		ExtractionHints: []string{"edge_client_registered"},

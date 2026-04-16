@@ -25,10 +25,10 @@ services/pipeline/extraction/
 │   ├── e06_microdata/
 │   ├── e07_playwright_xhr/
 │   ├── e08_pdf/
-│   ├── e09_csv_excel/
-│   ├── e10_mobile_api/
-│   ├── e11_edge_onboarding/
-│   └── e12_manual_review/
+│   ├── e09_excel/
+│   ├── e10_email/
+│   ├── e11_edge/
+│   └── e12_manual/
 └── dead_letter/
 ```
 
@@ -63,7 +63,7 @@ type ExtractionStrategy interface {
 
     // Priority determina el orden en la cascada. Mayor valor = se intenta primero.
     // E01=1200, E02=1100, E03=1000, E04=900, E05=1050, E06=800,
-    // E07=700, E08=300, E09=400, E10=200, E11=100, E12=0
+    // E07=700, E08=300, E09=400, E10=200, E11=1500, E12=0
     Priority() int
 }
 
@@ -174,7 +174,7 @@ func NewOrchestrator(strategies ...ExtractionStrategy) *ExtractionOrchestrator {
 // ExtractForDealer ejecuta la cascada de estrategias para un dealer dado.
 // Retorna el primer resultado exitoso (PartialSuccess o FullSuccess).
 // Si ninguna estrategia produce resultado, retorna ExtractionResult con FullSuccess=false
-// y NextFallback apuntando a "E11" o "E12" según el diagnóstico.
+// y NextFallback apuntando a "E12" (manual review — last resort).
 func (o *ExtractionOrchestrator) ExtractForDealer(ctx context.Context, d Dealer) (*ExtractionResult, error) {
     var lastResult *ExtractionResult
 
@@ -216,8 +216,8 @@ func (o *ExtractionOrchestrator) ExtractForDealer(ctx context.Context, d Dealer)
             FullSuccess:  false,
         }
     }
-    e11 := "E11"
-    lastResult.NextFallback = &e11
+    e12 := "E12"
+    lastResult.NextFallback = &e12
     return lastResult, nil
 }
 
@@ -239,18 +239,18 @@ func (o *ExtractionOrchestrator) findByID(id string) ExtractionStrategy {
 
 ```go
 const (
-    PriorityE01 = 1200 // JSON-LD Schema.org — máxima prioridad
+    PriorityE11 = 1500 // Edge push (Tauri client) — dealer-signed, highest trust
+    PriorityE01 = 1200 // JSON-LD Schema.org
     PriorityE02 = 1100 // CMS REST endpoint
-    PriorityE05 = 1050 // DMS hosted API (alta prioridad para ese segmento)
+    PriorityE05 = 1050 // DMS hosted API
     PriorityE03 = 1000 // Sitemap XML
     PriorityE04 = 900  // RSS/Atom
     PriorityE06 = 800  // Microdata/RDFa
     PriorityE07 = 700  // XHR/AJAX discovery
     PriorityE09 = 400  // CSV/Excel feeds
     PriorityE08 = 300  // PDF catalog
-    PriorityE10 = 200  // Mobile app API
-    PriorityE11 = 100  // Edge onboarding
-    PriorityE12 = 0    // Manual review
+    PriorityE10 = 200  // Email-based inventory
+    PriorityE12 = 0    // Manual review (last resort)
 )
 ```
 

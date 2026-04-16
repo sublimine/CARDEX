@@ -1,8 +1,8 @@
-// Package e12_edge implements extraction strategy E12 — Edge Dealer Push.
+// Package e11_edge implements extraction strategy E11 — Edge Dealer Push.
 //
 // # Architecture
 //
-// E12 is the highest-priority strategy (1500) because data pushed directly by
+// E11 is the highest-priority strategy (1500) because data pushed directly by
 // the dealer from their local DMS is the most trustworthy source — no
 // scraping, no heuristics, no field mapping ambiguity.
 //
@@ -13,14 +13,14 @@
 // DMS database, serialises vehicle records to protobuf, and pushes them via
 // signed gRPC to this service at configurable intervals.
 //
-// # gRPC server (Sprint 18 skeleton)
+// # gRPC server (Phase 4 work)
 //
 // The proto service definition lives at:
-//   extraction/internal/extractor/e12_edge/proto/edge.proto
+//   extraction/internal/extractor/e11_edge/proto/edge.proto
 //
 // The actual gRPC server (code-generated from the proto, with JWT auth
-// middleware) is Phase 4 work. This sprint delivers:
-//   - The ExtractionStrategy wrapper (E12) that reads from a staging table.
+// middleware) is Phase 4 work. Currently implemented:
+//   - The ExtractionStrategy wrapper (E11) that reads from a staging table.
 //   - The EdgeInventoryStore interface for the staging table interaction.
 //   - A no-op store implementation for use in main.go until Phase 4 wires
 //     the real gRPC receiver.
@@ -30,11 +30,11 @@
 //  1. gRPC server receives PushInventoryRequest from Tauri client.
 //  2. Server authenticates dealer JWT, validates VINs, writes vehicles to
 //     `edge_inventory_staging(push_id, dealer_id, vehicles_json, received_at)`.
-//  3. Orchestrator runs E12.Extract(dealer) on schedule.
-//  4. E12 reads from staging, converts to VehicleRaw, marks push consumed.
+//  3. Orchestrator runs E11.Extract(dealer) on schedule.
+//  4. E11 reads from staging, converts to VehicleRaw, marks push consumed.
 //
 // Priority: 1500 (highest — dealer-signed trusted source).
-package e12_edge
+package e11_edge
 
 import (
 	"context"
@@ -45,7 +45,7 @@ import (
 )
 
 const (
-	strategyID   = "E12"
+	strategyID   = "E11"
 	strategyName = "Edge Push (Tauri)"
 )
 
@@ -67,7 +67,7 @@ func (n *noOpStore) ReadPendingPush(_ context.Context, _ string) ([]*pipeline.Ve
 }
 func (n *noOpStore) MarkConsumed(_ context.Context, _ string) error { return nil }
 
-// Edge is the E12 extraction strategy.
+// Edge is the E11 extraction strategy.
 type Edge struct {
 	store EdgeInventoryStore
 	log   *slog.Logger
@@ -89,7 +89,7 @@ func NewWithStore(s EdgeInventoryStore) *Edge {
 
 func (e *Edge) ID() string    { return strategyID }
 func (e *Edge) Name() string  { return strategyName }
-func (e *Edge) Priority() int { return pipeline.PriorityE12 }
+func (e *Edge) Priority() int { return pipeline.PriorityE11 }
 
 // Applicable returns true for dealers with the "edge_client_registered" hint,
 // indicating they have an active Tauri client installation.
@@ -128,13 +128,13 @@ func (e *Edge) Extract(ctx context.Context, dealer pipeline.Dealer) (*pipeline.E
 	result.SourceCount = 1
 
 	if err := e.store.MarkConsumed(ctx, dealer.ID); err != nil {
-		e.log.Warn("E12: failed to mark push as consumed",
+		e.log.Warn("E11: failed to mark push as consumed",
 			"dealer_id", dealer.ID,
 			"err", err,
 		)
 	}
 
-	e.log.Info("E12: edge push consumed",
+	e.log.Info("E11: edge push consumed",
 		"dealer_id", dealer.ID,
 		"vehicles", len(vehicles),
 	)
