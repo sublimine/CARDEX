@@ -86,3 +86,15 @@ var (
 		Help:      "Current number of dealers pending extraction.",
 	})
 )
+
+// SanitizeStrategy returns the strategy label value if it is a known E-code
+// (E01–E13), or "unknown" otherwise. Call this before WithLabelValues to
+// prevent unbounded Prometheus cardinality from unexpected or malformed values.
+func SanitizeStrategy(s string) string {
+	switch s {
+	case "E01", "E02", "E03", "E04", "E05", "E06", "E07",
+		"E08", "E09", "E10", "E11", "E12", "E13":
+		return s
+	}
+	return "unknown"
+}

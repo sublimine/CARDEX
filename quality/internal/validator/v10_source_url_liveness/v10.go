@@ -50,6 +50,7 @@ type cacheEntry struct {
 type LivenessChecker struct {
 	client   *http.Client
 	cacheTTL time.Duration
+	now      func() time.Time // injectable for deterministic tests
 	mu       sync.Mutex
 	cache    map[string]*cacheEntry
 }
@@ -72,6 +73,7 @@ func NewWithClient(c *http.Client, cacheTTL time.Duration) *LivenessChecker {
 	return &LivenessChecker{
 		client:   c,
 		cacheTTL: cacheTTL,
+		now:      time.Now,
 		cache:    make(map[string]*cacheEntry),
 	}
 }
@@ -159,7 +161,7 @@ func (v *LivenessChecker) Validate(ctx context.Context, vehicle *pipeline.Vehicl
 // Returns -1 on network error or timeout. fromCache indicates a cache hit.
 func (v *LivenessChecker) probe(ctx context.Context, url string) (status int, fromCache bool) {
 	v.mu.Lock()
-	if e, ok := v.cache[url]; ok && time.Since(e.checkedAt) < v.cacheTTL {
+	if e, ok := v.cache[url]; ok && v.now().Sub(e.checkedAt) < v.cacheTTL {
 		v.mu.Unlock()
 		return e.status, true
 	}
@@ -184,6 +186,6 @@ func (v *LivenessChecker) probe(ctx context.Context, url string) (status int, fr
 
 func (v *LivenessChecker) storeCache(url string, status int) {
 	v.mu.Lock()
-	v.cache[url] = &cacheEntry{status: status, checkedAt: time.Now()}
+	v.cache[url] = &cacheEntry{status: status, checkedAt: v.now()}
 	v.mu.Unlock()
 }

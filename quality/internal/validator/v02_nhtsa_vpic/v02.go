@@ -77,7 +77,8 @@ type cacheEntry struct {
 // NHTSAValidator implements pipeline.Validator for V02.
 type NHTSAValidator struct {
 	client  *http.Client
-	baseURL string // overrideable in tests
+	baseURL string           // overrideable in tests
+	now     func() time.Time // injectable for deterministic tests
 	mu      sync.Mutex
 	cache   map[string]*cacheEntry
 }
@@ -96,6 +97,7 @@ func NewWithClient(c *http.Client, urlTemplate string) *NHTSAValidator {
 	return &NHTSAValidator{
 		client:  c,
 		baseURL: urlTemplate,
+		now:     time.Now,
 		cache:   make(map[string]*cacheEntry),
 	}
 }
@@ -186,7 +188,7 @@ func (v *NHTSAValidator) Validate(ctx context.Context, vehicle *pipeline.Vehicle
 // decode returns a decoded record for the given VIN, using the in-memory cache.
 func (v *NHTSAValidator) decode(ctx context.Context, vin string) (*decoded, error) {
 	v.mu.Lock()
-	if e, ok := v.cache[vin]; ok && time.Since(e.storedAt) < cacheTTL {
+	if e, ok := v.cache[vin]; ok && v.now().Sub(e.storedAt) < cacheTTL {
 		v.mu.Unlock()
 		return e.data, nil
 	}
@@ -218,7 +220,7 @@ func (v *NHTSAValidator) decode(ctx context.Context, vin string) (*decoded, erro
 		return nil, fmt.Errorf("parse vPIC response: %w", err)
 	}
 
-	dec := &decoded{cachedAt: time.Now()}
+	dec := &decoded{cachedAt: v.now()}
 	for _, r := range vpic.Results {
 		switch r.Variable {
 		case "Make":
@@ -239,7 +241,7 @@ func (v *NHTSAValidator) decode(ctx context.Context, vin string) (*decoded, erro
 	}
 
 	v.mu.Lock()
-	v.cache[vin] = &cacheEntry{data: dec, storedAt: time.Now()}
+	v.cache[vin] = &cacheEntry{data: dec, storedAt: v.now()}
 	v.mu.Unlock()
 
 	return dec, nil
