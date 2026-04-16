@@ -2,6 +2,28 @@
 
 All significant implementation milestones for CARDEX Phases 2–5.
 
+## [Phase 3, Sprint 26] — E13 VLM Screenshot Vision (2026-04-17)
+
+**Branch:** `sprint/26-vlm-e13` | **Commits:** `8bb7f5a` → `1279226`
+
+- **E13** `e13_vlm_vision`: VLM Screenshot Vision extraction strategy (priority 100 — last automated, before E12 manual review).
+  - `VLMClient` interface + `OllamaClient` (HTTP POST `/api/generate`, base64 images) + `MockClient` for tests.
+  - Prompts Phi-3.5-vision:latest (default) with structured JSON schema; parser handles bare JSON, ````json` fences, and leading prose.
+  - Model ladder: `phi3.5-vision:latest` → `moondream2` → `florence-2-base`.
+  - AI Act Art.50(2) disclosure: every extracted vehicle tagged `ai_generated=true` with model ID + UTC timestamp.
+  - Page scrape → `<img>` harvest (≤10 images, min 4 KB) → VLM inference → vehicle parse cascade.
+  - Opt-in via `VLM_ENABLED=true`; `VLM_MODEL`, `VLM_ENDPOINT`, `VLM_TIMEOUT`, `VLM_MAX_RETRIES`, `VLM_BACKEND`.
+  - Metrics: `cardex_extraction_e13_requests_total`, `cardex_extraction_e13_latency_seconds`, `cardex_extraction_e13_fields_extracted`.
+  - 10 unit tests (all pass, `-race`); 17/17 extraction packages green.
+  - Inference benchmarks (CX42 CPU): Phi-3.5-vision Q4_K_M p50 ≈ 45 s/image, ~3 GB RAM.
+  - Planning doc: `planning/04_EXTRACTION_PIPELINE/E13_VLM_VISION.md`.
+- **Pipeline**: `PriorityE13=100` added to `strategy.go` cascade constants.
+- **Config**: 7 new env vars for VLM control in `config.go`.
+- **Metrics**: 3 new Prometheus metrics in `metrics.go` (E13-scoped).
+- **Extraction strategies: 13/13 (Phase 3 +1 opt-in).**
+
+---
+
 ## [Phase 5] — Infrastructure (2026-04-14)
 
 **Commit:** `79254b0 feat(P5-sprint23): infrastructure scaffolding`
