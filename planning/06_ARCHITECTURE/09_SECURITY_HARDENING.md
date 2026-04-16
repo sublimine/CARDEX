@@ -293,7 +293,7 @@ SystemCallFilter=@system-service  # Solo syscalls necesarios para servicios típ
     #include <abstractions/nameservice>
 
     # Acceso permitido
-    /srv/cardex/db/main.db r,
+    /srv/cardex/db/discovery.db r,
     /srv/cardex/olap/ r,
     /srv/cardex/olap/** r,
     /srv/cardex/www/ r,
@@ -334,7 +334,7 @@ SystemCallFilter=@system-service  # Solo syscalls necesarios para servicios típ
 -w /etc/cardex/credentials/ -p wa -k cardex_secret_change
 
 # Monitorizar accesos a la base de datos desde fuera del proceso esperado
--a always,exit -F arch=b64 -S open,openat -F path=/srv/cardex/db/main.db \
+-a always,exit -F arch=b64 -S open,openat -F path=/srv/cardex/db/discovery.db \
     -F uid!=999 -k unauthorized_db_access
 
 # Monitorizar cambios en SSH config

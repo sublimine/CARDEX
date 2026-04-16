@@ -1,9 +1,9 @@
 # Dockerfile.discovery — CARDEX Discovery Service
-# Multi-stage build: Go 1.25 builder → distroless/static runtime
+# Multi-stage build: Go 1.26.2 builder → distroless/static runtime
 # Result: ~15 MB statically-linked binary in a minimal container
 
 # ── Stage 1: build ───────────────────────────────────────────────
-FROM golang:1.25-bookworm AS builder
+FROM golang:1.26.2-bookworm AS builder
 
 WORKDIR /src
 
@@ -30,6 +30,9 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOWORK=off \
     ./cmd/discovery-service/
 
 # ── Stage 2: runtime ─────────────────────────────────────────────
+# Pin digest in production to prevent supply-chain substitution:
+# docker pull gcr.io/distroless/static-debian12:nonroot && docker inspect --format='{{index .RepoDigests 0}}'
+# Then replace :nonroot with :nonroot@sha256:<digest>
 FROM gcr.io/distroless/static-debian12:nonroot
 
 LABEL org.opencontainers.image.title="cardex-discovery"

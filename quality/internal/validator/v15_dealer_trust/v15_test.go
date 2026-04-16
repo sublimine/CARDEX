@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"cardex.eu/quality/internal/pipeline"
 	"cardex.eu/quality/internal/validator/v15_dealer_trust"
@@ -120,5 +121,72 @@ func TestV15_StoreError_SoftFail(t *testing.T) {
 	}
 	if res.Severity != pipeline.SeverityInfo {
 		t.Errorf("want INFO for store error, got %s", res.Severity)
+	}
+}
+
+// ── Trust ramp-up tests ────────────────────────────────────────────────────────
+
+func dealerWithAge(id string, score float64, sources int, createdAt time.Time) *v15_dealer_trust.DealerRecord {
+	return &v15_dealer_trust.DealerRecord{
+		ID: id, Name: "Test Dealer",
+		ConfidenceScore: score, DataSources: sources,
+		CreatedAt: createdAt,
+	}
+}
+
+// TestV15_TrustRampUp_NewDealer verifies that a 5-day-old dealer has its
+// confidence score capped at 0.5 even when the raw score is high (0.92).
+func TestV15_TrustRampUp_NewDealer(t *testing.T) {
+	d := dealerWithAge("D_NEW", 0.92, 4, time.Now().AddDate(0, 0, -5))
+	store := &mockTrustStore{dealer: d}
+	val := v15_dealer_trust.NewWithStore(store)
+	res, err := val.Validate(context.Background(), vehicle("D_NEW"))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if res.Confidence > 0.5 {
+		t.Errorf("new dealer (5d): want confidence ≤ 0.5, got %.3f", res.Confidence)
+	}
+	if res.Evidence["trust_ramp_up"] != "true" {
+		t.Errorf("new dealer (5d): want evidence trust_ramp_up=true, got %q", res.Evidence["trust_ramp_up"])
+	}
+}
+
+// TestV15_TrustRampUp_EstablishedDealer verifies that a 60-day-old dealer
+// is NOT subject to the trust ramp-up cap.
+func TestV15_TrustRampUp_EstablishedDealer(t *testing.T) {
+	d := dealerWithAge("D_OLD", 0.92, 4, time.Now().AddDate(0, 0, -60))
+	store := &mockTrustStore{dealer: d}
+	val := v15_dealer_trust.NewWithStore(store)
+	res, err := val.Validate(context.Background(), vehicle("D_OLD"))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if res.Confidence <= 0.5 {
+		t.Errorf("established dealer (60d): want confidence > 0.5, got %.3f", res.Confidence)
+	}
+	if res.Evidence["trust_ramp_up"] != "" {
+		t.Errorf("established dealer (60d): want no trust_ramp_up evidence, got %q", res.Evidence["trust_ramp_up"])
+	}
+}
+
+// TestV15_TrustRampUp_BoundaryDealer verifies that a dealer exactly 30 days old
+// is NOT capped (boundary is inclusive: ≥30 days = established).
+func TestV15_TrustRampUp_BoundaryDealer(t *testing.T) {
+	// Use exact duration arithmetic (30 * 24h) so agedays is precisely 30.0,
+	// avoiding the DST ambiguity of AddDate which can produce ~29.96 days.
+	createdAt := time.Now().Add(-30 * 24 * time.Hour)
+	d := dealerWithAge("D_BOUNDARY", 0.92, 4, createdAt)
+	store := &mockTrustStore{dealer: d}
+	val := v15_dealer_trust.NewWithStore(store)
+	res, err := val.Validate(context.Background(), vehicle("D_BOUNDARY"))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if res.Confidence <= 0.5 {
+		t.Errorf("boundary dealer (30d): want confidence > 0.5, got %.3f", res.Confidence)
+	}
+	if res.Evidence["trust_ramp_up"] != "" {
+		t.Errorf("boundary dealer (30d): want no trust_ramp_up evidence, got %q", res.Evidence["trust_ramp_up"])
 	}
 }

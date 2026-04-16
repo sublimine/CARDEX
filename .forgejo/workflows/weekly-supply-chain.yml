@@ -1,0 +1,92 @@
+name: Weekly Supply Chain Audit
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday 06:00 UTC
+  workflow_dispatch:       # Manual trigger
+
+jobs:
+  go-vulnerability-scan:
+    name: Go vulnerability scan (all modules)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.26.2' }
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+      - name: govulncheck — discovery
+        run: cd discovery && govulncheck ./...
+      - name: govulncheck — extraction
+        run: cd extraction && govulncheck ./...
+      - name: govulncheck — quality
+        run: cd quality && govulncheck ./...
+
+  python-audit:
+    name: Python pip-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install pip-audit
+      - name: pip-audit (all requirements files)
+        run: |
+          for req in $(find . -name "requirements*.txt" -not -path "*/node_modules/*"); do
+            echo "Auditing $req"
+            pip-audit -r "$req" || true
+          done
+
+  node-audit:
+    name: Node npm audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: npm audit — b2b-dashboard
+        run: |
+          if [ -f b2b-dashboard/package.json ]; then
+            cd b2b-dashboard && npm audit --audit-level=high || true
+          fi
+      - name: npm audit — terminal
+        run: |
+          if [ -f terminal/package.json ]; then
+            cd terminal && npm audit --audit-level=high || true
+          fi
+
+  supply-chain-policy-check:
+    name: Supply chain policy check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for replace directives (suspicious)
+        run: |
+          echo "Checking for replace directives in go.mod files..."
+          FOUND=0
+          for gomod in $(find . -name "go.mod" -not -path "*/vendor/*"); do
+            if grep -q "^replace" "$gomod"; then
+              echo "WARNING: replace directive in $gomod:"
+              grep "^replace" "$gomod"
+              FOUND=1
+            fi
+          done
+          if [ "$FOUND" -eq 1 ]; then
+            echo "::warning::Replace directives found — review before merging"
+          else
+            echo "OK — no replace directives"
+          fi
+      - name: Check for blacklisted packages
+        run: |
+          BLACKLISTED=(
+            "github.com/refraction-networking/utls"
+            "github.com/Danny-Dasilva/CycleTLS"
+            "github.com/bogdanfinn/tls-client"
+          )
+          FOUND=0
+          for pkg in "${BLACKLISTED[@]}"; do
+            if grep -r "$pkg" */go.mod */go.sum 2>/dev/null; then
+              echo "ILLEGAL DEPENDENCY: $pkg"
+              FOUND=1
+            fi
+          done
+          if [ "$FOUND" -eq 1 ]; then exit 1; fi
+          echo "OK — no blacklisted packages"

@@ -1,9 +1,9 @@
 # Dockerfile.quality — CARDEX Quality Pipeline
-# Multi-stage build: Go 1.25 builder → distroless/static runtime
+# Multi-stage build: Go 1.26.2 builder → distroless/static runtime
 # Quality service uses modernc.org/sqlite (pure Go, no CGO) → stays statically linkable.
 
 # ── Stage 1: build ───────────────────────────────────────────────
-FROM golang:1.25-bookworm AS builder
+FROM golang:1.26.2-bookworm AS builder
 
 WORKDIR /src
 
@@ -25,6 +25,9 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOWORK=off \
     ./cmd/quality-service/
 
 # ── Stage 2: runtime ─────────────────────────────────────────────
+# Pin digest in production to prevent supply-chain substitution:
+# docker pull gcr.io/distroless/static-debian12:nonroot && docker inspect --format='{{index .RepoDigests 0}}'
+# Then replace :nonroot with :nonroot@sha256:<digest>
 FROM gcr.io/distroless/static-debian12:nonroot
 
 LABEL org.opencontainers.image.title="cardex-quality"

@@ -3,7 +3,7 @@
 **Operator:** Salman  
 **VPS:** Hetzner CX42 (4 vCPU AMD EPYC, 16 GB RAM, 240 GB NVMe)  
 **OS:** Debian 12 (Bookworm) minimal  
-**Domain:** cardex.io  
+**Domain:** cardex.eu  
 **Est. OPEX:** ~€22/month (VPS ~€18 + Storage Box ~€3 + domain ~€1.25)  
 
 ---
@@ -28,7 +28,7 @@ Before starting, have ready:
    - **SSH Key:** paste content of `deploy/secrets/id_ed25519.pub`
    - **Name:** `cardex-prod`
 3. Note the assigned IP address.
-4. Update DNS: `A cardex.io → <VPS IP>`, `CNAME www → cardex.io`
+4. Update DNS: `A cardex.eu → <VPS IP>`, `CNAME www → cardex.eu`
 5. Wait for DNS propagation (5–60 min).
 
 ---
@@ -230,7 +230,7 @@ sudo apt update && sudo apt install caddy
 
 # Copy Caddyfile:
 sudo cp /opt/cardex/deploy/caddy/Caddyfile /etc/caddy/Caddyfile
-sudo sed -i "s/{\\$CARDEX_DOMAIN:localhost}/cardex.io/g" /etc/caddy/Caddyfile
+sudo sed -i "s/{\\$CARDEX_DOMAIN:localhost}/cardex.eu/g" /etc/caddy/Caddyfile
 
 sudo systemctl enable --now caddy
 sudo systemctl status caddy
@@ -245,7 +245,7 @@ sudo systemctl status caddy
 sudo systemctl is-active cardex-discovery cardex-extraction cardex-quality caddy
 
 # Health endpoint (from external machine):
-curl https://cardex.io/health
+curl https://cardex.eu/health
 # Expected: "OK"
 
 # Metrics:
@@ -255,7 +255,7 @@ curl http://localhost:9103/metrics | head -20
 
 # Access Grafana via SSH tunnel:
 # (from local machine)
-ssh -L 3001:localhost:3001 cardex@cardex.io
+ssh -L 3001:localhost:3001 cardex@cardex.eu
 # Open http://localhost:3001 — login: admin / <GRAFANA_ADMIN_PASSWORD>
 ```
 
@@ -271,12 +271,12 @@ git clone https://github.com/cardex/cardex.git /opt/cardex-monitor
 cp /opt/cardex-monitor/deploy/scripts/health-check.sh /opt/cardex-monitor/
 
 # Configure:
-export CARDEX_URL=https://cardex.io
+export CARDEX_URL=https://cardex.eu
 export ALERT_EMAIL=operator@example.com
 
 # Add to crontab:
 crontab -e
-# Add: */5 * * * * CARDEX_URL=https://cardex.io ALERT_EMAIL=you@example.com \
+# Add: */5 * * * * CARDEX_URL=https://cardex.eu ALERT_EMAIL=you@example.com \
 #        /opt/cardex-monitor/health-check.sh >> /var/log/cardex-health.log 2>&1
 ```
 
@@ -286,7 +286,7 @@ crontab -e
 
 ### Deploy update
 ```bash
-./deploy/scripts/deploy.sh cardex@cardex.io production
+./deploy/scripts/deploy.sh cardex@cardex.eu production
 ```
 
 ### Manual backup
@@ -302,7 +302,7 @@ ls -lh /srv/cardex/backups/
 
 ### Rollback
 ```bash
-ssh cardex@cardex.io "
+ssh cardex@cardex.eu "
     cd /opt/cardex
     git log --oneline -5   # find previous commit hash
     git checkout <hash>

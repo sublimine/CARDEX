@@ -25,6 +25,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"cardex.eu/quality/internal/pipeline"
 )
@@ -33,9 +34,12 @@ const (
 	strategyID   = "V15"
 	strategyName = "Dealer Trust Score"
 
-	tierPass     = 0.85
-	tierInfo     = 0.60
-	tierWarning  = 0.30
+	tierPass    = 0.85
+	tierInfo    = 0.60
+	tierWarning = 0.30
+
+	trustRampUpDays = 30
+	trustRampUpCap  = 0.5
 )
 
 // DealerRecord is the trust information returned from the KG for a dealer.
@@ -43,7 +47,8 @@ type DealerRecord struct {
 	ID              string
 	Name            string
 	ConfidenceScore float64
-	DataSources     int // number of distinct data sources that confirmed this dealer
+	DataSources     int       // number of distinct data sources that confirmed this dealer
+	CreatedAt       time.Time // when the dealer was first registered; zero value means unknown
 }
 
 // TrustStore queries the knowledge graph for dealer trust data.
@@ -145,5 +150,19 @@ func (v *DealerTrust) Validate(ctx context.Context, vehicle *pipeline.Vehicle) (
 		result.Confidence = score
 		result.Suggested["action"] = "do not publish — flag dealer for fraud review"
 	}
+
+	// Trust ramp-up: dealers newer than trustRampUpDays get their confidence
+	// score capped at trustRampUpCap (0.5), regardless of computed signals.
+	// The cap is skipped when CreatedAt is zero (unknown age).
+	if !dealer.CreatedAt.IsZero() {
+		agedays := time.Since(dealer.CreatedAt).Hours() / 24
+		if agedays < trustRampUpDays {
+			if result.Confidence > trustRampUpCap {
+				result.Confidence = trustRampUpCap
+			}
+			result.Evidence["trust_ramp_up"] = "true"
+		}
+	}
+
 	return result, nil
 }
