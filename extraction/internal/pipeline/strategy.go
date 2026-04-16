@@ -18,7 +18,7 @@ import "context"
 //	E09 (400)  Excel/CSV feeds
 //	E08 (300)  PDF catalog parsing
 //	E10 (200)  Email-based inventory
-//	E13 (100)  VLM Screenshot Vision (last automated, opt-in)
+//	E13 (100)  VLM Screenshot Vision — last automated, opt-in
 //	E12 (0)    Manual review queue (last resort)
 const (
 	PriorityE11 = 1500 // Edge push (Tauri client) — dealer-signed, highest trust

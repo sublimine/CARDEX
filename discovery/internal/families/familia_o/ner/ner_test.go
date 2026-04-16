@@ -45,8 +45,9 @@ func TestExtractCandidates_NoMatches(t *testing.T) {
 	text := "The weather in Berlin was sunny yesterday. No dealers mentioned here."
 	candidates := ner.ExtractCandidates(text)
 	// Non-automotive text must not produce high-confidence dealer candidates.
-	// Zero is expected; up to 3 spurious matches is tolerable.
-	// More than 3 means the NER heuristic is too aggressive.
+	// Zero candidates is the expected outcome; a small number of spurious
+	// matches below threshold is acceptable. More than 3 would indicate the
+	// NER heuristic is too aggressive.
 	if len(candidates) > 3 {
 		t.Errorf("expected ≤3 spurious candidates for non-dealer text, got %d: %v",
 			len(candidates), candidates)

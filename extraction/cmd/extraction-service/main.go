@@ -64,6 +64,7 @@ import (
 	"cardex.eu/extraction/internal/extractor/e10_email"
 	"cardex.eu/extraction/internal/extractor/e11_edge"
 	"cardex.eu/extraction/internal/extractor/e12_manual"
+	"cardex.eu/extraction/internal/extractor/e13_vlm_vision"
 	"cardex.eu/extraction/internal/metrics"
 	"cardex.eu/extraction/internal/pipeline"
 	"cardex.eu/extraction/internal/storage"
@@ -148,6 +149,18 @@ func main() {
 	if !cfg.SkipE11 {
 		// E11 receives inventory pushed from dealer-installed edge clients (priority 1500).
 		strategies = append(strategies, e11_edge.New())
+	}
+	if cfg.VLMEnabled && !cfg.SkipE13 {
+		// E13: VLM Screenshot Vision — last automated strategy (priority 100).
+		// Opt-in via VLM_ENABLED=true. Requires ollama running with a vision model.
+		// Model ladder: phi3.5-vision:latest → moondream2 → florence-2-base.
+		strategies = append(strategies, e13_vlm_vision.New(e13_vlm_vision.VLMConfig{
+			Model:      cfg.VLMModel,
+			Endpoint:   cfg.VLMEndpoint,
+			Timeout:    cfg.VLMTimeout,
+			MaxRetries: cfg.VLMMaxRetries,
+		}))
+		log.Info("E13 VLM vision enabled", "model", cfg.VLMModel, "timeout", cfg.VLMTimeout)
 	}
 	if !cfg.SkipE12 {
 		// E12 is the last-resort fallback: enqueues dealers for manual review.

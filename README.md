@@ -7,7 +7,7 @@ Pan-European vehicle intelligence platform. Discovers, extracts, and validates u
 | Module | Phase | What it does | Status |
 |--------|-------|-------------|--------|
 | `discovery/` | P2 | Finds dealer URLs via 15 intelligence families (registries, OSM, OEM locators, social, etc.) | **Complete** |
-| `extraction/` | P3 | Extracts vehicle listings using 12 strategies (JSON-LD, CMS REST, Playwright, PDF, RSS, etc.) | **Complete** |
+| `extraction/` | P3 | Extracts vehicle listings using 13 strategies (JSON-LD, CMS REST, Playwright, PDF, RSS, VLM Vision, etc.) | **Complete** |
 | `quality/` | P4 | Validates listings against 20 rules (VIN, NHTSA, price, photo hash, sold-check, composite score) | **Complete** |
 | `deploy/` | P5 | Single-VPS deploy infra: systemd units, Caddy, Prometheus, Grafana, encrypted backups | **Complete** |
 | `frontend/terminal/` | P5+ | Terminal buyer CLI (`cardex search/show/stats`) reading from the shared SQLite | **Complete** |
@@ -93,8 +93,9 @@ CONTEXT_FOR_AI.md    AI onboarding: what is real, what is planned
 
 1. **GOWORK=off** for all production builds — each module builds independently.
 2. **CardexBot/1.0 UA only** — no spoofing, no stealth, no curl_cffi. CI enforces this.
-3. **robots.txt compliance** — `extraction/internal/robots.Checker` is wired in HTML-crawling strategies (E01, E03, E04); non-web strategies skip it by design.
-4. **SQLite + WAL** — no external database for the MVP. Backups are age-encrypted to Hetzner Storage Box.
+3. **E13 VLM opt-in** — `VLM_ENABLED=true` required; requires ollama running with a vision model (default: `phi3.5-vision:latest`). Disabled by default due to CPU cost (~45 s/image on CX42).
+4. **robots.txt compliance** — `extraction/internal/robots.Checker` is wired in HTML-crawling strategies (E01, E03, E04); non-web strategies skip it by design.
+5. **SQLite + WAL** — no external database for the MVP. Backups are age-encrypted to Hetzner Storage Box.
 
 ## Documentation index
 

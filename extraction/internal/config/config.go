@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Config holds all configuration for the extraction service.
@@ -68,11 +69,14 @@ type Config struct {
 	// SkipE10, when true, disables the Email Inventory strategy (stub).
 	SkipE10 bool
 
-	// SkipE11, when true, disables the Manual Review Queue strategy.
+	// SkipE11, when true, disables the Edge Dealer Push strategy.
 	SkipE11 bool
 
-	// SkipE12, when true, disables the Edge Dealer Push strategy.
+	// SkipE12, when true, disables the Manual Review Queue strategy.
 	SkipE12 bool
+
+	// SkipE13, when true, disables the VLM Screenshot Vision strategy.
+	SkipE13 bool
 
 	// EdgeGRPCPort is the port on which the gRPC edge push server listens.
 	// Default: 50051
@@ -81,19 +85,47 @@ type Config struct {
 	// RateLimitMs is the default inter-request sleep within a single dealer.
 	// Strategies may override this per-dealer. Default: 2000 ms.
 	RateLimitMs int
+
+	// VLMEnabled enables the E13 VLM Screenshot Vision strategy.
+	// Default: false (opt-in; inference is CPU-intensive on Hetzner CX42).
+	VLMEnabled bool
+
+	// VLMBackend selects the VLM inference backend: "ollama" (default) or "mock".
+	VLMBackend string
+
+	// VLMModel is the model tag as known to the backend.
+	// Default: "phi3.5-vision:latest". Fallbacks: "moondream2", "florence-2-base".
+	VLMModel string
+
+	// VLMEndpoint is the base URL of the VLM API server.
+	// Default: "http://localhost:11434" (ollama default).
+	VLMEndpoint string
+
+	// VLMTimeout is the per-image inference timeout.
+	// Phi-3.5-vision on CX42 CPU: 30-60 s/image. Default: 120 s.
+	VLMTimeout time.Duration
+
+	// VLMMaxRetries is the number of retry attempts on transient VLM errors.
+	// Default: 2.
+	VLMMaxRetries int
 }
 
 // Load builds a Config from environment variables.
 func Load() (*Config, error) {
 	c := &Config{
-		DBPath:       getEnv("EXTRACTION_DB_PATH", "./data/discovery.db"),
-		MetricsAddr:  getEnv("EXTRACTION_METRICS_ADDR", ":9091"),
-		BatchSize:    20, // matches docker-compose EXTRACTION_BATCH_SIZE default (#33)
-		WorkerCount:  4,
-		Countries:    []string{"FR"},
-		CardexBotUA:  "CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu)",
-		RateLimitMs:  2000,
-		EdgeGRPCPort: 50051,
+		DBPath:        getEnv("EXTRACTION_DB_PATH", "./data/discovery.db"),
+		MetricsAddr:   getEnv("EXTRACTION_METRICS_ADDR", ":9091"),
+		BatchSize:     20, // matches docker-compose EXTRACTION_BATCH_SIZE default (#33)
+		WorkerCount:   4,
+		Countries:     []string{"FR"},
+		CardexBotUA:   "CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu)",
+		RateLimitMs:   2000,
+		EdgeGRPCPort:  50051,
+		VLMBackend:    "ollama",
+		VLMModel:      "phi3.5-vision:latest",
+		VLMEndpoint:   "http://localhost:11434",
+		VLMTimeout:    120 * time.Second,
+		VLMMaxRetries: 2,
 	}
 
 	if raw := os.Getenv("EXTRACTION_BATCH_SIZE"); raw != "" {
@@ -158,6 +190,35 @@ func Load() (*Config, error) {
 	}
 	if os.Getenv("EXTRACTION_SKIP_E12") == "true" {
 		c.SkipE12 = true
+	}
+	if os.Getenv("EXTRACTION_SKIP_E13") == "true" {
+		c.SkipE13 = true
+	}
+	if os.Getenv("VLM_ENABLED") == "true" {
+		c.VLMEnabled = true
+	}
+	if raw := os.Getenv("VLM_BACKEND"); raw != "" {
+		c.VLMBackend = raw
+	}
+	if raw := os.Getenv("VLM_MODEL"); raw != "" {
+		c.VLMModel = raw
+	}
+	if raw := os.Getenv("VLM_ENDPOINT"); raw != "" {
+		c.VLMEndpoint = raw
+	}
+	if raw := os.Getenv("VLM_TIMEOUT"); raw != "" {
+		d, err := time.ParseDuration(raw)
+		if err != nil || d <= 0 {
+			return nil, fmt.Errorf("config: VLM_TIMEOUT must be a positive Go duration (e.g. 120s), got %q", raw)
+		}
+		c.VLMTimeout = d
+	}
+	if raw := os.Getenv("VLM_MAX_RETRIES"); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil || n < 0 {
+			return nil, fmt.Errorf("config: VLM_MAX_RETRIES must be a non-negative integer, got %q", raw)
+		}
+		c.VLMMaxRetries = n
 	}
 
 	if raw := os.Getenv("EDGE_GRPC_PORT"); raw != "" {
