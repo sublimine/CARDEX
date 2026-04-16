@@ -4,33 +4,34 @@ import "context"
 
 // Priority constants for the extraction cascade. Higher value = attempted first.
 //
-// Final Phase 3 ordering:
+// Ordering matches planning/04_EXTRACTION_PIPELINE/INTERFACES.md:241-254.
+// After the E11↔E12 semantic alignment (E11=Edge, E12=Manual):
 //
-//	E12 (1500) Edge push — dealer-trusted signed source, highest confidence
+//	E11 (1500) Edge push — dealer-trusted signed source, highest confidence
 //	E01 (1200) JSON-LD Schema.org
 //	E02 (1100) CMS REST endpoint
-//	E05 (950)  DMS hosted API
+//	E05 (1050) DMS hosted API
 //	E03 (1000) Sitemap XML
 //	E04 (900)  RSS/Atom feeds
-//	E06 (850)  Microdata/RDFa
-//	E07 (800)  Playwright XHR interception
-//	E08 (700)  PDF catalog parsing
-//	E09 (700)  Excel/CSV feeds
-//	E10 (600)  Email-based inventory
-//	E11 (100)  Manual review queue
+//	E06 (800)  Microdata/RDFa
+//	E07 (700)  Playwright XHR interception
+//	E09 (400)  Excel/CSV feeds
+//	E08 (300)  PDF catalog parsing
+//	E10 (200)  Email-based inventory
+//	E12 (0)    Manual review queue (last resort)
 const (
-	PriorityE12 = 1500 // Edge push (Tauri client) — dealer-signed, highest trust
+	PriorityE11 = 1500 // Edge push (Tauri client) — dealer-signed, highest trust
 	PriorityE01 = 1200 // JSON-LD Schema.org
 	PriorityE02 = 1100 // CMS REST endpoint
+	PriorityE05 = 1050 // DMS hosted API
 	PriorityE03 = 1000 // Sitemap XML
-	PriorityE05 = 950  // DMS hosted API
 	PriorityE04 = 900  // RSS/Atom feeds
-	PriorityE06 = 850  // Microdata/RDFa
-	PriorityE07 = 800  // XHR/AJAX discovery (Playwright)
-	PriorityE08 = 700  // PDF catalog parsing
-	PriorityE09 = 700  // CSV/Excel feeds
-	PriorityE10 = 600  // Email-based inventory
-	PriorityE11 = 100  // Manual review queue (last resort)
+	PriorityE06 = 800  // Microdata/RDFa
+	PriorityE07 = 700  // XHR/AJAX discovery (Playwright)
+	PriorityE09 = 400  // CSV/Excel feeds
+	PriorityE08 = 300  // PDF catalog parsing
+	PriorityE10 = 200  // Email-based inventory
+	PriorityE12 = 0    // Manual review queue (last resort)
 )
 
 // ExtractionStrategy is the interface all strategies E01-E12 must implement.
