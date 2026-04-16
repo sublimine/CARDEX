@@ -2,6 +2,58 @@
 
 All significant implementation milestones for CARDEX Phases 2–5.
 
+## [Sprint 31] — Chronos-2 Time-Series Price Forecasting (2026-04-17)
+
+**Branch:** `sprint/31-chronos-forecasting`
+
+### Data Pipeline (`innovation/chronos_forecasting/data_pipeline.py`)
+- SQL aggregation: `vehicle_record JOIN dealer_entity` → daily price_mean/p25/p75/volume/km_mean per (country, make, model, year_range)
+- `_year_bucket(year, width=3)` — 3-year buckets anchored to 2018 epoch
+- `SeriesKey.to_filename()` — sanitized CSV filenames (regex, no accented chars)
+- `run_pipeline(db_path, out_dir, min_points=30)` — discards sparse series; returns list of written paths
+- `make_fixture_db(db_path, rows)` — in-memory SQLite fixture for tests
+
+### Forecasting Engine (`innovation/chronos_forecasting/forecaster.py`)
+- **Primary:** `chronos-forecasting>=2.2.2`, model `amazon/chronos-bolt-mini` (28M, ~200 MB RAM, ~1-2s CPU)
+- **Fallback:** `statsforecast` (AutoETS + AutoARIMA ensemble, zero ML deps); auto-detected on import failure
+- Override model via `CHRONOS_MODEL` env var; override backend via `CHRONOS_BACKEND=statsforecast`
+- `mase()` / `smape()` — backtest metrics; MASE < 1.0 confirms model beats naïve baseline
+- 20% held-out tail backtest; raises `ValueError` on series < 10 points
+
+### Batch Mode (`innovation/chronos_forecasting/forecast_all.py`)
+- `run_batch(timeseries_dir, out_dir, horizon, workers)` with `ThreadPoolExecutor`
+- Writes `_batch_summary.json` with total/succeeded/failed/elapsed
+
+### Forecast API (`innovation/chronos_forecasting/serve.py`)
+- FastAPI on port 8503 (`FORECAST_PORT` env var); `GZipMiddleware`
+- `GET /health`, `GET /series` (metadata list), `POST /forecast` (pydantic v2 validated)
+- 404 on missing series; 422 on horizon=0 or >365 or series too short
+
+### Python packaging
+- `requirements.txt` — full stack: Chronos-2 + statsforecast + FastAPI + pytest
+- `requirements-minimal.txt` — statsforecast only, <100 MB, zero ML deps
+- `Dockerfile` — Python 3.11-slim; `TIMESERIES_DIR` + `FORECAST_PORT` env vars; port 8503
+
+### pytest suite (38 tests, no network/GPU required)
+- `test_pipeline.py` (10 tests) — year buckets, SeriesKey, 60-day output, schema, price stats, min_points filter, volume sum, empty DB, date sort
+- `test_forecaster.py` (12 tests) — MASE/sMAPE unit tests; integration tests skipped if no backend installed (MASE < 1.0 on linear trend, p10≤p50≤p90, horizons 30/60/90, short series raises)
+- `test_serve.py` (8 tests) — TestClient with monkeypatched TIMESERIES_DIR; health, /series metadata, /forecast structure + CI ordering, 404, 422 horizon validation
+
+### Go CLI (`frontend/terminal/cmd/cardex/forecast.go`)
+- `cardex forecast --make BMW --model 3er --year-min 2018 --year-max 2020 --country DE --horizon 30 [--spark]`
+- HTTP client to FastAPI with 120s timeout; `FORECAST_URL` env var
+- Renders: series metadata, forecast table (sampled rows), trend (↑/↓/→ at ±2%), %Δ, 90% CI band
+- `--spark`: Unicode block sparkline (▁▂▃▄▅▆▇█) of p50 series
+- MASE backtest with ✓/⚠ baseline comparison
+
+### Makefile
+- `make forecast-pipeline` — SQLite → CSVs
+- `make forecast-serve` — uvicorn on :8503 with --reload
+- `make forecast-test` — pytest suite
+
+### Planning
+- `planning/02_MARKET_INTELLIGENCE/INNOVATION_CHRONOS.md` — architecture, RAM budget, deployment, roadmap
+
 ## [Phase 5] — Infrastructure (2026-04-14)
 
 **Commit:** `79254b0 feat(P5-sprint23): infrastructure scaffolding`

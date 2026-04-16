@@ -123,6 +123,29 @@ backup:
 	./deploy/scripts/test-backup-restore.sh
 
 # ---------------------------------------------------------------------------
+# forecast-pipeline — run the Chronos-2 data pipeline (SQLite → time-series CSVs)
+# ---------------------------------------------------------------------------
+forecast-pipeline:
+	cd innovation/chronos_forecasting && \
+	    python data_pipeline.py \
+	    --db ../../data/discovery.db \
+	    --out timeseries
+
+# ---------------------------------------------------------------------------
+# forecast-serve — start the Chronos-2 forecast API server (port 8503)
+# ---------------------------------------------------------------------------
+forecast-serve:
+	cd innovation/chronos_forecasting && \
+	    TIMESERIES_DIR=timeseries \
+	    uvicorn serve:app --host 0.0.0.0 --port 8503 --reload
+
+# ---------------------------------------------------------------------------
+# forecast-test — run Chronos-2 pytest suite
+# ---------------------------------------------------------------------------
+forecast-test:
+	cd innovation/chronos_forecasting && python -m pytest tests/ -v
+
+# ---------------------------------------------------------------------------
 # help
 # ---------------------------------------------------------------------------
 help:
@@ -132,6 +155,10 @@ help:
 	@echo "  make build           Build discovery + extraction + quality binaries"
 	@echo "  make test            Run all tests (GOWORK=off per module)"
 	@echo "  make lint            Run golangci-lint on all three modules"
+	@echo ""
+	@echo "  make forecast-pipeline Run Chronos-2 data pipeline (SQLite → CSVs)"
+	@echo "  make forecast-serve    Start Chronos-2 forecast API (port 8503)"
+	@echo "  make forecast-test     Run Chronos-2 pytest suite"
 	@echo ""
 	@echo "  make dev             Start local Docker Compose stack"
 	@echo "  make down            Stop local stack"
