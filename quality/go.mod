@@ -1,6 +1,6 @@
 module cardex.eu/quality
 
-go 1.25.0
+go 1.26.2
 
 require (
 	github.com/corona10/goimagehash v1.1.0
