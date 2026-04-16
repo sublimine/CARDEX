@@ -50,8 +50,8 @@ Go module `github.com/cardex/extraction`. Extracts vehicle listings using 12 str
 | E08 | PDF extraction (inventory sheets) |
 | E09 | Excel/CSV extraction |
 | E10 | Email/EDI ingestion |
-| E11 | Manual queue (operator-assisted) |
-| E12 | Edge stub (future edge client) |
+| E11 | Edge push (Tauri client, Priority=1500 — Phase 4 gRPC wiring pending) |
+| E12 | Manual review queue (Priority=0 — last resort, enqueues dealer for human review) |
 
 ### Phase 4 — Quality (`quality/`)
 

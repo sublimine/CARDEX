@@ -25,10 +25,10 @@ services/pipeline/extraction/
 │   ├── e06_microdata/
 │   ├── e07_playwright_xhr/
 │   ├── e08_pdf/
-│   ├── e09_csv_excel/
-│   ├── e10_mobile_api/
-│   ├── e11_edge_onboarding/
-│   └── e12_manual_review/
+│   ├── e09_excel/
+│   ├── e10_email/
+│   ├── e11_edge/
+│   └── e12_manual/
 └── dead_letter/
 ```
 

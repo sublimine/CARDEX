@@ -1,6 +1,6 @@
 // Package e10_email implements extraction strategy E10 — Email-Based Inventory.
 //
-// # Architecture (Sprint 18 skeleton)
+// # Architecture
 //
 // Some micro-dealers have no website feed; they send inventory updates via email
 // with a CSV or Excel attachment. This strategy acts as the extraction side of
@@ -14,13 +14,13 @@
 //     same logic used by E09 (Excel/CSV), then marks rows as processed.
 //  4. Sender email ↔ dealer matching uses dealer_entity.contact_email.
 //
-// # Sprint 18 deliverable
+// # Implementation status
 //
-// This sprint delivers the skeleton: interface definition, Applicable logic,
-// and an Extract stub that signals "awaiting attachment" when no staging rows
-// are present. The real IMAP poller and staging table wiring are Phase 4 work.
+// Skeleton: interface definition, Applicable logic, and an Extract stub that
+// signals "awaiting attachment" when no staging rows are present.
+// The real IMAP poller and staging table wiring are Phase 4 work.
 //
-// Priority: 600.
+// Priority: 200.
 package e10_email
 
 import (

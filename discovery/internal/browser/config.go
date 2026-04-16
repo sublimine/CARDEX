@@ -18,6 +18,8 @@ package browser
 
 import (
 	"time"
+
+	"cardex.eu/discovery/internal/ua"
 )
 
 // ResourceType classifies a browser resource that can be blocked for efficiency.
@@ -76,8 +78,8 @@ type BrowserConfig struct {
 	ChromiumArgs []string
 }
 
-// cardexUA is the canonical CARDEX bot User-Agent.
-const cardexUA = "CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu)"
+// cardexUA is the canonical CARDEX bot User-Agent. Sourced from ua.CardexUA.
+const cardexUA = ua.CardexUA
 
 // DefaultBrowserConfig returns a BrowserConfig with all CARDEX policy defaults.
 func DefaultBrowserConfig() *BrowserConfig {

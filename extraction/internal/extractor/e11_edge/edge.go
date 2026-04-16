@@ -19,8 +19,8 @@
 //   extraction/internal/extractor/e11_edge/proto/edge.proto
 //
 // The actual gRPC server (code-generated from the proto, with JWT auth
-// middleware) is Phase 4 work. This sprint delivers:
-//   - The ExtractionStrategy wrapper (E12) that reads from a staging table.
+// middleware) is Phase 4 work. Currently implemented:
+//   - The ExtractionStrategy wrapper (E11) that reads from a staging table.
 //   - The EdgeInventoryStore interface for the staging table interaction.
 //   - A no-op store implementation for use in main.go until Phase 4 wires
 //     the real gRPC receiver.
