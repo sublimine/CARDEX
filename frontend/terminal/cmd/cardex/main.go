@@ -109,8 +109,10 @@ Set CARDEX_DB_PATH or pass --db to point at your database file.`,
 	root.PersistentFlags().StringVar(&flagDBPath, "db", "", "path to SQLite database (env: CARDEX_DB_PATH)")
 
 	root.AddCommand(newSearchCmd())
+	root.AddCommand(newSearchNaturalCmd())
 	root.AddCommand(newShowCmd())
 	root.AddCommand(newStatsCmd())
+	root.AddCommand(newForecastCmd())
 	return root
 }
 
