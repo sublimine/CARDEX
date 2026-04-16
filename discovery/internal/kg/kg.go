@@ -4,6 +4,7 @@ package kg
 
 import (
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -124,6 +125,29 @@ type DealerEntity struct {
 	MetadataJSON      *string
 }
 
+// allowedCountryCodes is the set of ISO 3166-1 alpha-2 codes supported by the
+// CARDEX discovery pipeline (DE,FR,ES,BE,NL,CH,AT,IT — configured via
+// DISCOVERY_COUNTRIES environment variable).
+var allowedCountryCodes = map[string]struct{}{
+	"DE": {}, "FR": {}, "ES": {}, "BE": {},
+	"NL": {}, "CH": {}, "AT": {}, "IT": {},
+}
+
+// Validate checks structural invariants of a DealerEntity.
+// It is intended to be called before persisting to the KG.
+func (e *DealerEntity) Validate() error {
+	if e.DealerID == "" {
+		return fmt.Errorf("DealerEntity: DealerID is required")
+	}
+	if e.CanonicalName == "" {
+		return fmt.Errorf("DealerEntity: CanonicalName is required")
+	}
+	if _, ok := allowedCountryCodes[e.CountryCode]; !ok {
+		return fmt.Errorf("DealerEntity: unsupported CountryCode %q (allowed: DE FR ES BE NL CH AT IT)", e.CountryCode)
+	}
+	return nil
+}
+
 // DealerIdentifier is an external ID attached to a DealerEntity.
 type DealerIdentifier struct {
 	IdentifierID    string
@@ -150,7 +174,7 @@ type DealerLocation struct {
 	Lon              *float64
 	H3Index          *string // Sprint 1: nil stub; computed in Sprint 2
 	OpeningHoursJSON *string
-	Phone            *string // optional phone number -- added by Sprint 5 migration v3
+	Phone            *string `json:"-"` // PII — excluded from JSON serialisation; stored in DB only
 	SourceFamilies   string  // comma-separated: "A,B,H"
 }
 

@@ -2,9 +2,13 @@
 //
 // Commands:
 //
-//	cardex search [flags]   — query vehicle_record with filters
-//	cardex show <id>        — full details + quality score breakdown
-//	cardex stats            — aggregate counts and confidence metrics
+//	cardex search [flags]                  — query vehicle_record with filters
+//	cardex show <id>                       — full details + quality score breakdown
+//	cardex stats                           — aggregate counts and confidence metrics
+//	cardex review list [--status]          — list manual review queue items
+//	cardex review show <id>                — show review item with vehicle context
+//	cardex review approve <id>             — approve a pending listing
+//	cardex review reject <id> --reason ""  — reject a pending listing with reason
 //
 // The CLI reads from the same SQLite database written by the pipeline
 // (discovery-service → extraction-service → quality-service).
@@ -97,6 +101,7 @@ Set CARDEX_DB_PATH or pass --db to point at your database file.`,
 	root.AddCommand(newSearchCmd())
 	root.AddCommand(newShowCmd())
 	root.AddCommand(newStatsCmd())
+	root.AddCommand(newReviewCmd())
 	return root
 }
 

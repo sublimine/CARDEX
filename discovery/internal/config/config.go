@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Config holds all runtime configuration for the discovery service.
@@ -142,6 +143,15 @@ type Config struct {
 	// skipped. Useful in CI environments without Playwright installed.
 	// Default: false
 	SkipBrowser bool
+
+	// FamilyRateLimitOverrides allows operators to tune inter-request delays per
+	// family without recompiling. Keys are upper-case family IDs ("B", "C", "F", …).
+	// Populated from DISCOVERY_RATE_LIMIT_<FAMILY>_MS environment variables.
+	//
+	// Example: DISCOVERY_RATE_LIMIT_B_MS=15000 slows Overpass queries to 15 s.
+	//
+	// Absent entries leave family built-in defaults unchanged.
+	FamilyRateLimitOverrides map[string]time.Duration
 }
 
 // LoadFromEnv builds a Config from environment variables.
@@ -243,6 +253,22 @@ func LoadFromEnv() (*Config, error) {
 		if len(countries) > 0 {
 			c.Countries = countries
 		}
+	}
+
+	// Parse per-family rate limit overrides: DISCOVERY_RATE_LIMIT_<FAMILY>_MS
+	overrides := map[string]time.Duration{}
+	for _, family := range []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O"} {
+		key := "DISCOVERY_RATE_LIMIT_" + family + "_MS"
+		if raw := os.Getenv(key); raw != "" {
+			ms, err := strconv.Atoi(raw)
+			if err != nil || ms < 0 {
+				return nil, fmt.Errorf("config: %s must be a non-negative integer, got %q", key, raw)
+			}
+			overrides[family] = time.Duration(ms) * time.Millisecond
+		}
+	}
+	if len(overrides) > 0 {
+		c.FamilyRateLimitOverrides = overrides
 	}
 
 	return c, nil

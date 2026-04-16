@@ -1,34 +1,41 @@
-// extraction-service -- Phase 3 Sprint 18 (12/12 strategies — Phase 3 complete)
+// extraction-service — Phase 3 Sprint 18 (12/12 strategies) + Sprint 26 E13 VLM Vision
 //
 // Startup sequence:
 //  1. Load config from environment variables.
 //  2. Open the shared SQLite Knowledge Graph.
-//  3. Register extraction strategies E01–E12 (Sprint 18).
+//  3. Register extraction strategies E01–E13.
 //  4. Start Prometheus /metrics HTTP endpoint.
 //  5. Run extraction cycles for each configured country.
 //     (continuous daemon mode blocks until SIGINT/SIGTERM)
 //
 // Environment variables:
-//   EXTRACTION_DB_PATH          path to shared SQLite KG     (default: ./data/discovery.db)
-//   EXTRACTION_METRICS_ADDR     Prometheus bind addr          (default: :9091)
-//   EXTRACTION_BATCH_SIZE       dealers per cycle             (default: 50)
-//   EXTRACTION_WORKERS          concurrent workers            (default: 4)
-//   EXTRACTION_RATE_LIMIT_MS    ms between requests per dealer(default: 2000)
-//   EXTRACTION_ONE_SHOT         "true" = run once and exit    (default: false)
-//   EXTRACTION_COUNTRIES        comma-separated ISO codes     (default: FR)
-//   EXTRACTION_SKIP_E01         "true" = skip JSON-LD strategy         (default: false)
-//   EXTRACTION_SKIP_E02         "true" = skip CMS REST strategy         (default: false)
-//   EXTRACTION_SKIP_E03         "true" = skip Sitemap XML strategy      (default: false)
-//   EXTRACTION_SKIP_E04         "true" = skip RSS/Atom strategy         (default: false)
-//   EXTRACTION_SKIP_E05         "true" = skip DMS API strategy          (default: false)
-//   EXTRACTION_SKIP_E06         "true" = skip Microdata/RDFa strategy   (default: false)
-//   EXTRACTION_SKIP_E07         "true" = skip Playwright XHR strategy   (default: false)
-//   EXTRACTION_SKIP_E08         "true" = skip PDF Catalog strategy       (default: false)
-//   EXTRACTION_SKIP_E09         "true" = skip Excel/CSV Feeds strategy   (default: false)
-//   EXTRACTION_SKIP_E10         "true" = skip Email Inventory strategy   (default: false)
-//   EXTRACTION_SKIP_E11         "true" = skip Manual Review Queue        (default: false)
-//   EXTRACTION_SKIP_E12         "true" = skip Edge Dealer Push strategy  (default: false)
-//   EDGE_GRPC_PORT              gRPC listen port for edge push           (default: 50051)
+//   EXTRACTION_DB_PATH          path to shared SQLite KG      (default: ./data/discovery.db)
+//   EXTRACTION_METRICS_ADDR     Prometheus bind addr           (default: :9091)
+//   EXTRACTION_BATCH_SIZE       dealers per cycle              (default: 50)
+//   EXTRACTION_WORKERS          concurrent workers             (default: 4)
+//   EXTRACTION_RATE_LIMIT_MS    ms between requests per dealer (default: 2000)
+//   EXTRACTION_ONE_SHOT         "true" = run once and exit     (default: false)
+//   EXTRACTION_COUNTRIES        comma-separated ISO codes      (default: FR)
+//   EXTRACTION_SKIP_E01         "true" = skip JSON-LD strategy          (default: false)
+//   EXTRACTION_SKIP_E02         "true" = skip CMS REST strategy          (default: false)
+//   EXTRACTION_SKIP_E03         "true" = skip Sitemap XML strategy       (default: false)
+//   EXTRACTION_SKIP_E04         "true" = skip RSS/Atom strategy          (default: false)
+//   EXTRACTION_SKIP_E05         "true" = skip DMS API strategy           (default: false)
+//   EXTRACTION_SKIP_E06         "true" = skip Microdata/RDFa strategy    (default: false)
+//   EXTRACTION_SKIP_E07         "true" = skip Playwright XHR strategy    (default: false)
+//   EXTRACTION_SKIP_E08         "true" = skip PDF Catalog strategy        (default: false)
+//   EXTRACTION_SKIP_E09         "true" = skip Excel/CSV Feeds strategy    (default: false)
+//   EXTRACTION_SKIP_E10         "true" = skip Email Inventory strategy    (default: false)
+//   EXTRACTION_SKIP_E11         "true" = skip Edge Dealer Push strategy   (default: false)
+//   EXTRACTION_SKIP_E12         "true" = skip Manual Review Queue         (default: false)
+//   EXTRACTION_SKIP_E13         "true" = skip VLM Screenshot Vision       (default: false)
+//   EDGE_GRPC_PORT              gRPC listen port for edge push            (default: 50051)
+//   VLM_ENABLED                 "true" = enable E13 VLM strategy          (default: false)
+//   VLM_BACKEND                 "ollama"|"mock"                           (default: ollama)
+//   VLM_MODEL                   model tag in ollama                       (default: phi3.5-vision:latest)
+//   VLM_ENDPOINT                ollama base URL                           (default: http://localhost:11434)
+//   VLM_TIMEOUT                 per-image inference timeout               (default: 120s)
+//   VLM_MAX_RETRIES             retries on transient VLM error            (default: 2)
 package main
 
 import (
@@ -55,8 +62,9 @@ import (
 	"cardex.eu/extraction/internal/extractor/e08_pdf"
 	"cardex.eu/extraction/internal/extractor/e09_excel"
 	"cardex.eu/extraction/internal/extractor/e10_email"
-	"cardex.eu/extraction/internal/extractor/e11_manual"
-	"cardex.eu/extraction/internal/extractor/e12_edge"
+	"cardex.eu/extraction/internal/extractor/e11_edge"
+	"cardex.eu/extraction/internal/extractor/e12_manual"
+	"cardex.eu/extraction/internal/extractor/e13_vlm_vision"
 	"cardex.eu/extraction/internal/metrics"
 	"cardex.eu/extraction/internal/pipeline"
 	"cardex.eu/extraction/internal/storage"
@@ -139,13 +147,30 @@ func main() {
 		strategies = append(strategies, e10_email.New())
 	}
 	if !cfg.SkipE11 {
-		// E11 enqueues dealers for manual human review (last-resort fallback).
-		strategies = append(strategies, e11_manual.New())
+		// E11 receives inventory pushed from dealer-installed edge clients (priority 1500).
+		strategies = append(strategies, e11_edge.New())
+	}
+	if cfg.VLMEnabled && !cfg.SkipE13 {
+		// E13: VLM Screenshot Vision — last automated strategy (priority 100).
+		// Opt-in via VLM_ENABLED=true. Requires ollama running with a vision model.
+		// Fallback model ladder: phi3.5-vision:latest → moondream2 → florence-2-base.
+		vlmCfg := e13_vlm_vision.VLMConfig{
+			Model:      cfg.VLMModel,
+			Endpoint:   cfg.VLMEndpoint,
+			Timeout:    cfg.VLMTimeout,
+			MaxRetries: cfg.VLMMaxRetries,
+		}
+		strategies = append(strategies, e13_vlm_vision.New(vlmCfg))
+		log.Info("E13 VLM vision strategy enabled",
+			"model", cfg.VLMModel,
+			"endpoint", cfg.VLMEndpoint,
+			"timeout", cfg.VLMTimeout,
+		)
 	}
 	if !cfg.SkipE12 {
-		// E12 receives inventory pushed from dealer-installed edge clients.
-		// Priority 1500 — checked first to honour dealer-trusted source.
-		strategies = append(strategies, e12_edge.New())
+		// E12 is the last-resort fallback: enqueues dealers for manual review.
+		// Priority 0 — only runs when all automated strategies are exhausted.
+		strategies = append(strategies, e12_manual.New())
 	}
 
 	if len(strategies) == 0 {
@@ -155,22 +180,28 @@ func main() {
 
 	orch := pipeline.New(store, strategies...)
 
-	// Start Prometheus metrics endpoint.
+	// Start Prometheus metrics endpoint with graceful shutdown.
+	metricsMux := http.NewServeMux()
+	metricsMux.Handle("/metrics", promhttp.Handler())
+	metricsMux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+	metricsSrv := &http.Server{Addr: cfg.MetricsAddr, Handler: metricsMux}
 	go func() {
-		mux := http.NewServeMux()
-		mux.Handle("/metrics", promhttp.Handler())
-		mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("ok"))
-		})
 		log.Info("metrics server starting", "addr", cfg.MetricsAddr)
-		if err := http.ListenAndServe(cfg.MetricsAddr, mux); err != nil {
+		if err := metricsSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Error("metrics server error", "err", err)
 		}
 	}()
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
+	defer func() {
+		shutCtx, shutCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer shutCancel()
+		_ = metricsSrv.Shutdown(shutCtx)
+	}()
 
 	for {
 		if ctx.Err() != nil {

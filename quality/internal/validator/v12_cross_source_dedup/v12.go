@@ -36,6 +36,16 @@ const (
 	criticalThreshold = 5  // >5 distinct dealers → CRITICAL
 )
 
+// redactVIN returns the last 4 characters of a VIN preceded by asterisks so
+// that structured logs and issue strings do not expose full VIN PII.
+// Input must already be upper-cased and trimmed (the caller ensures this).
+func redactVIN(vin string) string {
+	if len(vin) < 4 {
+		return "***"
+	}
+	return "***" + vin[len(vin)-4:]
+}
+
 // VehicleRecord is a minimal vehicle entry as returned by the KG query.
 type VehicleRecord struct {
 	InternalID string
@@ -115,7 +125,7 @@ func (v *CrossSourceDedup) Validate(ctx context.Context, vehicle *pipeline.Vehic
 	}
 	distinctDealers := len(dealers)
 
-	result.Evidence["vin"] = vin
+	result.Evidence["vin"] = redactVIN(vin)
 	result.Evidence["total_records"] = fmt.Sprintf("%d", len(records))
 	result.Evidence["distinct_dealers"] = fmt.Sprintf("%d", distinctDealers)
 	result.Evidence["source_urls"] = strings.Join(sourceURLs, " | ")
@@ -150,14 +160,14 @@ func (v *CrossSourceDedup) Validate(ctx context.Context, vehicle *pipeline.Vehic
 	case distinctDealers >= warnThreshold && distinctDealers <= criticalThreshold:
 		result.Pass = false
 		result.Severity = pipeline.SeverityWarning
-		result.Issue = fmt.Sprintf("VIN %s appears under %d distinct dealers — possible broker re-listing", vin, distinctDealers)
+		result.Issue = fmt.Sprintf("VIN %s appears under %d distinct dealers — possible broker re-listing", redactVIN(vin), distinctDealers)
 		result.Confidence = 0.85
 		result.Suggested["action"] = "verify ownership chain — VIN may be listed by multiple brokers"
 
 	default: // distinctDealers > criticalThreshold
 		result.Pass = false
 		result.Severity = pipeline.SeverityCritical
-		result.Issue = fmt.Sprintf("VIN %s appears under %d distinct dealers — highly suspicious (VIN swapping / fraud)", vin, distinctDealers)
+		result.Issue = fmt.Sprintf("VIN %s appears under %d distinct dealers — highly suspicious (VIN swapping / fraud)", redactVIN(vin), distinctDealers)
 		result.Confidence = 0.95
 		result.Suggested["action"] = "flag for fraud review — cross-dealer VIN proliferation"
 	}

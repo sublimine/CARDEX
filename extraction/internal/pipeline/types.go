@@ -2,7 +2,10 @@
 // pipeline. All extraction strategies E01-E12 operate on these types.
 package pipeline
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // Dealer is the input to the extraction pipeline, populated from the discovery
 // knowledge graph (dealer_entity + dealer_web_presence + CMS/DMS signals from
@@ -63,6 +66,30 @@ func (v *VehicleRaw) IsCritical() bool {
 		(v.PriceNet != nil || v.PriceGross != nil) &&
 		v.SourceURL != "" &&
 		len(v.ImageURLs) > 0
+}
+
+// Validate checks that the minimum required fields are present and within
+// acceptable ranges. Call before persisting to avoid storing junk records.
+func (v *VehicleRaw) Validate() error {
+	if v.SourceURL == "" {
+		return fmt.Errorf("VehicleRaw: SourceURL is required")
+	}
+	if v.Make == nil || *v.Make == "" {
+		return fmt.Errorf("VehicleRaw: Make is required")
+	}
+	if v.Model == nil || *v.Model == "" {
+		return fmt.Errorf("VehicleRaw: Model is required")
+	}
+	if v.Year != nil && (*v.Year < 1886 || *v.Year > 2100) {
+		return fmt.Errorf("VehicleRaw: Year %d is out of plausible range", *v.Year)
+	}
+	if v.PriceNet != nil && *v.PriceNet < 0 {
+		return fmt.Errorf("VehicleRaw: PriceNet must be non-negative")
+	}
+	if v.PriceGross != nil && *v.PriceGross < 0 {
+		return fmt.Errorf("VehicleRaw: PriceGross must be non-negative")
+	}
+	return nil
 }
 
 // ExtractionResult encapsulates the outcome of a single strategy run.
