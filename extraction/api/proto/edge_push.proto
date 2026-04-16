@@ -1,0 +1,81 @@
+// edge_push.proto — CARDEX Edge Push API v1
+//
+// Dealers running the Tauri desktop client call this gRPC service to push
+// their local DMS inventory directly to CARDEX.  This is the highest-
+// confidence data source (dealer-originated) and is processed at
+// extraction priority 1500.
+//
+// To regenerate Go code from this proto:
+//   make proto
+//
+// See: Makefile target 'proto' for required tools (protoc + plugins).
+
+syntax = "proto3";
+
+package cardex.edge;
+
+option go_package = "cardex.eu/extraction/api/edgepb";
+
+// EdgePush receives batches of vehicle listings from the Tauri desktop client.
+service EdgePush {
+  // PushListings is a client-streaming RPC: the client streams one or more
+  // ListingBatch messages and the server replies with a single PushResponse
+  // summarising accepted/rejected counts.
+  rpc PushListings(stream ListingBatch) returns (PushResponse);
+
+  // Heartbeat is a unary health-check call used by the Tauri client to verify
+  // connectivity and display the server clock in the status bar.
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+}
+
+// ListingBatch carries one page of vehicle listings from the dealer's DMS.
+// The api_key authenticates the dealer; it must match the hashed key stored
+// in the edge_dealers table for the given dealer_id.
+message ListingBatch {
+  string dealer_id      = 1;
+  string api_key        = 2; // plaintext key — transmitted over TLS only
+  repeated VehicleListing listings = 3;
+  int64  timestamp_unix = 4; // Unix timestamp (seconds) of the batch
+}
+
+// VehicleListing matches one vehicle record from the dealer's DMS.
+// All fields are optional except vin (used as idempotency key).
+message VehicleListing {
+  string   vin          = 1;
+  string   make         = 2;
+  string   model        = 3;
+  int32    year         = 4;
+  int32    price_cents  = 5; // price in cents of the given currency
+  string   currency     = 6; // ISO 4217 (e.g. "EUR")
+  int32    mileage_km   = 7;
+  string   fuel_type    = 8; // "gasoline"|"diesel"|"hybrid"|"electric"|"lpg"|"cng"|"hydrogen"
+  string   transmission = 9; // "manual"|"automatic"|"semi-automatic"
+  string   color        = 10;
+  repeated string image_urls  = 11;
+  string   description  = 12;
+  string   source_url   = 13;
+}
+
+// PushResponse summarises the result of a PushListings stream.
+message PushResponse {
+  int32 accepted = 1;
+  int32 rejected = 2;
+  repeated RejectionDetail rejections = 3;
+}
+
+// RejectionDetail explains why a specific listing was rejected.
+message RejectionDetail {
+  string vin    = 1;
+  string reason = 2;
+}
+
+// HeartbeatRequest carries the dealer identifier for logging purposes.
+message HeartbeatRequest {
+  string dealer_id = 1;
+}
+
+// HeartbeatResponse returns the server's current Unix time so the client can
+// display clock skew warnings.
+message HeartbeatResponse {
+  int64 server_time_unix = 1;
+}
