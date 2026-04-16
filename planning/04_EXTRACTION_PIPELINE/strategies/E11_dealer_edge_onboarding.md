@@ -6,14 +6,16 @@
 - Fecha: 2026-04-14, Estado: DOCUMENTADO
 
 ## Propósito y rationale
-E11 es la estrategia de última milla para dealers que las estrategias automatizadas E01-E10 no pueden indexar — ya sea porque no tienen website, porque su site bloquea crawlers, porque su DMS es completamente privado, o porque simplemente no tienen presencia digital estructurada. En lugar de rendirse o violar controles de acceso, CARDEX ofrece al dealer un cliente desktop gratuito (Tauri) que, una vez instalado, actúa como puente entre el DMS local del dealer y la plataforma CARDEX vía EU Data Act data delegation.
+E11 es la estrategia de última milla para dealers que las estrategias automatizadas E01-E10 no pueden indexar — ya sea porque no tienen website, porque su site bloquea crawlers, porque su DMS es completamente privado, o porque simplemente no tienen presencia digital estructurada. En lugar de rendirse o violar controles de acceso, CARDEX ofrece al dealer un cliente desktop gratuito (Tauri) que, una vez instalado, actúa como puente entre el DMS local del dealer y la plataforma CARDEX.
 
 El modelo de negocio es mutuamente beneficioso:
 - El dealer obtiene visibilidad gratuita en CARDEX sin necesidad de cambiar su DMS ni crear un website
 - CARDEX obtiene acceso estructurado y consentido al inventario del dealer
-- La base legal es explícita: EU Data Act + consentimiento contractual B2B
+- La base legal es explícita: **consentimiento contractual B2B (GDPR Art. 6(1)(a)/(b))**
 
-**NO aplica en CH:** Suiza no es miembro de la UE. El EU Data Act no tiene efecto en CH. Para dealers suizos en esta situación, E11 se reemplaza por E12 (manual review) o contrato B2B ad hoc sin invocar el EU Data Act.
+> **Nota Wave 2 — corrección de base legal (2026-04-14):** La referencia anterior al EU Data Act (Reg. 2023/2854) como base legal primaria de E11 ha sido corregida. El Data Act aplica a productos conectados IoT/hardware y no cubre directamente los datos de inventario del DMS de un dealer. La base legal correcta es el consentimiento GDPR Art. 6(1)(a) (consentimiento explícito en el onboarding flow del DSA) y Art. 6(1)(b) (ejecución del contrato de servicio con el dealer). El Data Act se menciona como marco normativo favorable, no como base legal directa.
+
+**NO aplica en CH:** Suiza no es miembro de la UE. El GDPR no aplica directamente; se usa nDSG Art. 6(6) (consentimiento bajo nDSG) + contrato B2B. Sin invocación del Data Act.
 
 ## Target de dealers
 - Dealers sin website o con website estático sin inventario online
@@ -78,9 +80,9 @@ El onboarding del cliente Tauri incluye:
 5. Retención: datos solo mientras el dealer esté activo en CARDEX
 
 Base legal del DSA:
-- EU Data Act Art. 4 (Data holder obligation to share data on request of data recipient)
-- Contrato B2B explícito con consentimiento informado
-- Reglamento (EU) 2023/2854
+- **GDPR Art. 6(1)(a):** Consentimiento explícito del dealer (checkbox + firma digital en el onboarding flow)
+- **GDPR Art. 6(1)(b):** Ejecución del contrato de servicio CARDEX–dealer (la transmisión es necesaria para prestar el servicio)
+- Contrato B2B DSA firmado digitalmente como evidencia del consentimiento
 
 ### E11.5 — Push API del cliente hacia CARDEX
 
@@ -108,11 +110,16 @@ JSON push desde el cliente Tauri hacia la CARDEX Ingestion API. Formato: `Vehicl
 Con DMS connector funcionando: todos los campos que el DMS del dealer tiene, potencialmente el set más completo de todos (incluyendo historial de mantenimiento si el dealer lo tiene en su DMS y decide compartirlo).
 
 ## Base legal
-- EU Data Act: delegación de acceso a datos de negocio con consentimiento explícito
-- Contrato B2B DSA firmado digitalmente
-- Consentimiento informado + derecho de revocación
-- NO aplica en CH (Suiza fuera de EU)
-- Base: `eu_data_act_delegation` + `b2b_contract`
+
+**Base legal primaria:**
+- **GDPR Art. 6(1)(a):** Consentimiento explícito del dealer en el onboarding flow (DSA firmado digitalmente)
+- **GDPR Art. 6(1)(b):** Ejecución del contrato de servicio CARDEX–dealer
+
+**Nota Wave 2 (2026-04-14):** La base `eu_data_act_delegation` ha sido eliminada como base legal primaria. El Data Act (Reg. 2023/2854) aplica a productos conectados IoT, no directamente a datos de inventario DMS transmitidos por consentimiento. La base GDPR es suficiente, más sólida y verificable.
+
+- Consentimiento informado + derecho de revocación implementado en el Edge Client
+- NO aplica en CH (Suiza fuera de EU): usar nDSG Art. 6(6) + contrato B2B
+- Base: `dealer_consent_gdpr_6_1a` + `b2b_contract`
 
 ## Métricas de éxito
 - `e11_outreach_open_rate` — % dealers que abrieron el email
