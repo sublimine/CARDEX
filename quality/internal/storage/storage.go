@@ -58,6 +58,10 @@ func New(path string) (*SQLiteStorage, error) {
 // Close releases the database connection.
 func (s *SQLiteStorage) Close() error { return s.db.Close() }
 
+// DB exposes the underlying *sql.DB for validators that need direct access
+// (e.g. V21 entity resolution for its embedding index).
+func (s *SQLiteStorage) DB() *sql.DB { return s.db }
+
 // PersistValidation inserts one validation result row.
 func (s *SQLiteStorage) PersistValidation(ctx context.Context, r *pipeline.ValidationResult) error {
 	suggested, err := json.Marshal(r.Suggested)
