@@ -124,13 +124,22 @@ puppeteer-extra-plugin-stealth|playwright-extra)" \
 
       - name: Install Go
         uses: actions/setup-go@v5
-        with: { go-version: '1.22' }
+        with: { go-version: '1.26.2' }
 
-      - name: govulncheck
+      - name: go mod verify — supply chain integrity (#42)
+        run: |
+          for mod in discovery extraction quality; do
+            echo "=== go mod verify: $mod ==="
+            (cd "$mod" && go mod verify)
+          done
+
+      - name: govulncheck — all modules (#50)
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
-          cd discovery
-          govulncheck ./...
+          for mod in discovery extraction quality; do
+            echo "=== govulncheck: $mod ==="
+            (cd "$mod" && govulncheck ./...)
+          done
 
       - name: pip-audit (Python deps si hay)
         run: |

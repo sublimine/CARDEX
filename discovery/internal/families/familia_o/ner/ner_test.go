@@ -44,9 +44,14 @@ L'opération porte sur deux concessions en Île-de-France.`
 func TestExtractCandidates_NoMatches(t *testing.T) {
 	text := "The weather in Berlin was sunny yesterday. No dealers mentioned here."
 	candidates := ner.ExtractCandidates(text)
-	// Should return empty or only spurious matches -- either is acceptable.
-	// This test just ensures no panic.
-	_ = candidates
+	// Non-automotive text must not produce high-confidence dealer candidates.
+	// Zero candidates is the expected outcome; a small number of spurious
+	// matches below threshold is acceptable. More than 3 would indicate the
+	// NER heuristic is too aggressive.
+	if len(candidates) > 3 {
+		t.Errorf("expected ≤3 spurious candidates for non-dealer text, got %d: %v",
+			len(candidates), candidates)
+	}
 }
 
 func TestNormalize_StripsLegalSuffixes(t *testing.T) {

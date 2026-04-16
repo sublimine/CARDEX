@@ -3,6 +3,8 @@ package runner
 import (
 	"context"
 	"fmt"
+	"runtime/debug"
+	"sync"
 )
 
 // HealthStatus is the outcome of a health check.
@@ -28,22 +30,42 @@ func CheckAll(ctx context.Context, families []FamilyRunner) *HealthReport {
 		Errors:   make(map[string]error),
 	}
 
+	if len(families) == 0 {
+		return report
+	}
+
 	type result struct {
 		id  string
 		err error
 	}
 	ch := make(chan result, len(families))
 
+	var wg sync.WaitGroup
 	for _, f := range families {
 		f := f
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					ch <- result{
+						id:  f.FamilyID(),
+						err: fmt.Errorf("panic in HealthCheck: %v\n%s", r, debug.Stack()),
+					}
+				}
+			}()
 			err := f.HealthCheck(ctx)
 			ch <- result{id: f.FamilyID(), err: err}
 		}()
 	}
 
-	for range families {
-		r := <-ch
+	// Close channel once all goroutines finish so callers can range over it.
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	for r := range ch {
 		if r.err != nil {
 			report.Families[r.id] = HealthDown
 			report.Errors[r.id] = fmt.Errorf("family %s: %w", r.id, r.err)
