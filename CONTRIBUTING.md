@@ -19,7 +19,7 @@ Each of the three core modules (`discovery/`, `extraction/`, `quality/`) is inde
 
 ## Adding a new extraction strategy
 
-Follow the same pattern as families but in `extraction/internal/strategy/e{NN}_{name}/`.
+Follow the same pattern as families but in `extraction/internal/extractor/e{NN}_{name}/`.
 
 ## Adding a new quality validator
 
