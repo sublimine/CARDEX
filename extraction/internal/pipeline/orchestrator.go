@@ -37,7 +37,7 @@ func (o *Orchestrator) sortByPriority() {
 
 // ExtractForDealer runs the strategy cascade for a single dealer.
 // Returns the first FullSuccess or PartialSuccess result.
-// If no strategy succeeds, returns a result with NextFallback="E11".
+// If no strategy succeeds, returns a result with NextFallback="E12".
 func (o *Orchestrator) ExtractForDealer(ctx context.Context, dealer Dealer) (*ExtractionResult, error) {
 	o.log.Info("extraction cascade starting",
 		"dealer_id", dealer.ID,
@@ -81,6 +81,14 @@ func (o *Orchestrator) ExtractForDealer(ctx context.Context, dealer Dealer) (*Ex
 				"full_success", result.FullSuccess,
 			)
 			if o.storage != nil && len(result.Vehicles) > 0 {
+				// Strip PII (emails, phones, personal names) from free-text
+				// fields before persistence — GDPR Art. 6 risk reduction.
+				if piiCount := SanitizeVehicles(result.Vehicles); piiCount > 0 {
+					o.log.Info("PII sanitized before persist",
+						"dealer_id", dealer.ID,
+						"fields_redacted", piiCount,
+					)
+				}
 				n, persErr := o.storage.PersistVehicles(ctx, dealer.ID, result.Vehicles)
 				if persErr != nil {
 					o.log.Warn("PersistVehicles failed",
@@ -108,15 +116,15 @@ func (o *Orchestrator) ExtractForDealer(ctx context.Context, dealer Dealer) (*Ex
 		}
 	}
 
-	// All automatic strategies exhausted → route to dead-letter / E11.
+	// All automatic strategies exhausted → route to dead-letter / E12.
 	if lastResult == nil {
 		lastResult = &ExtractionResult{
 			DealerID: dealer.ID,
 			Strategy: "none",
 		}
 	}
-	e11 := "E11"
-	lastResult.NextFallback = &e11
+	e12 := "E12"
+	lastResult.NextFallback = &e12
 	lastResult.Errors = append(lastResult.Errors, ExtractionError{
 		Code:    "NO_STRATEGY_SUCCEEDED",
 		Message: fmt.Sprintf("all applicable strategies exhausted for dealer %s", dealer.ID),
