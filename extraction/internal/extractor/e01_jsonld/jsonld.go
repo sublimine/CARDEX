@@ -45,6 +45,7 @@ import (
 
 	"cardex.eu/extraction/internal/normalize"
 	"cardex.eu/extraction/internal/pipeline"
+	"cardex.eu/extraction/internal/robots"
 )
 
 const (
@@ -92,6 +93,7 @@ type JSONLD struct {
 	client      *http.Client
 	rateLimitMs int
 	log         *slog.Logger
+	robots      *robots.Checker
 }
 
 // New constructs a JSONLD strategy with default HTTP client.
@@ -106,6 +108,7 @@ func NewWithClient(c *http.Client, rateLimitMs int) *JSONLD {
 		client:      c,
 		rateLimitMs: rateLimitMs,
 		log:         slog.Default().With("strategy", strategyID),
+		robots:      robots.New(c, 24*time.Hour),
 	}
 }
 
@@ -145,6 +148,21 @@ func (e *JSONLD) Extract(ctx context.Context, dealer pipeline.Dealer) (*pipeline
 	baseURL := dealer.URLRoot
 	if baseURL == "" {
 		baseURL = "https://" + dealer.Domain
+	}
+
+	// Robots.txt compliance: verify CardexBot is permitted on the base URL.
+	// All inventory pages are under the same host, so one check suffices.
+	if !e.robots.Allowed(ctx, cardexUA, baseURL) {
+		e.log.Info("E01: robots.txt disallows CardexBot — skipping",
+			"dealer_id", dealer.ID,
+			"url", baseURL,
+		)
+		result.Errors = append(result.Errors, pipeline.ExtractionError{
+			Code:    "ROBOTS_DISALLOWED",
+			Message: "robots.txt disallows CardexBot on this host",
+			URL:     baseURL,
+		})
+		return result, nil
 	}
 
 	seenPages := map[string]bool{}
