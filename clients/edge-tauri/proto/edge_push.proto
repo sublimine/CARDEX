@@ -1,0 +1,50 @@
+// edge_push.proto — copy for Tauri client code generation.
+// Source of truth: extraction/api/proto/edge_push.proto
+
+syntax = "proto3";
+
+package cardex.edge;
+
+option go_package = "cardex.eu/extraction/api/edgepb";
+
+service EdgePush {
+  rpc PushListings(stream ListingBatch) returns (PushResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+}
+
+message ListingBatch {
+  string dealer_id      = 1;
+  string api_key        = 2;
+  repeated VehicleListing listings = 3;
+  int64  timestamp_unix = 4;
+}
+
+message VehicleListing {
+  string   vin          = 1;
+  string   make         = 2;
+  string   model        = 3;
+  int32    year         = 4;
+  int32    price_cents  = 5;
+  string   currency     = 6;
+  int32    mileage_km   = 7;
+  string   fuel_type    = 8;
+  string   transmission = 9;
+  string   color        = 10;
+  repeated string image_urls  = 11;
+  string   description  = 12;
+  string   source_url   = 13;
+}
+
+message PushResponse {
+  int32 accepted = 1;
+  int32 rejected = 2;
+  repeated RejectionDetail rejections = 3;
+}
+
+message RejectionDetail {
+  string vin    = 1;
+  string reason = 2;
+}
+
+message HeartbeatRequest { string dealer_id = 1; }
+message HeartbeatResponse { int64 server_time_unix = 1; }
