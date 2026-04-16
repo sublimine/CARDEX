@@ -1,14 +1,14 @@
-// Package e11_manual implements extraction strategy E11 — Manual Review Queue.
+// Package e12_manual implements extraction strategy E12 — Manual Review Queue.
 //
 // # Strategy
 //
 // When all automated strategies E01–E10 fail to yield vehicles for a dealer,
-// E11 acts as the final safety net: it enqueues the dealer for human review
+// E12 acts as the final safety net: it enqueues the dealer for human review
 // and records that no automated extraction path was found.
 //
 // # Architecture
 //
-// E11 writes to a `manual_review_queue` table:
+// E12 writes to a `manual_review_queue` table:
 //
 //	CREATE TABLE IF NOT EXISTS manual_review_queue (
 //	    dealer_id    TEXT PRIMARY KEY,
@@ -22,13 +22,13 @@
 // A Cardex analyst uses the admin UI (POST /admin/manual-review/{dealer_id}/vehicles)
 // to submit vehicles for that dealer; those are persisted via the normal pipeline.
 //
-// # Sprint 18 deliverable
+// # Phase 4 work
 //
 // Skeleton + ManualQueueWriter interface. The real SQLite-backed implementation
-// is wired in main.go Phase 4. The strategy itself is fully functional.
+// is wired in main.go during Phase 4. The strategy itself is fully functional.
 //
-// Priority: 100 (lowest operational — runs only when everything else failed).
-package e11_manual
+// Priority: 0 (last resort — runs only when all automated strategies failed).
+package e12_manual
 
 import (
 	"context"
@@ -39,7 +39,7 @@ import (
 )
 
 const (
-	strategyID   = "E11"
+	strategyID   = "E12"
 	strategyName = "Manual Review Queue"
 )
 
@@ -54,7 +54,7 @@ type noOpWriter struct{}
 
 func (n *noOpWriter) EnqueueDealer(_ context.Context, _ string) error { return nil }
 
-// Manual is the E11 extraction strategy.
+// Manual is the E12 extraction strategy.
 type Manual struct {
 	queue ManualQueueWriter
 	log   *slog.Logger
@@ -76,9 +76,9 @@ func NewWithQueue(q ManualQueueWriter) *Manual {
 
 func (e *Manual) ID() string    { return strategyID }
 func (e *Manual) Name() string  { return strategyName }
-func (e *Manual) Priority() int { return pipeline.PriorityE11 }
+func (e *Manual) Priority() int { return pipeline.PriorityE12 }
 
-// Applicable returns true for all dealers — E11 is the universal fallback.
+// Applicable returns true for all dealers — E12 is the universal fallback.
 func (e *Manual) Applicable(_ pipeline.Dealer) bool { return true }
 
 // Extract enqueues the dealer for manual review and returns an informational
@@ -91,13 +91,13 @@ func (e *Manual) Extract(ctx context.Context, dealer pipeline.Dealer) (*pipeline
 	}
 
 	if err := e.queue.EnqueueDealer(ctx, dealer.ID); err != nil {
-		e.log.Warn("E11: failed to enqueue dealer for manual review",
+		e.log.Warn("E12: failed to enqueue dealer for manual review",
 			"dealer_id", dealer.ID,
 			"domain", dealer.Domain,
 			"err", err,
 		)
 	} else {
-		e.log.Info("E11: dealer enqueued for manual review",
+		e.log.Info("E12: dealer enqueued for manual review",
 			"dealer_id", dealer.ID,
 			"domain", dealer.Domain,
 		)
