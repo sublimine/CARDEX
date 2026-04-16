@@ -85,6 +85,31 @@ var (
 		Name:      "queue_depth",
 		Help:      "Current number of dealers pending extraction.",
 	})
+
+	// E13Requests counts VLM vision API calls by result ("success"|"error"|"timeout").
+	E13Requests = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "cardex",
+		Subsystem: "extraction",
+		Name:      "e13_requests_total",
+		Help:      "Total E13 VLM vision API requests, by result.",
+	}, []string{"result"})
+
+	// E13Latency observes VLM vision API round-trip latency.
+	E13Latency = promauto.NewHistogram(prometheus.HistogramOpts{
+		Namespace: "cardex",
+		Subsystem: "extraction",
+		Name:      "e13_latency_seconds",
+		Help:      "E13 VLM vision API round-trip latency in seconds.",
+		Buckets:   []float64{0.5, 1, 2, 5, 10, 20, 30, 60},
+	})
+
+	// E13FieldsExtracted tracks the running average of fields extracted per vehicle by E13.
+	E13FieldsExtracted = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: "cardex",
+		Subsystem: "extraction",
+		Name:      "e13_fields_extracted_avg",
+		Help:      "Running average of structured fields extracted per vehicle by E13 VLM.",
+	})
 )
 
 // SanitizeStrategy returns the strategy label value if it is a known E-code
