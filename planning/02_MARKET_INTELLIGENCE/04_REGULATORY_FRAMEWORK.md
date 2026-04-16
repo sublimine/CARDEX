@@ -295,6 +295,11 @@ El Data Act crea un marco normativo que refuerza el principio de portabilidad de
 - Los compradores B2B que acceden a la URL original a través de CARDEX están en el mismo público que ya podía acceder al listado directamente.
 - **Límite:** si CARDEX indexara contenido detrás de un paywall o área de acceso restringido, la doctrina Svensson no aplicaría.
 
+**Jurisprudencia posterior — VG Bild-Kunst v Stiftung Preußischer Kulturbesitz (C-392/19, 9 marzo 2021):**
+El TJUE matizó Svensson: el *framing* (incrustación via iframe) de una obra que el titular ha protegido con medidas tecnológicas anti-framing SÍ constituye comunicación al público. Cuando el titular adopta medidas técnicas para impedir el framing, el consentimiento al acceso libre no se extiende automáticamente a terceros que incrusten la obra vía iframe.
+
+**Impacto CARDEX:** CARDEX solo almacena URLs como punteros textuales — no usa iframes ni embeds de contenido de terceros. Riesgo nulo para el modelo actual. **Restricción permanente de producto:** cualquier futura funcionalidad de "preview" o "visor" de listados originales vía iframe está prohibida.
+
 ---
 
 ### III.3 — Innoweb v Wegener (C-202/12)
