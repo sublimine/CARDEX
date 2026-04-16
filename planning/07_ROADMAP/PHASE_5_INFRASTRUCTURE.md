@@ -1,3 +1,6 @@
+> **STATUS: COMPLETE** — Phase 5 infrastructure delivered in sprint 23 (2026-04-14).
+> See CHANGELOG.md §[Phase 5]. This document is archived for reference.
+
 # PHASE_5 — Infrastructure
 
 ## Identificador
