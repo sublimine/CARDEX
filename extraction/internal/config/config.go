@@ -88,7 +88,7 @@ func Load() (*Config, error) {
 	c := &Config{
 		DBPath:       getEnv("EXTRACTION_DB_PATH", "./data/discovery.db"),
 		MetricsAddr:  getEnv("EXTRACTION_METRICS_ADDR", ":9091"),
-		BatchSize:    50,
+		BatchSize:    20, // matches docker-compose EXTRACTION_BATCH_SIZE default (#33)
 		WorkerCount:  4,
 		Countries:    []string{"FR"},
 		CardexBotUA:  "CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu)",
