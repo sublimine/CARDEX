@@ -1,0 +1,20 @@
+{
+  "de_handelsregister.pdf": {
+    "REGISTRATION_NUMBER": ["HRB 12345"],
+    "COMPANY_NAME": ["Mustermann GmbH"],
+    "LEGAL_REPRESENTATIVE": ["Max Mustermann"],
+    "ADDRESS": ["Musterstraße 1, 80333 München"]
+  },
+  "fr_extrait_kbis.pdf": {
+    "REGISTRATION_NUMBER": ["123 456 789"],
+    "COMPANY_NAME": ["Dupont SA"],
+    "LEGAL_REPRESENTATIVE": ["Jean Dupont"],
+    "ADDRESS": ["1 rue de la Paix, 75001 Paris"]
+  },
+  "es_nota_simple.pdf": {
+    "REGISTRATION_NUMBER": ["A-12345678"],
+    "COMPANY_NAME": ["García S.L."],
+    "LEGAL_REPRESENTATIVE": ["Carlos García"],
+    "ADDRESS": ["Calle Mayor 10, 28013 Madrid"]
+  }
+}

@@ -2,6 +2,34 @@
 
 All significant implementation milestones for CARDEX Phases 2–5.
 
+## [Unreleased] — Sprint 29: GNN Dealer Inference + LayoutLMv3 PDF Extraction (2026-04-17)
+
+**Branch:** `sprint/29-gnn-layoutlm`
+
+### GNN Dealer Inference (`innovation/gnn_dealer_inference/`)
+- GraphSAGE 2-layer model: SAGEConv(9→64→32) encoder + link predictor MLP + node classifier (WHOLESALE/RETAIL/BROKER/FLEET)
+- 9-dim node features: listing volume, avg price/mileage (log-normalised), brand entropy, country, dealer age, V15 trust score, V21 cluster size, is_active
+- Temporal split anti-leakage: edges sorted by `first_observed` timestamp; test=most recent 10%, val=next 10%
+- CPU-only viable: <100K nodes ~200 MB RAM, batch inference <500ms
+- PyTorch Geometric primary backend; DGL fallback documented for ARM64/Alpine
+- Flask server: `POST /predict-links`, `GET /health`, `GET /metrics` (Prometheus text) on port 8501
+- Checkpoint format: `{model_state, model_config, dealer_ids, backend, val_auc, test_auc}`
+- 12 pytest cases; 7 data loader tests; temporal leakage guard
+
+### LayoutLMv3 PDF Extraction (`innovation/layoutlm_pdf/`)
+- `extract_entities()` with fallback chain: LayoutLMv3ForTokenClassification → regex heuristics → PyMuPDF+heuristics
+- Heuristic coverage: DE HRB/HRA, FR SIREN, ES NIF, company suffixes, legal reps, registered address
+- Three fixture PDFs (DE Handelsregister, FR Extrait Kbis, ES Nota Simple)
+- 11 pytest cases, Go subprocess contract
+
+### Go Integration (`discovery/internal/families/a_registries/`)
+- `GNNClient`: `PredictLinks(ctx, dealerID)` → `[]PredictedLink`
+- `dealer_predicted_links` SQLite table with upsert; 10 Go tests (race detector)
+- Prometheus metrics: `cardex_gnn_predictions_total`, `cardex_gnn_latency_seconds`, `cardex_gnn_links_stored_total`
+- Makefile: `gnn-setup`, `gnn-train`, `gnn-serve`, `gnn-test`, `layoutlm-setup`, `layoutlm-fixtures`, `layoutlm-test`
+
+---
+
 ## [Sprint 28] — E12 Edge Tauri gRPC Push MVP (2026-04-16)
 
 **Branch:** `sprint/28-edge-tauri-grpc`

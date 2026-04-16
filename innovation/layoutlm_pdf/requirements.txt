@@ -1,0 +1,17 @@
+# LayoutLMv3 PDF extraction — CPU-only
+#
+# System packages required:
+#   apt-get install poppler-utils tesseract-ocr \
+#                   tesseract-ocr-deu tesseract-ocr-fra tesseract-ocr-spa
+#
+# CI mode (no system deps):
+#   pytest -m "not fixture_pdf"
+
+transformers>=4.35.0
+torch>=2.0.0
+Pillow>=10.0.0
+pdf2image>=1.16.0
+pytesseract>=0.3.10
+pytest>=7.0.0
+# Optional for plain-text fallback:
+# PyMuPDF>=1.23.0
