@@ -169,7 +169,7 @@ Validator weights (total: 176 pts): V01=20, V12=15, V17=15, V05=15, V07=10, V08=
 ## 6. Security model
 
 - All HTTP clients identify as `CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu)`.
-- `RobotsChecker` verifies robots.txt compliance before crawling any URL.
+- `extraction/internal/robots.Checker` verifies robots.txt compliance in HTML-crawling strategies (E01, E03, E04). TTL-cached per host (24 h). Fails open on transient errors.
 - Rate limiting: configurable token bucket per domain (default 0.3 req/s).
 - Caddy terminates TLS (TLS 1.3 only, HSTS 6 months).
 - Secrets: `systemd-creds` encrypted at rest on VPS; `age` for backup encryption.

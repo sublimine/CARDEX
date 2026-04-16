@@ -72,7 +72,7 @@ CONTEXT_FOR_AI.md    AI onboarding: what is real, what is planned
 
 1. **GOWORK=off** for all production builds — each module builds independently.
 2. **CardexBot/1.0 UA only** — no spoofing, no stealth, no curl_cffi. CI enforces this.
-3. **robots.txt compliance** — `RobotsChecker` is wired in all HTTP crawl paths.
+3. **robots.txt compliance** — `extraction/internal/robots.Checker` is wired in HTML-crawling strategies (E01, E03, E04); non-web strategies skip it by design.
 4. **SQLite + WAL** — no external database for the MVP. Backups are age-encrypted to Hetzner Storage Box.
 
 ## Documentation index
