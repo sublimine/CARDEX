@@ -2,6 +2,54 @@
 
 All significant implementation milestones for CARDEX Phases 2–5.
 
+## [Sprint 29] — GNN Dealer Inference + LayoutLMv3 PDF Extraction (2026-04-17)
+
+**Branch:** `sprint/29-gnn-layoutlm`
+
+### GNN Dealer Inference (`innovation/gnn_dealer_inference/`)
+
+- **`data_loader.py`**: builds PyTorch Geometric `Data` object from SQLite KG.
+  9-dim node features (volume, price, mileage, brand entropy, country, age,
+  V15 trust, V21 cluster size, is_active). Directed edges from shared-VIN
+  observations. DGL fallback when torch_scatter/torch_sparse unavailable.
+
+- **`model.py`**: `DealerGNNModel` — GraphSAGE 2-layer (9→64→32) +
+  `LinkPredictor` head ([z_u ‖ z_v ‖ z_u⊙z_v] → sigmoid) +
+  `NodeClassifier` head (→ WHOLESALE/RETAIL/BROKER/FLEET).
+
+- **`train.py`**: temporal train/val/test split, negative sampling 1:1,
+  Adam + weight decay, best-checkpoint saving, sklearn AUC reporting.
+
+- **`serve.py`**: Flask `POST /predict-links`, `GET /health`, `GET /metrics`.
+  Precomputed embeddings at startup. Port 8501.
+
+- `Dockerfile` (Python 3.11-slim, CPU-only torch+PyG), `requirements.txt`.
+- Tests: 15 cases (shapes, no-NaN, dropout-eval, training step, temporal split).
+- Makefile: `gnn-setup`, `gnn-train`, `gnn-serve`, `gnn-test`.
+
+### LayoutLMv3 PDF Extraction (`innovation/layoutlm_pdf/`)
+
+- **`extractor.py`**: PDF→pdf2image→pytesseract→LayoutLMv3 NER.
+  Entities: `company_name`, `registration_number`, `address`, `legal_rep`.
+  Heuristic regex fallback (HRB/SIREN/NIF, GmbH/SARL/SL, Geschäftsführer/gérant/administrador).
+
+- 3 fixtures: DE Handelsregister, FR Extrait Kbis, ES Nota Simple.
+  `fixtures/generate_fixtures.py` + `ground_truth.json`.
+
+- Tests: 13 cases (heuristic patterns, confidence range, JSON schema, subprocess stdout).
+- Makefile: `layoutlm-setup`, `layoutlm-fixtures`, `layoutlm-test`.
+
+### Go Integration (`discovery/internal/families/a_registries/`)
+
+- **`gnn_enrichment.go`**: `GNNClient`, `PredictLinks`, `EnsureLinksSchema`,
+  `PersistLinks` (upsert), `EnrichDealer`. `dealer_predicted_links` table.
+- Prometheus: `cardex_gnn_predictions_total{result}`,
+  `cardex_gnn_latency_seconds`, `cardex_gnn_links_stored_total`.
+- Tests: 10 cases, all pass `-race`.
+- Planning: `planning/02_MARKET_INTELLIGENCE/INNOVATION_GNN.md`.
+
+---
+
 ## [Phase 5] — Infrastructure (2026-04-14)
 
 **Commit:** `79254b0 feat(P5-sprint23): infrastructure scaffolding`

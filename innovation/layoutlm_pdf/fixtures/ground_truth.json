@@ -1,0 +1,20 @@
+{
+  "de_handelsregister": {
+    "company_name": "Autohaus München GmbH",
+    "registration_number": "HRB 123456",
+    "address": "Leopoldstraße 45, 80804 München",
+    "legal_rep": "Hans Müller"
+  },
+  "fr_kbis": {
+    "company_name": "Garage Renault Lyon Centre SARL",
+    "registration_number": "542 107 651",
+    "address": "12 Rue de la République, 69001 Lyon",
+    "legal_rep": "Marie Dupont"
+  },
+  "es_nota_simple": {
+    "company_name": "Seat Concesionario Madrid Sur SL",
+    "registration_number": "B-87654321",
+    "address": "Calle Gran Vía 22, 28013 Madrid",
+    "legal_rep": "Carlos García"
+  }
+}
