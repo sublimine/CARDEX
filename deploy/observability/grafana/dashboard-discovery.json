@@ -41,7 +41,7 @@
       "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
       "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["sum"]}},
       "fieldConfig": {"defaults": {"unit": "short"}},
-      "targets": [{"expr": "increase(discovery_dealers_discovered_total[24h])", "legendFormat": "New dealers"}]
+      "targets": [{"expr": "increase(cardex_discovery_dealers_discovered_total[24h])", "legendFormat": "New dealers"}]
     },
     {
       "id": 3,
@@ -50,7 +50,7 @@
       "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
       "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"]}},
       "fieldConfig": {"defaults": {"unit": "short"}},
-      "targets": [{"expr": "discovery_dealers_total", "legendFormat": "Total dealers"}]
+      "targets": [{"expr": "cardex_discovery_dealers_total", "legendFormat": "Total dealers"}]
     },
     {
       "id": 4,
@@ -59,7 +59,7 @@
       "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
       "options": {"colorMode": "value", "reduceOptions": {"calcs": ["lastNotNull"]}},
       "fieldConfig": {"defaults": {"unit": "short"}},
-      "targets": [{"expr": "discovery_active_families", "legendFormat": "Families"}]
+      "targets": [{"expr": "cardex_discovery_active_families", "legendFormat": "Families"}]
     },
     {
       "id": 5,
@@ -73,7 +73,7 @@
       },
       "targets": [
         {
-          "expr": "rate(discovery_scrape_errors_total[5m]) / (rate(discovery_scrape_requests_total[5m]) + 0.001)",
+          "expr": "rate(cardex_discovery_scrape_errors_total[5m]) / (rate(cardex_discovery_scrape_requests_total[5m]) + 0.001)",
           "legendFormat": "{{family}}"
         }
       ]
@@ -87,7 +87,7 @@
       "fieldConfig": {"defaults": {"unit": "short"}},
       "targets": [
         {
-          "expr": "increase(discovery_dealers_discovered_total[24h])",
+          "expr": "increase(cardex_discovery_dealers_discovered_total[24h])",
           "legendFormat": "{{family}}"
         }
       ]
@@ -100,7 +100,7 @@
       "fieldConfig": {"defaults": {"unit": "s"}},
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, rate(discovery_scrape_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.95, rate(cardex_discovery_scrape_duration_seconds_bucket[5m]))",
           "legendFormat": "p95 {{family}}"
         }
       ]
@@ -113,7 +113,7 @@
       "fieldConfig": {"defaults": {"unit": "s"}},
       "targets": [
         {
-          "expr": "discovery_cycle_duration_seconds",
+          "expr": "cardex_discovery_cycle_duration_seconds",
           "legendFormat": "Cycle duration"
         }
       ]

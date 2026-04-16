@@ -32,7 +32,7 @@
       "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
       "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["sum"]}},
       "fieldConfig": {"defaults": {"unit": "short"}},
-      "targets": [{"expr": "increase(cardex_vehicles_validated_total[24h])", "legendFormat": "Validated"}]
+      "targets": [{"expr": "increase(cardex_quality_vehicles_validated_total[24h])", "legendFormat": "Validated"}]
     },
     {
       "id": 3,
@@ -46,7 +46,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": 0}, {"color": "yellow", "value": 10}, {"color": "red", "value": 50}]}
         }
       },
-      "targets": [{"expr": "increase(cardex_critical_failures_total[1h])", "legendFormat": "{{validator_id}}"}]
+      "targets": [{"expr": "increase(cardex_quality_critical_failures_total[1h])", "legendFormat": "{{validator_id}}"}]
     },
     {
       "id": 4,
@@ -60,7 +60,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": 0}, {"color": "yellow", "value": 1000}, {"color": "red", "value": 5000}]}
         }
       },
-      "targets": [{"expr": "quality_pending_vehicles", "legendFormat": "Pending"}]
+      "targets": [{"expr": "cardex_quality_pending_vehicles", "legendFormat": "Pending"}]
     },
     {
       "id": 5,
@@ -78,7 +78,7 @@
       },
       "targets": [
         {
-          "expr": "increase(cardex_validation_total{validator_id=\"V20\"}[24h])",
+          "expr": "increase(cardex_quality_validation_total{validator_id=\"V20\"}[24h])",
           "legendFormat": "{{result}}"
         }
       ]
@@ -96,7 +96,7 @@
       "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1}},
       "targets": [
         {
-          "expr": "rate(cardex_validation_total{result=\"pass\"}[1h]) / (rate(cardex_validation_total[1h]) + 0.001)",
+          "expr": "rate(cardex_quality_validation_total{result=\"pass\"}[1h]) / (rate(cardex_quality_validation_total[1h]) + 0.001)",
           "legendFormat": "{{validator_id}}"
         }
       ]
@@ -109,7 +109,7 @@
       "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 2}}},
       "targets": [
         {
-          "expr": "increase(cardex_critical_failures_total[5m])",
+          "expr": "increase(cardex_quality_critical_failures_total[5m])",
           "legendFormat": "{{validator_id}}"
         }
       ]
@@ -122,7 +122,7 @@
       "fieldConfig": {"defaults": {"unit": "ms"}},
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, rate(cardex_validation_duration_seconds_bucket[5m])) * 1000",
+          "expr": "histogram_quantile(0.95, rate(cardex_quality_validation_duration_seconds_bucket[5m])) * 1000",
           "legendFormat": "p95 {{validator_id}}"
         }
       ]
@@ -135,7 +135,7 @@
       "fieldConfig": {"defaults": {"unit": "percentunit"}},
       "targets": [
         {
-          "expr": "cardex_composite_score_bucket",
+          "expr": "cardex_quality_composite_score_bucket",
           "legendFormat": "Score {{le}}"
         }
       ]
@@ -146,7 +146,7 @@
       "type": "timeseries",
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
       "fieldConfig": {"defaults": {"unit": "short", "custom": {"fillOpacity": 20}}},
-      "targets": [{"expr": "rate(cardex_vehicles_validated_total[1m]) * 60", "legendFormat": "Vehicles/min"}]
+      "targets": [{"expr": "rate(cardex_quality_vehicles_validated_total[1m]) * 60", "legendFormat": "Vehicles/min"}]
     }
   ],
   "refresh": "1m",
