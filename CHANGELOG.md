@@ -2,6 +2,26 @@
 
 All significant implementation milestones for CARDEX Phases 2–5.
 
+## [Sprint 28] — E12 Edge Tauri gRPC Push MVP (2026-04-16)
+
+**Branch:** `sprint/28-edge-tauri-grpc`
+
+- **E12 gRPC server** (`extraction/internal/extractor/e12_edge/server/`):
+  - Client-streaming `PushListings` RPC + unary `Heartbeat`
+  - API key auth (SHA-256 hash in `edge_dealers` SQLite table)
+  - Per-dealer rate limit: 1000 listings/60s sliding window
+  - Prometheus: `cardex_edge_push_listings_total{dealer,status}`, `cardex_edge_push_latency_seconds`
+  - 7 Go tests pass with `-race`: heartbeat, valid batch, short VIN, bad key, multi-batch, extraction_method tag, DB lifecycle
+- **Proto definition** (`extraction/api/proto/edge_push.proto`) + hand-written wire-compatible Go types in `extraction/api/edgepb/`; `make proto` for protoc generation
+- **Dealer CLI** (`extraction/cmd/cardex-dealer/`): `register --name --country --vat` (VIES validated), `list`, `revoke`
+- **Edge Push server binary** (`extraction/cmd/edge-push-server/`): TLS 1.3, Prometheus `/metrics :9102`
+- **Tauri client scaffold** (`clients/edge-tauri/`): Rust backend (login/push_vehicle/push_csv/heartbeat), HTML/CSS/JS UI (Add Vehicle, CSV import, history, heartbeat indicator), auto-update
+- **Security**: grpc upgraded v1.71.1 → v1.79.3 (GO-2026-4762 auth bypass fix)
+- **Makefile**: `make proto`, `make build-edge`
+- **Planning doc**: `planning/04_EXTRACTION_PIPELINE/E12_EDGE_PUSH.md`
+
+---
+
 ## [Unreleased] — Sprint 24: E2E integration test + terminal CLI (2026-04-16)
 
 **Branch:** `sprint/24-e2e-terminal`

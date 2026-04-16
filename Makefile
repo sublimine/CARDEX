@@ -11,8 +11,8 @@
 #
 # =============================================================================
 
-.PHONY: all build test lint dev smoke deploy secrets help cli e2e \
-        build-discovery build-extraction build-quality \
+.PHONY: all build test lint dev smoke deploy secrets help cli e2e proto \
+        build-discovery build-extraction build-quality build-edge \
         test-discovery test-extraction test-quality \
         lint-discovery lint-extraction lint-quality
 
@@ -134,6 +134,38 @@ cli:
 # ---------------------------------------------------------------------------
 e2e:
 	go test ./tests/e2e/... -tags=e2e -v -timeout=5m
+
+# ---------------------------------------------------------------------------
+# proto — compile protobuf definitions to Go (+ Rust via cargo build)
+#
+# Prerequisites (one-time install):
+#   go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+#   go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+#   brew install protobuf   (or: apt install protobuf-compiler)
+# ---------------------------------------------------------------------------
+proto:
+	@echo "Compiling edge_push.proto -> Go (extraction/api/edgepb)..."
+	protoc \
+		--proto_path=extraction/api/proto \
+		--go_out=extraction/api/edgepb \
+		--go_opt=paths=source_relative \
+		--go-grpc_out=extraction/api/edgepb \
+		--go-grpc_opt=paths=source_relative \
+		extraction/api/proto/edge_push.proto
+	@echo "Done. Run 'cargo build' in clients/edge-tauri/ for Rust client."
+
+# ---------------------------------------------------------------------------
+# build-edge — build edge-push-server + cardex-dealer CLI
+# ---------------------------------------------------------------------------
+build-edge:
+	@echo "Building edge-push-server..."
+	cd extraction && GOWORK=off go build -ldflags="-s -w" \
+		-o ../bin/edge-push-server ./cmd/edge-push-server/
+	@echo "  -> bin/edge-push-server"
+	@echo "Building cardex-dealer..."
+	cd extraction && GOWORK=off go build -ldflags="-s -w" \
+		-o ../bin/cardex-dealer ./cmd/cardex-dealer/
+	@echo "  -> bin/cardex-dealer"
 
 # ---------------------------------------------------------------------------
 # help
