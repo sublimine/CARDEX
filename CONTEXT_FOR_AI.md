@@ -36,7 +36,7 @@ Go module `github.com/cardex/discovery`. Finds dealer URLs via 15 intelligence f
 
 ### Phase 3 — Extraction (`extraction/`)
 
-Go module `github.com/cardex/extraction`. Extracts vehicle listings using 12 strategies:
+Go module `github.com/cardex/extraction`. Extracts vehicle listings using 13 strategies:
 
 | Strategy | Method |
 |----------|--------|
@@ -50,8 +50,9 @@ Go module `github.com/cardex/extraction`. Extracts vehicle listings using 12 str
 | E08 | PDF extraction (inventory sheets) |
 | E09 | Excel/CSV extraction |
 | E10 | Email/EDI ingestion |
-| E11 | Edge push (Tauri client, Priority=1500 — Phase 4 gRPC wiring pending) |
-| E12 | Manual review queue (Priority=0 — last resort, enqueues dealer for human review) |
+| E11 | Dead-letter queue (Priority=50 — routes unresolvable dealers to E12/manual) |
+| E12 | gRPC edge push (Priority=1500 — dealer Tauri client, TLS 1.3, API key auth, :50051) |
+| E13 | VLM Screenshot Vision (Priority=100 — opt-in via VLM_ENABLED=true; Phi-3.5-vision via ollama) |
 
 ### Phase 4 — Quality (`quality/`)
 
@@ -112,16 +113,17 @@ Do not assume any of the following exist in working code:
 
 ---
 
-## What is future (Innovation Roadmap)
+## Innovation services (experimental, CPU-only)
 
-`planning/02_MARKET_INTELLIGENCE/06_INNOVATION_ROADMAP.md` describes 5 future AI/ML enhancements:
-1. GNN fraud detection
-2. VLM computer vision for vehicle photos
-3. RAG buying assistant
-4. Chronos-2 price forecasting
-5. BGE-M3 multilingual entity resolution
+Implemented in `innovation/` — Python services that run alongside the core pipeline:
 
-**These are a 12-month post-MVP roadmap. None are implemented.**
+| Service | Port | What it does |
+|---------|------|-------------|
+| `gnn_dealer_inference/` | :8501 | GraphSAGE link prediction — predicts dealer network relationships |
+| `rag_search/` | :8502 | Local RAG — nomic-embed-text + FAISS + optional Llama 3.2 reranker |
+| `chronos_forecasting/` | :8503 | Chronos-2 / AutoETS price forecasting per (country, make, model, year_range) |
+
+These are **experimental** — stable interface but not production-deployed. Require ollama (for E13/RAG) and ~200–800 MB RAM each. BGE-M3 multilingual entity resolution remains future roadmap.
 
 ---
 

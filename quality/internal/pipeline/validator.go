@@ -94,47 +94,6 @@ func NewVehicle(
 	}, nil
 }
 
-// NewVehicle constructs a Vehicle and validates its required fields.
-// Returns an error if InternalID, VIN, vehicleMake, vehicleModel, SourceURL,
-// or DealerID are empty — those are mandatory for the quality pipeline.
-func NewVehicle(
-	internalID, vin, vehicleMake, vehicleModel string,
-	year int,
-	sourceURL, dealerID, sourceCountry string,
-	extractedAt time.Time,
-) (*Vehicle, error) {
-	if internalID == "" {
-		return nil, fmt.Errorf("NewVehicle: InternalID is required")
-	}
-	if vin == "" {
-		return nil, fmt.Errorf("NewVehicle: VIN is required")
-	}
-	if vehicleMake == "" {
-		return nil, fmt.Errorf("NewVehicle: Make is required")
-	}
-	if vehicleModel == "" {
-		return nil, fmt.Errorf("NewVehicle: Model is required")
-	}
-	if sourceURL == "" {
-		return nil, fmt.Errorf("NewVehicle: SourceURL is required")
-	}
-	if dealerID == "" {
-		return nil, fmt.Errorf("NewVehicle: DealerID is required")
-	}
-	return &Vehicle{
-		InternalID:    internalID,
-		VIN:           vin,
-		Make:          vehicleMake,
-		Model:         vehicleModel,
-		Year:          year,
-		SourceURL:     sourceURL,
-		DealerID:      dealerID,
-		SourceCountry: sourceCountry,
-		ExtractedAt:   extractedAt,
-		Metadata:      map[string]string{},
-	}, nil
-}
-
 // ValidationResult is the outcome of a single validator run on one vehicle.
 type ValidationResult struct {
 	ValidatorID string

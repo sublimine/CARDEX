@@ -15,7 +15,7 @@ CARDEX is a three-stage pipeline: **Discover** dealers → **Extract** their lis
 │                                                                         │
 │  Discovery Service        Extraction Service       Quality Service      │
 │  ─────────────────        ─────────────────        ───────────────      │
-│  15 families:             12 strategies:           20 validators:       │
+│  15 families:             13 strategies:           20 validators:       │
 │  A. Business registries   E01 JSON-LD              V01 VIN checksum     │
 │  B. OSM Overpass          E02 CMS REST             V02 NHTSA recall     │
 │  C. Wayback/crt.sh        E03 Sitemap XML          V03 DAT lookup       │
@@ -26,9 +26,9 @@ CARDEX is a three-stage pipeline: **Discover** dealers → **Extract** their lis
 │  H. OEM dealer locators   E08 PDF extraction       V08 Mileage range    │
 │  I. Inspection networks   E09 Excel/CSV            V09 Year range       │
 │  J. Sub-jurisdictions     E10 Email/EDI            V10 URL liveness     │
-│  K. SearXNG meta-search   E11 Edge push (Tauri)    V11 NLG quality      │
-│  L. Social profiles       E12 Manual queue         V12 Cross-source dedup│
-│  M. VAT/UID registries                             V13 Completeness     │
+│  K. SearXNG meta-search   E11 Dead-letter queue    V11 NLG quality      │
+│  L. Social profiles       E12 gRPC edge push       V12 Cross-source dedup│
+│  M. VAT/UID registries    E13 VLM vision (opt-in)  V13 Completeness     │
 │  N. Infra intel                                    V14 Freshness        │
 │  O. Press archives                                 V15 Dealer trust     │
 │                                                    V16 Photo phash dedup│
@@ -72,6 +72,16 @@ Storage:
 
 Backup:
   Daily 03:00 UTC → WAL checkpoint → age-encrypt → rsync → Hetzner Storage Box
+
+Innovation services (experimental, CPU-only, loopback):
+  GNN inference     :8501  POST /predict-links  (GraphSAGE dealer link prediction)
+  RAG search        :8502  POST /search         (nomic-embed-text + FAISS + Llama 3.2)
+  Chronos forecast  :8503  POST /forecast       (Chronos-2 / AutoETS price forecasting)
+
+Edge push:
+  gRPC edge server  :50051  PushListings RPC (TLS 1.3, API key auth)
+                            Dealer CLI: extraction/cmd/cardex-dealer/
+                            Desktop client: clients/edge-tauri/ (Rust+Tauri)
 ```
 
 ---

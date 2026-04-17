@@ -74,6 +74,32 @@ Examples:
 - `fix(quality): V07 price range edge case for CH dealers`
 - `docs: update CONTEXT_FOR_AI with V20 composite decision logic`
 
+## Innovation services (Python)
+
+Services in `innovation/` follow these conventions:
+- Each service has its own `requirements.txt` and `Dockerfile` (Python 3.11-slim, CPU-only)
+- Tests use `pytest` with zero network/GPU dependencies (mocked models, `httptest`-style fixtures)
+- Run with `make {service}-setup / {service}-test` (see `make help` for all targets)
+- Flask/FastAPI servers expose `/health` and Prometheus `/metrics` endpoints
+
+## gRPC / protobuf
+
+The edge push contract lives in `extraction/api/proto/edge_push.proto`. Regenerate Go bindings:
+```bash
+make proto  # requires protoc + protoc-gen-go + protoc-gen-go-grpc
+```
+Hand-written wire-compatible Go types in `extraction/api/edgepb/` are the source of truth until proto codegen is available in CI.
+
+## Tauri (Rust) client
+
+The dealer edge-push desktop client lives in `clients/edge-tauri/`. It is a standard Tauri 1.x app:
+```bash
+cd clients/edge-tauri
+npm install
+npm run tauri dev
+```
+The Rust backend calls the gRPC edge server on `:50051`. Keep the Rust side free of business logic — all decisions belong in the server.
+
 ## Secrets
 
 - Never commit `.env`, `*.key`, `*.pem`, `*.age`, credentials of any kind.

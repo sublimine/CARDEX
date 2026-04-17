@@ -101,6 +101,30 @@ When starting work on a module, read these in order:
 ## 7. Known limitations
 
 - **E07 (Playwright)** requires Playwright and Chromium installed. Skip with `EXTRACTION_SKIP_E07=true` for dev.
+- **E12 gRPC edge push** requires `extraction/cmd/edge-push-server` running + TLS certs. Build with `make build-edge`.
+- **E13 VLM Vision** requires `ollama` running with a vision model. Enable with `VLM_ENABLED=true`. Skip for dev (CPU cost ~45 s/image).
 - **V02 (NHTSA)** makes external HTTP calls to api.nhtsa.dot.gov. Skip with `QUALITY_SKIP_V02=true` in offline environments.
 - **V03 (DAT)** requires DAT credentials. Skip with `QUALITY_SKIP_V03=true`.
 - **Family K (SearXNG)** requires a running SearXNG instance. Skip with `DISCOVERY_SKIP_FAMILIA_K=true`.
+
+## 8. Innovation services (Python, experimental)
+
+```bash
+# GNN dealer inference (port 8501)
+make gnn-setup   # install deps (CPU-only)
+make gnn-train   # train GraphSAGE model
+make gnn-serve   # start Flask server
+
+# Local RAG search (port 8502)
+cd innovation/rag_search && pip install -r requirements.txt
+python indexer.py --db ../../data/discovery.db
+uvicorn serve:app --port 8502
+
+# Chronos-2 price forecasting (port 8503)
+make forecast-pipeline  # SQLite → time-series CSVs
+make forecast-serve     # start FastAPI server
+
+# LayoutLMv3 PDF registry extractor (CLI subprocess, no server)
+make layoutlm-setup
+make layoutlm-test
+```
