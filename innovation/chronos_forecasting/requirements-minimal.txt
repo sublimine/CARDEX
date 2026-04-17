@@ -1,0 +1,17 @@
+# CARDEX Chronos-2 Forecasting — minimal dependencies (statsforecast only)
+#
+# Zero ML deps. No torch, no HuggingFace. ~100MB install.
+# The forecaster auto-detects statsforecast as fallback when chronos is absent.
+#
+# Usage:
+#   pip install -r requirements-minimal.txt
+
+pandas>=2.1.0
+numpy>=1.26.0
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.9.0
+httpx>=0.28.0
+statsforecast>=1.7.8
+pytest>=8.0.0
+pytest-asyncio>=0.23.0

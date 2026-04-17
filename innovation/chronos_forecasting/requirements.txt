@@ -1,0 +1,42 @@
+# CARDEX Chronos-2 Forecasting — Python dependencies
+#
+# Primary backend: Chronos-2 (Amazon, encoder-only, 28M mini)
+# Fallback backend: statsforecast (Nixtla, pure statistical)
+#
+# Install options:
+#
+#   Full (Chronos-2 + fallback):
+#     pip install -r requirements.txt
+#
+#   Minimal (statsforecast only, zero ML deps, <100MB):
+#     pip install -r requirements-minimal.txt
+#
+# Chronos-2 installation note (2026-04-16):
+#   Package: chronos-forecasting v2.2.2 (PyPI)
+#   Model:   amazon/chronos-bolt-mini (HuggingFace Hub)
+#   RAM:     ~200MB for mini; ~500MB for base
+#   Deps:    torch>=2.1 (CPU-only: torch --index-url https://download.pytorch.org/whl/cpu)
+#   If torch installation is slow/large, use the statsforecast-only requirements-minimal.txt.
+
+# ── Core data ────────────────────────────────────────────────────────────────
+pandas>=2.1.0
+numpy>=1.26.0
+
+# ── API server ───────────────────────────────────────────────────────────────
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.9.0
+httpx>=0.28.0  # for test client
+
+# ── Chronos-2 (primary backend) ──────────────────────────────────────────────
+chronos-forecasting>=2.2.2
+# torch is a transitive dependency of chronos-forecasting.
+# For CPU-only (no CUDA), install torch separately first:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+# ── statsforecast (fallback backend, always included) ────────────────────────
+statsforecast>=1.7.8
+
+# ── Testing ──────────────────────────────────────────────────────────────────
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
