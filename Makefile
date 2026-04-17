@@ -17,7 +17,8 @@
         lint-discovery lint-extraction lint-quality \
         gnn-setup gnn-train gnn-serve gnn-test \
         layoutlm-setup layoutlm-fixtures layoutlm-test \
-        forecast-pipeline forecast-serve forecast-test
+        forecast-pipeline forecast-serve forecast-test \
+        routes-build routes-serve routes-test
 
 # ---------------------------------------------------------------------------
 # Variables
@@ -252,6 +253,28 @@ forecast-test:
 	cd innovation/chronos_forecasting && python -m pytest tests/ -v
 
 # ---------------------------------------------------------------------------
+# routes-build — compile the CARDEX Routes disposition server
+# ---------------------------------------------------------------------------
+routes-build:
+	@echo "Building routes-server..."
+	cd innovation/routes && GOWORK=off go build -ldflags="-s -w" \
+	    -o ../../bin/routes-server ./cmd/routes-server/
+	@echo "  -> bin/routes-server"
+
+# ---------------------------------------------------------------------------
+# routes-serve — start the Routes disposition API server (port 8504)
+# ---------------------------------------------------------------------------
+routes-serve:
+	cd innovation/routes && GOWORK=off go run ./cmd/routes-server/ \
+	    2>&1 | tee -a routes-server.log
+
+# ---------------------------------------------------------------------------
+# routes-test — run routes Go test suite
+# ---------------------------------------------------------------------------
+routes-test:
+	cd innovation/routes && GOWORK=off go test -race -count=1 -v ./...
+
+# ---------------------------------------------------------------------------
 # help
 # ---------------------------------------------------------------------------
 help:
@@ -274,6 +297,10 @@ help:
 	@echo "  make forecast-pipeline Run Chronos-2 data pipeline (SQLite → CSVs)"
 	@echo "  make forecast-serve    Start Chronos-2 forecast API (port 8503)"
 	@echo "  make forecast-test     Run Chronos-2 pytest suite"
+	@echo ""
+	@echo "  make routes-build      Build routes-server binary"
+	@echo "  make routes-serve      Start Routes disposition API (port 8504)"
+	@echo "  make routes-test       Run routes Go test suite (35 tests, -race)"
 	@echo ""
 	@echo "  make dev             Start local Docker Compose stack"
 	@echo "  make down            Stop local stack"

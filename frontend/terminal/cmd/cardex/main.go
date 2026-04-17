@@ -120,6 +120,9 @@ Set CARDEX_DB_PATH or pass --db to point at your database file.`,
 	root.AddCommand(newReviewCmd())
 	root.AddCommand(newTaxCmd())
 	root.AddCommand(newEVWatchCmd())
+	root.AddCommand(newForecastCmd())
+	root.AddCommand(newRoutesCmd())
+	root.AddCommand(newPulseCmd())
 	return root
 }
 
