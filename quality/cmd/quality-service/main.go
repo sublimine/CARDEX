@@ -53,6 +53,7 @@ import (
 	_ "modernc.org/sqlite"
 
 	"cardex.eu/quality/internal/config"
+	"cardex.eu/quality/internal/ev_watch"
 	"cardex.eu/quality/internal/metrics"
 	"cardex.eu/quality/internal/pipeline"
 	"cardex.eu/quality/internal/storage"
@@ -210,6 +211,9 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
 	})
+	// EV watch API: /ev-watch/anomalies, /ev-watch/cohort, /ev-watch/run
+	ev_watch.NewHandler(store.DB(), log).Register(metricsMux)
+
 	metricsSrv := &http.Server{Addr: cfg.MetricsAddr, Handler: metricsMux}
 	go func() {
 		log.Info("metrics server starting", "addr", cfg.MetricsAddr)
@@ -226,12 +230,22 @@ func main() {
 		_ = metricsSrv.Shutdown(shutCtx)
 	}()
 
+	evWatchInterval := 24 * time.Hour
+	lastEVWatch := time.Time{}
+
 	for {
 		if ctx.Err() != nil {
 			break
 		}
 		if err := runCycle(ctx, log, pl, store, cfg); err != nil {
 			log.Error("validation cycle error", "err", err)
+		}
+		// Run EV anomaly analysis once per day.
+		if time.Since(lastEVWatch) >= evWatchInterval {
+			if err := ev_watch.RunAnalysisWithContext(ctx, store.DB(), log); err != nil {
+				log.Error("ev_watch analysis error", "err", err)
+			}
+			lastEVWatch = time.Now()
 		}
 		if cfg.OneShot {
 			log.Info("one-shot mode: exiting after single cycle")
