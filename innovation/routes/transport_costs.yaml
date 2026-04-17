@@ -1,0 +1,14 @@
+# CARDEX Routes — Transport Cost Overrides
+#
+# Override any built-in transport cost with your actual carrier rates.
+# Keys are "FROM-TO" (uppercase ISO 3166-1 alpha-2), values are EUR (not cents).
+#
+# Example: update DE→FR based on your contracted carrier rate:
+#
+#   pairs:
+#     DE-FR: 680
+#     FR-DE: 680
+#
+# Pairs not listed here fall back to the built-in defaults.
+
+pairs: {}

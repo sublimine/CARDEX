@@ -11,7 +11,7 @@ Pan-European vehicle intelligence platform. Discovers, extracts, and validates u
 | `quality/` | P4 | Validates listings against 20 rules (VIN, NHTSA, price, photo hash, sold-check, composite score) | **Complete** |
 | `deploy/` | P5 | Single-VPS deploy infra: systemd units, Caddy, Prometheus, Grafana, encrypted backups | **Complete** |
 | `frontend/terminal/` | P5+ | Terminal buyer CLI (`cardex search/show/stats/review/search-natural/forecast`) reading from the shared SQLite | **Complete** |
-| `innovation/` | R&D | GNN dealer inference (:8501), local RAG search (:8502), Chronos-2 price forecasting (:8503) | **Experimental** |
+| `innovation/` | R&D | GNN dealer inference (:8501), local RAG search (:8502), Chronos-2 price forecasting (:8503), Routes disposition (:8504) | **Experimental** |
 
 ## Quick start
 
@@ -59,6 +59,11 @@ cd frontend/terminal && GOWORK=off go build -o ../../bin/cardex-cli ./cmd/cardex
 
 # Price forecast via Chronos-2 (requires innovation/chronos_forecasting running)
 ./bin/cardex-cli forecast --make BMW --model "3er" --country DE --horizon 30 --spark
+
+# CARDEX Routes — Fleet Disposition Intelligence (requires innovation/routes running)
+./bin/cardex-cli routes spread --make BMW --model 320d --year 2021 --km 45000
+./bin/cardex-cli routes optimize --make BMW --model 320d --year 2021 --km 45000 --country FR
+./bin/cardex-cli routes batch --input fleet.csv --output plan.json
 ```
 
 Set `CARDEX_DB_PATH` to point to the SQLite database (default: `./data/discovery.db`).
@@ -95,7 +100,7 @@ extraction/          Go module — 13-strategy vehicle listing extractor (E01–
 quality/             Go module — 20-validator listing quality pipeline
 deploy/              VPS infrastructure (Docker + systemd + Caddy + Prometheus + scripts)
 frontend/terminal/   Terminal buyer CLI (Go) — search, show, stats, review, forecast
-innovation/          Python research services — GNN :8501, RAG :8502, Chronos :8503
+innovation/          Research services — GNN :8501, RAG :8502, Chronos :8503, Routes :8504
 clients/edge-tauri/  Rust+Tauri dealer desktop client (edge push gRPC)
 planning/            All specs and architecture docs (primary reference)
 internal/shared/     Shared Go utilities

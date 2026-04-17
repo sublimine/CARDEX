@@ -2,6 +2,113 @@
 
 All significant implementation milestones for CARDEX Phases 2–5.
 
+## [Sprint 36-39] — CARDEX Routes: Fleet Disposition Intelligence (2026-04-18)
+
+**Branch:** `sprint/36-routes-disposition`  
+**Module:** `innovation/routes/` (Go, `cardex.eu/routes`)
+
+### Market Spread Calculator (`spread.go`)
+- `SpreadCalculator.Calculate(make, model, year, km, fuel)` → `MarketSpread`
+- Cohort: `vehicle_record JOIN dealer_entity`, year ±1, km bracket (0-30k/30-80k/80k+)
+- `PricesByCountry` map with `AVG(price_gross_eur)*100` per country, `SamplesByCountry`
+- `BestCountry` / `WorstCountry` / `SpreadAmount` / `Confidence` (exp-decay on sample count)
+
+### Disposition Optimizer (`optimizer.go`)
+- `Optimizer.Optimize(OptimizeRequest)` → `DispositionPlan`
+- Evaluates all 6 countries × 3 channels (dealer_direct / auction / export)
+- Per route: market price, VAT/customs (Tax Engine), transport cost (carrier matrix)
+- Auction: adds 3% buyer premium to transport cost
+- Routes sorted by `NetProfit = EstimatedPrice − VATCost − TransportCost`
+- `TotalUplift`: best net profit vs selling locally
+
+### Transport Cost Matrix (`transport.go`)
+- Static defaults for all 30 directional country pairs (DE/FR/ES/NL/BE/CH)
+- YAML override: `transport_costs.yaml` — configurable real carrier rates per pair
+- `timeToSellDays`: calibrated static estimates by country/channel (BCA 2024 data)
+
+### Tax Engine Integration (`tax.go`)
+- `DefaultTaxEngine.VATCost(from, to, price)`: intra-EU B2B = €0; EU→CH = 8.1%+€500; CH→EU = dest VAT+€400
+- Mirrors `cardex.eu/tax` logic; standalone (no module dependency)
+
+### Batch Optimizer (`batch.go`)
+- `BatchOptimizer.Optimize([]VehicleInput)` → `BatchPlan`
+- Per-destination concentration cap: ≤20% of fleet to single country
+- Vehicles sorted by best net profit (highest-value first, for fair cap allocation)
+- `BatchSummary` helper with route breakdown, uplift totals
+
+### Gain-Share Calculator (`gainshare.go`)
+- `CalculateGainShare(actual, baseline, feeRate)` → `GainShare{Uplift, Fee, NetToClient}`
+- Fee rate 15–20%; zero fee when actual ≤ baseline; error on rate > 1
+- Ready for post-sale invoicing integration
+
+### HTTP API (`server.go`, port 8504)
+- `GET /health` → `{status, db, time}`
+- `GET /routes/spread?make=&model=&year=[&km&fuel]` → `MarketSpread`
+- `POST /routes/optimize` → `DispositionPlan` (404 if no data)
+- `POST /routes/batch` → `BatchPlan`
+
+### Go CLI (`frontend/terminal/cmd/cardex/routes.go`)
+- `cardex routes optimize --make BMW --model 320d --year 2021 --km 45000 --country FR`
+- `cardex routes spread --make BMW --model 320d --year 2021`
+- `cardex routes batch --input fleet.csv --output plan.json`
+- Fleet CSV: `vin,make,model,year,mileage_km,fuel_type,country`
+- Renders: ANSI route table, market spread by country, batch summary with destination breakdown
+
+### Test suite (35 tests, `go test -race`)
+- Transport: DE→FR cost, DE→ES > DE→NL, symmetry, same-country=0, YAML override, unknown pair penalty
+- Tax: intra-EU=0, EU→CH 8.1%+€500, CH→EU dest VAT+€400, same country=0
+- Spread: 5-country fixture, spread amount, confidence, empty result
+- Optimizer: best route net profit, intra-EU zero VAT, CH VAT cost present, sorted, no-data empty plan, formula
+- Batch: 10-vehicle all assigned, concentration ≤20%, empty input, validation
+- Gain-share: 15% fee, 20% fee, no-uplift=0, invalid rate error
+- HTTP: health 200, missing params 400, no-data 404, success 200, invalid JSON 400
+
+### Makefile
+- `make routes-build` — compile `bin/routes-server`
+- `make routes-serve` — run API on :8504
+- `make routes-test` — full test suite
+
+### Planning
+- `planning/INNOVATION/ROUTES_DISPOSITION.md` — exhaustive architecture doc, market context, API reference, deployment guide
+
+## [Unreleased] — Sprint 33: EV Watch — Battery Anomaly Signal (2026-04-18)
+
+**Branch:** `sprint/33-ev-watch`
+
+### EV Anomaly Analyzer (`quality/internal/ev_watch/`)
+- `EVAnomalyScore` struct — vehicle identity + cohort stats + z-score + SoH classification
+- `Analyzer.RunAnalysis()` — loads all EV listings (fuel_type IN electric/hybrid_plugin/plug_in_hybrid), groups by (make, model, year, country) cohort, runs OLS regression (price ~ mileage_km), computes z-score of price residuals
+- OLS fallback: constant-X denominator → use `mean(y)` as predicted price, avoiding division by zero
+- `MinCohortSize = 20` — cohorts below threshold silently skipped (insufficient statistical power)
+- `AnomalyFlag`: `z < -1.5` (strict); `EstimatedSoH`: "suspicious" z<-2.0 / "below_average" z<-1.5 / "normal"
+- `Confidence = min(1.0, cohortSize/100.0)` — saturates at 100 listings
+- `EnsureSchema()` — `ev_anomaly_scores` table with UNIQUE(vehicle_id) upsert; 4 indexes
+- Prometheus: `cardex_ev_watch_anomalies_detected_total`, `severe_anomaly_total`, `cohort_size` histogram, `analysis_duration_seconds`
+
+### HTTP API (`quality/internal/ev_watch/handler.go`)
+- `GET /ev-watch/anomalies` — query params: country, make, model, year, min_z, max_z, min_confidence, limit, anomaly_only
+- `GET /ev-watch/cohort` — make+model required; returns count/mean/stddev/price-range/anomaly counts
+- `POST /ev-watch/run` — triggers full analysis run, returns scored/anomalies/duration_ms
+- `RunAnalysisWithContext()` — called from quality service cron; structured log on severe anomalies (VIN, z-score, price_eur, cohort_size)
+
+### Quality Service Integration (`quality/cmd/quality-service/main.go`)
+- EV watch HTTP routes registered on `/metrics` mux
+- Daily cron: `evWatchInterval = 24h`; resets on each cycle; structured `slog.Warn` on z < -2.0 AND cohort >= 30
+
+### CLI (`frontend/terminal/cmd/cardex/ev_watch.go`)
+- `cardex ev-watch list [--country --make --model --year --min-confidence --limit --all]` — ANSI table with SoH color badges
+- `cardex ev-watch cohort --make --model [--year --country]` — cohort stats + ASCII z-score histogram (7 buckets, color-coded by severity)
+- `sohStyle()` — 🔴 suspicious / 🟡 below_avg / 🟢 normal via lipgloss
+
+### Tests (`quality/internal/ev_watch/analyzer_test.go`)
+- 15 tests: anomaly detection (50 normal + 3 anomalous fixtures), non-EV filtering, small cohort skip, severity levels, exact MinCohortSize boundary, upsert idempotency, confidence range [0,1], multi-country independence, OLS perfect line, OLS constant-X, mean/stddev, cohortConfidence, estimateSoH, schema idempotency, detectedAt timestamp
+- `go test ./... -race`: all 27 packages pass; govulncheck: no vulnerabilities
+
+### Planning
+- `planning/INNOVATION/EV_WATCH.md` — methodology, thresholds, deployment, roadmap
+
+---
+
 ## [Unreleased] — Sprint 31: Chronos-2 Time-Series Price Forecasting (2026-04-17)
 
 **Branch:** `sprint/31-chronos-forecasting`
