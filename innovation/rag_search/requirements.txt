@@ -1,0 +1,20 @@
+# CARDEX RAG search — Python dependencies
+# CPU-only (Hetzner CX42 — no GPU)
+
+# Core embedding + vector search
+faiss-cpu==1.9.0
+sentence-transformers==3.4.1
+torch==2.6.0
+numpy>=1.24,<2.0
+
+# API server
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+pydantic>=2.0
+slowapi==0.1.9
+
+# LLM reranker (optional — only needed when RAG_LLM_RERANK=true)
+# llama-cpp-python==0.3.9  # ~2GB wheel; install separately if needed
+
+# Utilities
+tqdm>=4.66

@@ -16,7 +16,8 @@
         test-discovery test-extraction test-quality \
         lint-discovery lint-extraction lint-quality \
         gnn-setup gnn-train gnn-serve gnn-test \
-        layoutlm-setup layoutlm-fixtures layoutlm-test
+        layoutlm-setup layoutlm-fixtures layoutlm-test \
+        forecast-pipeline forecast-serve forecast-test
 
 # ---------------------------------------------------------------------------
 # Variables
@@ -138,7 +139,6 @@ e2e:
 	go test ./tests/e2e/... -tags=e2e -v -timeout=5m
 
 # ---------------------------------------------------------------------------
-<<<<<<< HEAD
 # proto — compile protobuf definitions to Go (+ Rust via cargo build)
 #
 # Prerequisites (one-time install):
@@ -169,7 +169,8 @@ build-edge:
 	cd extraction && GOWORK=off go build -ldflags="-s -w" \
 		-o ../bin/cardex-dealer ./cmd/cardex-dealer/
 	@echo "  -> bin/cardex-dealer"
-=======
+
+# ---------------------------------------------------------------------------
 # gnn-setup — install GNN Python dependencies (CPU-only)
 # ---------------------------------------------------------------------------
 gnn-setup:
@@ -226,7 +227,29 @@ layoutlm-fixtures:
 # ---------------------------------------------------------------------------
 layoutlm-test:
 	cd innovation/layoutlm_pdf && python -m pytest tests/ -v
->>>>>>> sprint/29-gnn-layoutlm
+
+# ---------------------------------------------------------------------------
+# forecast-pipeline — run the Chronos-2 data pipeline (SQLite → time-series CSVs)
+# ---------------------------------------------------------------------------
+forecast-pipeline:
+	cd innovation/chronos_forecasting && \
+	    python data_pipeline.py \
+	    --db ../../data/discovery.db \
+	    --out timeseries
+
+# ---------------------------------------------------------------------------
+# forecast-serve — start the Chronos-2 forecast API server (port 8503)
+# ---------------------------------------------------------------------------
+forecast-serve:
+	cd innovation/chronos_forecasting && \
+	    TIMESERIES_DIR=timeseries \
+	    uvicorn serve:app --host 0.0.0.0 --port 8503 --reload
+
+# ---------------------------------------------------------------------------
+# forecast-test — run Chronos-2 pytest suite
+# ---------------------------------------------------------------------------
+forecast-test:
+	cd innovation/chronos_forecasting && python -m pytest tests/ -v
 
 # ---------------------------------------------------------------------------
 # help
@@ -238,6 +261,19 @@ help:
 	@echo "  make build           Build discovery + extraction + quality binaries"
 	@echo "  make test            Run all tests (GOWORK=off per module)"
 	@echo "  make lint            Run golangci-lint on all three modules"
+	@echo ""
+	@echo "  make gnn-setup       Install GNN CPU-only dependencies (PyG/DGL)"
+	@echo "  make gnn-train       Train GraphSAGE dealer link model"
+	@echo "  make gnn-serve       Start GNN inference server (port 8501)"
+	@echo "  make gnn-test        Run GNN pytest suite"
+	@echo ""
+	@echo "  make layoutlm-setup    Install LayoutLMv3 CPU-only dependencies"
+	@echo "  make layoutlm-fixtures Generate test PDF fixtures (DE/FR/ES)"
+	@echo "  make layoutlm-test     Run LayoutLMv3 pytest suite"
+	@echo ""
+	@echo "  make forecast-pipeline Run Chronos-2 data pipeline (SQLite → CSVs)"
+	@echo "  make forecast-serve    Start Chronos-2 forecast API (port 8503)"
+	@echo "  make forecast-test     Run Chronos-2 pytest suite"
 	@echo ""
 	@echo "  make dev             Start local Docker Compose stack"
 	@echo "  make down            Stop local stack"
