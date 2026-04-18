@@ -6,6 +6,7 @@ use (
 	./discovery
 	./extraction
 	./frontend/terminal
+	./innovation/tax_engine
 	./internal/shared
 	./quality
 	./tests/e2e

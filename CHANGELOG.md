@@ -2,6 +2,42 @@
 
 All significant implementation milestones for CARDEX Phases 2–5.
 
+## [Sprint 35] — CARDEX PULSE: Dealer Health Score (2026-04-18)
+
+**Branch:** `sprint/35-dealer-pulse`  
+**Module:** `discovery/internal/pulse/` + `discovery/cmd/pulse-service/`
+
+### Core Package
+- `model.go` — `DealerHealthScore`, `HistoryPoint`, `TierFromScore()`, tier constants (healthy/watch/stress/critical)
+- `config.go` — `WeightConfig`, `DefaultWeights()`, `LoadWeights(path)` (JSON override)
+- `signals.go` — `ComputeSignals()`: 7 SQL queries against `vehicle_record` (liquidation ratio, price trend, volume z-score, time on market, ToM delta, composite score delta, brand HHI, price vs market)
+- `scorer.go` — `Score()`, `DetectTrend()`, `CollectRiskSignals()`, per-signal stress normalisation
+- `storage.go` — `EnsureTable()`, `SaveSnapshot()`, `LoadHistory()`, `Watchlist()`, `PruneOld()`
+- `metrics.go` — `cardex_pulse_critical_dealers_total`, `cardex_pulse_watch_dealers_total`, `cardex_pulse_score_compute_duration_seconds`
+- `handler.go` — HTTP mux: `GET /pulse/health/{id}`, `GET /pulse/watchlist`, `GET /pulse/trend/{id}`
+
+### Scoring Model
+- Health score = 100 × (1 − Σ wᵢ × stress_i), clamped [0, 100]
+- Default weights: liquidation 20%, price_trend 15%, volume 15%, ToM 15%, composite_delta 10%, HHI 10%, price_vs_market 15%
+- Tiers: healthy ≥ 70, watch ≥ 50, stress ≥ 30, critical < 30
+
+### Database — Migration v8
+- `dealer_health_history` table + `idx_dhh_dealer_time` index
+
+### pulse-service Binary
+- HTTP server on `:8504`; env vars: `PULSE_DB_PATH`, `PULSE_ADDR`, `PULSE_WEIGHTS_PATH`, `PULSE_RETAIN_DAYS`
+- Graceful shutdown on SIGINT/SIGTERM; Prometheus `/metrics`, `/healthz`
+
+### CLI
+- `cardex pulse show <dealer_id>` — ANSI signal table, tier badge, trend indicator
+- `cardex pulse watchlist [--tier watch|stress|critical] [--country DE]` — worst-first
+- `CARDEX_PULSE_URL` env var (default: `http://localhost:8504`)
+
+### Tests
+- 20 tests, `go test -race`: TierFromScore boundaries (5), healthy/stressed scoring (2), BrandHHI single/equal (2), DetectTrend 4 cases, CollectRiskSignals 3 cases, EnsureTable idempotent, Save+Load history, Watchlist filter, weights sum to 1.0
+
+---
+
 ## [Sprint 36-39] — CARDEX Routes: Fleet Disposition Intelligence (2026-04-18)
 
 **Branch:** `sprint/36-routes-disposition`  
