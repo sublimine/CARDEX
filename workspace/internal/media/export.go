@@ -26,7 +26,7 @@ func ExportForPlatform(
 
 	out := make([]ExportedPhoto, 0, len(photos))
 	for _, p := range photos {
-		variants, err := storage.ListVariants(ctx, p.ID)
+		variants, err := storage.ListVariants(ctx, tenantID, p.ID)
 		if err != nil {
 			return nil, fmt.Errorf("export %s list variants for %s: %w", platform.Name, p.ID, err)
 		}

@@ -28,8 +28,9 @@ type MediaStorage interface {
 	GetPhoto(ctx context.Context, tenantID, photoID string) (*Photo, error)
 	// ListPhotos returns all photos for a vehicle, ordered by sort_order.
 	ListPhotos(ctx context.Context, tenantID, vehicleID string) ([]*Photo, error)
-	// ListVariants returns all variants for a photo.
-	ListVariants(ctx context.Context, photoID string) ([]*PhotoVariant, error)
+	// ListVariants returns all variants for a photo scoped to tenantID.
+	// tenantID is enforced via JOIN with crm_media_photos to prevent cross-tenant reads.
+	ListVariants(ctx context.Context, tenantID, photoID string) ([]*PhotoVariant, error)
 	// UpdateSortOrders atomically updates sort_order for a slice of photo IDs.
 	UpdateSortOrders(ctx context.Context, tenantID string, ordered []string) error
 	// DeletePhoto removes the photo record and all its variants.
@@ -196,10 +197,13 @@ func (s *FSStorage) ListPhotos(ctx context.Context, tenantID, vehicleID string) 
 	return out, rows.Err()
 }
 
-func (s *FSStorage) ListVariants(ctx context.Context, photoID string) ([]*PhotoVariant, error) {
+func (s *FSStorage) ListVariants(ctx context.Context, tenantID, photoID string) ([]*PhotoVariant, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, photo_id, kind, file_path, width, height, size_bytes, created_at
-		FROM crm_media_variants WHERE photo_id=? ORDER BY kind`, photoID)
+		SELECT v.id, v.photo_id, v.kind, v.file_path, v.width, v.height, v.size_bytes, v.created_at
+		FROM crm_media_variants v
+		JOIN crm_media_photos p ON p.id = v.photo_id
+		WHERE v.photo_id=? AND p.tenant_id=?
+		ORDER BY v.kind`, photoID, tenantID)
 	if err != nil {
 		return nil, err
 	}
