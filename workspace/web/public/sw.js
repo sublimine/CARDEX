@@ -19,16 +19,18 @@ self.addEventListener('fetch', (e) => {
   const { request } = e;
   const url = new URL(request.url);
 
-  // API: network-first, fall back to cache
+  // API: network-first, fall back to cache (only cache GET — never POST/PUT/PATCH).
   if (url.pathname.startsWith('/api/')) {
     e.respondWith(
       fetch(request)
         .then((res) => {
           const clone = res.clone();
-          if (res.ok) caches.open(CACHE).then((c) => c.put(request, clone));
+          if (res.ok && request.method === 'GET') {
+            caches.open(CACHE).then((c) => c.put(request, clone));
+          }
           return res;
         })
-        .catch(() => caches.match(request))
+        .catch(() => (request.method === 'GET' ? caches.match(request) : Promise.reject(new Error('offline'))))
     );
     return;
   }

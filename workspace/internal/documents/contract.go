@@ -23,7 +23,6 @@ type contractLocale struct {
 	signatureLeft  string
 	signatureRight string
 	clauses        []string
-	currency       string
 	dateLabel      string
 	placeLabel     string
 }

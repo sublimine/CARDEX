@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+const maxBodyBytes = 64 * 1024 // 64 KB — sufficient for any transaction JSON
+
 // Handler returns an http.Handler for all finance endpoints.
 //
 //	POST   /api/v1/vehicles/{id}/transactions
@@ -43,8 +45,13 @@ type financeHandler struct {
 
 func (h *financeHandler) createTx(w http.ResponseWriter, r *http.Request) {
 	tenant := tenantFrom(r)
+	if tenant == "" {
+		jsonErr(w, http.StatusBadRequest, errMissing("X-Tenant-ID"))
+		return
+	}
 	vehicleID := r.PathValue("id")
 
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	var req CreateTransactionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonErr(w, http.StatusBadRequest, err)
@@ -136,7 +143,12 @@ func (h *financeHandler) fleetAlerts(w http.ResponseWriter, r *http.Request) {
 
 func (h *financeHandler) updateTx(w http.ResponseWriter, r *http.Request) {
 	tenant := tenantFrom(r)
+	if tenant == "" {
+		jsonErr(w, http.StatusBadRequest, errMissing("X-Tenant-ID"))
+		return
+	}
 	id := r.PathValue("id")
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	var req CreateTransactionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonErr(w, http.StatusBadRequest, err)
@@ -171,8 +183,12 @@ func tenantFrom(r *http.Request) string {
 			return strings.Split(r.URL.Path, "/")[i+1]
 		}
 	}
-	return "default"
+	return "" // callers must reject empty tenant
 }
+
+type errMissing string
+
+func (e errMissing) Error() string { return string(e) + " header is required" }
 
 func jsonOK(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")

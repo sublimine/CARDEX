@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -134,7 +135,17 @@ func (s *FSStorage) SaveVariant(ctx context.Context, v *PhotoVariant) error {
 // WriteFile stores variant bytes at {baseDir}/{tenantID}/{vehicleID}/{photoID}_{kind}.jpg
 // and returns the relative path.
 func (s *FSStorage) WriteFile(tenantID, vehicleID, photoID string, kind VariantKind, data []byte) (string, error) {
+	if err := validatePathSegment(tenantID); err != nil {
+		return "", fmt.Errorf("media: invalid tenant_id: %w", err)
+	}
+	if err := validatePathSegment(vehicleID); err != nil {
+		return "", fmt.Errorf("media: invalid vehicle_id: %w", err)
+	}
 	dir := filepath.Join(s.baseDir, tenantID, vehicleID)
+	// Guard: ensure resolved dir is still under baseDir.
+	if !strings.HasPrefix(filepath.Clean(dir)+string(filepath.Separator), filepath.Clean(s.baseDir)+string(filepath.Separator)) {
+		return "", fmt.Errorf("media: path traversal detected")
+	}
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", fmt.Errorf("media mkdir: %w", err)
 	}
@@ -144,6 +155,17 @@ func (s *FSStorage) WriteFile(tenantID, vehicleID, photoID string, kind VariantK
 		return "", fmt.Errorf("media write file: %w", err)
 	}
 	return rel, nil
+}
+
+// validatePathSegment rejects path components that could enable directory traversal.
+func validatePathSegment(s string) error {
+	if s == "" {
+		return fmt.Errorf("empty segment")
+	}
+	if strings.Contains(s, "..") || strings.ContainsAny(s, `/\`) {
+		return fmt.Errorf("illegal characters in path segment %q", s)
+	}
+	return nil
 }
 
 func (s *FSStorage) GetPhoto(ctx context.Context, tenantID, photoID string) (*Photo, error) {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -66,8 +67,15 @@ func (s *Service) GetDocumentFile(ctx context.Context, id string) (*Document, er
 
 // persist writes PDF bytes to disk and records the document in the DB.
 func (s *Service) persist(ctx context.Context, tenantID string, docType DocType, vehicleID, dealID string, data []byte) (*GenerateResult, error) {
+	if strings.ContainsAny(tenantID, `/\.`) || tenantID == "" {
+		return nil, fmt.Errorf("documents: invalid tenant_id %q", tenantID)
+	}
 	id := generateID()
 	dir := filepath.Join(s.baseDir, tenantID, "documents")
+	// Guard: resolved path must still be under baseDir.
+	if !strings.HasPrefix(filepath.Clean(dir)+string(filepath.Separator), filepath.Clean(s.baseDir)+string(filepath.Separator)) {
+		return nil, fmt.Errorf("documents: path traversal detected")
+	}
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return nil, fmt.Errorf("documents: mkdir %s: %w", dir, err)
 	}
