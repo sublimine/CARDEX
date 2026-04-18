@@ -1,0 +1,29 @@
+{
+  "name": "CARDEX Workspace",
+  "short_name": "CARDEX",
+  "description": "Dealer CRM Dashboard",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#2563eb",
+  "background_color": "#f9fafb",
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "shortcuts": [
+    { "name": "Inbox", "url": "/inbox", "description": "Open unified inbox" },
+    { "name": "Vehicles", "url": "/vehicles", "description": "Browse vehicle stock" }
+  ]
+}
