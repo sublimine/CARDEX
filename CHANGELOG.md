@@ -2,6 +2,22 @@
 
 All significant implementation milestones for CARDEX Phases 2–5.
 
+## [Sprint 45] — CARDEX Financial Tracker + P&L per Vehicle (2026-04-18)
+
+**Branch:** `sprint/45-financial-tracker` | **Package:** `workspace/internal/finance/` | **Tests:** 33 | **govulncheck:** clean
+
+- **Schema** (`schema.go`): 2 tables — `crm_transactions` (12 transaction types: purchase, sale, transport, reconditioning, inspection, registration, insurance, storage, syndication_fee, platform_fee, tax, other) with tenant/vehicle/date indexes; `crm_exchange_rates` (FX rates per currency pair + effective date, UNIQUE constraint, `ORDER BY valid_from DESC` for historical lookup).
+- **Store** (`store.go`): Full CRUD (`Create`, `GetByID`, `Update`, `Delete`); `ListByVehicle`, `ListByDateRange`, `ListByMonth` with tenant isolation; `GetExchangeRate` returns `1.0` gracefully when no rate found; `UpsertExchangeRate` uses `ON CONFLICT DO UPDATE`.
+- **P&L Engine** (`calculator.go`): Pure `computeVehiclePnL(tenantID, vehicleID, txs, rateFunc)` — no DB dependency, injectable currency converter. Computes GrossMargin, MarginPct, ROIPct, DaysInStock (purchaseDate → saleDate or today), CostPerDay. `CalculateFleetPnL` aggregates across all vehicles in a date range, finds best/worst by margin, builds cost-by-type map. `CalculateMonthlyPnL` computes current + prior month with RevGrowthPct and MarginGrowthPct.
+- **Alerts** (`alerts.go`): `AlertService.GetAlerts` scans trailing 365 days; `checkVehicleAlerts` fires 3 conditions — `negative_margin` (sold at loss, critical), `stock_too_long` (≥60 days unsold, warning), `reconditioning_high` (recon/purchase >15%, warning).
+- **Multi-currency**: EUR base; CHF/GBP via `crm_exchange_rates`; fallback to 1.0 if no rate configured.
+- **HTTP API** (`handler.go`): 8 endpoints — `POST/GET /api/v1/vehicles/{id}/transactions`, `GET /api/v1/vehicles/{id}/pnl`, `GET /api/v1/fleet/pnl`, `GET /api/v1/fleet/pnl/monthly`, `GET /api/v1/fleet/alerts`, `PUT/DELETE /api/v1/transactions/{id}`. Tenant from `X-Tenant-ID` header.
+- **Metrics** (`metrics.go`): `finance_transactions_total` (counter), `finance_margin_cents` (histogram, EUR cents), `finance_alerts_active` (gauge). `sync.Once` prevents duplicate-registration panics.
+- **Tests** (`finance_test.go`): 33 tests — CRUD×8, VehiclePnL×7 (multi-currency CHF→EUR, DaysInStock, ROI), FleetPnL×4, MonthlyPnL×4 (growth rates), Alerts×4 (all 3 triggers + clean), ExchangeRates×3, HTTP×3. All pass `go test -race`.
+- **Planning doc:** `planning/WORKSPACE/05_FINANCIAL_TRACKER.md`.
+
+---
+
 ## [Sprint 42] — CARDEX Photo Pipeline (2026-04-18)
 
 **Branch:** `sprint/42-photo-pipeline` | **Package:** `workspace/internal/media/` | **Tests:** 24 | **govulncheck:** clean

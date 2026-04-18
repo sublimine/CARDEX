@@ -5,6 +5,9 @@
 //	/api/v1/documents/*  — PDF document generation (contracts, invoices, sheets, CMR)
 //	/api/v1/inbox/*      — Unified dealer inbox (conversations, messages, templates)
 //	/api/v1/ingest/*     — Inquiry ingestion (web webhook, manual)
+//	/api/v1/vehicles/*   — Per-vehicle financial transactions and P&L
+//	/api/v1/fleet/*      — Fleet-wide P&L aggregation and alerts
+//	/api/v1/transactions/* — Transaction update / delete
 //	/health              — Health check
 //
 // Environment variables:
@@ -30,6 +33,7 @@ import (
 	"time"
 
 	"cardex.eu/workspace/internal/documents"
+	"cardex.eu/workspace/internal/finance"
 	"cardex.eu/workspace/internal/inbox"
 	_ "modernc.org/sqlite"
 )
@@ -83,6 +87,16 @@ func main() {
 	}
 	inboxSrv := inbox.NewServer(db, smtpCfg, log)
 
+	// Finance service
+	if err := finance.EnsureSchema(db); err != nil {
+		log.Error("finance schema", "err", err)
+		os.Exit(1)
+	}
+	finStore := finance.NewStore(db)
+	finCalc := finance.NewCalculator(finStore)
+	finAlerts := finance.NewAlertService(finStore)
+	finHandler := finance.Handler(finStore, finCalc, finAlerts)
+
 	// Root mux
 	mux := http.NewServeMux()
 
@@ -97,6 +111,11 @@ func main() {
 	mux.Handle("/api/v1/templates/", inboxMux)
 	mux.Handle("/api/v1/templates", inboxMux)
 	mux.Handle("/api/v1/ingest/", inboxMux)
+
+	// Mount finance handler
+	mux.Handle("/api/v1/vehicles/", finHandler)
+	mux.Handle("/api/v1/fleet/", finHandler)
+	mux.Handle("/api/v1/transactions/", finHandler)
 
 	// Health
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
