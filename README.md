@@ -10,8 +10,8 @@ Pan-European vehicle intelligence platform. Discovers, extracts, and validates u
 | `extraction/` | P3 | Extracts vehicle listings using 13 strategies (JSON-LD, CMS REST, Playwright, PDF, RSS, VLM Vision, etc.) | **Complete** |
 | `quality/` | P4 | Validates listings against 20 rules (VIN, NHTSA, price, photo hash, sold-check, composite score) | **Complete** |
 | `deploy/` | P5 | Single-VPS deploy infra: systemd units, Caddy, Prometheus, Grafana, encrypted backups | **Complete** |
-| `frontend/terminal/` | P5+ | Terminal buyer CLI (`cardex search/show/stats/review/search-natural/forecast`) reading from the shared SQLite | **Complete** |
-| `innovation/` | R&D | GNN dealer inference (:8501), local RAG search (:8502), Chronos-2 price forecasting (:8503), Routes disposition (:8504) | **Experimental** |
+| `frontend/terminal/` | P5+ | Terminal buyer CLI (`cardex search/show/stats/review/search-natural/forecast/trust`) reading from the shared SQLite | **Complete** |
+| `innovation/` | R&D | GNN dealer inference (:8501), local RAG search (:8502), Chronos-2 price forecasting (:8503), Routes disposition (:8504), Trust KYB (:8505) | **Experimental** |
 
 ## Quick start
 

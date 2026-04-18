@@ -123,6 +123,7 @@ Set CARDEX_DB_PATH or pass --db to point at your database file.`,
 	root.AddCommand(newForecastCmd())
 	root.AddCommand(newRoutesCmd())
 	root.AddCommand(newPulseCmd())
+	root.AddCommand(newTrustCmd())
 	return root
 }
 

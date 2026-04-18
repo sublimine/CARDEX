@@ -19,7 +19,8 @@
         layoutlm-setup layoutlm-fixtures layoutlm-test \
         forecast-pipeline forecast-serve forecast-test \
         tax-build tax-serve tax-test \
-        routes-build routes-serve routes-test
+        routes-build routes-serve routes-test \
+        trust-build trust-serve trust-test
 
 # ---------------------------------------------------------------------------
 # Variables
@@ -298,6 +299,28 @@ routes-test:
 	cd innovation/routes && GOWORK=off go test -race -count=1 -v ./...
 
 # ---------------------------------------------------------------------------
+# trust-build — compile the Dealer KYB Trust Profile server
+# ---------------------------------------------------------------------------
+trust-build:
+	@echo "Building trust-service..."
+	cd innovation/trust_kyb && GOWORK=off go build -ldflags="-s -w" \
+	    -o ../../bin/trust-service ./cmd/trust-service/
+	@echo "  -> bin/trust-service"
+
+# ---------------------------------------------------------------------------
+# trust-serve — start the Trust KYB API server (port 8505)
+# ---------------------------------------------------------------------------
+trust-serve:
+	cd innovation/trust_kyb && GOWORK=off go run ./cmd/trust-service/ \
+	    2>&1 | tee -a trust-service.log
+
+# ---------------------------------------------------------------------------
+# trust-test — run Trust KYB Go test suite (-race)
+# ---------------------------------------------------------------------------
+trust-test:
+	cd innovation/trust_kyb && GOWORK=off go test -race -count=1 -v ./...
+
+# ---------------------------------------------------------------------------
 # help
 # ---------------------------------------------------------------------------
 help:
@@ -328,6 +351,10 @@ help:
 	@echo "  make routes-build      Build routes-server binary"
 	@echo "  make routes-serve      Start Routes disposition API (port 8504)"
 	@echo "  make routes-test       Run routes Go test suite (35 tests, -race)"
+	@echo ""
+	@echo "  make trust-build       Build trust-service binary"
+	@echo "  make trust-serve       Start Dealer KYB Trust API (port 8505)"
+	@echo "  make trust-test        Run Trust KYB test suite (-race)"
 	@echo ""
 	@echo "  make dev             Start local Docker Compose stack"
 	@echo "  make down            Stop local stack"

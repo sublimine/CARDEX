@@ -2,6 +2,27 @@
 
 All significant implementation milestones for CARDEX Phases 2–5.
 
+## [Sprint 34] — CARDEX Trust KYB: Dealer Portable Trust Profile (2026-04-18)
+
+**Branch:** `sprint/34-trust-kyb` | **Module:** `innovation/trust_kyb/` | **Port:** `:8505`
+
+- **Trust Profile Engine** (`innovation/trust_kyb/internal/profiler/`):
+  - 5-component weighted scoring (total 100 pts): VIES 20%, registry 15%, V15 20%, behavioral 25%, anomaly absence 20%.
+  - Trust ramp-up: V15 contribution capped at 10 pts (50%) for dealers indexed fewer than 30 days.
+  - Behavioral sub-scores: volume (8 pts, 50 listings=full), composite quality (10 pts), index tenure (7 pts, 1 year=full).
+  - Anomaly deduction: −4 pts per anomaly signal (EV Watch + bulk rejections), floored at 0.
+- **Trust Tiers**: `platinum` ≥ 85, `gold` ≥ 70, `silver` ≥ 50, `unverified` < 50.
+- **Profile Credential**: 90-day rolling validity; tamper-evident SHA-256 `profile_hash = SHA256(dealer_id:score:issued_at_unix)`; weekly daemon refresh.
+- **SVG Badge** (`innovation/trust_kyb/internal/badge/`): 180×36 px shield badge, 4 tier colour schemes; `Cache-Control: public, max-age=3600`; embeddable via `<img src="…/trust/badge/DEALER_ID.svg">`.
+- **HTTP API** (`cmd/trust-service/`): `GET /trust/profile/{id}`, `GET /trust/badge/{id}.svg`, `GET /trust/verify/{hash}`, `POST /trust/refresh/{id}`, `GET /trust/list?tier=&country=`.
+- **CLI** (`cardex trust show|list|refresh`): ANSI profile table, tier colour badges, score breakdown display.
+- **eIDAS 2 readiness**: `eidas_wallet_did` placeholder on every profile; planning doc documents DID/VC migration path for 2026–2027.
+- **Tests**: 15 tests total — 9 profiler (weight sum, zero case, ramp-up cap, tier boundaries, hash determinism, expiration, breakdown, badge URL, eIDAS placeholder) + 6 badge (all tiers, labels, unknown fallback, determinism, content type, colour). All pass `-race`.
+- `govulncheck`: No vulnerabilities found.
+- Planning doc: `planning/INNOVATION/TRUST_KYB.md`.
+
+---
+
 ## [Sprint 35] — CARDEX PULSE: Dealer Health Score (2026-04-18)
 
 **Branch:** `sprint/35-dealer-pulse`  
