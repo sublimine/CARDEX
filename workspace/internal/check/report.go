@@ -90,20 +90,22 @@ func (e *Engine) GenerateReport(ctx context.Context, vin string) (*VehicleReport
 		go func(idx int, prov RegistryProvider) {
 			defer wg.Done()
 			start := time.Now()
+			providerID := prov.Country() + "_provider"
 			ds := DataSource{
-				Provider: prov.Country() + "_provider",
-				Country:  prov.Country(),
+				ID:      providerID,
+				Name:    providerID,
+				Country: prov.Country(),
 			}
 			if !prov.SupportsVIN(vin) {
 				ds.Status = StatusUnavailable
 				ds.Error = "provider does not support VIN lookup"
-				metricProviderErrors.WithLabelValues(ds.Provider, ds.Country, "unsupported").Inc()
-				results[idx] = providerResult{provider: ds.Provider, country: ds.Country, source: ds}
+				metricProviderErrors.WithLabelValues(ds.ID, ds.Country, "unsupported").Inc()
+				results[idx] = providerResult{provider: ds.ID, country: ds.Country, source: ds}
 				return
 			}
 			data, fetchErr := prov.FetchHistory(ctx, vin)
 			ds.LatencyMs = time.Since(start).Milliseconds()
-			metricProviderLatency.WithLabelValues(ds.Provider, ds.Country).Observe(time.Since(start).Seconds())
+			metricProviderLatency.WithLabelValues(ds.ID, ds.Country).Observe(time.Since(start).Seconds())
 
 			if fetchErr != nil {
 				if errors.Is(fetchErr, ErrProviderUnavailable) {
@@ -112,14 +114,14 @@ func (e *Engine) GenerateReport(ctx context.Context, vin string) (*VehicleReport
 				} else {
 					ds.Status = StatusError
 					ds.Error = fetchErr.Error()
-					metricProviderErrors.WithLabelValues(ds.Provider, ds.Country, "fetch_error").Inc()
+					metricProviderErrors.WithLabelValues(ds.ID, ds.Country, "fetch_error").Inc()
 				}
-				results[idx] = providerResult{provider: ds.Provider, country: ds.Country, source: ds}
+				results[idx] = providerResult{provider: ds.ID, country: ds.Country, source: ds}
 				return
 			}
 			ds.Status = StatusSuccess
 			results[idx] = providerResult{
-				provider: ds.Provider,
+				provider: ds.ID,
 				country:  ds.Country,
 				data:     data,
 				source:   ds,
@@ -140,11 +142,7 @@ func (e *Engine) GenerateReport(ctx context.Context, vin string) (*VehicleReport
 			continue
 		}
 		if r.data.StolenFlag {
-			report.Alerts = append(report.Alerts, Alert{
-				Type:     AlertStolen,
-				Severity: SeverityCritical,
-				Message:  "Vehicle reported stolen in " + r.country,
-			})
+			report.Alerts = append(report.Alerts, newAlert(AlertStolen, SeverityCritical, "Vehicle reported stolen in "+r.country))
 		}
 		report.Recalls = append(report.Recalls, r.data.Recalls...)
 		report.MileageHistory = append(report.MileageHistory, r.data.MileageRecords...)
@@ -164,11 +162,7 @@ func (e *Engine) GenerateReport(ctx context.Context, vin string) (*VehicleReport
 	// Add alerts for open recalls.
 	for _, rec := range report.Recalls {
 		if rec.Status == RecallOpen {
-			report.Alerts = append(report.Alerts, Alert{
-				Type:     AlertRecallOpen,
-				Severity: SeverityWarning,
-				Message:  "Open recall: " + rec.Description,
-			})
+			report.Alerts = append(report.Alerts, newAlert(AlertRecallOpen, SeverityWarning, "Open recall: "+rec.Description))
 		}
 	}
 
@@ -178,17 +172,9 @@ func (e *Engine) GenerateReport(ctx context.Context, vin string) (*VehicleReport
 	if !report.MileageConsistency.Consistent {
 		metricMileageInconsistencies.Inc()
 		if report.MileageConsistency.Rollbacks > 0 {
-			report.Alerts = append(report.Alerts, Alert{
-				Type:     AlertMileageRollback,
-				Severity: SeverityCritical,
-				Message:  report.MileageConsistency.Note,
-			})
+			report.Alerts = append(report.Alerts, newAlert(AlertMileageRollback, SeverityCritical, report.MileageConsistency.Note))
 		} else if report.MileageConsistency.HighGaps > 0 {
-			report.Alerts = append(report.Alerts, Alert{
-				Type:     AlertMileageGap,
-				Severity: SeverityWarning,
-				Message:  report.MileageConsistency.Note,
-			})
+			report.Alerts = append(report.Alerts, newAlert(AlertMileageGap, SeverityWarning, report.MileageConsistency.Note))
 		}
 	}
 
