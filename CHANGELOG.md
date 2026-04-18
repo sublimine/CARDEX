@@ -2,6 +2,31 @@
 
 All significant implementation milestones for CARDEX Phases 2–5.
 
+## [Sprint 47] — Web Dashboard React PWA (2026-04-18)
+
+**Branch:** `sprint/47-web-dashboard` | **Location:** `workspace/web/` | **Build:** clean (tsc + vite, 0 errors)
+
+- **Stack:** React 18.3 + TypeScript 5.5, Tailwind CSS 3.4, Vite 5.3, React Router v6, recharts 2.12, @dnd-kit, lucide-react.
+- **PWA:** `manifest.json` (standalone, SVG icons 192/512, theme #2563eb) + `sw.js` (offline shell cache, API network-first, static cache-first). Service worker registered on load from `main.tsx`.
+- **Auth:** JWT in module memory (never localStorage). `AuthContext` + `ProtectedRoute`. Auto-logout on 401 via `auth:unauthorized` CustomEvent.
+- **Layout:** `Shell` (collapsible sidebar + topbar + dark-mode toggle + notifications bell) on desktop; `MobileNav` (bottom tab bar, 5 tabs) on mobile <768px. All touch targets ≥44px.
+- **Shared components (11):** `Button` (4 variants), `Input`, `Select`, `Modal` (bottom-sheet on mobile), `Badge`/`VehicleStatusBadge`/`DealStageBadge`, `Avatar` (deterministic colour from name), `Card`, `Table` (generic typed), `EmptyState`, `LoadingSpinner`/`PageSkeleton`, `ToastProvider` (4 types, 4s auto-dismiss).
+- **Domain hooks (6):** `useApi` (AbortController, reload), `useVehicles`, `useDeals`, `useInbox`, `useKanban` (optimistic drag update), `useAuth`.
+- **Dashboard:** 4 KPI cards + recharts `AreaChart` (6-month margin) + activity table.
+- **Vehicles:** Filterable table (status/search), thumbnail, `VehicleStatusBadge`, paginated. Detail modal with 5 tabs (info, photos, docs, finance, syndication).
+- **Kanban:** @dnd-kit DnD across 6 columns (lead→lost). WIP limit visual (column turns red if over limit). `DragOverlay` for dragged card. Optimistic state update + rollback on API error.
+- **Contacts:** List+detail split. Activity timeline with emoji type icons.
+- **Deals:** Pipeline columns with value totals + stage filter chips + "Advance →" shortcut.
+- **Inbox:** Split-view (list + thread). `textarea` reply box, Cmd+Enter to send. Unread dot + badge count.
+- **Calendar:** Custom built-in month grid (no external dep). Day panel with event list + type badges.
+- **Finance:** `BarChart` revenue/cost/margin (recharts). Negative-margin alert cards. Top-10 vehicle margin table.
+- **Settings:** 4-tab: profile, workspace, platform connect/disconnect (mobile.de, AutoScout24, leboncoin, La Centrale, AutoTrader), response templates list.
+- **Dark mode:** Tailwind `class` strategy, `localStorage` persistence, toggle in topbar.
+- **Build:** `npm run build` → 6 chunks, total gzip ~204 kB. TypeScript strict, 0 errors.
+- **Planning doc:** `planning/WORKSPACE/07_WEB_DASHBOARD.md`.
+
+---
+
 ## [Sprint 46] — CARDEX Kanban Board + Calendar Backend (2026-04-18)
 
 **Branch:** `sprint/46-kanban-calendar` | **Package:** `workspace/internal/kanban/` | **Tests:** 45 | **govulncheck:** clean
@@ -13,6 +38,22 @@ All significant implementation milestones for CARDEX Phases 2–5.
 - **Metrics** (`metrics.go`): `workspace_kanban_moves_total{tenant_id,from_state,to_state}`, `workspace_kanban_wip_current{tenant_id,column_id}`, `workspace_calendar_events_total{tenant_id,event_type}`, `workspace_calendar_overdue_total{tenant_id}`.
 - **Tests** (`kanban_test.go`): 45 tests — state machine validation, WIP limit enforcement, auto-event generation (in_transit/reserved triggers), date-range filtering, HTTP round-trips, tenant isolation, partial patch semantics. All pass `go test -race`.
 - **Planning doc:** `planning/WORKSPACE/06_KANBAN_CALENDAR.md`.
+
+---
+
+## [Sprint 45] — CARDEX Financial Tracker + P&L per Vehicle (2026-04-18)
+
+**Branch:** `sprint/45-financial-tracker` | **Package:** `workspace/internal/finance/` | **Tests:** 33 | **govulncheck:** clean
+
+- **Schema** (`schema.go`): 2 tables — `crm_transactions` (12 transaction types: purchase, sale, transport, reconditioning, inspection, registration, insurance, storage, syndication_fee, platform_fee, tax, other) with tenant/vehicle/date indexes; `crm_exchange_rates` (FX rates per currency pair + effective date, UNIQUE constraint, `ORDER BY valid_from DESC` for historical lookup).
+- **Store** (`store.go`): Full CRUD (`Create`, `GetByID`, `Update`, `Delete`); `ListByVehicle`, `ListByDateRange`, `ListByMonth` with tenant isolation; `GetExchangeRate` returns `1.0` gracefully when no rate found; `UpsertExchangeRate` uses `ON CONFLICT DO UPDATE`.
+- **P&L Engine** (`calculator.go`): Pure `computeVehiclePnL(tenantID, vehicleID, txs, rateFunc)` — no DB dependency, injectable currency converter. Computes GrossMargin, MarginPct, ROIPct, DaysInStock (purchaseDate → saleDate or today), CostPerDay. `CalculateFleetPnL` aggregates across all vehicles in a date range, finds best/worst by margin, builds cost-by-type map. `CalculateMonthlyPnL` computes current + prior month with RevGrowthPct and MarginGrowthPct.
+- **Alerts** (`alerts.go`): `AlertService.GetAlerts` scans trailing 365 days; `checkVehicleAlerts` fires 3 conditions — `negative_margin` (sold at loss, critical), `stock_too_long` (≥60 days unsold, warning), `reconditioning_high` (recon/purchase >15%, warning).
+- **Multi-currency**: EUR base; CHF/GBP via `crm_exchange_rates`; fallback to 1.0 if no rate configured.
+- **HTTP API** (`handler.go`): 8 endpoints — `POST/GET /api/v1/vehicles/{id}/transactions`, `GET /api/v1/vehicles/{id}/pnl`, `GET /api/v1/fleet/pnl`, `GET /api/v1/fleet/pnl/monthly`, `GET /api/v1/fleet/alerts`, `PUT/DELETE /api/v1/transactions/{id}`. Tenant from `X-Tenant-ID` header.
+- **Metrics** (`metrics.go`): `finance_transactions_total` (counter), `finance_margin_cents` (histogram, EUR cents), `finance_alerts_active` (gauge). `sync.Once` prevents duplicate-registration panics.
+- **Tests** (`finance_test.go`): 33 tests — CRUD×8, VehiclePnL×7 (multi-currency CHF→EUR, DaysInStock, ROI), FleetPnL×4, MonthlyPnL×4 (growth rates), Alerts×4 (all 3 triggers + clean), ExchangeRates×3, HTTP×3. All pass `go test -race`.
+- **Planning doc:** `planning/WORKSPACE/05_FINANCIAL_TRACKER.md`.
 
 ---
 
