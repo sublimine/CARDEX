@@ -2,6 +2,23 @@
 
 All significant implementation milestones for CARDEX Phases 2–5.
 
+## [Sprint 42] — CARDEX Photo Pipeline (2026-04-18)
+
+**Branch:** `sprint/42-photo-pipeline` | **Package:** `workspace/internal/media/` | **Tests:** 24 | **govulncheck:** clean
+
+- **Processor** (`processor.go`): Decodes JPEG, PNG, WebP, HEIC (via `goheif`). EXIF stripped via `imaging.AutoOrientation(true)` + re-encode. Produces 3 variants per upload: `original` (max 2048 px, q92), `web` (max 1024 px, q85, ≤800 KB auto-reduce), `thumbnail` (400×300 cropped, q75). Output format: JPEG throughout.
+- **Storage** (`storage.go`): `MediaStorage` interface + `FSStorage` (SQLite `crm_media_photos`/`crm_media_variants` + filesystem). Path layout: `{baseDir}/{tenantID}/{vehicleID}/{photoID}_{variant}.jpg`. Driver: `modernc.org/sqlite` (pure-Go, no CGo).
+- **Watermark** (`watermark.go`): `Watermarker.Apply()` composites dealer logo onto bottom-right corner of web variant at 40% opacity default via `draw.DrawMask` + custom `alphaMask`. Logo auto-scaled to ≤25% of image width. `LoadFromFile()` returns nil gracefully if no logo present.
+- **Bulk Upload** (`bulk.go`): `BulkUploader.Upload()` accepts up to 30 photos; `semaphore(4)` goroutines; first successful photo atomically marked `is_primary`; metrics emitted per upload.
+- **Reorder** (`reorder.go`): `PUT /api/v1/vehicles/{id}/media/reorder` updates `sort_order` atomically in a single SQLite transaction. Requires `X-Tenant-ID` header.
+- **Export** (`export.go`): `ExportForPlatform` selects best variant within platform size limits. Platform configs: mobile.de (max 30, 5 MB), AutoScout24 (max 50, 10 MB), leboncoin (max 10, 5 MB). Convenience wrappers: `ExportMobileDe`, `ExportAutoScout24`, `ExportLeboncoin`.
+- **Metrics** (`metrics.go`): `workspace_media_uploads_total{tenant_id,status}`, `workspace_media_processing_duration_seconds{variant}`, `workspace_media_storage_bytes_total{variant}`.
+- **Dependency upgrade:** `golang.org/x/image` v0.12.0 → v0.38.0 (fixes GO-2024-2937 + GO-2026-4815 TIFF vulnerabilities).
+- **Tests:** 24 tests covering format detection, 3-variant production, dimension caps, EXIF strip, SQLite round-trip, sort-order, watermark compositing, HTTP reorder handler, platform export limits. All pass `go test -race`.
+- **Planning doc:** `planning/WORKSPACE/02_PHOTO_PIPELINE.md`.
+
+---
+
 ## [Sprint 44] — CARDEX Workspace: Contact Management + Unified Inbox (2026-04-18)
 
 **Branch:** `sprint/44-inbox` | **Module:** `workspace/internal/inbox/` | **Tests:** 31 | **govulncheck:** clean

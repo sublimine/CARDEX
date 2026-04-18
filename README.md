@@ -12,6 +12,7 @@ Pan-European vehicle intelligence platform. Discovers, extracts, and validates u
 | `deploy/` | P5 | Single-VPS deploy infra: systemd units, Caddy, Prometheus, Grafana, encrypted backups | **Complete** |
 | `frontend/terminal/` | P5+ | Terminal buyer CLI (`cardex search/show/stats/review/search-natural/forecast/trust`) reading from the shared SQLite | **Complete** |
 | `innovation/` | R&D | GNN dealer inference (:8501), local RAG search (:8502), Chronos-2 price forecasting (:8503), Routes disposition (:8504), Trust KYB (:8505) | **Experimental** |
+| `workspace/` | P5+ | CRM workspace: multi-tenant syndication, document generation, unified inbox, photo pipeline (3-variant, EXIF strip, watermark) | **Complete** |
 
 ## Quick start
 

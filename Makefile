@@ -21,7 +21,7 @@
         tax-build tax-serve tax-test \
         routes-build routes-serve routes-test \
         trust-build trust-serve trust-test \
-        workspace-build workspace-serve workspace-test
+        workspace-build workspace-serve workspace-test media-test
 
 # ---------------------------------------------------------------------------
 # Variables
@@ -338,10 +338,16 @@ workspace-serve:
 	    2>&1 | tee -a workspace-service.log
 
 # ---------------------------------------------------------------------------
-# workspace-test — run Workspace Go test suite (documents + inbox, -race)
+# workspace-test — run Workspace Go test suite (documents + inbox + media, -race)
 # ---------------------------------------------------------------------------
 workspace-test:
 	cd workspace && GOWORK=off go test -race -count=1 -v ./...
+
+# ---------------------------------------------------------------------------
+# media-test — run photo pipeline tests only (fast subset, -race)
+# ---------------------------------------------------------------------------
+media-test:
+	cd workspace && GOWORK=off go test -race -count=1 -v ./internal/media/...
 
 # ---------------------------------------------------------------------------
 # help
@@ -381,7 +387,8 @@ help:
 	@echo ""
 	@echo "  make workspace-build   Build workspace-service binary (documents + inbox)"
 	@echo "  make workspace-serve   Start Workspace API (port 8506)"
-	@echo "  make workspace-test    Run Workspace test suite (57 tests: documents+inbox, -race)"
+	@echo "  make workspace-test    Run Workspace test suite (documents+inbox+media, -race)"
+	@echo "  make media-test        Run photo pipeline tests only (24 tests, -race)"
 	@echo ""
 	@echo "  make dev             Start local Docker Compose stack"
 	@echo "  make down            Stop local stack"
