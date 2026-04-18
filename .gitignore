@@ -37,3 +37,8 @@ go.work.sum
 
 # Temporary audit files
 TEMP_AUDIT.md
+
+# Deploy environment files (explicit)
+deploy/.env
+deploy/.env.*
+!deploy/env.example
