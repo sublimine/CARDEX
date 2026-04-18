@@ -20,7 +20,8 @@
         forecast-pipeline forecast-serve forecast-test \
         tax-build tax-serve tax-test \
         routes-build routes-serve routes-test \
-        trust-build trust-serve trust-test
+        trust-build trust-serve trust-test \
+        workspace-build workspace-serve workspace-test
 
 # ---------------------------------------------------------------------------
 # Variables
@@ -321,6 +322,28 @@ trust-test:
 	cd innovation/trust_kyb && GOWORK=off go test -race -count=1 -v ./...
 
 # ---------------------------------------------------------------------------
+# workspace-build — compile the CARDEX Workspace Service (documents + inbox)
+# ---------------------------------------------------------------------------
+workspace-build:
+	@echo "Building workspace-service..."
+	cd workspace && GOWORK=off go build -ldflags="-s -w" \
+	    -o ../bin/workspace-service ./cmd/workspace-service/
+	@echo "  -> bin/workspace-service"
+
+# ---------------------------------------------------------------------------
+# workspace-serve — start the Workspace API server (port 8506)
+# ---------------------------------------------------------------------------
+workspace-serve:
+	cd workspace && GOWORK=off go run ./cmd/workspace-service/ \
+	    2>&1 | tee -a workspace-service.log
+
+# ---------------------------------------------------------------------------
+# workspace-test — run Workspace Go test suite (documents + inbox, -race)
+# ---------------------------------------------------------------------------
+workspace-test:
+	cd workspace && GOWORK=off go test -race -count=1 -v ./...
+
+# ---------------------------------------------------------------------------
 # help
 # ---------------------------------------------------------------------------
 help:
@@ -355,6 +378,10 @@ help:
 	@echo "  make trust-build       Build trust-service binary"
 	@echo "  make trust-serve       Start Dealer KYB Trust API (port 8505)"
 	@echo "  make trust-test        Run Trust KYB test suite (-race)"
+	@echo ""
+	@echo "  make workspace-build   Build workspace-service binary (documents + inbox)"
+	@echo "  make workspace-serve   Start Workspace API (port 8506)"
+	@echo "  make workspace-test    Run Workspace test suite (57 tests: documents+inbox, -race)"
 	@echo ""
 	@echo "  make dev             Start local Docker Compose stack"
 	@echo "  make down            Stop local stack"

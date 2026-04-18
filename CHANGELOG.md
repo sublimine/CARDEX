@@ -2,6 +2,26 @@
 
 All significant implementation milestones for CARDEX Phases 2–5.
 
+## [Sprint 44] — CARDEX Workspace: Contact Management + Unified Inbox (2026-04-18)
+
+**Branch:** `sprint/44-inbox` | **Module:** `workspace/internal/inbox/` | **Tests:** 31 | **govulncheck:** clean
+
+- **Ingestion Engine** (`ingestion.go`): `IngestionEngine` polls all `InquirySource` adapters on configurable intervals, feeds `Processor.Process()`.
+- **Platform Adapters** — 5 sources: `MobileDeSource` + `AutoScout24Source` (email-forwarding scaffold, platform pattern matching + metadata extraction); `EmailSource` (IMAP scaffold, returns `ErrNotConfigured` until credentials present); `WebhookSource` (mutex queue + `POST /api/v1/ingest/web`); `ManualSource` (dealer call/visit logging via `POST /api/v1/ingest/manual`).
+- **Processor** (`processor.go`): atomic `BeginTx` per inquiry — find-or-create contact (email OR phone match), find vehicle (external_id → VIN → fuzzy make+model), find-or-create conversation (dedup on `source_platform+external_id`), find-or-create deal (`stage=lead`), insert activity (`inquiry`), insert message (`inbound`), transition vehicle `listed→inquiry`.
+- **Conversation Store** (`conversation.go`): paginated `List` (status/platform/unread/vehicle_id filters; spam excluded by default), `Get` with messages, `Patch` (status/unread), `AddMessage`.
+- **Response Templates** (`templates.go`): 25 system templates — 5 types (`inquiry_ack`, `price_offer`, `follow_up`, `visit_invite`, `rejection`) × 5 languages (DE/FR/ES/NL/EN); `Render()` replaces `{{placeholder}}`; unknown vars left intact.
+- **Reply Engine** (`reply.go`): outbound message creation, SMTP send (`net/smtp`), template rendering, `type=reply` activity, `workspace_inbox_response_time_seconds` histogram.
+- **Auto-Reminders** (`reminders.go`): `ReminderJob` finds `status=open` conversations idle >3 days → inserts `type=reminder` activity; updates `workspace_inbox_overdue_total` gauge.
+- **Metrics** (`metrics.go`): `workspace_inbox_conversations_total{status,platform}`, `workspace_inbox_messages_total{direction}`, `workspace_inbox_response_time_seconds` histogram, `workspace_inbox_overdue_total` gauge.
+- **HTTP API** (`server.go`): `GET /api/v1/inbox`, `GET /api/v1/inbox/{id}`, `POST /api/v1/inbox/{id}/reply`, `PATCH /api/v1/inbox/{id}`, `GET /api/v1/templates`, `POST /api/v1/templates`, `PUT /api/v1/templates/{id}`, `POST /api/v1/ingest/web`, `POST /api/v1/ingest/manual`. Tenant from `X-Tenant-ID` header.
+- **Schema** (`schema.go`): 7 tables — `crm_contacts`, `crm_vehicles`, `crm_deals`, `crm_activities`, `crm_conversations` (UNIQUE dedup index), `crm_messages`, `crm_templates`.
+- **Tests** (`inbox_test.go`): 31 tests — all processing flows, email/phone/external_id dedup, multi-platform isolation, VIN lookup, vehicle transition, reply+status, template render, list filters, PATCH, auto-reminder cases, HTTP endpoints. All pass `go test -race`.
+- **go.work:** added `./workspace`.
+- **Planning doc:** `planning/WORKSPACE/04_INBOX.md`.
+
+---
+
 ## [Sprint 43] — CARDEX Workspace: Document Generator (2026-04-18)
 
 **Branch:** `sprint/43-documents` | **Module:** `workspace/internal/documents/` | **Library:** `go-pdf/fpdf v0.9.0`
