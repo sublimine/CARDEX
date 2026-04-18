@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { api, setAccessToken, setTenantId } from '../api/client'
+import { api, setAccessToken, setTenantId, setTokenExpiry } from '../api/client'
 import type { User } from '../types'
 
 interface AuthState {
@@ -17,6 +17,7 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 interface LoginResponse {
   token: string
+  expires_in: number
   user: User
 }
 
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const data = await api.post<LoginResponse>('/auth/login', { email, password })
         setAccessToken(data.token)
+        setTokenExpiry(data.expires_in)
         setTenantId(data.user.tenantId)
         setState({ user: data.user, isLoading: false, isAuthenticated: true })
       } catch (err) {
