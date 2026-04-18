@@ -2,6 +2,20 @@
 
 All significant implementation milestones for CARDEX Phases 2–5.
 
+## [Sprint 46] — CARDEX Kanban Board + Calendar Backend (2026-04-18)
+
+**Branch:** `sprint/46-kanban-calendar` | **Package:** `workspace/internal/kanban/` | **Tests:** 45 | **govulncheck:** clean
+
+- **Schema** (`schema.go`): 3 tables — `crm_kanban_columns` (11 default pipeline stages, WIP limits, color), `crm_kanban_cards` (per-vehicle, priority/labels/assignee/due_date), `crm_events` (full calendar with auto_generated flag). `InitTenant()` is idempotent.
+- **State Machine** (`model.go`): `ValidateTransition(from, to)` enforces 11-stage pipeline (`sourcing → acquired → reconditioning/listed → inquiry → negotiation → reserved → sold → in_transit → delivered`). All 4 patch/move types defined with pointer-field partial updates.
+- **Store** (`store.go`): `MoveCard` validates state transition + WIP limit before updating `crm_vehicles.status`. `OnVehicleStateChange` auto-creates `transport_delivery` event (+3 days) on `in_transit`, `registration` event (+5 days) on `reserved`. Full CRUD for columns, cards, events.
+- **HTTP Server** (`server.go`): 10 endpoints — `GET/POST /api/v1/kanban/columns`, `PUT /api/v1/kanban/columns/{id}`, `PUT /api/v1/kanban/cards/{vehicleId}/move`, `PUT /api/v1/kanban/cards/{vehicleId}`, `GET/POST /api/v1/calendar/events`, `GET /api/v1/calendar/events/upcoming`, `PUT/DELETE /api/v1/calendar/events/{id}`. All tenant-scoped via `X-Tenant-ID` header.
+- **Metrics** (`metrics.go`): `workspace_kanban_moves_total{tenant_id,from_state,to_state}`, `workspace_kanban_wip_current{tenant_id,column_id}`, `workspace_calendar_events_total{tenant_id,event_type}`, `workspace_calendar_overdue_total{tenant_id}`.
+- **Tests** (`kanban_test.go`): 45 tests — state machine validation, WIP limit enforcement, auto-event generation (in_transit/reserved triggers), date-range filtering, HTTP round-trips, tenant isolation, partial patch semantics. All pass `go test -race`.
+- **Planning doc:** `planning/WORKSPACE/06_KANBAN_CALENDAR.md`.
+
+---
+
 ## [Sprint 42] — CARDEX Photo Pipeline (2026-04-18)
 
 **Branch:** `sprint/42-photo-pipeline` | **Package:** `workspace/internal/media/` | **Tests:** 24 | **govulncheck:** clean
