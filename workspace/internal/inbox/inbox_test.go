@@ -520,7 +520,7 @@ func TestSystemTemplatesSeeded(t *testing.T) {
 func TestTemplateListIncludesSystem(t *testing.T) {
 	db := newTestDB(t)
 	ts := NewTemplateStore(db)
-	templates, err := ts.List(testTenant, "EN")
+	templates, err := ts.List(context.Background(), testTenant, "EN")
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}

@@ -42,7 +42,7 @@ func (r *ReplyEngine) Reply(ctx context.Context, tenantID, convID string, req Re
 
 	// Resolve template if provided.
 	if req.TemplateID != "" {
-		tmpl, err := r.templates.GetByID(tenantID, req.TemplateID)
+		tmpl, err := r.templates.GetByID(ctx, tenantID, req.TemplateID)
 		if err != nil {
 			return nil, fmt.Errorf("template: %w", err)
 		}

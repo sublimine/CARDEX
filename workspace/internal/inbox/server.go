@@ -80,7 +80,10 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleListInbox(w http.ResponseWriter, r *http.Request) {
-	tenantID := tenantFromRequest(r)
+	tenantID, ok := requireTenant(w, r)
+	if !ok {
+		return
+	}
 	q := ListInboxQuery{
 		Status:   r.URL.Query().Get("status"),
 		Platform: r.URL.Query().Get("platform"),
@@ -104,7 +107,10 @@ func (s *Server) handleListInbox(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleGetConversation(w http.ResponseWriter, r *http.Request) {
-	tenantID := tenantFromRequest(r)
+	tenantID, ok := requireTenant(w, r)
+	if !ok {
+		return
+	}
 	id := r.PathValue("id")
 	conv, msgs, err := s.convs.Get(tenantID, id)
 	if err != nil {
@@ -115,7 +121,10 @@ func (s *Server) handleGetConversation(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleReply(w http.ResponseWriter, r *http.Request) {
-	tenantID := tenantFromRequest(r)
+	tenantID, ok := requireTenant(w, r)
+	if !ok {
+		return
+	}
 	id := r.PathValue("id")
 
 	var req ReplyRequest
@@ -140,7 +149,10 @@ func (s *Server) handleReply(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handlePatchConversation(w http.ResponseWriter, r *http.Request) {
-	tenantID := tenantFromRequest(r)
+	tenantID, ok := requireTenant(w, r)
+	if !ok {
+		return
+	}
 	id := r.PathValue("id")
 
 	var req PatchConversationRequest
@@ -156,9 +168,12 @@ func (s *Server) handlePatchConversation(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *Server) handleListTemplates(w http.ResponseWriter, r *http.Request) {
-	tenantID := tenantFromRequest(r)
+	tenantID, ok := requireTenant(w, r)
+	if !ok {
+		return
+	}
 	lang := r.URL.Query().Get("lang")
-	templates, err := s.templates.List(tenantID, lang)
+	templates, err := s.templates.List(r.Context(), tenantID, lang)
 	if err != nil {
 		writeErr(w, http.StatusInternalServerError, err)
 		return
@@ -167,7 +182,10 @@ func (s *Server) handleListTemplates(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleCreateTemplate(w http.ResponseWriter, r *http.Request) {
-	tenantID := tenantFromRequest(r)
+	tenantID, ok := requireTenant(w, r)
+	if !ok {
+		return
+	}
 	var t Template
 	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
 		writeErr(w, http.StatusBadRequest, err)
@@ -175,7 +193,7 @@ func (s *Server) handleCreateTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 	t.TenantID = tenantID
 	t.IsSystem = false
-	if err := s.templates.Create(&t); err != nil {
+	if err := s.templates.Create(r.Context(), &t); err != nil {
 		writeErr(w, http.StatusInternalServerError, err)
 		return
 	}
@@ -183,7 +201,10 @@ func (s *Server) handleCreateTemplate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleUpdateTemplate(w http.ResponseWriter, r *http.Request) {
-	tenantID := tenantFromRequest(r)
+	tenantID, ok := requireTenant(w, r)
+	if !ok {
+		return
+	}
 	id := r.PathValue("id")
 	var req struct {
 		Subject string `json:"subject"`
@@ -193,7 +214,7 @@ func (s *Server) handleUpdateTemplate(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, err)
 		return
 	}
-	if err := s.templates.Update(tenantID, id, req.Subject, req.Body); err != nil {
+	if err := s.templates.Update(r.Context(), tenantID, id, req.Subject, req.Body); err != nil {
 		writeErr(w, http.StatusNotFound, err)
 		return
 	}
@@ -201,7 +222,10 @@ func (s *Server) handleUpdateTemplate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleManualIngest(w http.ResponseWriter, r *http.Request) {
-	tenantID := tenantFromRequest(r)
+	tenantID, ok := requireTenant(w, r)
+	if !ok {
+		return
+	}
 	var raw RawInquiry
 	if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
 		writeErr(w, http.StatusBadRequest, err)
@@ -232,7 +256,16 @@ func tenantFromRequest(r *http.Request) string {
 			return parts[i+1]
 		}
 	}
-	return "default"
+	return "" // callers must reject empty tenant
+}
+
+func requireTenant(w http.ResponseWriter, r *http.Request) (string, bool) {
+	t := tenantFromRequest(r)
+	if t == "" {
+		writeErr(w, http.StatusBadRequest, errMsg("X-Tenant-ID header is required"))
+		return "", false
+	}
+	return t, true
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

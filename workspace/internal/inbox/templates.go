@@ -20,7 +20,7 @@ func NewTemplateStore(db *sql.DB) *TemplateStore {
 
 // List returns all templates visible to tenantID in the given language.
 // Includes system templates. Pass lang="" to return all languages.
-func (s *TemplateStore) List(tenantID, lang string) ([]*Template, error) {
+func (s *TemplateStore) List(ctx context.Context, tenantID, lang string) ([]*Template, error) {
 	query := `SELECT id,tenant_id,name,language,subject,body,is_system,created_at,updated_at
 	          FROM crm_templates
 	          WHERE (tenant_id=? OR tenant_id=?)`
@@ -31,7 +31,7 @@ func (s *TemplateStore) List(tenantID, lang string) ([]*Template, error) {
 	}
 	query += " ORDER BY is_system DESC, name, language"
 
-	rows, err := s.db.QueryContext(context.Background(), query, args...)
+	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -49,8 +49,8 @@ func (s *TemplateStore) List(tenantID, lang string) ([]*Template, error) {
 }
 
 // GetByID returns one template, checking tenant ownership or system.
-func (s *TemplateStore) GetByID(tenantID, id string) (*Template, error) {
-	row := s.db.QueryRowContext(context.Background(),
+func (s *TemplateStore) GetByID(ctx context.Context, tenantID, id string) (*Template, error) {
+	row := s.db.QueryRowContext(ctx,
 		`SELECT id,tenant_id,name,language,subject,body,is_system,created_at,updated_at
 		 FROM crm_templates WHERE id=? AND (tenant_id=? OR tenant_id=?)`,
 		id, tenantID, systemTenant)
@@ -62,14 +62,14 @@ func (s *TemplateStore) GetByID(tenantID, id string) (*Template, error) {
 }
 
 // Create inserts a new custom template for a tenant.
-func (s *TemplateStore) Create(t *Template) error {
+func (s *TemplateStore) Create(ctx context.Context, t *Template) error {
 	if t.ID == "" {
 		t.ID = newID()
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
 	t.CreatedAt, _ = time.Parse(time.RFC3339, now)
 	t.UpdatedAt = t.CreatedAt
-	_, err := s.db.ExecContext(context.Background(),
+	_, err := s.db.ExecContext(ctx,
 		`INSERT INTO crm_templates(id,tenant_id,name,language,subject,body,is_system,created_at,updated_at)
 		 VALUES(?,?,?,?,?,?,0,?,?)`,
 		t.ID, t.TenantID, t.Name, t.Language, t.Subject, t.Body, now, now)
@@ -77,9 +77,9 @@ func (s *TemplateStore) Create(t *Template) error {
 }
 
 // Update modifies subject and body of a custom (non-system) template.
-func (s *TemplateStore) Update(tenantID, id, subject, body string) error {
+func (s *TemplateStore) Update(ctx context.Context, tenantID, id, subject, body string) error {
 	nowStr := time.Now().UTC().Format(time.RFC3339)
-	res, err := s.db.ExecContext(context.Background(),
+	res, err := s.db.ExecContext(ctx,
 		`UPDATE crm_templates SET subject=?,body=?,updated_at=?
 		 WHERE id=? AND tenant_id=? AND is_system=0`,
 		subject, body, nowStr, id, tenantID)
