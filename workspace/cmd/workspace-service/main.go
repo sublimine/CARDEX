@@ -1,14 +1,16 @@
 // Package main is the CARDEX Workspace Service entry point.
 //
-// Exposes two HTTP sub-trees on a single port:
+// Exposes HTTP sub-trees on a single port:
 //
-//	/api/v1/documents/*  — PDF document generation (contracts, invoices, sheets, CMR)
-//	/api/v1/inbox/*      — Unified dealer inbox (conversations, messages, templates)
-//	/api/v1/ingest/*     — Inquiry ingestion (web webhook, manual)
-//	/api/v1/vehicles/*   — Per-vehicle financial transactions and P&L
-//	/api/v1/fleet/*      — Fleet-wide P&L aggregation and alerts
+//	/api/v1/documents/*    — PDF generation (contracts, invoices, sheets, CMR)
+//	/api/v1/inbox/*        — Unified dealer inbox (conversations, messages, templates)
+//	/api/v1/ingest/*       — Inquiry ingestion (web webhook, manual)
+//	/api/v1/vehicles/*     — Per-vehicle financial transactions, P&L, and media reorder
+//	/api/v1/fleet/*        — Fleet-wide P&L aggregation and alerts
 //	/api/v1/transactions/* — Transaction update / delete
-//	/health              — Health check
+//	/api/v1/kanban/*       — Kanban board (columns, cards, WIP limits, state machine)
+//	/api/v1/calendar/*     — Calendar events (CRUD, upcoming)
+//	/health                — Health check
 //
 // Environment variables:
 //
@@ -35,6 +37,9 @@ import (
 	"cardex.eu/workspace/internal/documents"
 	"cardex.eu/workspace/internal/finance"
 	"cardex.eu/workspace/internal/inbox"
+	"cardex.eu/workspace/internal/kanban"
+	"cardex.eu/workspace/internal/media"
+	"cardex.eu/workspace/internal/syndication"
 	_ "modernc.org/sqlite"
 )
 
@@ -69,14 +74,14 @@ func main() {
 
 	ctx := context.Background()
 
-	// Documents service
+	// ── Documents service (EnsureSchema called inside NewService) ────────────
 	docSvc, err := documents.NewService(ctx, db, mediaDir)
 	if err != nil {
 		log.Error("documents service init", "err", err)
 		os.Exit(1)
 	}
 
-	// Inbox service (schema includes CRM base tables + inbox tables)
+	// ── Inbox service (owns CRM base tables: contacts, vehicles, deals, …) ──
 	if err := inbox.EnsureSchema(db); err != nil {
 		log.Error("inbox schema", "err", err)
 		os.Exit(1)
@@ -87,7 +92,7 @@ func main() {
 	}
 	inboxSrv := inbox.NewServer(db, smtpCfg, log)
 
-	// Finance service
+	// ── Finance service ──────────────────────────────────────────────────────
 	if err := finance.EnsureSchema(db); err != nil {
 		log.Error("finance schema", "err", err)
 		os.Exit(1)
@@ -97,14 +102,34 @@ func main() {
 	finAlerts := finance.NewAlertService(finStore)
 	finHandler := finance.Handler(finStore, finCalc, finAlerts)
 
-	// Root mux
+	// ── Kanban + Calendar service (EnsureSchema called inside NewStore) ──────
+	kanbanStore, err := kanban.NewStore(db)
+	if err != nil {
+		log.Error("kanban store init", "err", err)
+		os.Exit(1)
+	}
+	kanbanSrv := kanban.NewServer(kanbanStore, log)
+
+	// ── Media storage (reuses shared DB to avoid second SQLite connection) ───
+	mediaSto, err := media.NewFSStorageWithDB(db, mediaDir)
+	if err != nil {
+		log.Error("media storage init", "err", err)
+		os.Exit(1)
+	}
+
+	// ── Syndication schema (engine/scheduler wired externally by ops jobs) ───
+	if err := syndication.EnsureSchema(db); err != nil {
+		log.Error("syndication schema", "err", err)
+		os.Exit(1)
+	}
+
+	// ── Root mux ─────────────────────────────────────────────────────────────
 	mux := http.NewServeMux()
 
-	// Mount documents handler
-	docHandler := documents.Handler(docSvc)
-	mux.Handle("/api/v1/documents/", docHandler)
+	// Documents
+	mux.Handle("/api/v1/documents/", documents.Handler(docSvc))
 
-	// Mount inbox handler (inbox owns all /api/v1/inbox and /api/v1/ingest and /api/v1/templates routes)
+	// Inbox (owns /api/v1/inbox, /api/v1/templates, /api/v1/ingest)
 	inboxMux := inboxSrv.Handler()
 	mux.Handle("/api/v1/inbox/", inboxMux)
 	mux.Handle("/api/v1/inbox", inboxMux)
@@ -112,10 +137,17 @@ func main() {
 	mux.Handle("/api/v1/templates", inboxMux)
 	mux.Handle("/api/v1/ingest/", inboxMux)
 
-	// Mount finance handler
+	// Finance (vehicles P&L, fleet, transactions)
 	mux.Handle("/api/v1/vehicles/", finHandler)
 	mux.Handle("/api/v1/fleet/", finHandler)
 	mux.Handle("/api/v1/transactions/", finHandler)
+
+	// Media reorder — mounted AFTER finance so the more-specific pattern wins
+	// for PUT /api/v1/vehicles/{id}/media/reorder vs GET /api/v1/vehicles/{id}/pnl
+	mux.Handle("PUT /api/v1/vehicles/{id}/media/reorder", media.ReorderHandler(mediaSto))
+
+	// Kanban + Calendar
+	kanbanSrv.Register(mux)
 
 	// Health
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

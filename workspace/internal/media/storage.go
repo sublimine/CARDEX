@@ -86,6 +86,21 @@ func NewFSStorage(dbPath, baseDir string) (*FSStorage, error) {
 	return &FSStorage{db: db, baseDir: baseDir}, nil
 }
 
+// NewFSStorageWithDB creates an FSStorage that reuses an existing *sql.DB
+// connection (e.g. the shared workspace SQLite file). The media schema tables
+// are created idempotently on db. Use this to avoid opening a second SQLite
+// connection, which would cause "database is locked" errors under concurrent
+// writes with modernc.org/sqlite.
+func NewFSStorageWithDB(db *sql.DB, baseDir string) (*FSStorage, error) {
+	if _, err := db.Exec(schema); err != nil {
+		return nil, fmt.Errorf("media storage create schema: %w", err)
+	}
+	if err := os.MkdirAll(baseDir, 0o755); err != nil {
+		return nil, fmt.Errorf("media storage mkdir: %w", err)
+	}
+	return &FSStorage{db: db, baseDir: baseDir}, nil
+}
+
 // Close releases the underlying database connection.
 func (s *FSStorage) Close() error { return s.db.Close() }
 

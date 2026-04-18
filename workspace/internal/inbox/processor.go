@@ -119,11 +119,25 @@ func (p *Processor) Process(ctx context.Context, tenantID string, raw RawInquiry
 		return nil, fmt.Errorf("message: %w", err)
 	}
 
-	// Transition vehicle listed→inquiry.
-	if vehicle != nil && vehicle.Status == "listed" {
-		if _, err := tx.ExecContext(ctx,
-			`UPDATE crm_vehicles SET status='inquiry', updated_at=? WHERE id=?`, nowStr, vehicle.ID); err != nil {
-			return nil, fmt.Errorf("vehicle transition: %w", err)
+	// Transition vehicle status: only "listed" → "inquiry" is valid on first
+	// inquiry (mirrors the kanban state machine: listed→inquiry is an allowed
+	// edge). Any other current status (inquiry, negotiation, reserved, sold…)
+	// means the vehicle is already beyond this stage; skip silently — the
+	// inquiry is still recorded, only the state update is omitted.
+	if vehicle != nil {
+		switch vehicle.Status {
+		case "listed":
+			if _, err := tx.ExecContext(ctx,
+				`UPDATE crm_vehicles SET status='inquiry', updated_at=? WHERE id=?`,
+				nowStr, vehicle.ID); err != nil {
+				return nil, fmt.Errorf("vehicle transition listed→inquiry: %w", err)
+			}
+		case "inquiry", "negotiation", "reserved", "sold", "in_transit", "delivered":
+			// Vehicle already past listing stage — inquiry recorded, no state change.
+		default:
+			// Unexpected status (e.g. "sourcing", "acquired", "reconditioning"):
+			// vehicle is not yet listed, so an external inquiry arriving is anomalous.
+			// Record the inquiry but do NOT alter vehicle status to avoid corruption.
 		}
 	}
 
