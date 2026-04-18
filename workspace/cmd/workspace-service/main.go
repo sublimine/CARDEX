@@ -3,6 +3,7 @@
 // Exposes HTTP sub-trees on a single port:
 //
 //	/api/v1/auth/*         — Authentication (login, register, refresh) — public
+//	/api/v1/check/*        — Vehicle history report (VIN decode + registry data) — public with rate limit
 //	/api/v1/documents/*    — PDF generation (contracts, invoices, sheets, CMR)
 //	/api/v1/inbox/*        — Unified dealer inbox (conversations, messages, templates)
 //	/api/v1/ingest/*       — Inquiry ingestion (web webhook, manual)
@@ -41,6 +42,7 @@ import (
 	"time"
 
 	"cardex.eu/workspace/internal/auth"
+	"cardex.eu/workspace/internal/check"
 	"cardex.eu/workspace/internal/documents"
 	"cardex.eu/workspace/internal/finance"
 	"cardex.eu/workspace/internal/inbox"
@@ -177,12 +179,33 @@ func main() {
 	syndicationScheduler := syndication.NewScheduler(syndicationEngine, getListing, log)
 	go syndicationScheduler.Run(ctx)
 
+	// ── Vehicle history check service ────────────────────────────────────────
+	if err := check.EnsureSchema(db); err != nil {
+		log.Error("check schema", "err", err)
+		os.Exit(1)
+	}
+	checkCache := check.NewCache(db)
+	checkDecoder := check.NewVINDecoder()
+	checkProviders := []check.RegistryProvider{
+		check.NewNLProvider(),
+		check.NewFRProvider(),
+		check.NewBEProvider(),
+		check.NewESProvider(),
+		check.NewDEProvider(),
+		check.NewCHProvider(),
+	}
+	checkEngine := check.NewEngine(checkCache, checkDecoder, checkProviders)
+	checkHandler := check.NewHandler(checkEngine, checkCache)
+
 	// ── Root mux ─────────────────────────────────────────────────────────────
 	mux := http.NewServeMux()
 	requireAuth := auth.RequireAuth(jwtSvc)
 
 	// Auth endpoints — no middleware (public)
 	authHandler.Register(mux)
+
+	// Vehicle history check — public with built-in per-IP rate limiting
+	checkHandler.Register(mux)
 
 	// All other handlers wrapped with RequireAuth
 	// Documents
