@@ -18,6 +18,7 @@
         gnn-setup gnn-train gnn-serve gnn-test \
         layoutlm-setup layoutlm-fixtures layoutlm-test \
         forecast-pipeline forecast-serve forecast-test \
+        tax-build tax-serve tax-test \
         routes-build routes-serve routes-test
 
 # ---------------------------------------------------------------------------
@@ -253,6 +254,28 @@ forecast-test:
 	cd innovation/chronos_forecasting && python -m pytest tests/ -v
 
 # ---------------------------------------------------------------------------
+# tax-build — compile the VAT cross-border optimiser server
+# ---------------------------------------------------------------------------
+tax-build:
+	@echo "Building tax-server..."
+	cd innovation/tax_engine && GOWORK=off go build -ldflags="-s -w" \
+	    -o ../../bin/tax-server ./cmd/tax-server/
+	@echo "  -> bin/tax-server"
+
+# ---------------------------------------------------------------------------
+# tax-serve — start the Tax Engine API server (port 8504)
+# ---------------------------------------------------------------------------
+tax-serve:
+	cd innovation/tax_engine && GOWORK=off go run ./cmd/tax-server/ \
+	    2>&1 | tee -a tax-server.log
+
+# ---------------------------------------------------------------------------
+# tax-test — run Tax Engine Go test suite (36 tests, -race)
+# ---------------------------------------------------------------------------
+tax-test:
+	cd innovation/tax_engine && GOWORK=off go test -race -count=1 -v ./...
+
+# ---------------------------------------------------------------------------
 # routes-build — compile the CARDEX Routes disposition server
 # ---------------------------------------------------------------------------
 routes-build:
@@ -297,6 +320,10 @@ help:
 	@echo "  make forecast-pipeline Run Chronos-2 data pipeline (SQLite → CSVs)"
 	@echo "  make forecast-serve    Start Chronos-2 forecast API (port 8503)"
 	@echo "  make forecast-test     Run Chronos-2 pytest suite"
+	@echo ""
+	@echo "  make tax-build         Build tax-server binary"
+	@echo "  make tax-serve         Start VAT Tax Engine API (port 8504)"
+	@echo "  make tax-test          Run Tax Engine test suite (36 tests, -race)"
 	@echo ""
 	@echo "  make routes-build      Build routes-server binary"
 	@echo "  make routes-serve      Start Routes disposition API (port 8504)"

@@ -147,6 +147,39 @@ All significant implementation milestones for CARDEX Phases 2–5.
 
 ---
 
+## [Sprint 32] — VAT Cross-Border Optimiser — Tax Engine (2026-04-18)
+
+**Branch:** `sprint/32-tax-engine`  
+**Module:** `innovation/tax_engine/` (Go, `cardex.eu/tax`) — port 8504
+
+### Core Engine (`innovation/tax_engine/`)
+- `VATRegime`: `MARGIN_SCHEME` / `INTRA_COMMUNITY` / `EXPORT_IMPORT` typed constants
+- `NationalVATRates`: DE 19%, FR 20%, ES/BE/NL 21%, CH 8.1% MWST
+- `IsNewVehicle(ageMonths, km)` — Art. 2(2)(b) Dir. IVA: ≤ 6 months OR ≤ 6 000 km
+- `Routes(from, to, hasValidVATIDs, isNew)` — 30 directional pairs (EU×EU + EU↔CH)
+- Margin scheme excluded for new vehicles (Art. 311 Dir. IVA); IC at dest rate applied
+- `Calculate(req, viesStatus)` → sorted routes; `NetSaving` = irrecoverable VAT saved vs worst route
+- `computeRoute()`: MS embeds VAT (margin × rate/(1+rate)); IC 0%; Export/Import on full price
+
+### VIES Integration (`vies.go`)
+- `VIESClient` with 24h TTL cache (`sync.RWMutex`), concurrent validation via goroutines
+- `NewVIESClientWithTTL(hc, ttl)` — injectable HTTP client for tests
+- `Validate()`: normalises VAT ID, checks 2-char EU prefix, CH returns false without HTTP
+- `ValidateBoth()`: concurrent goroutines, VIES fallback → margin scheme only on failure
+
+### HTTP Server + CLI
+- `POST /tax/calculate`, `GET /health`; `TAX_PORT` env var (default 8504)
+- `cardex tax --from ES --to DE --price 15000 --margin 2000 --seller-vat ... --buyer-vat ...`
+- Lipgloss-rendered table: VIES status, route ranking, savings summary, legal basis
+
+### Tests (36 tests, `go test -race`)
+- All 30 directional pairs; IC vs MS amounts; VIES mock + cache; new vehicle boundaries
+
+### Makefile
+- `make tax-build` / `tax-serve` / `tax-test`
+
+---
+
 ## [Unreleased] — Sprint 31: Chronos-2 Time-Series Price Forecasting (2026-04-17)
 
 **Branch:** `sprint/31-chronos-forecasting`
