@@ -3,7 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import {
   LayoutDashboard, Car, KanbanSquare, Users, GitPullRequest,
   MessageSquare, Calendar, BarChart3, Settings, Menu, X, Bell,
-  Car as CarIcon, ChevronRight, Moon, Sun,
+  Car as CarIcon, ChevronRight, Moon, Sun, FileSearch,
 } from 'lucide-react'
 import MobileNav from './MobileNav'
 import Avatar from '../components/Avatar'
@@ -18,6 +18,7 @@ const navItems = [
   { to: '/inbox',     label: 'Inbox',      icon: MessageSquare },
   { to: '/calendar',  label: 'Calendar',   icon: Calendar },
   { to: '/finance',   label: 'Finance',    icon: BarChart3 },
+  { to: '/check',     label: 'VIN Check',  icon: FileSearch },
   { to: '/settings',  label: 'Settings',   icon: Settings },
 ]
 

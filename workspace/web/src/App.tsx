@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import Shell from './layout/Shell'
 import ProtectedRoute from './auth/ProtectedRoute'
 import LoginPage from './auth/LoginPage'
+import CheckPage from './pages/Check'
 import Dashboard from './pages/Dashboard'
 import Vehicles from './pages/Vehicles'
 import Kanban from './pages/Kanban'
@@ -16,8 +17,12 @@ import Settings from './pages/Settings'
 export default function App() {
   return (
     <Routes>
+      {/* Public routes — no auth required */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/check" element={<CheckPage />} />
+      <Route path="/check/:vin" element={<CheckPage />} />
 
+      {/* Protected app shell */}
       <Route
         element={
           <ProtectedRoute>

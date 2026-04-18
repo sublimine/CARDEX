@@ -1,13 +1,13 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Car, MessageSquare, GitPullRequest, MoreHorizontal } from 'lucide-react'
+import { LayoutDashboard, Car, MessageSquare, GitPullRequest, FileSearch } from 'lucide-react'
 
 const tabs = [
   { to: '/',        label: 'Dashboard', icon: LayoutDashboard },
   { to: '/vehicles', label: 'Vehicles',  icon: Car },
   { to: '/inbox',    label: 'Inbox',     icon: MessageSquare },
   { to: '/deals',    label: 'Deals',     icon: GitPullRequest },
-  { to: '/settings', label: 'More',      icon: MoreHorizontal },
+  { to: '/check',    label: 'Check',     icon: FileSearch },
 ]
 
 export default function MobileNav() {
