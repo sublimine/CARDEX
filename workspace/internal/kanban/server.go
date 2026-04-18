@@ -19,7 +19,7 @@ func NewServer(store *Store, log *slog.Logger) *Server {
 	return &Server{store: store, log: log}
 }
 
-// Register mounts routes on mux.
+// Register mounts routes on mux without any middleware.
 func (srv *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/kanban/columns", srv.handleColumns)
 	mux.HandleFunc("/api/v1/kanban/columns/", srv.handleColumnByID)
@@ -27,6 +27,17 @@ func (srv *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/calendar/events", srv.handleEvents)
 	mux.HandleFunc("/api/v1/calendar/events/upcoming", srv.handleUpcoming)
 	mux.HandleFunc("/api/v1/calendar/events/", srv.handleEventByID)
+}
+
+// RegisterWithMiddleware mounts routes on mux, wrapping each handler with mw.
+func (srv *Server) RegisterWithMiddleware(mux *http.ServeMux, mw func(http.Handler) http.Handler) {
+	wrap := func(h http.HandlerFunc) http.Handler { return mw(h) }
+	mux.Handle("/api/v1/kanban/columns", wrap(srv.handleColumns))
+	mux.Handle("/api/v1/kanban/columns/", wrap(srv.handleColumnByID))
+	mux.Handle("/api/v1/kanban/cards/", wrap(srv.handleCards))
+	mux.Handle("/api/v1/calendar/events", wrap(srv.handleEvents))
+	mux.Handle("/api/v1/calendar/events/upcoming", wrap(srv.handleUpcoming))
+	mux.Handle("/api/v1/calendar/events/", wrap(srv.handleEventByID))
 }
 
 // ── Kanban handlers ───────────────────────────────────────────────────────────

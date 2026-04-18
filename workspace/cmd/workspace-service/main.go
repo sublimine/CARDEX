@@ -2,6 +2,7 @@
 //
 // Exposes HTTP sub-trees on a single port:
 //
+//	/api/v1/auth/*         — Authentication (login, register, refresh) — public
 //	/api/v1/documents/*    — PDF generation (contracts, invoices, sheets, CMR)
 //	/api/v1/inbox/*        — Unified dealer inbox (conversations, messages, templates)
 //	/api/v1/ingest/*       — Inquiry ingestion (web webhook, manual)
@@ -14,26 +15,32 @@
 //
 // Environment variables:
 //
-//	WORKSPACE_PORT      (default: 8506)
-//	WORKSPACE_DB_PATH   (default: data/workspace.db)
-//	WORKSPACE_MEDIA_DIR (default: data/workspace/media)
-//	SMTP_HOST           (default: "")
-//	SMTP_PORT           (default: 25)
-//	SMTP_USER           (default: "")
-//	SMTP_PASS           (default: "")
-//	SMTP_FROM           (default: "")
+//	WORKSPACE_PORT       (default: 8506)
+//	WORKSPACE_DB_PATH    (default: data/workspace.db)
+//	WORKSPACE_MEDIA_DIR  (default: data/workspace/media)
+//	CARDEX_JWT_SECRET    (default: random 32 bytes — use a fixed value in production)
+//	SMTP_HOST            (default: "")
+//	SMTP_PORT            (default: 25)
+//	SMTP_USER            (default: "")
+//	SMTP_PASS            (default: "")
+//	SMTP_FROM            (default: "")
 package main
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
+	"cardex.eu/workspace/internal/auth"
 	"cardex.eu/workspace/internal/documents"
 	"cardex.eu/workspace/internal/finance"
 	"cardex.eu/workspace/internal/inbox"
@@ -49,6 +56,19 @@ func main() {
 	port := envOrDefault("WORKSPACE_PORT", "8506")
 	dbPath := envOrDefault("WORKSPACE_DB_PATH", "data/workspace.db")
 	mediaDir := envOrDefault("WORKSPACE_MEDIA_DIR", "data/workspace/media")
+
+	// ── JWT secret ───────────────────────────────────────────────────────────
+	jwtSecret := os.Getenv("CARDEX_JWT_SECRET")
+	if jwtSecret == "" {
+		b := make([]byte, 32)
+		if _, err := rand.Read(b); err != nil {
+			log.Error("generate jwt secret", "err", err)
+			os.Exit(1)
+		}
+		jwtSecret = hex.EncodeToString(b)
+		log.Warn("CARDEX_JWT_SECRET not set — using ephemeral random secret (tokens will be invalidated on restart)")
+	}
+	jwtSvc := auth.NewJWTService([]byte(jwtSecret), 24*time.Hour)
 
 	smtpPort, _ := strconv.Atoi(envOrDefault("SMTP_PORT", "25"))
 	smtpCfg := inbox.SMTPConfig{
@@ -72,7 +92,16 @@ func main() {
 	db.SetMaxOpenConns(1) // SQLite single-writer
 	defer db.Close()
 
-	ctx := context.Background()
+	// Context cancelled on SIGTERM/SIGINT for graceful shutdown.
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer stop()
+
+	// ── Auth service (must be first — creates crm_users) ────────────────────
+	if err := auth.EnsureSchema(db); err != nil {
+		log.Error("auth schema", "err", err)
+		os.Exit(1)
+	}
+	authHandler := auth.NewHandler(db, jwtSvc)
 
 	// ── Documents service (EnsureSchema called inside NewService) ────────────
 	docSvc, err := documents.NewService(ctx, db, mediaDir)
@@ -117,39 +146,68 @@ func main() {
 		os.Exit(1)
 	}
 
-	// ── Syndication schema (engine/scheduler wired externally by ops jobs) ───
+	// ── Syndication: schema + engine + scheduler ─────────────────────────────
 	if err := syndication.EnsureSchema(db); err != nil {
 		log.Error("syndication schema", "err", err)
 		os.Exit(1)
 	}
+	syndicationEngine, err := syndication.NewEngine(db, log)
+	if err != nil {
+		log.Error("syndication engine init", "err", err)
+		os.Exit(1)
+	}
+	// getListing queries crm_vehicles for the minimal fields needed by adapters.
+	// Photo URLs are intentionally empty here — they are passed at publish time
+	// by the caller that holds the full media export result.
+	getListing := func(vehicleID string) (syndication.PlatformListing, error) {
+		var l syndication.PlatformListing
+		row := db.QueryRowContext(ctx,
+			`SELECT id, COALESCE(make,''), COALESCE(model,''), COALESCE(year,0),
+			        COALESCE(vin,''), COALESCE(status,'')
+			 FROM crm_vehicles WHERE id=?`, vehicleID)
+		var statusIgnored string
+		if err := row.Scan(&l.VehicleID, &l.Make, &l.Model, &l.Year, &l.VIN, &statusIgnored); err != nil {
+			if err == sql.ErrNoRows {
+				return l, fmt.Errorf("syndication getListing: vehicle %s not found", vehicleID)
+			}
+			return l, fmt.Errorf("syndication getListing: %w", err)
+		}
+		return l, nil
+	}
+	syndicationScheduler := syndication.NewScheduler(syndicationEngine, getListing, log)
+	go syndicationScheduler.Run(ctx)
 
 	// ── Root mux ─────────────────────────────────────────────────────────────
 	mux := http.NewServeMux()
+	requireAuth := auth.RequireAuth(jwtSvc)
 
+	// Auth endpoints — no middleware (public)
+	authHandler.Register(mux)
+
+	// All other handlers wrapped with RequireAuth
 	// Documents
-	mux.Handle("/api/v1/documents/", documents.Handler(docSvc))
+	mux.Handle("/api/v1/documents/", requireAuth(documents.Handler(docSvc)))
 
-	// Inbox (owns /api/v1/inbox, /api/v1/templates, /api/v1/ingest)
+	// Inbox
 	inboxMux := inboxSrv.Handler()
-	mux.Handle("/api/v1/inbox/", inboxMux)
-	mux.Handle("/api/v1/inbox", inboxMux)
-	mux.Handle("/api/v1/templates/", inboxMux)
-	mux.Handle("/api/v1/templates", inboxMux)
-	mux.Handle("/api/v1/ingest/", inboxMux)
+	mux.Handle("/api/v1/inbox/", requireAuth(inboxMux))
+	mux.Handle("/api/v1/inbox", requireAuth(inboxMux))
+	mux.Handle("/api/v1/templates/", requireAuth(inboxMux))
+	mux.Handle("/api/v1/templates", requireAuth(inboxMux))
+	mux.Handle("/api/v1/ingest/", requireAuth(inboxMux))
 
-	// Finance (vehicles P&L, fleet, transactions)
-	mux.Handle("/api/v1/vehicles/", finHandler)
-	mux.Handle("/api/v1/fleet/", finHandler)
-	mux.Handle("/api/v1/transactions/", finHandler)
+	// Finance
+	mux.Handle("/api/v1/vehicles/", requireAuth(finHandler))
+	mux.Handle("/api/v1/fleet/", requireAuth(finHandler))
+	mux.Handle("/api/v1/transactions/", requireAuth(finHandler))
 
-	// Media reorder — mounted AFTER finance so the more-specific pattern wins
-	// for PUT /api/v1/vehicles/{id}/media/reorder vs GET /api/v1/vehicles/{id}/pnl
-	mux.Handle("PUT /api/v1/vehicles/{id}/media/reorder", media.ReorderHandler(mediaSto))
+	// Media reorder
+	mux.Handle("PUT /api/v1/vehicles/{id}/media/reorder", requireAuth(media.ReorderHandler(mediaSto)))
 
 	// Kanban + Calendar
-	kanbanSrv.Register(mux)
+	kanbanSrv.RegisterWithMiddleware(mux, requireAuth)
 
-	// Health
+	// Health (public)
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprintf(w, `{"status":"ok","time":"%s"}`, time.Now().UTC().Format(time.RFC3339))
@@ -164,10 +222,24 @@ func main() {
 		WriteTimeout: 60 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
-	if err := srv.ListenAndServe(); err != nil {
-		log.Error("server error", "err", err)
-		os.Exit(1)
+
+	// Start server in goroutine so we can listen for shutdown.
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Error("server error", "err", err)
+		}
+	}()
+	log.Info("workspace-service ready", "addr", addr)
+
+	// Block until shutdown signal.
+	<-ctx.Done()
+	log.Info("shutdown signal received — draining connections")
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Error("graceful shutdown error", "err", err)
 	}
+	log.Info("workspace-service stopped")
 }
 
 func envOrDefault(key, def string) string {
