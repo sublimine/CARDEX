@@ -192,6 +192,7 @@ func (s *Store) listCards(ctx context.Context, tenantID, columnID string) ([]Car
 }
 
 // EnsureCard upserts a card for a vehicle into the correct column.
+// It also ensures a matching row exists in crm_vehicles so MoveCard can sync status.
 func (s *Store) EnsureCard(ctx context.Context, tenantID, vehicleID, columnID string, position int) error {
 	now := nowRFC3339()
 	_, err := s.db.ExecContext(ctx, `
@@ -200,6 +201,14 @@ func (s *Store) EnsureCard(ctx context.Context, tenantID, vehicleID, columnID st
 		ON CONFLICT(vehicle_id) DO UPDATE SET
 			column_id=excluded.column_id, position=excluded.position, updated_at=excluded.updated_at`,
 		vehicleID, tenantID, columnID, position, now)
+	if err != nil {
+		return err
+	}
+	_, err = s.db.ExecContext(ctx, `
+		INSERT INTO crm_vehicles (id, tenant_id, status, updated_at)
+		VALUES (?,?,'sourcing',?)
+		ON CONFLICT(id, tenant_id) DO NOTHING`,
+		vehicleID, tenantID, now)
 	return err
 }
 
@@ -237,25 +246,25 @@ func (s *Store) MoveCard(ctx context.Context, tenantID, vehicleID string, req Mo
 		}
 	}
 
-	// Enforce WIP limit on target column.
-	var limit int
-	s.db.QueryRowContext(ctx, `SELECT vehicle_limit FROM crm_kanban_columns WHERE tenant_id=? AND id=?`,
-		tenantID, req.TargetColumnID).Scan(&limit)
-	if limit > 0 {
-		var count int
-		s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM crm_kanban_cards WHERE tenant_id=? AND column_id=?`,
-			tenantID, req.TargetColumnID).Scan(&count)
-		if count >= limit {
-			return Card{}, fmt.Errorf("WIP limit of %d reached for target column", limit)
-		}
-	}
-
 	now := nowRFC3339()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return Card{}, err
 	}
 	defer tx.Rollback()
+
+	// Enforce WIP limit inside the transaction to prevent TOCTOU races.
+	var limit int
+	tx.QueryRowContext(ctx, `SELECT vehicle_limit FROM crm_kanban_columns WHERE tenant_id=? AND id=?`,
+		tenantID, req.TargetColumnID).Scan(&limit)
+	if limit > 0 {
+		var count int
+		tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM crm_kanban_cards WHERE tenant_id=? AND column_id=?`,
+			tenantID, req.TargetColumnID).Scan(&count)
+		if count >= limit {
+			return Card{}, fmt.Errorf("WIP limit of %d reached for target column", limit)
+		}
+	}
 
 	_, err = tx.ExecContext(ctx, `
 		UPDATE crm_kanban_cards SET column_id=?, position=?, updated_at=?
@@ -267,9 +276,11 @@ func (s *Store) MoveCard(ctx context.Context, tenantID, vehicleID string, req Mo
 
 	// Sync vehicle status when state_key is present.
 	if dstKey != "" {
-		tx.ExecContext(ctx,
+		if _, err := tx.ExecContext(ctx,
 			`UPDATE crm_vehicles SET status=?, updated_at=? WHERE tenant_id=? AND id=?`,
-			dstKey, now, tenantID, vehicleID)
+			dstKey, now, tenantID, vehicleID); err != nil {
+			return Card{}, fmt.Errorf("vehicle status sync: %w", err)
+		}
 	}
 
 	if err := tx.Commit(); err != nil {

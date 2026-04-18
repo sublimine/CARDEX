@@ -34,6 +34,14 @@ CREATE INDEX IF NOT EXISTS idx_kanban_cards_tenant  ON crm_kanban_cards(tenant_i
 CREATE INDEX IF NOT EXISTS idx_kanban_cards_assignee ON crm_kanban_cards(tenant_id, assignee_id)
     WHERE assignee_id IS NOT NULL;
 
+CREATE TABLE IF NOT EXISTS crm_vehicles (
+    id          TEXT NOT NULL,
+    tenant_id   TEXT NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'sourcing',
+    updated_at  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id, tenant_id)
+);
+
 CREATE TABLE IF NOT EXISTS crm_events (
     id               TEXT    PRIMARY KEY,
     tenant_id        TEXT    NOT NULL,
