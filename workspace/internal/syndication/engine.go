@@ -288,7 +288,7 @@ func (e *SyndicationEngine) upsertRecord(vehicleID, platform, extID, extURL, sta
 			error_message  = excluded.error_message,
 			next_retry_at  = excluded.next_retry_at,
 			published_at   = COALESCE(excluded.published_at, crm_syndication.published_at),
-			withdrawn_at   = excluded.withdrawn_at,
+			withdrawn_at   = COALESCE(excluded.withdrawn_at, crm_syndication.withdrawn_at),
 			updated_at     = CURRENT_TIMESTAMP`,
 		vehicleID, platform, extID, extURL, status, errMsg,
 		nextRetry, publishedAt, withdrawnAt)
