@@ -2,6 +2,32 @@
 
 All significant implementation milestones for CARDEX Phases 2–5.
 
+## [Sprint 43] — CARDEX Workspace: Document Generator (2026-04-18)
+
+**Branch:** `sprint/43-documents` | **Module:** `workspace/internal/documents/` | **Library:** `go-pdf/fpdf v0.9.0`
+
+- **PDF Engine** (`template.go`): Pure-Go PDF generation via `github.com/go-pdf/fpdf` (no CGO, no external binaries). Helper primitives: `newPDF`, `drawHeader`, `drawHRule`, `drawSectionTitle`, `drawTwoColumnRow`, `drawPartyBox`, `drawPartiesRow`, `drawSignatureBlock`, `drawFooter`, `formatPrice`.
+
+- **Purchase/Sale Contracts** (`contract.go`): Country-specific templates for DE (Kaufvertrag, §476 BGB), FR (Bon de Commande, Art. L.217-1), ES (Contrato compraventa, RDL 1/2007), NL (Koopovereenkomst, art. 7:23 BW). Each includes 5 localised legal clauses, seller/buyer party boxes, vehicle data, price + VAT block, and dual signature lines.
+
+- **EU Invoices** (`invoice.go`): VAT scheme support — `standard` (rate% + amount), `reverse_charge` (Art. 196 Directive 2006/112/EC, 0%), `margin` (Art. 313, margin scheme notice). Invoice footer renders the appropriate legal reference per scheme. Seller/buyer VAT IDs included when provided.
+
+- **Vehicle Technical Sheet** (`vehicle_sheet.go`): 1-page A4 layout — dark-blue title banner, dealer sub-banner, 2-column spec grid, 3-column equipment list, dark-blue price box, QR/URL placeholder, footer note, dealer branding bar.
+
+- **Transport Accompaniment Document** (`transport_doc.go`): Simplified CMR-like document (internal use only, not official CMR). Sections: transport banner, document reference, route, vehicle details, parties, notes, 5-checkbox condition list, double signature block (sender/recipient + carrier/date).
+
+- **Service Layer** (`service.go`): `Service` struct orchestrates generate → disk write → DB persist. Files stored at `{baseDir}/{tenantID}/documents/{type}_{id}.pdf`. `generateID()` uses `time.Now().UnixNano()`.
+
+- **Storage** (`schema.go`): `crm_documents` table (id, tenant_id, type, vehicle_id, deal_id, file_path, created_at) + `crm_invoice_seq` for atomic invoice numbering. Format: `{prefix}-{year}-{seq:05d}`. Increment is transactional (`ON CONFLICT DO UPDATE SET last_seq = last_seq + 1`).
+
+- **HTTP Handler** (`handler.go`): `POST /api/v1/documents/contract|invoice|vehicle-sheet|transport` → 201 + `GenerateResult` JSON. `GET /api/v1/documents/{id}/download` → streams PDF with `Content-Type: application/pdf`.
+
+- **Tests** (`documents_test.go`): 26 tests — contract DE/FR/ES/NL, unsupported country error, invoice standard/reverse_charge/margin, vehicle sheet full + minimal, transport doc with/without notes, service file storage, GetDocumentFile, NotFound, invoice sequence uniqueness + format + multi-tenant isolation, handler POST 201, handler missing field 400, handler download round-trip, handler 404, EnsureSchema idempotency, tenant directory layout. All pass `go test -race`.
+
+- **Planning doc:** `planning/WORKSPACE/03_DOCUMENTS.md`
+
+---
+
 ## [Sprint 34] — CARDEX Trust KYB: Dealer Portable Trust Profile (2026-04-18)
 
 **Branch:** `sprint/34-trust-kyb` | **Module:** `innovation/trust_kyb/` | **Port:** `:8505`

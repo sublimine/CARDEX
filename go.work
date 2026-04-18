@@ -11,4 +11,5 @@ use (
 	./internal/shared
 	./quality
 	./tests/e2e
+	./workspace
 )
