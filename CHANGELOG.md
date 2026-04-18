@@ -48,6 +48,62 @@ All significant implementation milestones for CARDEX Phases 2–5.
 
 ---
 
+## [Sprint 41] — Multi-Platform Syndication Engine (2026-04-18)
+
+**Branch:** `sprint/41-syndication` | **Package:** `workspace/internal/syndication/`
+
+**Branch:** `sprint/41-syndication` | **Package:** `workspace/internal/syndication/`
+
+### Platform Adapters
+- **mobile.de** (`mobile_de.go`): XML feed in mobile.de dealer import format; `ADD/CHANGE/DELETE` actions; max 30 photos; field mappers for body type, fuel type, transmission (DE labels)
+- **AutoScout24** (`autoscout24.go`): XML feed in AutoScout24 classified import format; max 50 photos; fuel/transmission code mappers (B/D/E/L/C/2/3, A/M)
+- **AutoScout24 BE** (`autoscout24_be.go`): Belgian variant via `NewAutoScout24("BE")` — same adapter, country-scoped
+- **AutoScout24 CH** (`autoscout24_ch.go`): Swiss variant via `NewAutoScout24("CH")` — CHF currency support
+- **leboncoin** (`leboncoin.go`): FR-only; CSV export with `LeboncoinCSVRow()` / `LeboncoinCSVHeader()`; auto-generates FR description if blank
+- **coches.net** (`coches_net.go`): ES-only; XML export in coches.net import format; Spanish fuel/transmission labels
+- **universal_csv** (`universal_csv.go`): Generic CSV fallback (`GenerateCSV()`); 24-column standard header; wildcard country support
+- **universal_xml** (`universal_xml.go`): Generic XML fallback (`GenerateXML()`); schema-agnostic `<listings><listing>` format; wildcard country support
+
+### Core Engine (`engine.go`)
+- `SyndicationEngine.PublishVehicle()` — validates, publishes to target platforms, upserts `crm_syndication`, logs activity
+- `WithdrawVehicle()` — withdraws from all published platforms; updates status + `withdrawn_at`
+- `SyncAll()` — polls `Status()` for all active listings, marks withdrawn if platform confirms
+- `RetryErrors()` — exponential backoff retries (1h → 2h → 4h, max 3 attempts); `getListing` callback for fresh data
+
+### Scheduler (`scheduler.go`)
+- `Run(ctx)` — background goroutine; sync every 30 min, retry every 1 hour
+- `OnVehicleStateChange()` — auto-withdraws on `"sold"` or `"reserved"` state; no-op on other states
+
+### Schema (`schema.go`)
+- `crm_syndication`: `UNIQUE(vehicle_id, platform)`; status/retry_count/next_retry_at/published_at/withdrawn_at
+- `crm_syndication_activity`: event log (published, syndication_withdrawn, publish_error, retry_published)
+- 4 indexes on vehicle_id, platform, status, next_retry_at (partial)
+
+### Supporting Packages
+- `formatter.go`: `NormaliseFuelType`, `NormaliseTransmission`, `TruncatePhotos`, `FormatPrice`, `SanitiseVATID`
+- `description.go`: `GenerateDescription(lang, data)` with templates for DE/FR/ES/NL/EN; `AIGeneratedDescription` field reserved for future NLG
+- `metrics.go`: `workspace_syndication_{published_total, errors_total, latency_seconds, active_listings}`
+- `platform.go`: `Platform` interface + global registry (`Register`, `Registered`, `Get`)
+
+### Tests (`syndication_test.go`)
+- 41 tests; all pass with `-race`; govulncheck: no vulnerabilities
+- Engine: publish creates DB record, error recorded, platform selection, withdraw updates status + activity, auto-withdraw on sold/reserved/listed states, retry backoff + success, upsert idempotent, SyncAll
+- Validation: missing Make/Model/Price/Year across all adapters; ValidationError.Error() format
+- Descriptions: all 5 language templates, fallback to EN, AI override, features list
+- CSV: header + row count, field values, photo truncation to 3
+- XML: valid output, empty batch, field mapping
+- Formatters: FormatPrice, NormaliseFuelType, TruncatePhotos, NormaliseTransmission
+- Registry: all 8 platforms registered, nil for unknown, SupportedCountries
+- mobile.de specific: Publish returns non-empty IDs, Withdraw no error
+- AutoScout24 variants: correct Name() for DE/BE/CH
+- leboncoin CSV row: column alignment, Make in titre
+- Schema: EnsureSchema idempotent
+
+### Planning
+- `planning/WORKSPACE/01_SYNDICATION.md` — architecture diagram, platform table, retry strategy, Sprint 40 integration guide, roadmap
+
+---
+
 ## [Sprint 34] — CARDEX Trust KYB: Dealer Portable Trust Profile (2026-04-18)
 
 **Branch:** `sprint/34-trust-kyb` | **Module:** `innovation/trust_kyb/` | **Port:** `:8505`
