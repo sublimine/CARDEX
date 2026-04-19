@@ -1,84 +1,122 @@
-// Types for the CARDEX Check vehicle history report.
+// Types aligned with workspace/internal/check/ Go types.
+// Backend JSON field names must match exactly.
 
 export interface VINDecodeResult {
   vin: string
+  wmi?: string
   manufacturer: string
   make: string
-  model: string
+  model?: string
   year: number
-  bodyType: string
-  fuelType: string
+  bodyType?: string
+  fuelType?: string
   engineDisplacement?: string
   driveType?: string
   countryOfManufacture: string
   plant?: string
+  plantCountry?: string
+  serialNumber?: string
 }
 
 export interface VehicleAlert {
   id: string
   severity: 'critical' | 'warning' | 'info'
-  type: 'stolen' | 'recall_open' | 'mileage_inconsistency' | 'total_loss' | 'other'
+  // Backend sends: stolen, recall_open, mileage_rollback, mileage_gap
+  type: 'stolen' | 'recall_open' | 'mileage_rollback' | 'mileage_gap' | string
   title: string
   description: string
-  recommendedAction: string
+  recommendedAction?: string
   source: string
   detectedAt?: string
 }
 
 export interface InspectionRecord {
-  id: string
   date: string
   country: string
   center?: string
-  result: 'pass' | 'fail' | 'advisory'
+  result: 'pass' | 'fail' | 'pending' | 'advisory'
   mileageKm?: number
   nextInspectionDate?: string
-  notes?: string
 }
 
 export interface RecallEntry {
   campaignId: string
   manufacturer: string
   description: string
-  affectedComponent: string
-  status: 'open' | 'completed' | 'na'
+  affectedComponent?: string
+  status: 'open' | 'completed'
   startDate: string
   completionDate?: string
+  country?: string
+  source?: string
 }
 
 export interface MileageRecord {
   date: string
   mileageKm: number
   source: string
+  country?: string
   isAnomaly?: boolean
 }
 
-export type DataSourceStatus = 'success' | 'partial' | 'unavailable' | 'requires_owner'
+export interface MileageConsistency {
+  consistent: boolean
+  rollbacks: number
+  highGaps: number
+  note?: string
+}
+
+export interface CountryReport {
+  country: string
+  registrations: {
+    date: string
+    country: string
+    type: 'first_registration' | 'transfer' | 'import' | 'export'
+  }[]
+  inspections: InspectionRecord[]
+  stolenFlag: boolean
+}
+
+// Backend can send "error" in addition to the user-facing statuses.
+export type DataSourceStatus = 'success' | 'error' | 'partial' | 'unavailable' | 'requires_owner'
 
 export interface DataSource {
   id: string
   name: string
   country: string
   status: DataSourceStatus
-  recordsFound?: number
   note?: string
+  latencyMs?: number
+}
+
+export interface PlateInfo {
+  vin?: string
+  plate?: string
+  make?: string
+  model?: string
+  country?: string
+  source: string
+  partial?: boolean
+  [key: string]: unknown
+}
+
+// VehicleReport mirrors Go's VehicleReport struct.
+// nil Go slices arrive as JSON null — types reflect that with | null.
+export interface VehicleReport {
+  vin: string
+  /** Absent when VIN could not be decoded (e.g. plate-only lookups with no VIN). */
+  vinDecode?: VINDecodeResult | null
+  generatedAt: string
+  countries?: CountryReport[] | null
+  recalls: RecallEntry[] | null
+  mileageHistory: MileageRecord[] | null
+  mileageConsistency?: MileageConsistency | null
+  alerts: VehicleAlert[] | null
+  dataSources: DataSource[]
+  plateInfo?: PlateInfo | null
 }
 
 export type ReportOverallStatus = 'clean' | 'attention' | 'alerts'
-
-export interface VehicleReport {
-  vin: string
-  generatedAt: string
-  overallStatus: ReportOverallStatus
-  vinDecode: VINDecodeResult
-  alerts: VehicleAlert[]
-  inspections: InspectionRecord[]
-  recalls: RecallEntry[]
-  mileageHistory: MileageRecord[]
-  /** 0-100 consistency score; undefined if fewer than 3 mileage records */
-  mileageConsistencyScore?: number
-  dataSources: DataSource[]
-}
 
 export type CheckErrorCode =
   | 'invalid_vin'

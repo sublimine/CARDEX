@@ -17,6 +17,7 @@ import { SourceBadge } from '../../components/SourceBadge'
 import { cn } from '../../lib/cn'
 import type {
   VehicleReport, InspectionRecord, RecallEntry, MileageRecord,
+  MileageConsistency, ReportOverallStatus,
 } from '../../types/check'
 
 // ── Formatters ────────────────────────────────────────────────────────────────
@@ -41,6 +42,21 @@ function fmtKm(km: number): string {
   return new Intl.NumberFormat(navigator.language).format(km) + ' km'
 }
 
+// Converts a MileageConsistency object (from backend) to a 0–100 score for the gauge.
+function consistencyToScore(mc: MileageConsistency | null | undefined): number | undefined {
+  if (mc == null) return undefined
+  if (mc.consistent) return 100
+  return Math.max(0, 100 - mc.rollbacks * 30 - mc.highGaps * 15)
+}
+
+// Derives the overall status from the alerts array.
+function deriveOverallStatus(alerts: VehicleReport['alerts']): ReportOverallStatus {
+  const list = alerts ?? []
+  if (list.some((a) => a.severity === 'critical')) return 'alerts'
+  if (list.some((a) => a.severity === 'warning'))  return 'attention'
+  return 'clean'
+}
+
 // ── Animation variants ────────────────────────────────────────────────────────
 
 const container = {
@@ -58,8 +74,10 @@ const sectionItem = {
 
 // ── Status indicator ──────────────────────────────────────────────────────────
 
-function StatusIndicator({ status }: { status: VehicleReport['overallStatus'] }) {
-  const configs = {
+function StatusIndicator({ status }: { status: ReportOverallStatus }) {
+  const configs: Record<ReportOverallStatus, {
+    className: string; dot: string; Icon: React.ElementType; label: string
+  }> = {
     clean: {
       className: 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20',
       dot:   'bg-emerald-400 animate-pulse',
@@ -123,7 +141,7 @@ function Section({
 
 // ── VIN Decode grid ───────────────────────────────────────────────────────────
 
-function VINDecodeGrid({ decode }: { decode: VehicleReport['vinDecode'] }) {
+function VINDecodeGrid({ decode }: { decode: NonNullable<VehicleReport['vinDecode']> }) {
   const fields: [string, string | number | undefined][] = [
     ['Fabricante',       decode.manufacturer],
     ['Marca',            decode.make],
@@ -152,13 +170,48 @@ function VINDecodeGrid({ decode }: { decode: VehicleReport['vinDecode'] }) {
   )
 }
 
+// ── Plate info grid (when VIN decode is unavailable) ──────────────────────────
+
+function PlateInfoGrid({ plateInfo }: { plateInfo: NonNullable<VehicleReport['plateInfo']> }) {
+  const fields: [string, string | number | undefined][] = [
+    ['Matrícula',     plateInfo.plate],
+    ['País',          plateInfo.country],
+    ['Marca',         plateInfo.make],
+    ['Modelo',        plateInfo.model],
+    ['Fuente',        plateInfo.source],
+  ]
+  const visible = fields.filter(([, v]) => v !== undefined && v !== '')
+
+  if (visible.length === 0) {
+    return (
+      <p className="text-sm text-text-muted italic">
+        No se obtuvieron datos de identificación adicionales.
+      </p>
+    )
+  }
+
+  return (
+    <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+      {visible.map(([label, value]) => (
+        <div key={label}>
+          <dt className="text-[10px] font-medium text-text-muted uppercase tracking-widest mb-0.5">
+            {label}
+          </dt>
+          <dd className="text-sm font-medium text-text-primary">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
+
 // ── Inspection timeline ───────────────────────────────────────────────────────
 
 function inspectionItems(inspections: InspectionRecord[]) {
   return [...inspections]
     .sort((a, b) => b.date.localeCompare(a.date))
-    .map((ins) => ({
-      id: ins.id,
+    .map((ins, idx) => ({
+      // Backend Inspection has no id field — synthesise a stable key.
+      id: `${ins.date}-${ins.country}-${ins.center ?? ''}-${idx}`,
       date: formatDate(ins.date),
       accent: ins.result === 'pass' ? 'green' as const
             : ins.result === 'fail' ? 'red' as const
@@ -196,9 +249,11 @@ function RecallRow({ recall }: { recall: RecallEntry }) {
             <span className="text-[10px] text-text-muted font-mono">{recall.campaignId}</span>
           </div>
           <p className="text-sm font-medium text-text-primary">{recall.description}</p>
-          <p className="text-xs text-text-muted mt-0.5">
-            Componente: {recall.affectedComponent}
-          </p>
+          {recall.affectedComponent && (
+            <p className="text-xs text-text-muted mt-0.5">
+              Componente: {recall.affectedComponent}
+            </p>
+          )}
         </div>
       </div>
       <div className="flex gap-4 mt-2 text-[10px] text-text-muted font-mono">
@@ -346,16 +401,33 @@ interface CheckReportProps {
 }
 
 export default function CheckReport({ report, onBack, onRefresh }: CheckReportProps) {
-  const { vinDecode: d, alerts, inspections, recalls, mileageHistory, mileageConsistencyScore, dataSources } = report
+  // Normalise null arrays to empty arrays (Go nil slices → JSON null).
+  const d            = report.vinDecode ?? undefined
+  const alerts       = report.alerts ?? []
+  const recalls      = report.recalls ?? []
+  const mileageHistory = report.mileageHistory ?? []
+  const dataSources  = report.dataSources ?? []
 
-  const vehicleTitle = [d.make, d.model, d.year].filter(Boolean).join(' ')
+  // Flatten inspections from countries (not exposed at top level by backend).
+  const inspections = (report.countries ?? []).flatMap((c) => c.inspections ?? [])
+
+  // Compute derived values that the backend doesn't send directly.
+  const overallStatus    = deriveOverallStatus(alerts)
+  const mileageConsistencyScore = consistencyToScore(report.mileageConsistency)
+
+  const vehicleTitle = d
+    ? [d.make, d.model, d.year].filter(Boolean).join(' ')
+    : report.plateInfo
+    ? [report.plateInfo.make, report.plateInfo.model].filter(Boolean).join(' ')
+    : 'Vehículo'
 
   async function copyVIN() {
-    await navigator.clipboard.writeText(report.vin).catch(() => null)
+    if (report.vin) await navigator.clipboard.writeText(report.vin).catch(() => null)
   }
 
   function shareLink() {
-    const url = `${window.location.origin}/check/${report.vin}`
+    const path = report.vin ? `/check/${report.vin}` : '/check'
+    const url = `${window.location.origin}${path}`
     navigator.clipboard.writeText(url).catch(() => null)
   }
 
@@ -428,21 +500,37 @@ export default function CheckReport({ report, onBack, onRefresh }: CheckReportPr
               </h1>
 
               {/* VIN row */}
-              <div className="flex items-center gap-2 mt-2">
-                <span className="font-mono text-sm text-text-secondary tracking-[0.18em] select-all">
-                  {report.vin}
-                </span>
-                <button
-                  onClick={copyVIN}
-                  title="Copiar VIN"
-                  className="text-text-muted hover:text-text-primary transition-colors duration-150 active:scale-90"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                </button>
-              </div>
+              {report.vin && (
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="font-mono text-sm text-text-secondary tracking-[0.18em] select-all">
+                    {report.vin}
+                  </span>
+                  <button
+                    onClick={copyVIN}
+                    title="Copiar VIN"
+                    className="text-text-muted hover:text-text-primary transition-colors duration-150 active:scale-90"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
+              {/* Plate badge when no full VIN */}
+              {!report.vin && report.plateInfo?.plate && (
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="font-mono text-sm text-text-secondary tracking-[0.18em]">
+                    {report.plateInfo.country} · {report.plateInfo.plate}
+                  </span>
+                  {report.plateInfo.partial && (
+                    <span className="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                      Datos parciales
+                    </span>
+                  )}
+                </div>
+              )}
 
               {/* Manufacturer + country */}
-              {(d.manufacturer || d.countryOfManufacture) && (
+              {d && (d.manufacturer || d.countryOfManufacture) && (
                 <p className="mt-1.5 text-xs text-text-muted">
                   {[d.manufacturer, d.countryOfManufacture].filter(Boolean).join(' · ')}
                 </p>
@@ -459,7 +547,7 @@ export default function CheckReport({ report, onBack, onRefresh }: CheckReportPr
               {mileageConsistencyScore !== undefined && mileageHistory.length >= 3 && (
                 <ScoreGauge score={mileageConsistencyScore} size={120} label="Consistencia" />
               )}
-              <StatusIndicator status={report.overallStatus} />
+              <StatusIndicator status={overallStatus} />
             </div>
           </div>
         </motion.div>
@@ -497,13 +585,22 @@ export default function CheckReport({ report, onBack, onRefresh }: CheckReportPr
             animate="visible"
             className="space-y-5 min-w-0"
           >
-            {/* Identity */}
-            <Section
-              title="Identidad del vehículo"
-              icon={<Car className="w-3.5 h-3.5" strokeWidth={1.5} />}
-            >
-              <VINDecodeGrid decode={d} />
-            </Section>
+            {/* Identity — VIN decode or plate info */}
+            {d ? (
+              <Section
+                title="Identidad del vehículo"
+                icon={<Car className="w-3.5 h-3.5" strokeWidth={1.5} />}
+              >
+                <VINDecodeGrid decode={d} />
+              </Section>
+            ) : report.plateInfo ? (
+              <Section
+                title="Datos de matrícula"
+                icon={<Car className="w-3.5 h-3.5" strokeWidth={1.5} />}
+              >
+                <PlateInfoGrid plateInfo={report.plateInfo} />
+              </Section>
+            ) : null}
 
             {/* Inspections */}
             <Section
@@ -519,7 +616,7 @@ export default function CheckReport({ report, onBack, onRefresh }: CheckReportPr
 
             {/* Recalls */}
             <Section
-              title={`Recalls`}
+              title="Recalls"
               icon={<RotateCcw className="w-3.5 h-3.5" strokeWidth={1.5} />}
               count={recalls.length > 0 ? recalls.length : undefined}
             >

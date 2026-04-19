@@ -21,6 +21,12 @@ const statusConfig: Record<DataSourceStatus, {
     label:     'Datos parciales',
     opacity:   '',
   },
+  error: {
+    Icon:      AlertCircle,
+    iconClass: 'text-accent-rose',
+    label:     'Error al consultar',
+    opacity:   'opacity-60',
+  },
   unavailable: {
     Icon:      XCircle,
     iconClass: 'text-accent-rose',
@@ -59,11 +65,6 @@ export function SourceBadge({ source, index = 0 }: SourceBadgeProps) {
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
           <span className="text-sm font-medium text-text-primary">{source.name}</span>
           <span className="text-xs text-text-muted">({source.country})</span>
-          {source.recordsFound !== undefined && source.recordsFound > 0 && (
-            <span className="text-xs text-accent-emerald font-medium">
-              {source.recordsFound} registro{source.recordsFound !== 1 ? 's' : ''}
-            </span>
-          )}
         </div>
         <p className="text-xs text-text-muted mt-0.5">{source.note ?? cfg.label}</p>
       </div>

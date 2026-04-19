@@ -117,7 +117,9 @@ export default function CheckPage() {
   useEffect(() => {
     if (report) {
       const d = report.vinDecode
-      document.title = `${d.make} ${d.model} ${d.year} — CARDEX Check`
+      document.title = d
+        ? `${[d.make, d.model, d.year].filter(Boolean).join(' ')} — CARDEX Check`
+        : 'CARDEX Check — Historial vehicular'
     } else {
       document.title = 'CARDEX Check — Historial vehicular gratuito'
     }

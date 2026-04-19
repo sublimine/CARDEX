@@ -33,10 +33,12 @@ const severityConfig = {
   },
 }
 
-const typeIcon: Record<VehicleAlert['type'], React.ElementType> = {
+const typeIcon: Record<string, React.ElementType> = {
   stolen:                Car,
   recall_open:           RotateCcw,
-  mileage_inconsistency: TrendingDown,
+  mileage_rollback:      TrendingDown,
+  mileage_gap:           TrendingDown,
+  mileage_inconsistency: TrendingDown, // legacy alias
   total_loss:            AlertOctagon,
   other:                 AlertTriangle,
 }
