@@ -1,0 +1,87 @@
+/*
+ * CARDEX Design System — CSS Custom Properties
+ * Dark-first luxury automotive palette.
+ * :root = dark (default). .light class = light overrides.
+ */
+
+:root {
+  /* ── Backgrounds ──────────────────────────────────────────────────────────── */
+  --bg-primary:  #0a0a0f;
+  --bg-surface:  #12121a;
+  --bg-elevated: #1a1a2e;
+  --bg-overlay:  #22223a;
+
+  /* ── Accent colours ───────────────────────────────────────────────────────── */
+  --color-blue:    #3b82f6;
+  --color-blue-dim: #1d4ed8;
+  --color-amber:   #f59e0b;
+  --color-emerald: #10b981;
+  --color-rose:    #f43f5e;
+
+  /* ── Text ─────────────────────────────────────────────────────────────────── */
+  --text-primary:   #ffffff;
+  --text-secondary: #a1a1aa;
+  --text-muted:     #52525b;
+
+  /* ── Glass / Frosted surfaces ─────────────────────────────────────────────── */
+  --glass-subtle: rgba(255, 255, 255, 0.03);
+  --glass-medium: rgba(255, 255, 255, 0.06);
+  --glass-strong: rgba(255, 255, 255, 0.08);
+
+  /* ── Borders ──────────────────────────────────────────────────────────────── */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-active: rgba(255, 255, 255, 0.12);
+
+  /* ── Border radius ────────────────────────────────────────────────────────── */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  /* ── Elevation shadows ────────────────────────────────────────────────────── */
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.40);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.50);
+  --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-4: 0 16px 48px rgba(0, 0, 0, 0.65);
+
+  /* Coloured glow variants */
+  --shadow-glow-blue:  0 0 20px rgba(59,  130, 246, 0.30), 0 0 40px rgba(59,  130, 246, 0.12);
+  --shadow-glow-amber: 0 0 20px rgba(245, 158,  11, 0.30), 0 0 40px rgba(245, 158,  11, 0.12);
+
+  /* ── Transitions ──────────────────────────────────────────────────────────── */
+  --transition-fast: 150ms;
+  --transition-base: 250ms;
+  --transition-slow: 400ms;
+
+  /* ── Z-index scale ────────────────────────────────────────────────────────── */
+  --z-base:    0;
+  --z-raised:  10;
+  --z-overlay: 100;
+  --z-modal:   200;
+  --z-toast:   300;
+  --z-tooltip: 400;
+}
+
+/* ── Light mode overrides ─────────────────────────────────────────────────── */
+.light {
+  --bg-primary:  #f4f4f8;
+  --bg-surface:  #ffffff;
+  --bg-elevated: #ececf4;
+  --bg-overlay:  #e2e2f0;
+
+  --text-primary:   #09090b;
+  --text-secondary: #52525b;
+  --text-muted:     #a1a1aa;
+
+  --glass-subtle: rgba(0, 0, 0, 0.02);
+  --glass-medium: rgba(0, 0, 0, 0.04);
+  --glass-strong: rgba(0, 0, 0, 0.06);
+
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-active: rgba(0, 0, 0, 0.12);
+
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.10);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --shadow-4: 0 16px 48px rgba(0, 0, 0, 0.18);
+}
