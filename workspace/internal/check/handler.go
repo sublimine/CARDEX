@@ -11,13 +11,15 @@ import (
 // Handler exposes the vehicle history check endpoints.
 // Routes:
 //
-//	GET /api/v1/check/{vin}         — full report
-//	GET /api/v1/check/{vin}/summary — VIN decode + alerts only
+//	GET /api/v1/check/{vin}                      — full report
+//	GET /api/v1/check/{vin}/summary              — VIN decode + alerts only
+//	GET /api/v1/check/plate/{country}/{plate}    — plate→VIN→report (when plates != nil)
 type Handler struct {
-	engine        *Engine
-	cache         *Cache
-	anonLimit     *RateLimiter         // unauthenticated callers: 10 req/hour
-	isValidToken  func(string) bool    // nil = always treat as anonymous
+	engine       *Engine
+	cache        *Cache
+	anonLimit    *RateLimiter      // unauthenticated callers: 10 req/hour
+	isValidToken func(string) bool // nil = always treat as anonymous
+	plates       *PlateRegistry    // nil = plate endpoint not registered
 }
 
 // NewHandler creates the HTTP handler with the default rate limit (10 req/hour for anon).
@@ -61,8 +63,38 @@ func NewHandlerWithLimitAndValidator(engine *Engine, cache *Cache, rl *RateLimit
 	}
 }
 
+// NewHandlerWithValidatorAndPlates creates an HTTP handler with a JWT validator and
+// a PlateRegistry that enables the GET /api/v1/check/plate/{country}/{plate} endpoint.
+func NewHandlerWithValidatorAndPlates(engine *Engine, cache *Cache, isValid func(string) bool, plates *PlateRegistry) *Handler {
+	return &Handler{
+		engine:       engine,
+		cache:        cache,
+		anonLimit:    NewRateLimiter(10, time.Hour),
+		isValidToken: isValid,
+		plates:       plates,
+	}
+}
+
+// NewHandlerWithLimitAndValidatorAndPlates creates an HTTP handler with a custom
+// rate limiter, token validator, and plate registry (for integration tests).
+func NewHandlerWithLimitAndValidatorAndPlates(engine *Engine, cache *Cache, rl *RateLimiter, isValid func(string) bool, plates *PlateRegistry) *Handler {
+	return &Handler{
+		engine:       engine,
+		cache:        cache,
+		anonLimit:    rl,
+		isValidToken: isValid,
+		plates:       plates,
+	}
+}
+
 // Register mounts the check routes on mux without auth middleware (public).
+// The plate route is only registered when a PlateRegistry was provided.
 func (h *Handler) Register(mux *http.ServeMux) {
+	// Plate route registered first: more-specific literal "plate" segment takes
+	// precedence over the {vin} wildcard for the path /api/v1/check/plate/...
+	if h.plates != nil {
+		mux.HandleFunc("GET /api/v1/check/plate/{country}/{plate}", h.plateReport)
+	}
 	mux.HandleFunc("GET /api/v1/check/{vin}", h.fullReport)
 	mux.HandleFunc("GET /api/v1/check/{vin}/summary", h.summary)
 }
@@ -170,6 +202,67 @@ func summaryFromReport(report *VehicleReport) SummaryReport {
 		MileageConsistency: report.MileageConsistency,
 		DataSources:        report.DataSources,
 	}
+}
+
+func (h *Handler) plateReport(w http.ResponseWriter, r *http.Request) {
+	country := strings.ToUpper(strings.TrimSpace(r.PathValue("country")))
+	plate := strings.TrimSpace(r.PathValue("plate"))
+	if country == "" || plate == "" {
+		jsonCheckErr(w, http.StatusBadRequest, "country and plate are required")
+		return
+	}
+
+	ip := clientIPCheck(r)
+	if !h.isAuthenticated(r) && !h.anonLimit.Allow(ip) {
+		w.Header().Set("Retry-After", "3600")
+		jsonCheckErr(w, http.StatusTooManyRequests, "rate limit exceeded — 10 requests per hour for unauthenticated users")
+		return
+	}
+
+	vin, err := h.plates.Resolve(r.Context(), plate, country)
+	if err != nil {
+		if errors.Is(err, ErrPlateResolutionUnavailable) {
+			jsonCheckErr(w, http.StatusServiceUnavailable, "plate lookup unavailable for "+country)
+			return
+		}
+		if errors.Is(err, ErrPlateNotFound) {
+			jsonCheckErr(w, http.StatusNotFound, "plate not found: "+plate)
+			return
+		}
+		jsonCheckErr(w, http.StatusInternalServerError, "plate resolution failed")
+		return
+	}
+
+	tenantID := r.Header.Get("X-Tenant-ID")
+
+	if cached, ok := h.cache.GetReport(r.Context(), vin); ok {
+		h.cache.RecordRequest(r.Context(), vin, ip, tenantID, true)
+		metricRequestsTotal.WithLabelValues("true").Inc()
+		w.Header().Set("X-Cache-Hit", "true")
+		w.Header().Set("X-Plate-Resolved-VIN", vin)
+		w.Header().Set("X-Data-Sources", sourceHeader(cached.DataSources))
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(cached)
+		return
+	}
+
+	report, err := h.engine.GenerateReport(r.Context(), vin)
+	if err != nil {
+		if errors.Is(err, ErrInvalidVIN) {
+			// Resolver returned a VIN that failed ISO 3779 — resolver bug.
+			jsonCheckErr(w, http.StatusInternalServerError, "resolver returned invalid VIN")
+			return
+		}
+		jsonCheckErr(w, http.StatusInternalServerError, "report generation failed")
+		return
+	}
+
+	h.cache.RecordRequest(r.Context(), vin, ip, tenantID, false)
+	w.Header().Set("X-Cache-Hit", "false")
+	w.Header().Set("X-Plate-Resolved-VIN", vin)
+	w.Header().Set("X-Data-Sources", sourceHeader(report.DataSources))
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(report)
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────

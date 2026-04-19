@@ -204,10 +204,11 @@ func main() {
 		check.NewCHProvider(),
 	}
 	checkEngine := check.NewEngine(checkCache, checkDecoder, checkProviders)
-	checkHandler := check.NewHandlerWithValidator(checkEngine, checkCache, func(token string) bool {
+	checkPlateRegistry := check.NewPlateRegistry(rdwBaseURL)
+	checkHandler := check.NewHandlerWithValidatorAndPlates(checkEngine, checkCache, func(token string) bool {
 		_, err := jwtSvc.ValidateToken(token)
 		return err == nil
-	})
+	}, checkPlateRegistry)
 
 	// ── Root mux ─────────────────────────────────────────────────────────────
 	mux := http.NewServeMux()

@@ -74,6 +74,29 @@ const COUNTRIES = [
   { code: 'CH', name: 'Suiza',       sources: 1 },
 ]
 
+// Countries with live plate→VIN resolution
+const PLATE_LIVE_COUNTRIES = new Set(['NL'])
+
+const PLATE_COUNTRIES = [
+  { code: 'NL', name: 'Países Bajos' },
+  { code: 'FR', name: 'Francia' },
+  { code: 'BE', name: 'Bélgica' },
+  { code: 'ES', name: 'España' },
+  { code: 'DE', name: 'Alemania' },
+  { code: 'CH', name: 'Suiza' },
+]
+
+// ── Plate validation ──────────────────────────────────────────────────────────
+
+function normalizePlate(raw: string): string {
+  return raw.replace(/[\s-]/g, '').toUpperCase()
+}
+
+function isValidPlate(raw: string): boolean {
+  const plate = normalizePlate(raw)
+  return plate.length >= 3 && plate.length <= 12 && /^[A-Z0-9]+$/.test(plate)
+}
+
 // ── Floating decoration background ───────────────────────────────────────────
 
 function FloatingBlobs() {
@@ -102,20 +125,44 @@ function FloatingBlobs() {
 
 interface CheckLandingProps {
   onSearch: (vin: string) => void
+  onSearchByPlate?: (country: string, plate: string) => void
   initialVin?: string
   loading?: boolean
 }
 
+type InputMode = 'vin' | 'plate'
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function CheckLanding({ onSearch, initialVin = '', loading }: CheckLandingProps) {
+export default function CheckLanding({
+  onSearch,
+  onSearchByPlate,
+  initialVin = '',
+  loading,
+}: CheckLandingProps) {
+  const [mode, setMode] = useState<InputMode>('vin')
   const [vin, setVin] = useState(initialVin)
   const [guideOpen, setGuideOpen] = useState(false)
 
+  // Plate mode state
+  const [plateCountry, setPlateCountry] = useState('NL')
+  const [plate, setPlate] = useState('')
+
   function handleSubmit() {
-    const clean = vin.trim().toUpperCase()
-    if (validateVIN(clean)) onSearch(clean)
+    if (mode === 'vin') {
+      const clean = vin.trim().toUpperCase()
+      if (validateVIN(clean)) onSearch(clean)
+    } else {
+      if (isValidPlate(plate) && onSearchByPlate) {
+        onSearchByPlate(plateCountry, normalizePlate(plate))
+      }
+    }
   }
+
+  const plateIsLive = PLATE_LIVE_COUNTRIES.has(plateCountry)
+  const canSubmit = mode === 'vin'
+    ? validateVIN(vin)
+    : isValidPlate(plate) && !!onSearchByPlate
 
   return (
     <div className="relative min-h-[100dvh] overflow-hidden bg-bg-primary flex flex-col">
@@ -151,7 +198,7 @@ export default function CheckLanding({ onSearch, initialVin = '', loading }: Che
                 </span>
               </motion.div>
 
-              {/* Headline — left-aligned, controlled size */}
+              {/* Headline */}
               <motion.h1
                 variants={itemVariants}
                 className="text-[2.4rem] md:text-[3rem] lg:text-[3.25rem] font-bold tracking-tight leading-[1.08] text-text-primary mb-4"
@@ -169,20 +216,112 @@ export default function CheckLanding({ onSearch, initialVin = '', loading }: Che
                 vehículo en Europa — sin registro, sin coste.
               </motion.p>
 
-              {/* VIN input block */}
+              {/* ── Mode toggle + input block ── */}
               <motion.div variants={itemVariants} className="w-full max-w-lg space-y-3">
-                <VINInput
-                  value={vin}
-                  onChange={setVin}
-                  onSubmit={handleSubmit}
-                  disabled={loading}
-                  large
-                />
+
+                {/* Segmented toggle: VIN / Matrícula */}
+                <div className="flex items-center gap-1 p-1 rounded-lg bg-bg-surface ring-1 ring-border-subtle w-fit">
+                  {(['vin', 'plate'] as InputMode[]).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => setMode(m)}
+                      disabled={loading}
+                      className={cn(
+                        'px-4 py-1.5 rounded-md text-xs font-semibold tracking-wide transition-all duration-150',
+                        mode === m
+                          ? 'bg-accent-blue text-white shadow-sm'
+                          : 'text-text-muted hover:text-text-secondary',
+                      )}
+                    >
+                      {m === 'vin' ? 'VIN' : 'Matrícula'}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Input area — animated switch */}
+                <AnimatePresence mode="wait">
+                  {mode === 'vin' ? (
+                    <motion.div
+                      key="vin"
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.18 }}
+                    >
+                      <VINInput
+                        value={vin}
+                        onChange={setVin}
+                        onSubmit={handleSubmit}
+                        disabled={loading}
+                        large
+                      />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="plate"
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.18 }}
+                      className="flex gap-2"
+                    >
+                      {/* Country selector */}
+                      <div className="relative">
+                        <select
+                          value={plateCountry}
+                          onChange={(e) => setPlateCountry(e.target.value)}
+                          disabled={loading}
+                          className="h-full appearance-none pl-3 pr-7 py-3 rounded-lg bg-bg-surface ring-1 ring-border-subtle text-sm font-semibold text-text-primary focus:ring-accent-blue/60 focus:outline-none transition-shadow cursor-pointer disabled:opacity-50"
+                        >
+                          {PLATE_COUNTRIES.map(({ code, name }) => (
+                            <option key={code} value={code}>
+                              {code}
+                              {!PLATE_LIVE_COUNTRIES.has(code) ? ' (próx.)' : ''}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-text-muted pointer-events-none" />
+                      </div>
+
+                      {/* Plate input */}
+                      <input
+                        type="text"
+                        value={plate}
+                        onChange={(e) => {
+                          const v = e.target.value.replace(/[^a-zA-Z0-9\s-]/g, '').toUpperCase()
+                          setPlate(v)
+                        }}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+                        placeholder="Ej. GV-123-B"
+                        disabled={loading}
+                        maxLength={15}
+                        className="flex-1 px-4 py-3 rounded-lg bg-bg-surface ring-1 ring-border-subtle text-sm font-mono font-semibold text-text-primary placeholder:text-text-muted placeholder:font-sans placeholder:font-normal focus:ring-accent-blue/60 focus:outline-none focus:ring-2 transition-shadow disabled:opacity-50 uppercase"
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Country note for plate mode */}
+                {mode === 'plate' && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className={cn(
+                      'text-[11px] font-ui',
+                      plateIsLive ? 'text-text-muted' : 'text-amber-400/80',
+                    )}
+                  >
+                    {plateIsLive
+                      ? 'Búsqueda en tiempo real vía RDW (Países Bajos)'
+                      : 'Solo NL disponible actualmente · otros países próximamente'}
+                  </motion.p>
+                )}
+
                 <Button
                   variant="primary"
                   size="lg"
                   onClick={handleSubmit}
-                  disabled={!validateVIN(vin)}
+                  disabled={!canSubmit}
                   loading={loading}
                   className="w-full text-base py-3.5"
                 >
@@ -223,48 +362,50 @@ export default function CheckLanding({ onSearch, initialVin = '', loading }: Che
                 ))}
               </motion.div>
 
-              {/* VIN location guide — expandable */}
-              <motion.div variants={itemVariants} className="mt-8 w-full max-w-lg">
-                <button
-                  onClick={() => setGuideOpen((v) => !v)}
-                  className="flex items-center gap-2 text-xs text-text-muted hover:text-text-secondary transition-colors duration-150"
-                >
-                  <span className="font-medium uppercase tracking-wider">¿Dónde encuentro el VIN?</span>
-                  <motion.span
-                    animate={{ rotate: guideOpen ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
+              {/* VIN location guide — expandable (only in VIN mode) */}
+              {mode === 'vin' && (
+                <motion.div variants={itemVariants} className="mt-8 w-full max-w-lg">
+                  <button
+                    onClick={() => setGuideOpen((v) => !v)}
+                    className="flex items-center gap-2 text-xs text-text-muted hover:text-text-secondary transition-colors duration-150"
                   >
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </motion.span>
-                </button>
-
-                <AnimatePresence>
-                  {guideOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                      style={{ overflow: 'hidden' }}
+                    <span className="font-medium uppercase tracking-wider">¿Dónde encuentro el VIN?</span>
+                    <motion.span
+                      animate={{ rotate: guideOpen ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
                     >
-                      <div className="grid grid-cols-3 gap-2.5 mt-4">
-                        {vinLocations.map(({ Icon, label, detail }) => (
-                          <div
-                            key={label}
-                            className="glass rounded-lg p-3 flex flex-col items-center gap-1.5 text-center"
-                          >
-                            <div className="w-7 h-7 rounded-md bg-blue-500/10 ring-1 ring-blue-500/15 flex items-center justify-center">
-                              <Icon className="w-3.5 h-3.5 text-accent-blue" strokeWidth={1.5} />
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    </motion.span>
+                  </button>
+
+                  <AnimatePresence>
+                    {guideOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                        style={{ overflow: 'hidden' }}
+                      >
+                        <div className="grid grid-cols-3 gap-2.5 mt-4">
+                          {vinLocations.map(({ Icon, label, detail }) => (
+                            <div
+                              key={label}
+                              className="glass rounded-lg p-3 flex flex-col items-center gap-1.5 text-center"
+                            >
+                              <div className="w-7 h-7 rounded-md bg-blue-500/10 ring-1 ring-blue-500/15 flex items-center justify-center">
+                                <Icon className="w-3.5 h-3.5 text-accent-blue" strokeWidth={1.5} />
+                              </div>
+                              <p className="text-[11px] font-medium text-text-primary">{label}</p>
+                              <p className="text-[10px] text-text-muted leading-snug">{detail}</p>
                             </div>
-                            <p className="text-[11px] font-medium text-text-primary">{label}</p>
-                            <p className="text-[10px] text-text-muted leading-snug">{detail}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              )}
             </motion.div>
 
             {/* ── Right column — decoration (hidden on mobile) ── */}
@@ -278,7 +419,7 @@ export default function CheckLanding({ onSearch, initialVin = '', loading }: Che
                   className="text-[22rem] font-bold tracking-tighter text-white/[0.018] leading-none"
                   style={{ fontVariantNumeric: 'tabular-nums' }}
                 >
-                  17
+                  {mode === 'vin' ? '17' : 'EU'}
                 </span>
               </div>
 

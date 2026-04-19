@@ -85,6 +85,8 @@ export type CheckErrorCode =
   | 'rate_limit'
   | 'server_error'
   | 'not_found'
+  | 'plate_not_found'
+  | 'plate_unavailable'
 
 export interface CheckError {
   code: CheckErrorCode

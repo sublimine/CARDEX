@@ -112,7 +112,7 @@ const fadeSlide = {
 export default function CheckPage() {
   const { vin: vinParam } = useParams<{ vin?: string }>()
   const navigate = useNavigate()
-  const { report, loading, error, checkVIN, reset } = useCheck(vinParam)
+  const { report, loading, error, checkVIN, checkByPlate, reset } = useCheck(vinParam)
 
   useEffect(() => {
     if (report) {
@@ -127,6 +127,11 @@ export default function CheckPage() {
   function handleSearch(vin: string) {
     navigate(`/check/${vin}`, { replace: vinParam !== undefined })
     checkVIN(vin)
+  }
+
+  function handleSearchByPlate(country: string, plate: string) {
+    navigate('/check', { replace: vinParam !== undefined })
+    checkByPlate(country, plate)
   }
 
   function handleBack() {
@@ -171,7 +176,7 @@ export default function CheckPage() {
               ) : (
                 <div className="space-y-0">
                   <GenericError message={error.message} onRetry={handleBack} />
-                  <CheckLanding onSearch={handleSearch} initialVin={vinParam} />
+                  <CheckLanding onSearch={handleSearch} onSearchByPlate={handleSearchByPlate} initialVin={vinParam} />
                 </div>
               )}
             </motion.div>
@@ -191,6 +196,7 @@ export default function CheckPage() {
             <motion.div key="landing" {...fadeSlide}>
               <CheckLanding
                 onSearch={handleSearch}
+                onSearchByPlate={handleSearchByPlate}
                 initialVin={vinParam}
                 loading={loading}
               />
