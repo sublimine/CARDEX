@@ -74,16 +74,31 @@ const COUNTRIES = [
   { code: 'CH', name: 'Suiza',       sources: 1 },
 ]
 
-// Countries with live plate→VIN resolution
-const PLATE_LIVE_COUNTRIES = new Set(['NL'])
+// Countries with live plate lookup (may return partial data without VIN).
+// NL: full VIN + rich data (RDW Open Data)
+// ES: badge + fuel type (DGT etiqueta medioambiental — no VIN)
+// BE: inspection data via GOCA; km history via Car-Pass if chassis available
+// DE: Zulassungsbezirk (registration district) from plate prefix — no VIN
+// CH: make/type + next MFK date for free-portal cantons (ZH/AG/LU/SH/ZG)
+// FR: unavailable — HistoVec requires owner identity; no public plate API
+const PLATE_LIVE_COUNTRIES = new Set(['NL', 'ES', 'BE', 'DE', 'CH'])
 
-const PLATE_COUNTRIES = [
-  { code: 'NL', name: 'Países Bajos' },
-  { code: 'FR', name: 'Francia' },
-  { code: 'BE', name: 'Bélgica' },
-  { code: 'ES', name: 'España' },
-  { code: 'DE', name: 'Alemania' },
-  { code: 'CH', name: 'Suiza' },
+// Countries where only certain plates work (e.g. CH depends on canton).
+const PLATE_PARTIAL_COUNTRIES = new Set(['ES', 'BE', 'DE', 'CH'])
+
+type PlateCountryInfo = {
+  code: string
+  name: string
+  note: string
+}
+
+const PLATE_COUNTRIES: PlateCountryInfo[] = [
+  { code: 'NL', name: 'Países Bajos', note: 'VIN + datos completos (RDW)' },
+  { code: 'ES', name: 'España',        note: 'Etiqueta DGT + combustible (sin VIN)' },
+  { code: 'BE', name: 'Bélgica',      note: 'Datos ITV GOCA + historial km' },
+  { code: 'DE', name: 'Alemania',     note: 'Distrito de registro (sin VIN — §33 StVG)' },
+  { code: 'CH', name: 'Suiza',        note: 'Cantones ZH/AG/LU/SH/ZG gratuitos' },
+  { code: 'FR', name: 'Francia',      note: 'No disponible — HistoVec requiere identidad del propietario' },
 ]
 
 // ── Plate validation ──────────────────────────────────────────────────────────
@@ -162,7 +177,7 @@ export default function CheckLanding({
   const plateIsLive = PLATE_LIVE_COUNTRIES.has(plateCountry)
   const canSubmit = mode === 'vin'
     ? validateVIN(vin)
-    : isValidPlate(plate) && !!onSearchByPlate
+    : isValidPlate(plate) && !!onSearchByPlate && plateIsLive
 
   return (
     <div className="relative min-h-[100dvh] overflow-hidden bg-bg-primary flex flex-col">
@@ -274,9 +289,9 @@ export default function CheckLanding({
                           className="h-full appearance-none pl-3 pr-7 py-3 rounded-lg bg-bg-surface ring-1 ring-border-subtle text-sm font-semibold text-text-primary focus:ring-accent-blue/60 focus:outline-none transition-shadow cursor-pointer disabled:opacity-50"
                         >
                           {PLATE_COUNTRIES.map(({ code, name }) => (
-                            <option key={code} value={code}>
+                            <option key={code} value={code} disabled={code === 'FR'}>
                               {code}
-                              {!PLATE_LIVE_COUNTRIES.has(code) ? ' (próx.)' : ''}
+                              {code === 'FR' ? ' (no disp.)' : PLATE_PARTIAL_COUNTRIES.has(code) ? ' (parcial)' : ''}
                             </option>
                           ))}
                         </select>
@@ -308,12 +323,14 @@ export default function CheckLanding({
                     animate={{ opacity: 1 }}
                     className={cn(
                       'text-[11px] font-ui',
-                      plateIsLive ? 'text-text-muted' : 'text-amber-400/80',
+                      plateIsLive && !PLATE_PARTIAL_COUNTRIES.has(plateCountry)
+                        ? 'text-text-muted'
+                        : plateIsLive
+                        ? 'text-blue-400/80'
+                        : 'text-amber-400/80',
                     )}
                   >
-                    {plateIsLive
-                      ? 'Búsqueda en tiempo real vía RDW (Países Bajos)'
-                      : 'Solo NL disponible actualmente · otros países próximamente'}
+                    {PLATE_COUNTRIES.find(c => c.code === plateCountry)?.note ?? ''}
                   </motion.p>
                 )}
 
