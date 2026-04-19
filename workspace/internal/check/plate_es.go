@@ -2,36 +2,23 @@ package check
 
 // ES plate resolver — Spain
 //
-// Investigation summary (exhaustive):
+// Data sources:
 //
-// 1. DGT Sede Electrónica (sede.dgt.gob.es / infocar.dgt.es)
-//    - "Informe de Vehículo" completo: requires Cl@ve or certificado digital. Not accessible.
-//    - "Etiqueta Medioambiental DGT": historically a public form that returned the
-//      environmental badge (Zero/Eco/C/B) and first-registration date by plate with NO auth.
-//      Probed at: POST sede.dgt.gob.es/.../etiqueta-medioambiental/
-//      Returns badge type + fuel category when the form responds.
-//    - infocar.dgt.es/etrami servlet: GET-based, historically returned make/model/engine data.
-//      As of 2024 it redirects to Cl@ve login for full informe; may still return partial data.
+// 1. DGT Distintivo Ambiental (sede.dgt.gob.es) — PUBLIC, no auth required.
+//    GET sede.dgt.gob.es/.../distintivo-ambiental/index.html?matricula={PLATE}
+//    Returns: environmental badge (0/ECO/C/B) embedded in HTML.
+//    Not-found: "No se ha encontrado ningún resultado".
 //
-// 2. DGT TESTRA / GESTAR (B2B API): requires professional agreement + CIF/NIF. Not applicable.
+// 2. infocar.dgt.es — as of 2025 requires Cl@ve/certificado. Skipped.
 //
-// 3. ITV portals (Inspección Técnica de Vehículos):
-//    - Each of Spain's 17 autonomous communities runs its own ITV system.
-//    - None offer an unauthenticated public plate lookup as of 2025.
-//    - ITEVEBASA (Canary Islands), VEIASA (Andalucía), APPLUS+ (Cat/Mad): all require login
-//      or provide only station-locator functionality publicly.
+// 3. ITV portals: each of Spain's 17 CCAA runs its own system, none public.
 //
-// 4. autoficha.com, informedeunvehiculo.com, cartell.es:
-//    - These are commercial resellers of DGT data via licensed API. Not freely accessible.
+// 4. Commercial resellers (autoficha, cartell, etc.): not freely accessible.
 //
-// What VIN availability: NONE. Spain's DGT does not expose the número de bastidor (VIN)
-// in any public endpoint — it is available only to the registered owner via Cl@ve or on
-// the physical Permiso de Circulación document.
+// VIN availability: NOT available from any public Spanish source.
 //
 // What this resolver returns (partial):
-//   - Environmental badge (Zero / Eco / C / B) → fuel category proxy
-//   - First registration date (from DGT etiqueta form)
-//   - Make / model / displacement / power (from infocar.dgt.es if accessible)
+//   - Environmental badge (0 / ECO / C / B)
 
 import (
 	"context"
@@ -75,158 +62,107 @@ func (r *esPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 	result := &PlateResult{
 		Plate:     plate,
 		Country:   "ES",
-		Source:    "DGT Sede Electrónica (etiqueta medioambiental, infocar)",
+		Source:    "DGT Sede Electrónica — distintivo ambiental (sede.dgt.gob.es)",
 		FetchedAt: time.Now().UTC(),
 		Partial:   true,
 	}
 
-	// Step 1: DGT environmental badge (public, no auth required historically).
-	etiquetaErr := r.fetchDGTEtiqueta(ctx, plate, result)
+	// DGT Distintivo Ambiental — public GET form, no auth required.
+	etiquetaErr := r.fetchDGTDistintivo(ctx, plate, result)
 
-	// Step 2: DGT infocar reduced data (may redirect to login).
-	r.fetchDGTInformeReducido(ctx, plate, result)
-
-	// If neither returned anything useful, fail with a clear explanation.
-	if result.EnvironmentalBadge == "" && result.Make == "" && result.FirstRegistration == nil {
+	if result.EnvironmentalBadge == "" {
 		if etiquetaErr != nil {
-			return nil, fmt.Errorf("%w: DGT portal error (%v) — full data requires Cl@ve login", ErrPlateResolutionUnavailable, etiquetaErr)
+			return nil, fmt.Errorf("%w: DGT distintivo error: %v", ErrPlateResolutionUnavailable, etiquetaErr)
 		}
-		return nil, fmt.Errorf("%w: DGT returned no data for plate %s", ErrPlateResolutionUnavailable, plate)
+		return nil, fmt.Errorf("%w: DGT returned no data for plate %s — plate not found or no label assigned", ErrPlateNotFound, plate)
 	}
 
-	// Mark as non-partial if we got at least badge + date.
-	if result.EnvironmentalBadge != "" && result.FirstRegistration != nil {
-		result.Partial = false
-	}
-
+	result.Partial = false
 	return result, nil
 }
 
-// fetchDGTEtiqueta sends a POST to the DGT environmental-badge form.
-// URL: https://sede.dgt.gob.es/sede/procedimientos/tramites-vehiculos/etiqueta-medioambiental/
-// Form field: matricula=<PLATE>
-// Response: HTML page containing badge class and registration date.
-func (r *esPlateResolver) fetchDGTEtiqueta(ctx context.Context, plate string, result *PlateResult) error {
-	const baseURL = "https://sede.dgt.gob.es/sede/procedimientos/tramites-vehiculos/etiqueta-medioambiental/"
+// fetchDGTDistintivo queries the DGT environmental badge using the public GET form.
+// URL: GET sede.dgt.gob.es/.../distintivo-ambiental/index.html?matricula={PLATE}
+// No authentication or CAPTCHA required.
+// Response HTML contains badge in SVG filename: distinctivo_{BADGE}_sin_fondo.svg
+func (r *esPlateResolver) fetchDGTDistintivo(ctx context.Context, plate string, result *PlateResult) error {
+	const pageBase = "https://sede.dgt.gob.es/es/vehiculos/informacion-de-vehiculos/distintivo-ambiental/"
+	queryURL := pageBase + "index.html?matricula=" + url.QueryEscape(plate)
 
-	// GET the page first to capture hidden form fields / CSRF tokens.
-	getBody, status, err := plateRetry(ctx, 2, func() ([]byte, int, error) {
-		return plateGetHTML(ctx, r.client, baseURL)
+	body, status, err := plateRetry(ctx, 2, func() ([]byte, int, error) {
+		req, rerr := http.NewRequestWithContext(ctx, http.MethodGet, queryURL, nil)
+		if rerr != nil {
+			return nil, 0, rerr
+		}
+		req.Header.Set("User-Agent", plateUA)
+		req.Header.Set("Referer", pageBase)
+		req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+		resp, rerr := r.client.Do(req)
+		if rerr != nil {
+			return nil, 0, rerr
+		}
+		defer resp.Body.Close()
+		b, rerr := io.ReadAll(io.LimitReader(resp.Body, 256*1024))
+		return b, resp.StatusCode, rerr
 	})
-	if err != nil || (status != http.StatusOK && status != http.StatusFound) {
-		return fmt.Errorf("DGT etiqueta GET: HTTP %d: %w", status, err)
-	}
-
-	// Build POST body with plate + any hidden fields extracted from the form.
-	formData := url.Values{}
-	formData.Set("matricula", plate)
-	extractHiddenFields(string(getBody), formData)
-
-	// POST the form.
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL, strings.NewReader(formData.Encode()))
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: DGT distintivo unreachable: %v", ErrPlateResolutionUnavailable, err)
 	}
-	req.Header.Set("User-Agent", plateUA)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("Referer", baseURL)
-	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-
-	resp, err := r.client.Do(req)
-	if err != nil {
-		return fmt.Errorf("DGT etiqueta POST: %w", err)
-	}
-	defer resp.Body.Close()
-
-	bodyBytes, err := io.ReadAll(io.LimitReader(resp.Body, 256*1024))
-	if err != nil {
-		return fmt.Errorf("DGT etiqueta read: %w", err)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("DGT etiqueta POST: HTTP %d", resp.StatusCode)
+	if status != http.StatusOK {
+		return fmt.Errorf("%w: DGT distintivo HTTP %d", ErrPlateResolutionUnavailable, status)
 	}
 
-	return parseDGTEtiquetaResponse(string(bodyBytes), result)
+	return parseDGTDistintivoResponse(string(body), result)
 }
 
-// parseDGTEtiquetaResponse extracts badge + date from the DGT etiqueta HTML.
-// The DGT page contains spans/divs with class names like "etiqueta-ZERO", "etiqueta-ECO", etc.
-func parseDGTEtiquetaResponse(body string, result *PlateResult) error {
+// parseDGTDistintivoResponse extracts the environmental badge from DGT HTML.
+// Badge is embedded in SVG filename: "distintivo_C_sin_fondo.svg",
+// or in text: "Distintivo Ambiental C."
+func parseDGTDistintivoResponse(body string, result *PlateResult) error {
 	upper := strings.ToUpper(body)
 
-	for _, badge := range []string{"ZERO", "ECO", "C", "B"} {
-		if strings.Contains(upper, "ETIQUETA-"+badge) ||
-			strings.Contains(upper, "ETIQUETA "+badge) ||
-			strings.Contains(upper, ">"+badge+"<") {
-			result.EnvironmentalBadge = badge
-			switch badge {
-			case "ZERO":
+	// Not found.
+	if strings.Contains(upper, "NO SE HA ENCONTRADO") {
+		return nil // return nil — Resolve will emit ErrPlateNotFound
+	}
+
+	// Extract badge from SVG filename: "DISTINTIVO_C_SIN_FONDO.SVG" or "DISTINTIVO_CERO_SIN_FONDO.SVG"
+	for _, badge := range []string{"CERO", "ECO", "C", "B"} {
+		needle := "DISTINTIVO_" + badge + "_SIN_FONDO"
+		if strings.Contains(upper, needle) {
+			if badge == "CERO" {
+				result.EnvironmentalBadge = "0"
 				result.FuelType = "Eléctrico / Hidrógeno"
-			case "ECO":
-				result.FuelType = "Gas Natural / Híbrido enchufable"
-			case "C":
-				result.FuelType = "Gasolina o Diésel Euro 6"
-			case "B":
-				result.FuelType = "Gasolina o Diésel Euro 5"
+			} else {
+				result.EnvironmentalBadge = badge
+				switch badge {
+				case "ECO":
+					result.FuelType = "Gas Natural / Híbrido enchufable"
+				case "C":
+					result.FuelType = "Gasolina o Diésel Euro 6"
+				case "B":
+					result.FuelType = "Gasolina o Diésel Euro 5"
+				}
 			}
 			break
 		}
 	}
 
-	// First registration date — look for DD/MM/YYYY or YYYY-MM-DD near "MATRICULACION"
-	if d := extractDateAfterMarker(upper, "PRIMERA MATRICULACION"); !d.IsZero() {
-		result.FirstRegistration = &d
-	} else if d := extractDateAfterMarker(upper, "MATRICULACION"); !d.IsZero() {
-		result.FirstRegistration = &d
+	// Fallback: parse from text "Distintivo Ambiental C."
+	if result.EnvironmentalBadge == "" {
+		for _, badge := range []string{"0", "ECO", "C", "B"} {
+			if strings.Contains(upper, "DISTINTIVO AMBIENTAL "+badge+".") ||
+				strings.Contains(upper, "DISTINTIVO AMBIENTAL "+badge+" ") {
+				result.EnvironmentalBadge = badge
+				break
+			}
+		}
 	}
 
 	if result.EnvironmentalBadge == "" {
-		return fmt.Errorf("no badge found in DGT etiqueta response")
+		return fmt.Errorf("no badge found in DGT distintivo response")
 	}
 	return nil
-}
-
-// fetchDGTInformeReducido attempts the infocar.dgt.es servlet.
-// Historically returned make, model, displacement, power without auth.
-// As of 2024 it may redirect to login for full data.
-func (r *esPlateResolver) fetchDGTInformeReducido(ctx context.Context, plate string, result *PlateResult) {
-	informeURL := fmt.Sprintf(
-		"https://infocar.dgt.es/etrami/servlet/Anulaciones?accion=InformeVehiculo&matricula=%s",
-		url.QueryEscape(plate),
-	)
-
-	body, status, err := plateRetry(ctx, 1, func() ([]byte, int, error) {
-		return plateGetHTML(ctx, r.client, informeURL)
-	})
-	if err != nil || status != http.StatusOK || len(body) < 200 {
-		return
-	}
-
-	s := string(body)
-	// Skip if redirected to Cl@ve login.
-	if strings.Contains(strings.ToLower(s), "clave") || strings.Contains(strings.ToLower(s), "login") {
-		return
-	}
-
-	if v := htmlExtractAfter(s, "MARCA", "<td", "</td>"); v != "" {
-		result.Make = stripHTMLTags(v)
-	}
-	if v := htmlExtractAfter(s, "MODELO", "<td", "</td>"); v != "" {
-		result.Model = stripHTMLTags(v)
-	}
-	if v := htmlExtractAfter(s, "CILINDRADA", "<td", "</td>"); v != "" {
-		if cc := parseInt(stripHTMLTags(v)); cc > 0 {
-			result.DisplacementCC = cc
-		}
-	}
-	if v := htmlExtractAfter(s, "POTENCIA", "<td", "</td>"); v != "" {
-		if kw := parseFloat(stripHTMLTags(v)); kw > 0 {
-			result.PowerKW = kw
-		}
-	}
-	if v := htmlExtractAfter(s, "COMBUSTIBLE", "<td", "</td>"); v != "" && result.FuelType == "" {
-		result.FuelType = stripHTMLTags(v)
-	}
 }
 
 // ── shared helpers ─────────────────────────────────────────────────────────────
