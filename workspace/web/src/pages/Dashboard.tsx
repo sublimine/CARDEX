@@ -187,7 +187,7 @@ export default function Dashboard() {
   const { data, loading } = useApi<KpiData>('/kpi')
   const navigate = useNavigate()
   const [chartRange, setChartRange] = useState('ytd')
-  const kpi = data ?? MOCK_KPI
+  const kpi: KpiData = data ? { ...MOCK_KPI, ...data } : MOCK_KPI
 
   if (loading && !data) return <PageSkeleton />
 
