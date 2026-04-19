@@ -96,13 +96,21 @@ func (b *bePlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 		b.fetchCarPass(ctx, chassisFromGOCA, result)
 	}
 
-	if gocaErr != nil && result.LastInspectionDate == nil {
-		// GOCA failed and we got nothing.
+	// Return unavailable when GOCA gave us nothing useful.
+	// goca.be now redirects to gocavlaanderen.be (Flanders-only); the Wallonie
+	// portal (autocontrole.be) has no public unauthenticated plate lookup.
+	noData := result.LastInspectionDate == nil && result.VIN == "" && result.Make == ""
+	if noData {
+		errDetail := "GOCA returned no data (portal may have redirected or restructured)"
+		if gocaErr != nil {
+			errDetail = gocaErr.Error()
+		}
 		return nil, fmt.Errorf(
-			"%w: Belgium (BE) — GOCA portal error (%v). "+
+			"%w: Belgium (BE) — %s. "+
 				"DIV requires eID auth. Belgian plates are personal (not vehicle-bound). "+
-				"Investigated: goca.be, mobilit.belgium.be, car-pass.be",
-			ErrPlateResolutionUnavailable, gocaErr,
+				"goca.be redirects to gocavlaanderen.be (Flanders); "+
+				"Wallonie/Brussels CT portal has no public plate lookup.",
+			ErrPlateResolutionUnavailable, errDetail,
 		)
 	}
 

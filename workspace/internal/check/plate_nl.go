@@ -79,6 +79,21 @@ type rdwPlateAPK struct {
 	Vervaldatum    string `json:"vervaldatum_keuring_dt"` // ISO 8601
 }
 
+// rdwPlateFuel captures fuel/emission rows from the 8ys7-d773 brandstof dataset.
+// RDW does NOT include fuel data in the main m9d7-ebf2 dataset; it lives separately.
+type rdwPlateFuel struct {
+	Kenteken              string `json:"kenteken"`
+	BrandstofOmschrijving string `json:"brandstof_omschrijving"`   // e.g. "Benzine"
+	Vermogen              string `json:"nettomaximumvermogen"`      // kW
+	CO2                   string `json:"co2_uitstoot_gecombineerd"` // g/km
+	EuroNorm              string `json:"uitlaatemissieniveau"`      // e.g. "EURO 6"
+}
+
+// rdwFuelDS is the RDW Open Data dataset ID for fuel/emission data per vehicle.
+// NOTE: despite the name in the older VIN provider (rdwStolenDS), 8ys7-d773 is the
+// brandstof (fuel) dataset. The plate resolver uses it for fuel type, power, CO2, and Euro norm.
+const rdwFuelDS = "8ys7-d773"
+
 func (r *nlPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResult, error) {
 	// 1. Fetch primary vehicle record by kenteken.
 	vehicle, err := r.fetchVehicleByPlate(ctx, plate)
@@ -86,13 +101,7 @@ func (r *nlPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 		return nil, err
 	}
 
-	vin := strings.ToUpper(strings.TrimSpace(vehicle.VIN))
-	if vin == "" {
-		return nil, fmt.Errorf("%w: no VIN in RDW record for plate %s", ErrPlateNotFound, plate)
-	}
-
 	result := &PlateResult{
-		VIN:               vin,
 		Plate:             plate,
 		Make:              strings.TrimSpace(vehicle.Merk),
 		Model:             strings.TrimSpace(vehicle.Handelsbenaming),
@@ -105,10 +114,14 @@ func (r *nlPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 		EmptyWeightKg:     parseInt(vehicle.MassaLeegVoertuig),
 		GrossWeightKg:     parseInt(vehicle.ToegestaneMaximumMassaVoertuig),
 		Country:           "NL",
-		Source:            "RDW Open Data — m9d7-ebf2 (Gekentekende voertuigen)",
+		Source:            "RDW Open Data — m9d7-ebf2 + 8ys7-d773 + sgfe-77wx",
 		FetchedAt:         time.Now().UTC(),
 	}
 
+	// VIN (voertuigidentificatienummer) is NOT exposed in m9d7-ebf2; set only when present.
+	if vin := strings.ToUpper(strings.TrimSpace(vehicle.VIN)); vin != "" {
+		result.VIN = vin
+	}
 	if kw := parseFloat(vehicle.NettoMaximumvermogen); kw > 0 {
 		result.PowerKW = kw
 	}
@@ -128,7 +141,27 @@ func (r *nlPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 		result.RegistrationStatus = "uninsured"
 	}
 
-	// 2. Enrich with APK (MOT) history — best-effort; failure is non-fatal.
+	// 2. Enrich with fuel/emission data from brandstof dataset — best-effort.
+	if fuel, err := r.fetchFuelByPlate(ctx, plate); err == nil && fuel != nil {
+		if result.FuelType == "" {
+			result.FuelType = strings.TrimSpace(fuel.BrandstofOmschrijving)
+		}
+		if result.PowerKW == 0 {
+			if kw := parseFloat(fuel.Vermogen); kw > 0 {
+				result.PowerKW = kw
+			}
+		}
+		if result.CO2GPerKm == 0 {
+			if co2 := parseFloat(fuel.CO2); co2 > 0 {
+				result.CO2GPerKm = co2
+			}
+		}
+		if fuel.EuroNorm != "" {
+			result.EuroNorm = strings.TrimSpace(fuel.EuroNorm)
+		}
+	}
+
+	// 3. Enrich with APK (MOT) history — best-effort; failure is non-fatal.
 	if inspections, err := r.fetchAPKByPlate(ctx, plate); err == nil && len(inspections) > 0 {
 		// Most-recent first.
 		latest := inspections[0]
@@ -183,4 +216,22 @@ func (r *nlPlateResolver) fetchAPKByPlate(ctx context.Context, plate string) ([]
 		return nil, err
 	}
 	return rows, nil
+}
+
+func (r *nlPlateResolver) fetchFuelByPlate(ctx context.Context, plate string) (*rdwPlateFuel, error) {
+	query := fmt.Sprintf("%s/%s.json?kenteken=%s&$limit=1",
+		r.baseURL, rdwFuelDS, url.QueryEscape(plate),
+	)
+	body, status, err := plateGetJSON(ctx, r.client, query)
+	if err != nil || status != http.StatusOK {
+		return nil, fmt.Errorf("RDW fuel request: status=%d err=%v", status, err)
+	}
+	var rows []rdwPlateFuel
+	if err := json.Unmarshal(body, &rows); err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, nil
+	}
+	return &rows[0], nil
 }

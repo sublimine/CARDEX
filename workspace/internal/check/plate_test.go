@@ -118,15 +118,23 @@ func TestNLPlateResolver_NotFound(t *testing.T) {
 }
 
 func TestNLPlateResolver_EmptyVINField(t *testing.T) {
+	// RDW does NOT expose voertuigidentificatienummer in the m9d7-ebf2 dataset.
+	// The resolver must return vehicle data (not an error) when VIN is absent.
 	srv := rdwPlateServer([]map[string]string{
-		{"kenteken": "XX0000", "voertuigidentificatienummer": ""},
+		{"kenteken": "XX0000", "merk": "FIAT", "handelsbenaming": "500", "voertuigidentificatienummer": ""},
 	})
 	defer srv.Close()
 
 	r := check.NewNLPlateResolverWithBase(srv.URL)
-	_, err := r.Resolve(context.Background(), "XX0000")
-	if !errors.Is(err, check.ErrPlateNotFound) {
-		t.Errorf("want ErrPlateNotFound for empty VIN field, got %v", err)
+	result, err := r.Resolve(context.Background(), "XX0000")
+	if err != nil {
+		t.Fatalf("expected no error when VIN is empty, got %v", err)
+	}
+	if result.VIN != "" {
+		t.Errorf("expected empty VIN when field is absent, got %q", result.VIN)
+	}
+	if result.Make != "FIAT" {
+		t.Errorf("expected Make=FIAT, got %q", result.Make)
 	}
 }
 
