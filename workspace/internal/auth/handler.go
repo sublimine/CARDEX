@@ -14,14 +14,30 @@ import (
 
 // Handler exposes the auth HTTP endpoints.
 type Handler struct {
-	db     *sql.DB
-	jwtSvc *JWTService
-	rl     *loginRateLimiter
+	db            *sql.DB
+	jwtSvc        *JWTService
+	rl            *loginRateLimiter
+	registerToken string // empty = registration disabled
+	bcryptCost    int    // OWASP minimum 12 in production; use bcrypt.MinCost in tests
 }
 
-// NewHandler creates a Handler.
+// NewHandler creates a Handler with registration disabled.
+// Use NewHandlerWithRegisterToken to enable self-registration.
 func NewHandler(db *sql.DB, jwtSvc *JWTService) *Handler {
-	return &Handler{db: db, jwtSvc: jwtSvc, rl: newLoginRateLimiter()}
+	return &Handler{db: db, jwtSvc: jwtSvc, rl: newLoginRateLimiter(), bcryptCost: 12}
+}
+
+// NewHandlerWithRegisterToken creates a Handler that allows self-registration
+// when the caller supplies the matching X-Register-Token header.
+// Pass an empty token to keep registration disabled.
+func NewHandlerWithRegisterToken(db *sql.DB, jwtSvc *JWTService, token string) *Handler {
+	return &Handler{db: db, jwtSvc: jwtSvc, rl: newLoginRateLimiter(), registerToken: token, bcryptCost: 12}
+}
+
+// NewHandlerForTest creates a Handler with minimum bcrypt cost for fast test execution.
+// Never use this in production.
+func NewHandlerForTest(db *sql.DB, jwtSvc *JWTService, token string) *Handler {
+	return &Handler{db: db, jwtSvc: jwtSvc, rl: newLoginRateLimiter(), registerToken: token, bcryptCost: bcrypt.MinCost}
 }
 
 // Register mounts auth routes on mux (all public — no auth middleware).
@@ -70,6 +86,7 @@ type userView struct {
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	ip := clientIP(r)
 	if !h.rl.Allow(ip) {
+		w.Header().Set("Retry-After", "900")
 		jsonAuthErr(w, http.StatusTooManyRequests, "too many login attempts — try again in 15 minutes")
 		return
 	}
@@ -125,6 +142,15 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 
 // POST /api/v1/auth/register
 func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
+	if h.registerToken == "" {
+		jsonAuthErr(w, http.StatusForbidden, "registration is disabled — contact your administrator")
+		return
+	}
+	if r.Header.Get("X-Register-Token") != h.registerToken {
+		jsonAuthErr(w, http.StatusForbidden, "invalid registration token")
+		return
+	}
+
 	var req registerRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonAuthErr(w, http.StatusBadRequest, "invalid JSON")
@@ -140,7 +166,7 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), h.bcryptCost)
 	if err != nil {
 		jsonAuthErr(w, http.StatusInternalServerError, "internal error")
 		return
@@ -235,8 +261,10 @@ func (h *Handler) refresh(w http.ResponseWriter, r *http.Request) {
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 func clientIP(r *http.Request) string {
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		return strings.SplitN(xff, ",", 2)[0]
+	// X-Real-IP is set by the reverse proxy (nginx/traefik) to the real client
+	// address and cannot be forged by the client — use it when present.
+	if xri := strings.TrimSpace(r.Header.Get("X-Real-IP")); xri != "" {
+		return xri
 	}
 	ip := r.RemoteAddr
 	if idx := strings.LastIndex(ip, ":"); idx != -1 {

@@ -6,9 +6,13 @@ import { AuthProvider } from './auth/AuthContext'
 import { ToastProvider } from './components/Toast'
 import './index.css'
 
-// Apply saved dark mode preference before first paint
+// Apply saved theme before first paint.
+// CSS tokens: :root = dark (default), .light = light overrides.
+// Tailwind darkMode:'class' requires the .dark class on <html>.
 const saved = localStorage.getItem('theme')
-if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+if (saved === 'light') {
+  document.documentElement.classList.add('light')
+} else {
   document.documentElement.classList.add('dark')
 }
 

@@ -14,17 +14,30 @@ import (
 //	GET /api/v1/check/{vin}         — full report
 //	GET /api/v1/check/{vin}/summary — VIN decode + alerts only
 type Handler struct {
-	engine    *Engine
-	cache     *Cache
-	anonLimit *RateLimiter // unauthenticated callers: 10 req/hour
+	engine        *Engine
+	cache         *Cache
+	anonLimit     *RateLimiter         // unauthenticated callers: 10 req/hour
+	isValidToken  func(string) bool    // nil = always treat as anonymous
 }
 
 // NewHandler creates the HTTP handler with the default rate limit (10 req/hour for anon).
+// All callers are treated as anonymous — no JWT bypass.
 func NewHandler(engine *Engine, cache *Cache) *Handler {
 	return &Handler{
 		engine:    engine,
 		cache:     cache,
 		anonLimit: NewRateLimiter(10, time.Hour),
+	}
+}
+
+// NewHandlerWithValidator creates the HTTP handler with a JWT validator so that
+// authenticated callers are exempt from the anonymous rate limit.
+func NewHandlerWithValidator(engine *Engine, cache *Cache, isValid func(string) bool) *Handler {
+	return &Handler{
+		engine:       engine,
+		cache:        cache,
+		anonLimit:    NewRateLimiter(10, time.Hour),
+		isValidToken: isValid,
 	}
 }
 
@@ -34,6 +47,17 @@ func NewHandlerWithLimit(engine *Engine, cache *Cache, rl *RateLimiter) *Handler
 		engine:    engine,
 		cache:     cache,
 		anonLimit: rl,
+	}
+}
+
+// NewHandlerWithLimitAndValidator creates an HTTP handler with a custom rate limiter
+// and a token validator (for integration tests that verify auth bypass behaviour).
+func NewHandlerWithLimitAndValidator(engine *Engine, cache *Cache, rl *RateLimiter, isValid func(string) bool) *Handler {
+	return &Handler{
+		engine:       engine,
+		cache:        cache,
+		anonLimit:    rl,
+		isValidToken: isValid,
 	}
 }
 
@@ -51,8 +75,9 @@ func (h *Handler) fullReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ip := clientIPCheck(r)
-	authenticated := r.Header.Get("Authorization") != ""
+	authenticated := h.isAuthenticated(r)
 	if !authenticated && !h.anonLimit.Allow(ip) {
+		w.Header().Set("Retry-After", "3600")
 		jsonCheckErr(w, http.StatusTooManyRequests, "rate limit exceeded — 10 requests per hour for unauthenticated users")
 		return
 	}
@@ -103,9 +128,20 @@ func (h *Handler) summary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ip := clientIPCheck(r)
-	authenticated := r.Header.Get("Authorization") != ""
+	tenantID := r.Header.Get("X-Tenant-ID")
+	authenticated := h.isAuthenticated(r)
 	if !authenticated && !h.anonLimit.Allow(ip) {
+		w.Header().Set("Retry-After", "3600")
 		jsonCheckErr(w, http.StatusTooManyRequests, "rate limit exceeded")
+		return
+	}
+
+	// Check cache before generating.
+	if cached, ok := h.cache.GetReport(r.Context(), vin); ok {
+		h.cache.RecordRequest(r.Context(), vin, ip, tenantID, true)
+		w.Header().Set("X-Cache-Hit", "true")
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(summaryFromReport(cached))
 		return
 	}
 
@@ -119,7 +155,14 @@ func (h *Handler) summary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	summary := SummaryReport{
+	h.cache.RecordRequest(r.Context(), vin, ip, tenantID, false)
+	w.Header().Set("X-Cache-Hit", "false")
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(summaryFromReport(report))
+}
+
+func summaryFromReport(report *VehicleReport) SummaryReport {
+	return SummaryReport{
 		VIN:                report.VIN,
 		DecodedVIN:         report.DecodedVIN,
 		GeneratedAt:        report.GeneratedAt,
@@ -127,8 +170,6 @@ func (h *Handler) summary(w http.ResponseWriter, r *http.Request) {
 		MileageConsistency: report.MileageConsistency,
 		DataSources:        report.DataSources,
 	}
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(summary)
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -154,9 +195,25 @@ func sourceHeader(sources []DataSource) string {
 	return strings.Join(parts, ",")
 }
 
+// isAuthenticated returns true only when the request carries a bearer token
+// that the configured validator accepts. Presence of any non-empty header is
+// not sufficient — the token must be cryptographically valid.
+func (h *Handler) isAuthenticated(r *http.Request) bool {
+	if h.isValidToken == nil {
+		return false
+	}
+	bearer := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+	if bearer == "" || bearer == r.Header.Get("Authorization") {
+		return false
+	}
+	return h.isValidToken(bearer)
+}
+
 func clientIPCheck(r *http.Request) string {
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		return strings.SplitN(xff, ",", 2)[0]
+	// X-Real-IP is set by the reverse proxy (nginx/traefik) and cannot be
+	// forged by the client — use it when present.
+	if xri := strings.TrimSpace(r.Header.Get("X-Real-IP")); xri != "" {
+		return xri
 	}
 	ip := r.RemoteAddr
 	if idx := strings.LastIndex(ip, ":"); idx != -1 {

@@ -10,32 +10,32 @@ import (
 
 // VehicleReport is the top-level output of GenerateReport.
 type VehicleReport struct {
-	VIN                string
-	DecodedVIN         *VINInfo
-	GeneratedAt        time.Time
-	Countries          []CountryReport
-	Recalls            []Recall          // consolidated from all sources
-	MileageHistory     []MileageRecord   // consolidated, sorted oldest-first
-	MileageConsistency *ConsistencyScore
-	Alerts             []Alert
-	DataSources        []DataSource // transparency: every provider consulted
+	VIN                string            `json:"vin"`
+	DecodedVIN         *VINInfo          `json:"vinDecode,omitempty"`
+	GeneratedAt        time.Time         `json:"generatedAt"`
+	Countries          []CountryReport   `json:"countries"`
+	Recalls            []Recall          `json:"recalls"`
+	MileageHistory     []MileageRecord   `json:"mileageHistory"`
+	MileageConsistency *ConsistencyScore `json:"mileageConsistency,omitempty"`
+	Alerts             []Alert           `json:"alerts"`
+	DataSources        []DataSource      `json:"dataSources"`
 }
 
 // CountryReport groups all data returned by a single country's provider.
 type CountryReport struct {
-	Country        string
-	Registrations  []Registration
-	Inspections    []Inspection
-	StolenFlag     bool
-	TechnicalSpecs *TechnicalSpecs
+	Country        string          `json:"country"`
+	Registrations  []Registration  `json:"registrations"`
+	Inspections    []Inspection    `json:"inspections"`
+	StolenFlag     bool            `json:"stolenFlag"`
+	TechnicalSpecs *TechnicalSpecs `json:"technicalSpecs,omitempty"`
 }
 
 // ConsistencyScore summarises the quality of the mileage record history.
 type ConsistencyScore struct {
-	Consistent     bool
-	Rollbacks      int // number of records where odometer decreased
-	HighGaps       int // number of year-over-year gaps >50 000 km
-	Note           string
+	Consistent bool   `json:"consistent"`
+	Rollbacks  int    `json:"rollbacks"`
+	HighGaps   int    `json:"highGaps"`
+	Note       string `json:"note,omitempty"`
 }
 
 // Engine orchestrates VIN decoding and provider fetching.
@@ -111,9 +111,11 @@ func (e *Engine) GenerateReport(ctx context.Context, vin string) (*VehicleReport
 				if errors.Is(fetchErr, ErrProviderUnavailable) {
 					ds.Status = StatusUnavailable
 					ds.Error = fetchErr.Error()
+					ds.Note = fetchErr.Error()
 				} else {
 					ds.Status = StatusError
 					ds.Error = fetchErr.Error()
+					ds.Note = fetchErr.Error()
 					metricProviderErrors.WithLabelValues(ds.ID, ds.Country, "fetch_error").Inc()
 				}
 				results[idx] = providerResult{provider: ds.ID, country: ds.Country, source: ds}

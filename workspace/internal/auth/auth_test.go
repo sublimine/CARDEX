@@ -41,10 +41,12 @@ func newShortJWT(t *testing.T) *auth.JWTService {
 	return auth.NewJWTService([]byte("test-secret-must-be-32-bytes-000"), 1*time.Millisecond)
 }
 
+const testRegisterToken = "test-register-token-for-unit-tests"
+
 func newHandler(t *testing.T) (*auth.Handler, *sql.DB) {
 	t.Helper()
 	db := openDB(t)
-	return auth.NewHandler(db, newJWT(t)), db
+	return auth.NewHandlerForTest(db, newJWT(t), testRegisterToken), db
 }
 
 func postJSON(t *testing.T, handler http.Handler, path string, body any) *httptest.ResponseRecorder {
@@ -52,6 +54,17 @@ func postJSON(t *testing.T, handler http.Handler, path string, body any) *httpte
 	b, _ := json.Marshal(body)
 	req := httptest.NewRequest(http.MethodPost, path, bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	return w
+}
+
+func postRegister(t *testing.T, handler http.Handler, body any) *httptest.ResponseRecorder {
+	t.Helper()
+	b, _ := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewReader(b))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Register-Token", testRegisterToken)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	return w
@@ -78,12 +91,17 @@ func setupMux(t *testing.T) (*http.ServeMux, *auth.Handler, *sql.DB) {
 
 func registerUser(t *testing.T, mux http.Handler, email, password, tenantID string) string {
 	t.Helper()
-	w := postJSON(t, mux, "/api/v1/auth/register", map[string]string{
+	b, _ := json.Marshal(map[string]string{
 		"email":     email,
 		"password":  password,
 		"tenant_id": tenantID,
 		"name":      "Test User",
 	})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewReader(b))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Register-Token", testRegisterToken)
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
 	if w.Code != http.StatusCreated {
 		t.Fatalf("registerUser: want 201, got %d: %s", w.Code, w.Body.String())
 	}
@@ -163,9 +181,37 @@ func TestJWT_Expiry(t *testing.T) {
 
 // ── Register tests ────────────────────────────────────────────────────────────
 
+func TestRegister_DisabledWhenNoToken(t *testing.T) {
+	db := openDB(t)
+	h := auth.NewHandlerForTest(db, newJWT(t), "") // empty token = disabled
+	mux := http.NewServeMux()
+	h.Register(mux)
+	w := postRegister(t, mux, map[string]string{
+		"email": "any@example.com", "password": "password123", "tenant_id": "t1",
+	})
+	if w.Code != http.StatusForbidden {
+		t.Errorf("want 403 when disabled, got %d", w.Code)
+	}
+}
+
+func TestRegister_WrongToken(t *testing.T) {
+	mux, _, _ := setupMux(t)
+	b, _ := json.Marshal(map[string]string{
+		"email": "any@example.com", "password": "password123", "tenant_id": "t1",
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewReader(b))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Register-Token", "wrong-token")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+	if w.Code != http.StatusForbidden {
+		t.Errorf("want 403 for wrong token, got %d", w.Code)
+	}
+}
+
 func TestRegister_Success(t *testing.T) {
 	mux, _, _ := setupMux(t)
-	w := postJSON(t, mux, "/api/v1/auth/register", map[string]string{
+	w := postRegister(t, mux, map[string]string{
 		"email":     "alice@example.com",
 		"password":  "password123",
 		"tenant_id": "t1",
@@ -194,8 +240,8 @@ func TestRegister_Success(t *testing.T) {
 func TestRegister_DuplicateEmail(t *testing.T) {
 	mux, _, _ := setupMux(t)
 	body := map[string]string{"email": "dup@example.com", "password": "password123", "tenant_id": "t1", "name": "X"}
-	postJSON(t, mux, "/api/v1/auth/register", body)
-	w := postJSON(t, mux, "/api/v1/auth/register", body)
+	postRegister(t, mux, body)
+	w := postRegister(t, mux, body)
 	if w.Code != http.StatusConflict {
 		t.Errorf("want 409, got %d", w.Code)
 	}
@@ -203,7 +249,7 @@ func TestRegister_DuplicateEmail(t *testing.T) {
 
 func TestRegister_PasswordTooShort(t *testing.T) {
 	mux, _, _ := setupMux(t)
-	w := postJSON(t, mux, "/api/v1/auth/register", map[string]string{
+	w := postRegister(t, mux, map[string]string{
 		"email": "short@example.com", "password": "abc", "tenant_id": "t1",
 	})
 	if w.Code != http.StatusBadRequest {
@@ -213,7 +259,7 @@ func TestRegister_PasswordTooShort(t *testing.T) {
 
 func TestRegister_MissingEmail(t *testing.T) {
 	mux, _, _ := setupMux(t)
-	w := postJSON(t, mux, "/api/v1/auth/register", map[string]string{
+	w := postRegister(t, mux, map[string]string{
 		"password": "password123", "tenant_id": "t1",
 	})
 	if w.Code != http.StatusBadRequest {
@@ -223,7 +269,7 @@ func TestRegister_MissingEmail(t *testing.T) {
 
 func TestRegister_MissingTenantID(t *testing.T) {
 	mux, _, _ := setupMux(t)
-	w := postJSON(t, mux, "/api/v1/auth/register", map[string]string{
+	w := postRegister(t, mux, map[string]string{
 		"email": "notenant@example.com", "password": "password123",
 	})
 	if w.Code != http.StatusBadRequest {
@@ -235,6 +281,7 @@ func TestRegister_InvalidJSON(t *testing.T) {
 	mux, _, _ := setupMux(t)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", strings.NewReader("{bad json"))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Register-Token", testRegisterToken)
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)
 	if w.Code != http.StatusBadRequest {
@@ -374,14 +421,17 @@ func TestRefresh_MissingToken(t *testing.T) {
 func TestRefresh_ExpiredToken(t *testing.T) {
 	db := openDB(t)
 	shortJWT := newShortJWT(t)
-	h := auth.NewHandler(db, shortJWT)
+	h := auth.NewHandlerForTest(db, shortJWT, testRegisterToken)
 	mux := http.NewServeMux()
 	h.Register(mux)
 
 	// Register with short-lived token.
-	w := postJSON(t, mux, "/api/v1/auth/register", map[string]string{
+	w := postRegister(t, mux, map[string]string{
 		"email": "g@g.com", "password": "password1", "tenant_id": "t1",
 	})
+	if w.Code != http.StatusCreated {
+		t.Fatalf("register: want 201, got %d: %s", w.Code, w.Body.String())
+	}
 	var resp map[string]any
 	_ = json.Unmarshal(w.Body.Bytes(), &resp)
 	token, _ := resp["token"].(string)

@@ -32,6 +32,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -48,7 +49,9 @@ import (
 	"cardex.eu/workspace/internal/inbox"
 	"cardex.eu/workspace/internal/kanban"
 	"cardex.eu/workspace/internal/media"
+	"cardex.eu/workspace/internal/middleware"
 	"cardex.eu/workspace/internal/syndication"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	_ "modernc.org/sqlite"
 )
 
@@ -103,7 +106,11 @@ func main() {
 		log.Error("auth schema", "err", err)
 		os.Exit(1)
 	}
-	authHandler := auth.NewHandler(db, jwtSvc)
+	registerToken := os.Getenv("REGISTER_TOKEN")
+	if registerToken == "" {
+		log.Warn("REGISTER_TOKEN not set — self-registration is disabled")
+	}
+	authHandler := auth.NewHandlerWithRegisterToken(db, jwtSvc, registerToken)
 
 	// ── Documents service (EnsureSchema called inside NewService) ────────────
 	docSvc, err := documents.NewService(ctx, db, mediaDir)
@@ -185,9 +192,11 @@ func main() {
 		os.Exit(1)
 	}
 	checkCache := check.NewCache(db)
-	checkDecoder := check.NewVINDecoder()
+	nhtsaBaseURL := envOrDefault("NHTSA_BASE_URL", "https://vpic.nhtsa.dot.gov")
+	rdwBaseURL := envOrDefault("RDW_BASE_URL", "https://opendata.rdw.nl/resource")
+	checkDecoder := check.NewVINDecoderWithBase(nhtsaBaseURL)
 	checkProviders := []check.RegistryProvider{
-		check.NewNLProvider(),
+		check.NewNLProviderWithBase(rdwBaseURL),
 		check.NewFRProvider(),
 		check.NewBEProvider(),
 		check.NewESProvider(),
@@ -195,7 +204,10 @@ func main() {
 		check.NewCHProvider(),
 	}
 	checkEngine := check.NewEngine(checkCache, checkDecoder, checkProviders)
-	checkHandler := check.NewHandler(checkEngine, checkCache)
+	checkHandler := check.NewHandlerWithValidator(checkEngine, checkCache, func(token string) bool {
+		_, err := jwtSvc.ValidateToken(token)
+		return err == nil
+	})
 
 	// ── Root mux ─────────────────────────────────────────────────────────────
 	mux := http.NewServeMux()
@@ -219,6 +231,15 @@ func main() {
 	mux.Handle("/api/v1/templates", requireAuth(inboxMux))
 	mux.Handle("/api/v1/ingest/", requireAuth(inboxMux))
 
+	// CRM listing routes (owned by inbox package — uses shared CRM tables).
+	// Exact path patterns so they coexist with the finance /vehicles/ subtree.
+	mux.Handle("GET /api/v1/vehicles", requireAuth(inboxMux))
+	mux.Handle("GET /api/v1/contacts", requireAuth(inboxMux))
+	mux.Handle("GET /api/v1/contacts/", requireAuth(inboxMux))
+	mux.Handle("GET /api/v1/deals", requireAuth(inboxMux))
+	mux.Handle("PATCH /api/v1/deals/", requireAuth(inboxMux))
+	mux.Handle("POST /api/v1/deals", requireAuth(inboxMux))
+
 	// Finance
 	mux.Handle("/api/v1/vehicles/", requireAuth(finHandler))
 	mux.Handle("/api/v1/fleet/", requireAuth(finHandler))
@@ -230,23 +251,72 @@ func main() {
 	// Kanban + Calendar
 	kanbanSrv.RegisterWithMiddleware(mux, requireAuth)
 
+	// KPI summary — aggregates from CRM tables for the dashboard.
+	crmStore := inbox.NewCRMStore(db)
+	mux.Handle("GET /api/v1/kpi", requireAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tenantID := r.Header.Get("X-Tenant-ID")
+		if tenantID == "" {
+			http.Error(w, `{"error":"X-Tenant-ID required"}`, http.StatusBadRequest)
+			return
+		}
+		kpi, err := crmStore.KPISummary(tenantID)
+		if err != nil {
+			http.Error(w, `{"error":"internal"}`, http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(kpi)
+	})))
+
 	// Health (public)
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprintf(w, `{"status":"ok","time":"%s"}`, time.Now().UTC().Format(time.RFC3339))
 	})
 
+	// Wrap main mux with CORS so browser cross-origin calls (tunnel, CDN, etc.) work.
+	corsOrigins := []string{
+		"http://localhost:5173",
+		"http://localhost:3000",
+		"http://localhost:4173",
+		".trycloudflare.com",
+		".ngrok-free.app",
+		".ngrok.io",
+		".loca.lt",
+		".serveo.net",
+	}
+	if extra := os.Getenv("CORS_ORIGIN"); extra != "" {
+		corsOrigins = append(corsOrigins, extra)
+	}
+	corsHandler := middleware.CORS(corsOrigins)(mux)
+
 	addr := ":" + port
 	log.Info("workspace-service starting", "addr", addr, "db", dbPath)
 	srv := &http.Server{
 		Addr:         addr,
-		Handler:      mux,
+		Handler:      corsHandler,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 60 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
 
-	// Start server in goroutine so we can listen for shutdown.
+	// ── Prometheus metrics server ─────────────────────────────────────────────
+	metricsAddr := envOrDefault("WORKSPACE_METRICS_ADDR", ":9091")
+	metricsMux := http.NewServeMux()
+	metricsMux.Handle("/metrics", promhttp.Handler())
+	metricsSrv := &http.Server{
+		Addr:        metricsAddr,
+		Handler:     metricsMux,
+		ReadTimeout: 5 * time.Second,
+	}
+	go func() {
+		log.Info("metrics server starting", "addr", metricsAddr)
+		if err := metricsSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Error("metrics server error", "err", err)
+		}
+	}()
+
+	// Start main server in goroutine so we can listen for shutdown.
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Error("server error", "err", err)
@@ -259,6 +329,7 @@ func main() {
 	log.Info("shutdown signal received — draining connections")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
+	_ = metricsSrv.Shutdown(shutdownCtx)
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Error("graceful shutdown error", "err", err)
 	}

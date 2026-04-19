@@ -26,13 +26,10 @@ import (
 )
 
 const (
-	rdwBase        = "https://opendata.rdw.nl/resource"
-	rdwVehiclesDS  = "m9d7-ebf2" // Gekentekende voertuigen
-	rdwAPKDS       = "sgfe-77wx" // APK inspections
-	rdwStolenDS    = "8ys7-d773" // Stolen vehicles
-
-	// Minimum ms between requests to respect RDW's informal 1 req/sec guideline.
-	rdwMinIntervalMs = 1000
+	rdwBase       = "https://opendata.rdw.nl/resource"
+	rdwVehiclesDS = "m9d7-ebf2" // Gekentekende voertuigen
+	rdwAPKDS      = "sgfe-77wx" // APK inspections
+	rdwStolenDS   = "8ys7-d773" // Stolen vehicles
 )
 
 // NLProvider fetches data from the Dutch RDW open data portal.

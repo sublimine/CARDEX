@@ -11,12 +11,26 @@
   --bg-elevated: #1a1a2e;
   --bg-overlay:  #22223a;
 
+  /* RGB channels for backgrounds — required for Tailwind opacity-modifier classes.
+     e.g. bg-bg-surface/70 → rgb(var(--bg-surface-ch) / 0.7)                          */
+  --bg-primary-ch:  10 10 15;
+  --bg-surface-ch:  18 18 26;
+  --bg-elevated-ch: 26 26 46;
+  --bg-overlay-ch:  34 34 58;
+
   /* ── Accent colours ───────────────────────────────────────────────────────── */
   --color-blue:    #3b82f6;
   --color-blue-dim: #1d4ed8;
   --color-amber:   #f59e0b;
   --color-emerald: #10b981;
   --color-rose:    #f43f5e;
+
+  /* RGB channels — required for Tailwind opacity-modifier classes (bg-accent-blue/20 etc.)
+     rgb(var(--color-*-ch)) expands to a valid color; rgb(#hex / alpha) does not.         */
+  --color-blue-ch:    59 130 246;
+  --color-amber-ch:   245 158 11;
+  --color-emerald-ch: 16 185 129;
+  --color-rose-ch:    244 63 94;
 
   /* ── Text ─────────────────────────────────────────────────────────────────── */
   --text-primary:   #ffffff;
@@ -68,6 +82,12 @@
   --bg-surface:  #ffffff;
   --bg-elevated: #ececf4;
   --bg-overlay:  #e2e2f0;
+
+  /* RGB channels for bg opacity modifiers in light mode */
+  --bg-primary-ch:  244 244 248;
+  --bg-surface-ch:  255 255 255;
+  --bg-elevated-ch: 236 236 244;
+  --bg-overlay-ch:  226 226 240;
 
   --text-primary:   #09090b;
   --text-secondary: #52525b;

@@ -1,4 +1,4 @@
-const CACHE = 'cardex-v1';
+const CACHE = 'cardex-v2';
 const SHELL = ['/', '/index.html'];
 
 self.addEventListener('install', (e) => {

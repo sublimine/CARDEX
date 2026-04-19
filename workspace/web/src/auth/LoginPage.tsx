@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
+import { motion } from 'framer-motion'
 import { useAuthContext } from './AuthContext'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Car, LogIn } from 'lucide-react'
+import { LogIn, Mail, Lock } from 'lucide-react'
+import { cn } from '../lib/cn'
 
 export default function LoginPage() {
   const { login, isLoading } = useAuthContext()
@@ -9,9 +11,9 @@ export default function LoginPage() {
   const location = useLocation()
   const from = (location.state as { from?: string })?.from ?? '/'
 
-  const [email, setEmail] = useState('')
+  const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError]       = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -25,60 +27,166 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 p-4">
-      <div className="w-full max-w-sm">
-        <div className="flex items-center gap-3 justify-center mb-8">
-          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg">
-            <Car className="w-6 h-6 text-brand-600" />
+    <div
+      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+      style={{ background: 'var(--bg-primary)' }}
+    >
+      {/* Ambient blue orb */}
+      <div
+        className="pointer-events-none absolute -top-48 -left-48 w-[700px] h-[700px] rounded-full"
+        style={{
+          background: 'radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 65%)',
+        }}
+      />
+      {/* Ambient amber orb */}
+      <div
+        className="pointer-events-none absolute -bottom-48 -right-48 w-[600px] h-[600px] rounded-full"
+        style={{
+          background: 'radial-gradient(circle, rgba(245,158,11,0.10) 0%, transparent 65%)',
+        }}
+      />
+      {/* Subtle dot-grid */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.035]"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle, var(--text-muted) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+        }}
+      />
+
+      <motion.div
+        initial={{ opacity: 0, y: 28, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+        className="w-full max-w-sm relative z-10"
+      >
+        {/* Wordmark */}
+        <div className="flex flex-col items-center mb-8">
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 border border-border-subtle"
+            style={{
+              background: 'var(--glass-medium)',
+              backdropFilter: 'blur(16px)',
+              boxShadow: 'var(--shadow-glow-blue)',
+            }}
+          >
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3"
+                stroke="var(--color-blue)" strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round"
+              />
+              <rect
+                x="9" y="11" width="14" height="10" rx="2"
+                stroke="var(--color-blue)" strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round"
+              />
+            </svg>
           </div>
-          <span className="text-2xl font-bold text-white tracking-tight">CARDEX</span>
+          <span
+            className="text-2xl font-bold tracking-[0.22em] leading-tight"
+            style={{
+              background:
+                'linear-gradient(125deg, var(--color-blue) 0%, #c8d8ff 60%, #ffffff 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            CARDEX
+          </span>
+          <span className="text-[10px] font-semibold tracking-[0.3em] text-text-muted uppercase mt-1">
+            Workspace
+          </span>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8">
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">Welcome back</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Sign in to your workspace</p>
+        {/* Card — uses bg-elevated so it's visibly distinct from the near-black page bg */}
+        <div
+          className="rounded-2xl border border-border-subtle p-7"
+          style={{
+            background: 'var(--bg-elevated)',
+            boxShadow: 'var(--shadow-4)',
+          }}
+        >
+          <h1 className="text-lg font-semibold text-text-primary mb-1">Welcome back</h1>
+          <p className="text-sm text-text-muted mb-6">Sign in to your workspace</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            {/* Email */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium text-text-secondary uppercase tracking-wide">
                 Email
               </label>
-              <input
-                type="email"
-                autoComplete="username"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent text-sm transition"
-                placeholder="you@dealership.com"
-              />
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+                <input
+                  type="email"
+                  autoComplete="username"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@dealership.com"
+                  className={cn(
+                    'w-full pl-9 pr-3.5 py-2.5 rounded-md text-sm text-text-primary placeholder:text-text-muted',
+                    'bg-glass-subtle border border-border-subtle',
+                    'focus:outline-none focus:border-border-active focus:ring-2 focus:ring-accent-blue/20',
+                    'transition-all duration-150',
+                  )}
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            {/* Password */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium text-text-secondary uppercase tracking-wide">
                 Password
               </label>
-              <input
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent text-sm transition"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className={cn(
+                    'w-full pl-9 pr-3.5 py-2.5 rounded-md text-sm text-text-primary placeholder:text-text-muted',
+                    'bg-glass-subtle border border-border-subtle',
+                    'focus:outline-none focus:border-border-active focus:ring-2 focus:ring-accent-blue/20',
+                    'transition-all duration-150',
+                  )}
+                />
+              </div>
             </div>
 
+            {/* Error banner */}
             {error && (
-              <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="text-xs text-accent-rose bg-rose-500/10 border border-rose-500/20 rounded-lg px-3.5 py-2.5"
+              >
                 {error}
-              </div>
+              </motion.div>
             )}
 
-            <button
+            {/* Submit */}
+            <motion.button
               type="submit"
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-medium rounded-lg text-sm transition-colors min-h-[44px]"
+              whileTap={{ scale: isLoading ? 1 : 0.97 }}
+              whileHover={{ scale: isLoading ? 1 : 1.01 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              className={cn(
+                'w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg',
+                'text-sm font-medium text-white min-h-[44px]',
+                'bg-accent-blue shadow-glow-blue hover:brightness-110',
+                'disabled:opacity-50 disabled:pointer-events-none',
+                'transition-[filter] duration-150',
+              )}
             >
               {isLoading ? (
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -86,14 +194,14 @@ export default function LoginPage() {
                 <LogIn className="w-4 h-4" />
               )}
               {isLoading ? 'Signing in…' : 'Sign in'}
-            </button>
+            </motion.button>
           </form>
         </div>
 
-        <p className="text-center text-xs text-white/50 mt-6">
+        <p className="text-center text-xs text-text-muted mt-6">
           CARDEX Workspace © {new Date().getFullYear()}
         </p>
-      </div>
+      </motion.div>
     </div>
   )
 }

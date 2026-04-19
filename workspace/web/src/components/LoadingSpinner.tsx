@@ -41,13 +41,13 @@ export default function LoadingSpinner({ size = 'md', className }: LoadingSpinne
 export function PageSkeleton() {
   return (
     <div className="animate-pulse space-y-4 p-5">
-      <div className="h-7 w-48 bg-glass-medium rounded-md" />
+      <div className="h-7 w-48 bg-bg-elevated rounded-md" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-24 bg-glass-medium rounded-lg" />
+          <div key={i} className="h-24 bg-bg-elevated rounded-lg" />
         ))}
       </div>
-      <div className="h-64 bg-glass-medium rounded-lg" />
+      <div className="h-64 bg-bg-elevated rounded-lg" />
     </div>
   )
 }

@@ -20,18 +20,22 @@ export default {
           900: '#1e3a8a',
         },
 
-        // Design-system tokens — resolved via CSS custom properties at runtime
+        // Design-system tokens — resolved via CSS custom properties at runtime.
+        // Using rgb(var(--*-ch)) format so that Tailwind opacity modifiers work
+        // correctly (bg-bg-surface/70, ring-bg-surface/30, etc.).
         bg: {
-          primary:  'var(--bg-primary)',
-          surface:  'var(--bg-surface)',
-          elevated: 'var(--bg-elevated)',
-          overlay:  'var(--bg-overlay)',
+          primary:  'rgb(var(--bg-primary-ch))',
+          surface:  'rgb(var(--bg-surface-ch))',
+          elevated: 'rgb(var(--bg-elevated-ch))',
+          overlay:  'rgb(var(--bg-overlay-ch))',
         },
         accent: {
-          blue:    'var(--color-blue)',
-          amber:   'var(--color-amber)',
-          emerald: 'var(--color-emerald)',
-          rose:    'var(--color-rose)',
+          // rgb(var(--color-*-ch)) lets Tailwind opacity modifiers work correctly
+          // (bg-accent-blue/20, ring-accent-blue/50, etc.) — plain var(--color) does not.
+          blue:    'rgb(var(--color-blue-ch))',
+          amber:   'rgb(var(--color-amber-ch))',
+          emerald: 'rgb(var(--color-emerald-ch))',
+          rose:    'rgb(var(--color-rose-ch))',
         },
         text: {
           primary:   'var(--text-primary)',

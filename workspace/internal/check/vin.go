@@ -11,22 +11,23 @@ import (
 )
 
 // VINInfo holds the decoded output from a VIN lookup.
+// Field names match the frontend VINDecodeResult type.
 type VINInfo struct {
-	VIN                string
-	WMI                string
-	Manufacturer       string
-	Country            string
-	ModelYear          int
-	PlantCode          string
-	SerialNumber       string
-	// Fields populated by NHTSA vPIC enrichment (may be empty if enrichment fails)
-	Model              string
-	BodyType           string
-	FuelType           string
-	EngineDisplacement string // e.g. "2.0L"
-	DriveType          string // e.g. "Rear-Wheel Drive"
-	PlantCountry       string
-	RawNHTSA           map[string]string
+	VIN                string            `json:"vin"`
+	WMI                string            `json:"wmi,omitempty"`
+	Manufacturer       string            `json:"manufacturer"`
+	Make               string            `json:"make"` // alias for Manufacturer (frontend expects both)
+	Country            string            `json:"countryOfManufacture"`
+	ModelYear          int               `json:"year"`
+	PlantCode          string            `json:"plant,omitempty"`
+	SerialNumber       string            `json:"serialNumber,omitempty"`
+	Model              string            `json:"model,omitempty"`
+	BodyType           string            `json:"bodyType,omitempty"`
+	FuelType           string            `json:"fuelType,omitempty"`
+	EngineDisplacement string            `json:"engineDisplacement,omitempty"`
+	DriveType          string            `json:"driveType,omitempty"`
+	PlantCountry       string            `json:"plantCountry,omitempty"`
+	RawNHTSA           map[string]string `json:"-"` // omitted from HTTP responses (too verbose)
 }
 
 // ErrInvalidVIN is returned when a VIN fails ISO 3779 validation.
@@ -104,6 +105,7 @@ func DecodeVIN(vin string) VINInfo {
 		VIN:          vin,
 		WMI:          wmi,
 		Manufacturer: mfr,
+		Make:         mfr,
 		Country:      country,
 		ModelYear:    year,
 		PlantCode:    string(vin[10]),
@@ -265,7 +267,8 @@ func NewVINDecoder() *VINDecoder {
 	}
 }
 
-// NewVINDecoderWithBase constructs a VINDecoder pointing at a custom base URL (for tests).
+// NewVINDecoderWithBase constructs a VINDecoder pointing at a custom base URL.
+// Used for testing and for production overrides via config.NHTSABaseURL.
 func NewVINDecoderWithBase(base string) *VINDecoder {
 	return &VINDecoder{
 		httpClient: &http.Client{Timeout: 5 * time.Second},
@@ -275,8 +278,8 @@ func NewVINDecoderWithBase(base string) *VINDecoder {
 
 // nhtsaDecodeVinValues is the shape of the NHTSA /DecodeVinValues endpoint.
 type nhtsaResponse struct {
-	Count   int               `json:"Count"`
-	Results []map[string]string `json:"Results"`
+	Count   int                  `json:"Count"`
+	Results []map[string]string  `json:"Results"`
 }
 
 // Decode validates, locally decodes, and optionally enriches a VIN via NHTSA.
@@ -291,7 +294,6 @@ func (d *VINDecoder) Decode(ctx context.Context, vin string) (*VINInfo, error) {
 
 	// Enrich from NHTSA — failure is non-fatal, we log and continue.
 	if err := d.enrichFromNHTSA(ctx, &info); err != nil {
-		// Enrichment failure: return locally decoded info, no error.
 		_ = err
 	}
 	return &info, nil
@@ -324,7 +326,8 @@ func (d *VINDecoder) enrichFromNHTSA(ctx context.Context, info *VINInfo) error {
 	info.RawNHTSA = r
 
 	if v := r["Make"]; v != "" && v != "0" {
-		info.Manufacturer = v // NHTSA is authoritative over WMI table
+		info.Manufacturer = v
+		info.Make = v
 	}
 	if v := r["Model"]; v != "" && v != "0" {
 		info.Model = v

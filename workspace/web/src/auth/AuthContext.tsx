@@ -39,10 +39,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState((s) => ({ ...s, isLoading: true }))
       try {
         const data = await api.post<LoginResponse>('/auth/login', { email, password })
+        // Backend returns snake_case; normalize tenant_id → tenantId
+        const raw = data.user as unknown as Record<string, unknown>
+        const user = { ...data.user, tenantId: (raw.tenantId ?? raw.tenant_id ?? '') as string }
         setAccessToken(data.token)
         setTokenExpiry(data.expires_in)
-        setTenantId(data.user.tenantId)
-        setState({ user: data.user, isLoading: false, isAuthenticated: true })
+        setTenantId(user.tenantId)
+        setState({ user, isLoading: false, isAuthenticated: true })
       } catch (err) {
         setState((s) => ({ ...s, isLoading: false }))
         throw err

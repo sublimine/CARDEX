@@ -17,6 +17,7 @@ type Server struct {
 	proc      *Processor
 	web       *WebhookSource
 	manual    *ManualSource
+	crm       *CRMStore
 	log       *slog.Logger
 }
 
@@ -33,6 +34,7 @@ func NewServer(db *sql.DB, smtpCfg SMTPConfig, log *slog.Logger) *Server {
 		proc:      proc,
 		web:       NewWebhookSource(),
 		manual:    NewManualSource(),
+		crm:       NewCRMStore(db),
 		log:       log,
 	}
 }
@@ -57,6 +59,14 @@ func (s *Server) Handler() http.Handler {
 	// Ingestion endpoints
 	mux.HandleFunc("POST /api/v1/ingest/web", s.web.IngestHandler())
 	mux.HandleFunc("POST /api/v1/ingest/manual", s.handleManualIngest)
+
+	// CRM endpoints — vehicles, contacts, deals backed by shared CRM tables.
+	mux.HandleFunc("GET /api/v1/vehicles", s.handleListVehicles)
+	mux.HandleFunc("GET /api/v1/contacts", s.handleListContacts)
+	mux.HandleFunc("GET /api/v1/contacts/{id}", s.handleGetContact)
+	mux.HandleFunc("GET /api/v1/deals", s.handleListDeals)
+	mux.HandleFunc("PATCH /api/v1/deals/{id}", s.handlePatchDeal)
+	mux.HandleFunc("POST /api/v1/deals", s.handleCreateDeal)
 
 	return mux
 }
@@ -103,7 +113,14 @@ func (s *Server) handleListInbox(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusInternalServerError, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, convs)
+	// Ensure nil slice serialises as [] not null.
+	if convs == nil {
+		convs = []*Conversation{}
+	}
+	writeJSON(w, http.StatusOK, ConversationListResponse{
+		Conversations: convs,
+		Total:         len(convs),
+	})
 }
 
 func (s *Server) handleGetConversation(w http.ResponseWriter, r *http.Request) {
@@ -241,6 +258,122 @@ func (s *Server) handleManualIngest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, conv)
+}
+
+// ── CRM handlers ─────────────────────────────────────────────────────────────
+
+func (s *Server) handleListVehicles(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := requireTenant(w, r)
+	if !ok {
+		return
+	}
+	page     := parseIntOr(r.URL.Query().Get("page"),      1)
+	pageSize := parseIntOr(r.URL.Query().Get("page_size"), 20)
+	status   := r.URL.Query().Get("status")
+
+	resp, err := s.crm.ListVehicles(tenantID, page, pageSize, status)
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, resp)
+}
+
+func (s *Server) handleListContacts(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := requireTenant(w, r)
+	if !ok {
+		return
+	}
+	page     := parseIntOr(r.URL.Query().Get("page"),      1)
+	pageSize := parseIntOr(r.URL.Query().Get("page_size"), 20)
+	search   := r.URL.Query().Get("q")
+
+	resp, err := s.crm.ListContacts(tenantID, page, pageSize, search)
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, resp)
+}
+
+func (s *Server) handleListDeals(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := requireTenant(w, r)
+	if !ok {
+		return
+	}
+	page     := parseIntOr(r.URL.Query().Get("page"),      1)
+	pageSize := parseIntOr(r.URL.Query().Get("page_size"), 20)
+	stage    := r.URL.Query().Get("stage")
+
+	resp, err := s.crm.ListDeals(tenantID, page, pageSize, stage)
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, resp)
+}
+
+func (s *Server) handlePatchDeal(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := requireTenant(w, r)
+	if !ok {
+		return
+	}
+	id := r.PathValue("id")
+	var req struct {
+		Stage string `json:"stage"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeErr(w, http.StatusBadRequest, err)
+		return
+	}
+	if err := s.crm.PatchDeal(tenantID, id, req.Stage); err != nil {
+		writeErr(w, http.StatusNotFound, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) handleCreateDeal(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := requireTenant(w, r)
+	if !ok {
+		return
+	}
+	var req struct {
+		ContactID string `json:"contact_id"`
+		VehicleID string `json:"vehicle_id"`
+		Stage     string `json:"stage"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeErr(w, http.StatusBadRequest, err)
+		return
+	}
+	if req.ContactID == "" {
+		writeErr(w, http.StatusBadRequest, errMsg("contact_id required"))
+		return
+	}
+	deal, err := s.crm.CreateDeal(tenantID, req.ContactID, req.VehicleID, req.Stage)
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, deal)
+}
+
+func (s *Server) handleGetContact(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := requireTenant(w, r)
+	if !ok {
+		return
+	}
+	id := r.PathValue("id")
+	contact, err := s.crm.GetContact(tenantID, id)
+	if err != nil {
+		writeErr(w, http.StatusNotFound, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ContactDetailResponse{
+		Contact:    contact,
+		Activities: []struct{}{},
+	})
 }
 
 // ── helpers ────────────────────────────────────────────────────────────────────
