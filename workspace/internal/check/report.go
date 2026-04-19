@@ -149,6 +149,7 @@ func (e *Engine) GenerateReport(ctx context.Context, vin string) (*VehicleReport
 		if r.data.StolenFlag {
 			report.Alerts = append(report.Alerts, newAlert(AlertStolen, SeverityCritical, "Vehicle reported stolen in "+r.country))
 		}
+		report.Alerts = append(report.Alerts, r.data.Alerts...)
 		report.Recalls = append(report.Recalls, r.data.Recalls...)
 		report.MileageHistory = append(report.MileageHistory, r.data.MileageRecords...)
 
