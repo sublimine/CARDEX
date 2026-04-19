@@ -42,3 +42,10 @@ TEMP_AUDIT.md
 deploy/.env
 deploy/.env.*
 !deploy/env.example
+
+# Runtime data (SQLite databases, uploads)
+workspace/data/
+
+# Puppeteer debug artifacts
+workspace/web/debug-*.png
+workspace/web/debug-*.html
