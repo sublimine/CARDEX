@@ -2,29 +2,81 @@ package check
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"math"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 )
 
-// ErrPlateResolutionUnavailable is returned when no public API exists for
-// plate→VIN resolution in the requested country.
+// ErrPlateResolutionUnavailable is returned when no public portal exists for
+// plate→vehicle resolution in the requested country, or when the portal
+// requires authentication/payment we cannot satisfy.
 var ErrPlateResolutionUnavailable = errors.New("plate resolution unavailable for this country")
 
-// ErrPlateNotFound is returned when the plate is not present in the registry.
+// ErrPlateNotFound is returned when a plate is not found in the registry.
 var ErrPlateNotFound = errors.New("plate not found")
 
-// PlateResolver converts a normalized license plate and ISO-3166-1 alpha-2
-// country code into a VIN.
-type PlateResolver interface {
-	Resolve(ctx context.Context, plate, country string) (string, error)
+// PlateResult holds all vehicle information extractable from a public license-plate
+// portal. Fields are zero/nil when the source portal does not expose them.
+// VIN, Make, Model, and FirstRegistration are the most commonly available;
+// remaining fields depend on what each country's portal exposes.
+type PlateResult struct {
+	// Identification
+	VIN     string `json:"vin,omitempty"`
+	Plate   string `json:"plate,omitempty"`
+	Make    string `json:"make,omitempty"`
+	Model   string `json:"model,omitempty"`
+	Variant string `json:"variant,omitempty"`
+
+	// Technical
+	FuelType          string  `json:"fuel_type,omitempty"`
+	DisplacementCC    int     `json:"displacement_cc,omitempty"`
+	PowerKW           float64 `json:"power_kw,omitempty"`
+	EmptyWeightKg     int     `json:"empty_weight_kg,omitempty"`
+	GrossWeightKg     int     `json:"gross_weight_kg,omitempty"`
+	CO2GPerKm         float64 `json:"co2_g_per_km,omitempty"`
+	EuroNorm          string  `json:"euro_norm,omitempty"`
+	BodyType          string  `json:"body_type,omitempty"`
+	Color             string  `json:"color,omitempty"`
+	NumberOfSeats     int     `json:"number_of_seats,omitempty"`
+	NumberOfCylinders int     `json:"number_of_cylinders,omitempty"`
+
+	// Registration
+	FirstRegistration  *time.Time `json:"first_registration,omitempty"`
+	Country            string     `json:"country,omitempty"`
+	RegistrationStatus string     `json:"registration_status,omitempty"` // active, cancelled, export …
+
+	// Inspection (APK / ITV / CT / TÜV / MFK)
+	LastInspectionDate   *time.Time `json:"last_inspection_date,omitempty"`
+	LastInspectionResult string     `json:"last_inspection_result,omitempty"` // pass, fail, pending
+	NextInspectionDate   *time.Time `json:"next_inspection_date,omitempty"`
+
+	// Mileage (exposed by some portals: NL via APK dataset, BE via Car-Pass)
+	MileageKm   int        `json:"mileage_km,omitempty"`
+	MileageDate *time.Time `json:"mileage_date,omitempty"`
+
+	// Geographic context (DE: Zulassungsbezirk; CH: Canton)
+	District string `json:"district,omitempty"`
+
+	// Environmental badge (ES: DGT label — Zero / Eco / C / B)
+	EnvironmentalBadge string `json:"environmental_badge,omitempty"`
+
+	// Metadata
+	Source    string    `json:"source"`
+	FetchedAt time.Time `json:"fetched_at"`
+	Partial   bool      `json:"partial,omitempty"` // true when only a subset of fields is available
 }
 
-// NormalizePlate strips whitespace and dashes then uppercases a license plate.
+// PlateResolver converts a normalised license plate into a PlateResult.
+// The country is embedded in the resolver implementation.
+type PlateResolver interface {
+	Resolve(ctx context.Context, plate string) (*PlateResult, error)
+}
+
+// NormalizePlate strips whitespace and dashes then uppercases.
 // "1-ABC-23" → "1ABC23", "ab 12 cd" → "AB12CD".
 func NormalizePlate(plate string) string {
 	plate = strings.ToUpper(plate)
@@ -33,126 +85,155 @@ func NormalizePlate(plate string) string {
 	return plate
 }
 
-// PlateRegistry maps ISO-3166-1 alpha-2 country codes to PlateResolver
-// implementations. Only NL has a live resolver; the remaining countries are
-// honest scaffolds that return ErrPlateResolutionUnavailable.
+// PlateRegistry maps ISO-3166-1 alpha-2 country codes to PlateResolver implementations.
 type PlateRegistry struct {
 	resolvers map[string]PlateResolver
 }
 
-// NewPlateRegistry builds the registry. rdwBaseURL is the RDW Open Data
-// resource base URL, e.g. "https://opendata.rdw.nl/resource". Pass a custom
-// base to override for testing.
+// NewPlateRegistry builds the production registry.
+// rdwBaseURL is the RDW Open Data resource base, e.g. "https://opendata.rdw.nl/resource".
 func NewPlateRegistry(rdwBaseURL string) *PlateRegistry {
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := newPlateHTTPClient(15 * time.Second)
 	return &PlateRegistry{
 		resolvers: map[string]PlateResolver{
-			"NL": &NLPlateResolver{client: client, baseURL: rdwBaseURL},
-			// Countries below have no publicly accessible plate→VIN API.
-			// See unavailableResolver comments for per-country details.
-			"FR": &unavailableResolver{"FR"},
-			"BE": &unavailableResolver{"BE"},
-			"ES": &unavailableResolver{"ES"},
-			"DE": &unavailableResolver{"DE"},
-			"CH": &unavailableResolver{"CH"},
+			"NL": newNLPlateResolver(client, rdwBaseURL),
+			"ES": newESPlateResolver(client),
+			"FR": newFRPlateResolver(client),
+			"BE": newBEPlateResolver(client),
+			"DE": newDEPlateResolver(),
+			"CH": newCHPlateResolver(client),
 		},
 	}
 }
 
-// NewPlateRegistryFromMap builds a PlateRegistry from an explicit resolver map.
-// Intended for tests that need to inject mock resolvers.
+// NewPlateRegistryFromMap builds a registry from an explicit resolver map (for tests).
 func NewPlateRegistryFromMap(resolvers map[string]PlateResolver) *PlateRegistry {
 	return &PlateRegistry{resolvers: resolvers}
 }
 
 // Resolve normalises plate, selects the resolver for country, and delegates.
-func (r *PlateRegistry) Resolve(ctx context.Context, plate, country string) (string, error) {
+func (r *PlateRegistry) Resolve(ctx context.Context, plate, country string) (*PlateResult, error) {
 	resolver, ok := r.resolvers[strings.ToUpper(country)]
 	if !ok {
-		return "", ErrPlateResolutionUnavailable
+		return nil, ErrPlateResolutionUnavailable
 	}
-	return resolver.Resolve(ctx, NormalizePlate(plate), country)
+	return resolver.Resolve(ctx, NormalizePlate(plate))
 }
 
-// ── NL resolver ───────────────────────────────────────────────────────────────
+// ── shared HTTP helpers ───────────────────────────────────────────────────────
 
-// NLPlateResolver resolves Dutch license plates to VINs using the RDW Open
-// Data m9d7-ebf2 dataset (Gekentekende voertuigen).
-//
-// Query: GET {base}/m9d7-ebf2.json?kenteken={PLATE}
-// Returns field: voertuigidentificatienummer
-//
-// Same API used by NLProvider; no API key required.
-// Rate-limit: ≤1 req/sec per Socrata terms of service.
-type NLPlateResolver struct {
-	client  *http.Client
-	baseURL string // e.g. "https://opendata.rdw.nl/resource"
+// plateUA mimics a real browser to avoid trivial bot-detection on government portals.
+const plateUA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+
+func newPlateHTTPClient(timeout time.Duration) *http.Client {
+	return &http.Client{Timeout: timeout}
 }
 
-// NewNLPlateResolverWithBase creates an NLPlateResolver pointing at a custom
-// base URL. Use in tests to point at a local httptest.Server.
-func NewNLPlateResolverWithBase(baseURL string) *NLPlateResolver {
-	return &NLPlateResolver{
-		client:  &http.Client{Timeout: 5 * time.Second},
-		baseURL: baseURL,
-	}
-}
-
-// rdwPlateRow is the minimum field set from m9d7-ebf2 needed for plate→VIN.
-type rdwPlateRow struct {
-	Kenteken string `json:"kenteken"`
-	VIN      string `json:"voertuigidentificatienummer"`
-}
-
-func (r *NLPlateResolver) Resolve(ctx context.Context, plate, _ string) (string, error) {
-	u := fmt.Sprintf("%s/%s.json?kenteken=%s",
-		r.baseURL, rdwVehiclesDS, url.QueryEscape(plate),
-	)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+// plateGetHTML sends a GET with browser-like headers; returns body + HTTP status.
+func plateGetHTML(ctx context.Context, client *http.Client, rawURL string) ([]byte, int, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
-		return "", fmt.Errorf("build rdw plate request: %w", err)
+		return nil, 0, err
 	}
-	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", plateUA)
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+	req.Header.Set("Accept-Language", "es-ES,es;q=0.9,fr-FR;q=0.8,nl;q=0.7,de;q=0.6,en;q=0.5")
 
-	resp, err := r.client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("rdw plate request: %w", err)
+		return nil, 0, err
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("rdw returned HTTP %d", resp.StatusCode)
-	}
-
-	var rows []rdwPlateRow
-	if err := json.NewDecoder(resp.Body).Decode(&rows); err != nil {
-		return "", fmt.Errorf("decode rdw plate response: %w", err)
-	}
-	if len(rows) == 0 {
-		return "", fmt.Errorf("%w: plate %s not in RDW registry", ErrPlateNotFound, plate)
-	}
-
-	vin := strings.ToUpper(strings.TrimSpace(rows[0].VIN))
-	if vin == "" {
-		return "", fmt.Errorf("%w: no VIN in RDW record for plate %s", ErrPlateNotFound, plate)
-	}
-	return vin, nil
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 512*1024)) // 512 KB cap
+	return body, resp.StatusCode, err
 }
 
-// ── Scaffold resolvers ─────────────────────────────────────────────────────────
-//
-// The following countries have no publicly accessible API for plate→VIN:
-//
-//   FR: SIV (Système d'Immatriculation des Véhicules) is restricted to
-//       professionals; Histovec requires explicit vehicle-owner consent.
-//   BE: DIV (Direction pour l'Immatriculation des Véhicules) is restricted to
-//       approved authorities; Car-Pass does not expose plate→VIN.
-//   ES: DGT TESTRA requires both licence plate and owner DNI; no public lookup.
-//   DE: KBA ZFZR is restricted to authorities; no public plate→VIN API.
-//   CH: MOFIS (fedpol) is restricted; cantonal systems have no open API.
+// plateGetJSON sends a GET requesting JSON; returns body + HTTP status.
+func plateGetJSON(ctx context.Context, client *http.Client, rawURL string) ([]byte, int, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
+	if err != nil {
+		return nil, 0, err
+	}
+	req.Header.Set("User-Agent", plateUA)
+	req.Header.Set("Accept", "application/json")
 
-type unavailableResolver struct{ country string }
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 512*1024))
+	return body, resp.StatusCode, err
+}
 
-func (r *unavailableResolver) Resolve(_ context.Context, _, _ string) (string, error) {
-	return "", ErrPlateResolutionUnavailable
+// plateRetry executes fn up to 1+maxRetries times with exponential backoff (300 ms base).
+// Retries only on transient failures (HTTP 429/5xx or network errors).
+func plateRetry(ctx context.Context, maxRetries int, fn func() ([]byte, int, error)) ([]byte, int, error) {
+	var body []byte
+	var status int
+	var err error
+	for i := 0; i <= maxRetries; i++ {
+		if i > 0 {
+			wait := time.Duration(math.Pow(2, float64(i-1))*300) * time.Millisecond
+			select {
+			case <-ctx.Done():
+				return nil, 0, ctx.Err()
+			case <-time.After(wait):
+			}
+		}
+		body, status, err = fn()
+		if err == nil && status != http.StatusTooManyRequests && status < 500 {
+			return body, status, nil
+		}
+	}
+	return body, status, err
+}
+
+// parseFloat converts a string to float64; returns 0 on failure.
+func parseFloat(s string) float64 {
+	var f float64
+	fmt.Sscanf(strings.TrimSpace(s), "%f", &f)
+	return f
+}
+
+// htmlExtract returns the trimmed text content between two literal string markers.
+// Returns "" when start or end is not found.
+func htmlExtract(body, start, end string) string {
+	i := strings.Index(body, start)
+	if i < 0 {
+		return ""
+	}
+	i += len(start)
+	j := strings.Index(body[i:], end)
+	if j < 0 {
+		return ""
+	}
+	return strings.TrimSpace(body[i : i+j])
+}
+
+// htmlExtractAfter locates `after` in body then returns htmlExtract(…, open, close)
+// on the suffix that follows it.
+func htmlExtractAfter(body, after, open, close string) string {
+	i := strings.Index(body, after)
+	if i < 0 {
+		return ""
+	}
+	return htmlExtract(body[i+len(after):], open, close)
+}
+
+// stripHTMLTags removes any content wrapped in < > from s.
+func stripHTMLTags(s string) string {
+	var b strings.Builder
+	inTag := false
+	for _, r := range s {
+		switch {
+		case r == '<':
+			inTag = true
+		case r == '>':
+			inTag = false
+		case !inTag:
+			b.WriteRune(r)
+		}
+	}
+	return strings.TrimSpace(b.String())
 }

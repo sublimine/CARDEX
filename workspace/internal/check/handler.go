@@ -219,7 +219,7 @@ func (h *Handler) plateReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vin, err := h.plates.Resolve(r.Context(), plate, country)
+	plateResult, err := h.plates.Resolve(r.Context(), plate, country)
 	if err != nil {
 		if errors.Is(err, ErrPlateResolutionUnavailable) {
 			jsonCheckErr(w, http.StatusServiceUnavailable, "plate lookup unavailable for "+country)
@@ -233,36 +233,59 @@ func (h *Handler) plateReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	vin := plateResult.VIN
 	tenantID := r.Header.Get("X-Tenant-ID")
 
-	if cached, ok := h.cache.GetReport(r.Context(), vin); ok {
-		h.cache.RecordRequest(r.Context(), vin, ip, tenantID, true)
-		metricRequestsTotal.WithLabelValues("true").Inc()
-		w.Header().Set("X-Cache-Hit", "true")
-		w.Header().Set("X-Plate-Resolved-VIN", vin)
-		w.Header().Set("X-Data-Sources", sourceHeader(cached.DataSources))
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(cached)
-		return
-	}
-
-	report, err := h.engine.GenerateReport(r.Context(), vin)
-	if err != nil {
-		if errors.Is(err, ErrInvalidVIN) {
-			// Resolver returned a VIN that failed ISO 3779 — resolver bug.
-			jsonCheckErr(w, http.StatusInternalServerError, "resolver returned invalid VIN")
+	// If VIN was resolved, generate (or serve from cache) the full vehicle report.
+	if vin != "" {
+		if cached, ok := h.cache.GetReport(r.Context(), vin); ok {
+			cached.PlateInfo = plateResult
+			h.cache.RecordRequest(r.Context(), vin, ip, tenantID, true)
+			metricRequestsTotal.WithLabelValues("true").Inc()
+			w.Header().Set("X-Cache-Hit", "true")
+			w.Header().Set("X-Plate-Resolved-VIN", vin)
+			w.Header().Set("X-Data-Sources", sourceHeader(cached.DataSources))
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(cached)
 			return
 		}
-		jsonCheckErr(w, http.StatusInternalServerError, "report generation failed")
+
+		report, err := h.engine.GenerateReport(r.Context(), vin)
+		if err != nil {
+			if errors.Is(err, ErrInvalidVIN) {
+				jsonCheckErr(w, http.StatusInternalServerError, "resolver returned invalid VIN")
+				return
+			}
+			jsonCheckErr(w, http.StatusInternalServerError, "report generation failed")
+			return
+		}
+		report.PlateInfo = plateResult
+
+		h.cache.RecordRequest(r.Context(), vin, ip, tenantID, false)
+		w.Header().Set("X-Cache-Hit", "false")
+		w.Header().Set("X-Plate-Resolved-VIN", vin)
+		w.Header().Set("X-Data-Sources", sourceHeader(report.DataSources))
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(report)
 		return
 	}
 
-	h.cache.RecordRequest(r.Context(), vin, ip, tenantID, false)
+	// No VIN — return a partial report built from the plate resolver data only.
+	// This is the case for ES, BE (when no chassis), DE, CH.
+	partial := &VehicleReport{
+		VIN:         "",
+		GeneratedAt: time.Now().UTC(),
+		PlateInfo:   plateResult,
+		DataSources: []DataSource{{
+			ID:     "plate-resolver",
+			Name:   plateResult.Source,
+			Country: country,
+			Status: StatusSuccess,
+		}},
+	}
 	w.Header().Set("X-Cache-Hit", "false")
-	w.Header().Set("X-Plate-Resolved-VIN", vin)
-	w.Header().Set("X-Data-Sources", sourceHeader(report.DataSources))
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(report)
+	_ = json.NewEncoder(w).Encode(partial)
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────

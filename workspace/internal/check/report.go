@@ -19,6 +19,9 @@ type VehicleReport struct {
 	MileageConsistency *ConsistencyScore `json:"mileageConsistency,omitempty"`
 	Alerts             []Alert           `json:"alerts"`
 	DataSources        []DataSource      `json:"dataSources"`
+	// PlateInfo holds the data returned by the plate resolver.
+	// Populated only on the plate→report path; nil on direct VIN lookups.
+	PlateInfo          *PlateResult      `json:"plateInfo,omitempty"`
 }
 
 // CountryReport groups all data returned by a single country's provider.
