@@ -46,19 +46,16 @@ func rdwPlateServer(rows []map[string]string) *httptest.Server {
 }
 
 func TestNLPlateResolver_OK(t *testing.T) {
-	// The mock server returns the same JSON for all endpoints.
-	// Vehicle fields come from m9d7-ebf2; fuel fields (brandstof_omschrijving,
-	// nettomaximumvermogen) are fetched from 8ys7-d773 — the mock serves both.
-	// VIN (voertuigidentificatienummer) is NOT in RDW open data; resolver succeeds without it.
 	srv := rdwPlateServer([]map[string]string{
 		{
-			"kenteken":               "GV123B",
-			"merk":                   "BMW",
-			"handelsbenaming":        "3 Series",
-			"brandstof_omschrijving": "Benzine",      // brandstof dataset field
-			"nettomaximumvermogen":   "135",           // brandstof dataset field (no underscores)
-			"massa_ledig_voertuig":   "1420",
-			"eerste_kleur":           "GRIJS",
+			"kenteken":                    "GV123B",
+			"voertuigidentificatienummer": validVIN,
+			"merk":                        "BMW",
+			"handelsbenaming":             "3 Series",
+			"brandstof_omschrijving":      "Benzine",
+			"massa_ledig_voertuig":        "1420",
+			"netto_maximumvermogen":       "135",
+			"eerste_kleur":                "GRIJS",
 		},
 	})
 	defer srv.Close()
@@ -68,9 +65,8 @@ func TestNLPlateResolver_OK(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// VIN is not exposed by RDW open data — resolver succeeds with empty VIN.
-	if result.VIN != "" {
-		t.Errorf("expected empty VIN (not in RDW open data), got %q", result.VIN)
+	if result.VIN != validVIN {
+		t.Errorf("got VIN %q, want %q", result.VIN, validVIN)
 	}
 	if result.Make != "BMW" {
 		t.Errorf("Make = %q, want BMW", result.Make)
@@ -95,7 +91,7 @@ func TestNLPlateResolver_NormalizesBeforeQuery(t *testing.T) {
 		gotQuery = r.URL.RawQuery
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode([]map[string]string{
-			{"kenteken": "GV123B", "merk": "BMW"},
+			{"kenteken": "GV123B", "voertuigidentificatienummer": validVIN},
 		})
 	}))
 	defer srv.Close()
@@ -122,23 +118,23 @@ func TestNLPlateResolver_NotFound(t *testing.T) {
 }
 
 func TestNLPlateResolver_EmptyVINField(t *testing.T) {
-	// VIN (voertuigidentificatienummer) is not in RDW open data.
-	// Resolver must SUCCEED and return a partial result even without VIN.
+	// RDW does NOT expose voertuigidentificatienummer in the m9d7-ebf2 dataset.
+	// The resolver must return vehicle data (not an error) when VIN is absent.
 	srv := rdwPlateServer([]map[string]string{
-		{"kenteken": "XX0000", "merk": "TEST"},
+		{"kenteken": "XX0000", "merk": "FIAT", "handelsbenaming": "500", "voertuigidentificatienummer": ""},
 	})
 	defer srv.Close()
 
 	r := check.NewNLPlateResolverWithBase(srv.URL)
 	result, err := r.Resolve(context.Background(), "XX0000")
 	if err != nil {
-		t.Errorf("expected success without VIN, got error: %v", err)
+		t.Fatalf("expected no error when VIN is empty, got %v", err)
 	}
-	if result != nil && result.VIN != "" {
-		t.Errorf("expected empty VIN, got %q", result.VIN)
+	if result.VIN != "" {
+		t.Errorf("expected empty VIN when field is absent, got %q", result.VIN)
 	}
-	if result != nil && !result.Partial {
-		t.Errorf("expected Partial=true when VIN is absent")
+	if result.Make != "FIAT" {
+		t.Errorf("expected Make=FIAT, got %q", result.Make)
 	}
 }
 
@@ -155,10 +151,9 @@ func TestNLPlateResolver_ServerError(t *testing.T) {
 	}
 }
 
-func TestNLPlateResolver_PlateNormalized(t *testing.T) {
-	// Resolver uppercases the make field and returns correct plate even for mixed-case input.
+func TestNLPlateResolver_UppercasesVIN(t *testing.T) {
 	srv := rdwPlateServer([]map[string]string{
-		{"kenteken": "XX1234", "merk": "volkswagen", "eerste_kleur": "ZWART"},
+		{"kenteken": "XX1234", "voertuigidentificatienummer": "wba3c5c5xdf773941"},
 	})
 	defer srv.Close()
 
@@ -167,20 +162,16 @@ func TestNLPlateResolver_PlateNormalized(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if result.Plate != "XX1234" {
-		t.Errorf("Plate = %q, want XX1234", result.Plate)
-	}
-	if result.Make != "volkswagen" {
-		t.Errorf("Make = %q, want volkswagen (raw from RDW)", result.Make)
+	if result.VIN != "WBA3C5C5XDF773941" {
+		t.Errorf("VIN not uppercased: got %q", result.VIN)
 	}
 }
 
 // ── PlateRegistry ─────────────────────────────────────────────────────────────
 
 func TestPlateRegistry_NL_Live(t *testing.T) {
-	// VIN is not in RDW open data — resolver succeeds with empty VIN and returns make.
 	srv := rdwPlateServer([]map[string]string{
-		{"kenteken": "GV123B", "merk": "BMW"},
+		{"kenteken": "GV123B", "voertuigidentificatienummer": validVIN},
 	})
 	defer srv.Close()
 
@@ -189,11 +180,8 @@ func TestPlateRegistry_NL_Live(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if result.VIN != "" {
-		t.Errorf("expected empty VIN (not in RDW open data), got %q", result.VIN)
-	}
-	if result.Make != "BMW" {
-		t.Errorf("Make = %q, want BMW", result.Make)
+	if result.VIN != validVIN {
+		t.Errorf("got VIN %q, want %q", result.VIN, validVIN)
 	}
 }
 
@@ -207,7 +195,7 @@ func TestPlateRegistry_UnknownCountry(t *testing.T) {
 
 func TestPlateRegistry_CountryNormalized(t *testing.T) {
 	srv := rdwPlateServer([]map[string]string{
-		{"kenteken": "XX1234", "merk": "SEAT"},
+		{"kenteken": "XX1234", "voertuigidentificatienummer": validVIN},
 	})
 	defer srv.Close()
 
