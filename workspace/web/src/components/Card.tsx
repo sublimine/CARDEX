@@ -1,4 +1,6 @@
+import { motion } from 'framer-motion'
 import React from 'react'
+import { cn } from '../lib/cn'
 
 interface CardProps {
   children: React.ReactNode
@@ -8,15 +10,22 @@ interface CardProps {
   onClick?: () => void
 }
 
-export default function Card({ children, className = '', padding = true, hover, onClick }: CardProps) {
+export default function Card({ children, className, padding = true, hover, onClick }: CardProps) {
+  const interactive = hover || !!onClick
+
   return (
-    <div
+    <motion.div
       onClick={onClick}
-      className={`bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm ${
-        padding ? 'p-5' : ''
-      } ${hover ? 'hover:shadow-md hover:border-brand-200 dark:hover:border-brand-700 cursor-pointer transition-all' : ''} ${className}`}
+      whileHover={interactive ? { y: -2, boxShadow: 'var(--shadow-3)' } : undefined}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+      className={cn(
+        'glass rounded-lg border-border-subtle',
+        padding && 'p-5',
+        interactive && 'cursor-pointer',
+        className
+      )}
     >
       {children}
-    </div>
+    </motion.div>
   )
 }

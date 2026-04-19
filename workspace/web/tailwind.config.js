@@ -108,15 +108,25 @@ export default {
           from: { transform: 'translateX(100%)', opacity: '0' },
           to:   { transform: 'translateX(0)',    opacity: '1' },
         },
+        'shimmer': {
+          from: { transform: 'translateX(-100%)' },
+          to:   { transform: 'translateX(200%)' },
+        },
+        'fade-out': {
+          from: { opacity: '1' },
+          to:   { opacity: '0' },
+        },
       },
 
       // ── Animation shorthands ─────────────────────────────────────────────────
       animation: {
         'fade-in':    'fade-in 250ms ease both',
+        'fade-out':   'fade-out 200ms ease both',
         'slide-up':   'slide-up 250ms ease both',
         'slide-down': 'slide-down 250ms ease both',
         'scale-in':   'scale-in 150ms ease both',
         'glow-pulse': 'glow-pulse 2s ease-in-out infinite',
+        'shimmer':    'shimmer 1.5s infinite',
         // Alias used by existing Toast component
         'in': 'slide-in-from-right 200ms ease-out',
       },

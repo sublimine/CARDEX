@@ -1,75 +1,85 @@
-import React from 'react'
+import { motion } from 'framer-motion'
 import { AlertTriangle, AlertOctagon, Info, Car, RotateCcw, TrendingDown } from 'lucide-react'
+import { cn } from '../lib/cn'
 import type { VehicleAlert } from '../types/check'
 
 const severityConfig = {
   critical: {
-    container: 'bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-700',
-    icon: 'text-red-600 dark:text-red-400',
-    title: 'text-red-800 dark:text-red-300',
-    body: 'text-red-700 dark:text-red-400',
-    badge: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+    bar:   'bg-accent-rose',
+    icon:  'text-accent-rose',
+    title: 'text-rose-300',
+    body:  'text-rose-400/80',
+    badge: 'bg-rose-500/15 text-rose-400 ring-1 ring-rose-500/20',
     label: 'CRÍTICO',
-    IconComponent: AlertOctagon,
+    Icon:  AlertOctagon,
   },
   warning: {
-    container: 'bg-yellow-50 dark:bg-yellow-950/30 border-yellow-300 dark:border-yellow-700',
-    icon: 'text-yellow-600 dark:text-yellow-400',
-    title: 'text-yellow-800 dark:text-yellow-300',
-    body: 'text-yellow-700 dark:text-yellow-500',
-    badge: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
+    bar:   'bg-accent-amber',
+    icon:  'text-accent-amber',
+    title: 'text-amber-300',
+    body:  'text-amber-400/80',
+    badge: 'bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/20',
     label: 'ATENCIÓN',
-    IconComponent: AlertTriangle,
+    Icon:  AlertTriangle,
   },
   info: {
-    container: 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800',
-    icon: 'text-blue-600 dark:text-blue-400',
-    title: 'text-blue-800 dark:text-blue-300',
-    body: 'text-blue-700 dark:text-blue-400',
-    badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+    bar:   'bg-accent-blue',
+    icon:  'text-accent-blue',
+    title: 'text-blue-300',
+    body:  'text-blue-400/80',
+    badge: 'bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/20',
     label: 'INFO',
-    IconComponent: Info,
+    Icon:  Info,
   },
 }
 
 const typeIcon: Record<VehicleAlert['type'], React.ElementType> = {
-  stolen: Car,
-  recall_open: RotateCcw,
+  stolen:                Car,
+  recall_open:           RotateCcw,
   mileage_inconsistency: TrendingDown,
-  total_loss: AlertOctagon,
-  other: AlertTriangle,
+  total_loss:            AlertOctagon,
+  other:                 AlertTriangle,
 }
 
 interface AlertCardProps {
   alert: VehicleAlert
+  index?: number
 }
 
-export default function AlertCard({ alert }: AlertCardProps) {
-  const cfg = severityConfig[alert.severity]
+export default function AlertCard({ alert, index = 0 }: AlertCardProps) {
+  const cfg     = severityConfig[alert.severity]
   const TypeIcon = typeIcon[alert.type] ?? AlertTriangle
 
   return (
-    <div className={`rounded-xl border p-4 ${cfg.container}`}>
-      <div className="flex items-start gap-3">
-        <div className={`shrink-0 mt-0.5 ${cfg.icon}`}>
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.06, duration: 0.25 }}
+      className="relative glass rounded-lg overflow-hidden pl-4"
+    >
+      {/* Colored left bar */}
+      <span className={cn('absolute left-0 inset-y-0 w-1', cfg.bar)} />
+
+      <div className="flex items-start gap-3 p-4">
+        <div className={cn('shrink-0 mt-0.5', cfg.icon)}>
           <TypeIcon className="w-5 h-5" strokeWidth={2} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wide ${cfg.badge}`}>
+            <span className={cn('inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wide', cfg.badge)}>
               {cfg.label}
             </span>
-            <p className={`text-sm font-semibold ${cfg.title}`}>{alert.title}</p>
+            <p className={cn('text-sm font-semibold', cfg.title)}>{alert.title}</p>
           </div>
-          <p className={`text-sm ${cfg.body}`}>{alert.description}</p>
+          <p className={cn('text-sm', cfg.body)}>{alert.description}</p>
           {alert.recommendedAction && (
-            <p className={`mt-1.5 text-xs font-medium ${cfg.body} opacity-90`}>
+            <p className={cn('mt-1.5 text-xs font-medium', cfg.body)}>
               → {alert.recommendedAction}
             </p>
           )}
-          <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500">Fuente: {alert.source}</p>
+          <p className="mt-1.5 text-[11px] text-text-muted">Fuente: {alert.source}</p>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }

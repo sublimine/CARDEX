@@ -1,4 +1,6 @@
+import { motion } from 'framer-motion'
 import React from 'react'
+import { cn } from '../lib/cn'
 import LoadingSpinner from './LoadingSpinner'
 import EmptyState from './EmptyState'
 
@@ -16,6 +18,7 @@ interface TableProps<T> {
   keyExtractor: (row: T) => string
   onRowClick?: (row: T) => void
   emptyMessage?: string
+  className?: string
 }
 
 export default function Table<T>({
@@ -25,6 +28,7 @@ export default function Table<T>({
   keyExtractor,
   onRowClick,
   emptyMessage = 'No data found',
+  className,
 }: TableProps<T>) {
   if (loading) {
     return (
@@ -39,33 +43,45 @@ export default function Table<T>({
   }
 
   return (
-    <div className="overflow-x-auto -mx-5 px-5">
+    <div className={cn('overflow-x-auto -mx-5 px-5', className)}>
       <table className="w-full min-w-[600px]">
         <thead>
-          <tr className="border-b border-gray-200 dark:border-gray-700">
+          <tr className="border-b border-border-subtle">
             {columns.map((col) => (
               <th
                 key={col.key}
-                className={`pb-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider ${col.className ?? ''}`}
+                className={cn(
+                  'pb-3 text-left text-[11px] font-medium text-text-muted uppercase tracking-wider',
+                  col.className
+                )}
               >
                 {col.header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
-          {data.map((row) => (
-            <tr
+        <tbody>
+          {data.map((row, idx) => (
+            <motion.tr
               key={keyExtractor(row)}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.03, duration: 0.2 }}
               onClick={() => onRowClick?.(row)}
-              className={`${onRowClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/30' : ''} transition-colors`}
+              className={cn(
+                'border-b border-border-subtle/50 last:border-0 transition-colors duration-150',
+                onRowClick && 'cursor-pointer hover:bg-glass-subtle'
+              )}
             >
               {columns.map((col) => (
-                <td key={col.key} className={`py-3.5 pr-4 text-sm text-gray-900 dark:text-gray-100 ${col.className ?? ''}`}>
+                <td
+                  key={col.key}
+                  className={cn('py-3.5 pr-4 text-sm text-text-primary', col.className)}
+                >
                   {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key] ?? '')}
                 </td>
               ))}
-            </tr>
+            </motion.tr>
           ))}
         </tbody>
       </table>
