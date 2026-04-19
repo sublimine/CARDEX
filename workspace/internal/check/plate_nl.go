@@ -4,17 +4,18 @@ package check
 //
 // Source:   opendata.rdw.nl — no API key required.
 // Dataset:  m9d7-ebf2  "Gekentekende voertuigen" (primary vehicle register)
+//           8ys7-d773  "Brandstof/emissies" (fuel & emissions, queried by kenteken)
 //           sgfe-77wx  "APK / MOT inspections" (queried by kenteken)
 // Rate-limit: ≤1 req/sec per Socrata terms of service.
 //
 // What this returns:
-//   - VIN (voertuigidentificatienummer) — full 17-char chassis number
 //   - Make, model, body type, color, seats
-//   - Fuel type, displacement, power (kW), CO2 (g/km)
+//   - Fuel type, displacement, power (kW), CO2 (g/km), Euro norm
 //   - Empty weight / gross weight (kg)
 //   - First registration date
 //   - APK (MOT) expiry date → NextInspectionDate
 //   - Last APK date + result → LastInspectionDate / LastInspectionResult
+//   - VIN: NOT available — voertuigidentificatienummer is protected data under Dutch law
 
 import (
 	"context"
@@ -47,28 +48,35 @@ func NewNLPlateResolverWithBase(baseURL string) *nlPlateResolver {
 // rdwPlateVehicle captures the full set of m9d7-ebf2 fields available by kenteken.
 // Field names follow the RDW open-data catalogue (opendata.rdw.nl); update here
 // if RDW renames a field.
+// NOTE: voertuigidentificatienummer (VIN/chassisnummer) is NOT exposed in this
+// dataset — it is protected personal data. Fuel/power/CO2 data is in a linked
+// dataset (8ys7-d773 / brandstof); fetched separately in fetchFuelByPlate.
 type rdwPlateVehicle struct {
 	Kenteken                       string `json:"kenteken"`
-	VIN                            string `json:"voertuigidentificatienummer"`
 	Merk                           string `json:"merk"`
 	Handelsbenaming                string `json:"handelsbenaming"`
-	Inrichting                     string `json:"inrichting"`    // body type
-	EersteKleur                    string `json:"eerste_kleur"`  // primary colour
-	DatumEersteToelating           string `json:"datum_eerste_toelating"`             // YYYYMMDD
-	DatumTenaamstelling            string `json:"datum_tenaamstelling"`               // current registration date
-	BrandstofOmschrijving          string `json:"brandstof_omschrijving"`
-	MassaLeegVoertuig              string `json:"massa_ledig_voertuig"`               // kg
-	ToegestaneMaximumMassaVoertuig string `json:"toegestane_maximum_massa_voertuig"`  // kg
+	Inrichting                     string `json:"inrichting"`   // body type
+	EersteKleur                    string `json:"eerste_kleur"` // primary colour
+	DatumEersteToelating           string `json:"datum_eerste_toelating"`            // YYYYMMDD
+	MassaLeegVoertuig              string `json:"massa_ledig_voertuig"`              // kg
+	ToegestaneMaximumMassaVoertuig string `json:"toegestane_maximum_massa_voertuig"` // kg
 	Voertuigsoort                  string `json:"voertuigsoort"`
-	CilinderInhoud                 string `json:"cilinderinhoud"`                     // cc
+	CilinderInhoud                 string `json:"cilinderinhoud"` // cc
 	AantalCilinders                string `json:"aantal_cilinders"`
 	AantalZitplaatsen              string `json:"aantal_zitplaatsen"`
-	VervaldatumAPK                 string `json:"vervaldatum_apk"`                    // YYYYMMDD
-	NettoMaximumvermogen           string `json:"netto_maximumvermogen"`              // kW
-	CO2UitstootGecombineerd        string `json:"co2_uitstoot_gecombineerd"`          // g/km
-	EuroClassificatie              string `json:"uitstoot_deeltjes_licht"`            // Euro norm proxy
-	WamVerzekerd                   string `json:"wam_verzekerd"`                      // "Ja"/"Nee"
+	VervaldatumAPK                 string `json:"vervaldatum_apk"` // YYYYMMDD
+	WamVerzekerd                   string `json:"wam_verzekerd"`   // "Ja"/"Nee"
 	TenaamstellenMogelijk          string `json:"tenaamstellen_mogelijk"`
+}
+
+// rdwPlateBrandstof captures fuel/emissions data from the 8ys7-d773 dataset
+// (api_gekentekende_voertuigen_brandstof), queried by kenteken.
+type rdwPlateBrandstof struct {
+	Kenteken                 string `json:"kenteken"`
+	BrandstofOmschrijving    string `json:"brandstof_omschrijving"`  // "Benzine", "Diesel", etc.
+	NettoMaximumvermogen     string `json:"nettomaximumvermogen"`    // kW (string in dataset)
+	CO2UitstootGecombineerd  string `json:"co2_uitstoot_gecombineerd"`
+	EmissiecodeOmschrijving  string `json:"emissiecode_omschrijving"` // Euro norm digit: "6" → "Euro 6"
 }
 
 // rdwPlateAPK captures APK inspection rows from sgfe-77wx.
@@ -86,35 +94,26 @@ func (r *nlPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 		return nil, err
 	}
 
-	vin := strings.ToUpper(strings.TrimSpace(vehicle.VIN))
-	if vin == "" {
-		return nil, fmt.Errorf("%w: no VIN in RDW record for plate %s", ErrPlateNotFound, plate)
-	}
-
+	// VIN (voertuigidentificatienummer) is NOT exposed in the m9d7-ebf2 open data
+	// dataset — it is protected personal data under Dutch law. We return all other
+	// available fields and mark the result as partial.
 	result := &PlateResult{
-		VIN:               vin,
 		Plate:             plate,
 		Make:              strings.TrimSpace(vehicle.Merk),
 		Model:             strings.TrimSpace(vehicle.Handelsbenaming),
 		BodyType:          strings.TrimSpace(vehicle.Inrichting),
 		Color:             strings.TrimSpace(vehicle.EersteKleur),
-		FuelType:          strings.TrimSpace(vehicle.BrandstofOmschrijving),
 		DisplacementCC:    parseInt(vehicle.CilinderInhoud),
 		NumberOfCylinders: parseInt(vehicle.AantalCilinders),
 		NumberOfSeats:     parseInt(vehicle.AantalZitplaatsen),
 		EmptyWeightKg:     parseInt(vehicle.MassaLeegVoertuig),
 		GrossWeightKg:     parseInt(vehicle.ToegestaneMaximumMassaVoertuig),
 		Country:           "NL",
-		Source:            "RDW Open Data — m9d7-ebf2 (Gekentekende voertuigen)",
+		Source:            "RDW Open Data — m9d7-ebf2 + 8ys7-d773 (Gekentekende voertuigen)",
 		FetchedAt:         time.Now().UTC(),
+		Partial:           true, // VIN not in open data
 	}
 
-	if kw := parseFloat(vehicle.NettoMaximumvermogen); kw > 0 {
-		result.PowerKW = kw
-	}
-	if co2 := parseFloat(vehicle.CO2UitstootGecombineerd); co2 > 0 {
-		result.CO2GPerKm = co2
-	}
 	if t := parseRDWDate(vehicle.DatumEersteToelating); !t.IsZero() {
 		result.FirstRegistration = &t
 	}
@@ -128,9 +127,22 @@ func (r *nlPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 		result.RegistrationStatus = "uninsured"
 	}
 
-	// 2. Enrich with APK (MOT) history — best-effort; failure is non-fatal.
+	// 2. Enrich with fuel/emissions data from the brandstof dataset (best-effort).
+	if fuel, err := r.fetchFuelByPlate(ctx, plate); err == nil && fuel != nil {
+		result.FuelType = strings.TrimSpace(fuel.BrandstofOmschrijving)
+		if kw := parseFloat(fuel.NettoMaximumvermogen); kw > 0 {
+			result.PowerKW = kw
+		}
+		if co2 := parseFloat(fuel.CO2UitstootGecombineerd); co2 > 0 {
+			result.CO2GPerKm = co2
+		}
+		if fuel.EmissiecodeOmschrijving != "" {
+			result.EuroNorm = "Euro " + strings.TrimSpace(fuel.EmissiecodeOmschrijving)
+		}
+	}
+
+	// 3. Enrich with APK (MOT) history — best-effort; failure is non-fatal.
 	if inspections, err := r.fetchAPKByPlate(ctx, plate); err == nil && len(inspections) > 0 {
-		// Most-recent first.
 		latest := inspections[0]
 		if t := parseRDWDateTime(latest.MeldDatum); !t.IsZero() {
 			result.LastInspectionDate = &t
@@ -183,4 +195,26 @@ func (r *nlPlateResolver) fetchAPKByPlate(ctx context.Context, plate string) ([]
 		return nil, err
 	}
 	return rows, nil
+}
+
+// fetchFuelByPlate queries the 8ys7-d773 brandstof dataset for fuel/emissions data.
+// This is a linked dataset — not part of m9d7-ebf2 — and is queried by kenteken.
+const rdwBrandstofDS = "8ys7-d773"
+
+func (r *nlPlateResolver) fetchFuelByPlate(ctx context.Context, plate string) (*rdwPlateBrandstof, error) {
+	query := fmt.Sprintf("%s/%s.json?kenteken=%s&$limit=1",
+		r.baseURL, rdwBrandstofDS, url.QueryEscape(plate),
+	)
+	body, status, err := plateGetJSON(ctx, r.client, query)
+	if err != nil || status != http.StatusOK {
+		return nil, fmt.Errorf("RDW brandstof request: status=%d err=%v", status, err)
+	}
+	var rows []rdwPlateBrandstof
+	if err := json.Unmarshal(body, &rows); err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, fmt.Errorf("no fuel data for plate %s", plate)
+	}
+	return &rows[0], nil
 }

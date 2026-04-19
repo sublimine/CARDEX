@@ -96,14 +96,18 @@ func (b *bePlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 		b.fetchCarPass(ctx, chassisFromGOCA, result)
 	}
 
-	if gocaErr != nil && result.LastInspectionDate == nil {
-		// GOCA failed and we got nothing.
-		return nil, fmt.Errorf(
-			"%w: Belgium (BE) — GOCA portal error (%v). "+
-				"DIV requires eID auth. Belgian plates are personal (not vehicle-bound). "+
-				"Investigated: goca.be, mobilit.belgium.be, car-pass.be",
-			ErrPlateResolutionUnavailable, gocaErr,
-		)
+	// If GOCA returned nothing useful (either an error, or a redirect to a site
+	// with no plate data), report unavailable rather than returning an empty result.
+	hasData := result.LastInspectionDate != nil || result.VIN != "" || result.Make != ""
+	if !hasData {
+		msg := "Belgium (BE) — GOCA vehicle inspection lookup unavailable. " +
+			"DIV (vehicle registration) requires eID auth. " +
+			"Belgian plates are personal (move with owner, not vehicle). " +
+			"Investigated: goca.be, mobilit.belgium.be, car-pass.be"
+		if gocaErr != nil {
+			msg = fmt.Sprintf("%s — GOCA error: %v", msg, gocaErr)
+		}
+		return nil, fmt.Errorf("%w: %s", ErrPlateResolutionUnavailable, msg)
 	}
 
 	if result.LastInspectionDate != nil || result.VIN != "" {
