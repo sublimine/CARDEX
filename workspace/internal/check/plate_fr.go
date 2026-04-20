@@ -4,19 +4,31 @@ package check
 //
 // The site renders vehicle data server-side. For any valid French plate
 // the SSR HTML always includes:
-//   <title>{PLATE} - {Make} {Year}</title>
-//   <meta name="description" content="{Make} {Model} immatriculée en France ...
-//     couleur extérieure {Color}, son carburant {Fuel}, ... capacité de {CC} cm³">
 //
-// Not-found detection: page title contains "Téléchargez l'application" instead
-// of the plate number.
+//   1. <title>{PLATE} - {Make} {Year}</title>
+//   2. <meta name="description" content="{Make} {Model} immatriculée en France
+//      sous le numéro de plaque d'immatriculation {PLATE} en {Year}. Découvrez
+//      son carburant {Fuel}, sa {Transmission} et sa capacité de {CC} cm³">
+//   3. <astro-island ... props="{&quot;input&quot;:[0,&quot;{PLATE}&quot;],
+//      &quot;brandModelYear&quot;:[0,{&quot;brand&quot;:[0,&quot;{MAKE}&quot;],
+//      &quot;model&quot;:[0,&quot;{MODEL}&quot;],&quot;year&quot;:[0,&quot;{YEAR}&quot;]}] …}">
+//
+// The astro-island `brandModelYear` prop is the most reliable signal — it is a
+// structured JSON object the site injects for hydration. We parse it first,
+// then fall back to meta description and title for fields not exposed there
+// (fuel, transmission, displacement).
+//
+// Not-found detection: the page still returns HTTP 200 but the <title> no
+// longer contains the plate, and no `brandModelYear` prop is rendered.
 //
 // VIN availability: NOT available from this public source.
-// Data available: Make, Model, Year, Color, Fuel type, Displacement CC.
+// Other sources investigated and rejected — see FR_ENDPOINTS.md.
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"html"
 	"io"
 	"net/http"
 	"regexp"
@@ -79,9 +91,10 @@ func (r *frPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 
 	bodyStr := string(body)
 
-	// Not-found: title doesn't contain the plate.
+	// Not-found: title doesn't contain the plate AND no brandModelYear prop.
 	title := htmlExtract(bodyStr, "<title>", "</title>")
-	if title == "" || !strings.Contains(title, plate) {
+	hasBMY := strings.Contains(bodyStr, "brandModelYear")
+	if (title == "" || !strings.Contains(title, plate)) && !hasBMY {
 		return nil, fmt.Errorf("%w: plate %s not found in FR public registry", ErrPlateNotFound, plate)
 	}
 
@@ -93,10 +106,13 @@ func (r *frPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 		Partial:   true,
 	}
 
-	// Parse title: "{PLATE} - {Make} {Year}"
+	// Primary: structured brandModelYear prop from the Report astro-island.
+	parseFRAstroIslandProps(bodyStr, result)
+
+	// Secondary: title ("{PLATE} - {Make} {Year}") — only fills gaps.
 	parsefrTitle(title, plate, result)
 
-	// Parse meta description for richer data.
+	// Tertiary: meta description for fuel, displacement, colour.
 	metaDesc := extractMetaDescription(bodyStr)
 	if metaDesc != "" {
 		parseFRMetaDesc(metaDesc, result)
@@ -108,6 +124,94 @@ func (r *frPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 
 	return result, nil
 }
+
+// parseFRAstroIslandProps extracts the `brandModelYear` object from the
+// astro-island prop attribute attached to the Report component. Astro encodes
+// each field as a 2-tuple `[0, value]`; we unwrap them into a flat JSON object
+// before Unmarshalling into our struct.
+//
+// Expected HTML (simplified, with HTML-entity-escaped JSON):
+//
+//	<astro-island … props="{&quot;input&quot;:[0,&quot;FX055SH&quot;],
+//	  &quot;brandModelYear&quot;:[0,{&quot;brand&quot;:[0,&quot;DACIA&quot;],
+//	  &quot;model&quot;:[0,&quot;SANDERO III&quot;],&quot;year&quot;:[0,&quot;2021&quot;]}], …}">
+func parseFRAstroIslandProps(body string, result *PlateResult) {
+	// Find any astro-island tag whose props mentions brandModelYear.
+	needle := "brandModelYear"
+	idx := strings.Index(body, needle)
+	if idx < 0 {
+		return
+	}
+
+	// Walk backward to the enclosing props=".
+	propsAttr := `props="`
+	start := strings.LastIndex(body[:idx], propsAttr)
+	if start < 0 {
+		return
+	}
+	start += len(propsAttr)
+	end := strings.IndexByte(body[start:], '"')
+	if end <= 0 {
+		return
+	}
+	propsJSON := html.UnescapeString(body[start : start+end])
+
+	// The prop is wrapped as [0, {...}] — extract that inner object.
+	bmyStart := strings.Index(propsJSON, `"brandModelYear":[0,`)
+	if bmyStart < 0 {
+		return
+	}
+	tail := propsJSON[bmyStart+len(`"brandModelYear":[0,`):]
+	depth := 0
+	objEnd := -1
+	for i, r := range tail {
+		switch r {
+		case '{':
+			depth++
+		case '}':
+			depth--
+			if depth == 0 {
+				objEnd = i + 1
+			}
+		}
+		if objEnd > 0 {
+			break
+		}
+	}
+	if objEnd <= 0 {
+		return
+	}
+	bmyRaw := tail[:objEnd]
+
+	// bmyRaw looks like {"brand":[0,"DACIA"],"model":[0,"SANDERO III"],"year":[0,"2021"]}
+	// Unwrap each [0, value] tuple to its plain value so a plain JSON decoder works.
+	unwrapped := frAstroTupleRE.ReplaceAllString(bmyRaw, `:"$1"`)
+
+	var bmy struct {
+		Brand string `json:"brand"`
+		Model string `json:"model"`
+		Year  string `json:"year"`
+	}
+	if err := json.Unmarshal([]byte(unwrapped), &bmy); err != nil {
+		return
+	}
+	if bmy.Brand != "" && result.Make == "" {
+		result.Make = strings.TrimSpace(bmy.Brand)
+	}
+	if bmy.Model != "" && result.Model == "" {
+		result.Model = strings.TrimSpace(bmy.Model)
+	}
+	if bmy.Year != "" && result.FirstRegistration == nil {
+		if yr, err := strconv.Atoi(bmy.Year); err == nil && yr >= 1950 && yr <= 2030 {
+			t := time.Date(yr, 1, 1, 0, 0, 0, 0, time.UTC)
+			result.FirstRegistration = &t
+		}
+	}
+}
+
+// frAstroTupleRE matches Astro's `[0, "<value>"]` wrapper around a primitive
+// string so the surrounding JSON can be decoded as a plain object.
+var frAstroTupleRE = regexp.MustCompile(`:\[0,"([^"]*)"\]`)
 
 // parsefrTitle parses "{PLATE} - {Make} {Year}" from the <title> element.
 func parsefrTitle(title, plate string, r *PlateResult) {
