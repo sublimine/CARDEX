@@ -35,11 +35,14 @@ type PlateResult struct {
 	FuelType          string  `json:"fuel_type,omitempty"`
 	DisplacementCC    int     `json:"displacement_cc,omitempty"`
 	PowerKW           float64 `json:"power_kw,omitempty"`
+	PowerCV           int     `json:"power_cv,omitempty"` // metric horsepower (ES/FR convention)
 	EmptyWeightKg     int     `json:"empty_weight_kg,omitempty"`
 	GrossWeightKg     int     `json:"gross_weight_kg,omitempty"`
 	CO2GPerKm         float64 `json:"co2_g_per_km,omitempty"`
 	EuroNorm          string  `json:"euro_norm,omitempty"`
 	BodyType          string  `json:"body_type,omitempty"`
+	Transmission      string  `json:"transmission,omitempty"` // Manual / Automático / CVT …
+	EngineCode        string  `json:"engine_code,omitempty"`  // OEM engine identifier (e.g. CFGB)
 	Color             string  `json:"color,omitempty"`
 	SecondaryColor    string  `json:"secondary_color,omitempty"`
 	NumberOfSeats     int     `json:"number_of_seats,omitempty"`
@@ -48,6 +51,7 @@ type PlateResult struct {
 	NumberOfAxles     int     `json:"number_of_axles,omitempty"`
 	NumberOfWheels    int     `json:"number_of_wheels,omitempty"`
 	WheelbaseCm       int     `json:"wheelbase_cm,omitempty"`
+	ModelYear         int     `json:"model_year,omitempty"` // annee_modelo — may differ from first_registration year
 
 	// Fuel consumption (L/100km) — NL RDW brandstof dataset
 	FuelConsumptionCombinedL100km   float64 `json:"fuel_consumption_combined_l100km,omitempty"`
@@ -91,6 +95,9 @@ type PlateResult struct {
 	// Mileage (exposed by some portals: NL via APK dataset, BE via Car-Pass)
 	MileageKm   int        `json:"mileage_km,omitempty"`
 	MileageDate *time.Time `json:"mileage_date,omitempty"`
+
+	// Ownership history (ES: comprobarmatricula exposes owner count)
+	PreviousOwners int `json:"previous_owners,omitempty"`
 
 	// Geographic context (DE: Zulassungsbezirk; CH: Canton)
 	District string `json:"district,omitempty"`

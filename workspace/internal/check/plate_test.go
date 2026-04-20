@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -622,6 +623,181 @@ func TestESPlateResolver_InvalidFormat(t *testing.T) {
 	_, err := reg.Resolve(context.Background(), "AB", "ES") // too short
 	if err == nil {
 		t.Error("expected error for too-short ES plate")
+	}
+}
+
+// esMockServer wires comprobarmatricula.com page + API + DGT distintivo onto
+// a single httptest server so tests can assert on real parsing.
+func esMockServer(t *testing.T, cmToken string, cmJSON string, dgtBadge string) *httptest.Server {
+	t.Helper()
+	mux := http.NewServeMux()
+
+	// Plate page: returns HTML with the hidden _g_tk input. Real CM always
+	// serves HTTP 404 here, mirror that quirk.
+	mux.HandleFunc("/matricula/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, `<html><body>
+<input type="hidden" id="_g_tk" value="%s">
+<input type="text" id="_g_hp" name="_website" value="">
+</body></html>`, cmToken)
+	})
+
+	// JSON API: echoes the fixture back when token matches.
+	mux.HandleFunc("/api/vehiculo.php", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("_tk") != cmToken {
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = fmt.Fprint(w, `{"ok":0,"err":"Forbidden"}`)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, cmJSON)
+	})
+
+	// DGT distintivo ambiental page.
+	mux.HandleFunc("/dgt/", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		if dgtBadge == "" {
+			_, _ = fmt.Fprint(w, "No se ha encontrado ningún resultado")
+			return
+		}
+		_, _ = fmt.Fprintf(w, `<img src="/img/distintivo_%s_sin_fondo.svg">`, dgtBadge)
+	})
+
+	return httptest.NewServer(mux)
+}
+
+func TestESPlateResolver_FullResolve(t *testing.T) {
+	const token = "1776671834.abcdef.0123456789"
+	cmJSON := `{"ok":1,"mat":"8000LVY","brand":"Vw","marca_oficial":"VW",
+"model":"Tiguan","modelo_completo":"TIGUAN (5N_)","version":"2.0 TDI 4motion | 170 cv",
+"fuel":"Diésel","potencia_cv":170,"potencia_kw":125,"cilindrada_cc":"1968 cc",
+"carroceria":"SUV","caja":"Manual","codigo_motor":"CFGB","vin":"WVGZZZ5NZAW021819",
+"fecha_matriculacion":"02/09/2009","annee_modelo":"2009","etiq":"B",
+"itv_date":"20/10/2027","owners":3}`
+	srv := esMockServer(t, token, cmJSON, "C")
+	defer srv.Close()
+
+	r := check.NewESPlateResolverWithBases(srv.URL, srv.URL+"/dgt/")
+	result, err := r.Resolve(context.Background(), "8000LVY")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.VIN != "WVGZZZ5NZAW021819" {
+		t.Errorf("VIN = %q, want WVGZZZ5NZAW021819", result.VIN)
+	}
+	if result.Make != "VW" {
+		t.Errorf("Make = %q, want VW", result.Make)
+	}
+	if result.Model != "TIGUAN (5N_)" {
+		t.Errorf("Model = %q, want TIGUAN (5N_)", result.Model)
+	}
+	if result.Variant != "2.0 TDI 4motion | 170 cv" {
+		t.Errorf("Variant = %q, want 2.0 TDI 4motion | 170 cv", result.Variant)
+	}
+	if result.FuelType != "Diésel" {
+		t.Errorf("FuelType = %q, want Diésel", result.FuelType)
+	}
+	if result.PowerKW != 125 {
+		t.Errorf("PowerKW = %v, want 125", result.PowerKW)
+	}
+	if result.DisplacementCC != 1968 {
+		t.Errorf("DisplacementCC = %d, want 1968", result.DisplacementCC)
+	}
+	if result.BodyType != "SUV" {
+		t.Errorf("BodyType = %q, want SUV", result.BodyType)
+	}
+	if result.PowerCV != 170 {
+		t.Errorf("PowerCV = %d, want 170", result.PowerCV)
+	}
+	if result.Transmission != "Manual" {
+		t.Errorf("Transmission = %q, want Manual", result.Transmission)
+	}
+	if result.EngineCode != "CFGB" {
+		t.Errorf("EngineCode = %q, want CFGB", result.EngineCode)
+	}
+	if result.PreviousOwners != 3 {
+		t.Errorf("PreviousOwners = %d, want 3", result.PreviousOwners)
+	}
+	if result.ModelYear != 2009 {
+		t.Errorf("ModelYear = %d, want 2009", result.ModelYear)
+	}
+	// DGT is the canonical badge source — must win over etiq from CM.
+	if result.EnvironmentalBadge != "C" {
+		t.Errorf("EnvironmentalBadge = %q, want C (from DGT)", result.EnvironmentalBadge)
+	}
+	if result.FirstRegistration == nil || result.FirstRegistration.Format("2006-01-02") != "2009-09-02" {
+		t.Errorf("FirstRegistration = %v, want 2009-09-02", result.FirstRegistration)
+	}
+	if result.NextInspectionDate == nil || result.NextInspectionDate.Format("2006-01-02") != "2027-10-20" {
+		t.Errorf("NextInspectionDate = %v, want 2027-10-20", result.NextInspectionDate)
+	}
+	if result.Partial {
+		t.Error("expected Partial=false when CM returned data")
+	}
+	if !strings.Contains(result.Source, "comprobarmatricula") || !strings.Contains(result.Source, "dgt") {
+		t.Errorf("Source = %q, want both CM and DGT mentioned", result.Source)
+	}
+}
+
+func TestESPlateResolver_DGTOnlyPartial(t *testing.T) {
+	const token = "tok"
+	srv := esMockServer(t, token, `{"ok":0}`, "CERO")
+	defer srv.Close()
+
+	r := check.NewESPlateResolverWithBases(srv.URL, srv.URL+"/dgt/")
+	result, err := r.Resolve(context.Background(), "1234BCJ")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.EnvironmentalBadge != "0" {
+		t.Errorf("EnvironmentalBadge = %q, want 0 (CERO)", result.EnvironmentalBadge)
+	}
+	if result.VIN != "" {
+		t.Errorf("VIN should be empty when CM didn't return data, got %q", result.VIN)
+	}
+	if !result.Partial {
+		t.Error("expected Partial=true when only DGT returned data")
+	}
+}
+
+func TestESPlateResolver_AllSourcesFail(t *testing.T) {
+	// Both endpoints return no data.
+	const token = "tok"
+	srv := esMockServer(t, token, `{"ok":0}`, "")
+	defer srv.Close()
+
+	r := check.NewESPlateResolverWithBases(srv.URL, srv.URL+"/dgt/")
+	_, err := r.Resolve(context.Background(), "9999AAA")
+	if !errors.Is(err, check.ErrPlateNotFound) {
+		t.Errorf("want ErrPlateNotFound, got %v", err)
+	}
+}
+
+// TestESPlateResolver_Live hits the real production endpoints. It is skipped
+// unless CARDEX_LIVE_ES=1 to keep the default test run hermetic.
+func TestESPlateResolver_Live(t *testing.T) {
+	if os.Getenv("CARDEX_LIVE_ES") != "1" {
+		t.Skip("live ES test skipped; set CARDEX_LIVE_ES=1 to enable")
+	}
+	reg := check.NewPlateRegistry("http://localhost:0")
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	result, err := reg.Resolve(ctx, "8000LVY", "ES")
+	if err != nil {
+		t.Fatalf("live resolve failed: %v", err)
+	}
+	// DGT must always work — it has no rate limit.
+	if result.EnvironmentalBadge == "" {
+		t.Error("live result missing DGT environmental badge")
+	}
+	t.Logf("live result: VIN=%s make=%s model=%s variant=%s fuel=%s kW=%v cc=%d body=%s badge=%s firstReg=%v itv=%v partial=%v source=%s",
+		result.VIN, result.Make, result.Model, result.Variant, result.FuelType,
+		result.PowerKW, result.DisplacementCC, result.BodyType, result.EnvironmentalBadge,
+		result.FirstRegistration, result.NextInspectionDate, result.Partial, result.Source)
+	// Rate-limited CM response → VIN absent is legitimate. Do not fail.
+	if result.VIN == "" {
+		t.Log("VIN absent — likely CM rate-limit; DGT-only partial is expected fallback")
 	}
 }
 

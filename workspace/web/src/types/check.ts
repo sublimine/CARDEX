@@ -125,11 +125,14 @@ export interface PlateInfo {
   fuel_type?: string
   displacement_cc?: number
   power_kw?: number
+  power_cv?: number
   empty_weight_kg?: number
   gross_weight_kg?: number
   co2_g_per_km?: number
   euro_norm?: string
   body_type?: string
+  transmission?: string
+  engine_code?: string
   color?: string
   secondary_color?: string
   number_of_seats?: number
@@ -138,6 +141,7 @@ export interface PlateInfo {
   number_of_axles?: number
   number_of_wheels?: number
   wheelbase_cm?: number
+  model_year?: number
   // Fuel consumption (L/100km)
   fuel_consumption_combined_l100km?: number
   fuel_consumption_city_l100km?: number
@@ -172,6 +176,8 @@ export interface PlateInfo {
   // Mileage
   mileage_km?: number
   mileage_date?: string
+  // Ownership
+  previous_owners?: number
   // Other
   district?: string
   environmental_badge?: string
