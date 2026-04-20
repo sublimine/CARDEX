@@ -5,6 +5,22 @@ Recorded: 2026-04-20. Test plates: `8000LVY` (VW Tiguan 2009), `1234BCJ` (Seat I
 Only public, unauthenticated, free HTTP endpoints are listed. APIs behind Cl@ve,
 digital certificate, payment, or APK decompilation are explicitly excluded.
 
+**Rate-limit mitigation in this package.** comprobarmatricula.com enforces a
+per-IP anti-scrape bucket (returns `{"ok":0,"limit":true}` after ~3 lookups and
+`{"ok":0,"err":"Forbidden"}` when the API is hit without a valid page session).
+The resolver addresses this on three fronts:
+
+1. **Persistent plate cache** (`plate_cache` table, `cache.go`): once CM
+   returns a rich record, the full `PlateResult` is stored for 30 days. Repeat
+   lookups skip CM entirely. Partial (DGT-only) results are cached 1 hour so
+   CM is retried after its bucket refills. A stale cache is surfaced when all
+   live sources fail rather than letting the user see a blank report.
+2. **User-Agent rotation** (`cmUserAgents` pool): randomised per lookup so
+   requests don't cluster under one fingerprint.
+3. **Per-request cookie jar**: every lookup starts with a fresh jar; CM's
+   anti-scrape cookies are harvested from the page hit and replayed on the
+   API call within the same logical session.
+
 ---
 
 ## 1. comprobarmatricula.com — PRIMARY SOURCE (rich dataset incl. VIN)
@@ -177,6 +193,27 @@ exist either. Skipped.
 - **Ministerio de Transportes / MITMA** — no public plate API; data is
   released as bulk statistical CSVs, not per-plate.
 
+## 8. Re-probed 2026-04-20 — no new viable public source
+
+- **check-vehiculo.es** — DNS resolution fails (domain inactive).
+- **infocoches.com** — permanent 301 to `forocoches.com` (forum, no plate DB).
+- **matriculas.info** — GoDaddy page-builder storefront, no lookup form.
+- **coches.net/matriculas/** — HTTP 403 (Cloudflare challenge, no public path).
+- **autocasion.com/matricula/** — HTTP 404 (no such endpoint).
+- **km77.com** — model catalog; indexed by make/model, not plate. Could be
+  used for model-level specs enrichment post-VIN, but contributes nothing to
+  plate → vehicle resolution.
+- **plateomatic.com** — lander redirect, no lookup.
+- **consulta-dgt.es / consultadni.es / numrplate.com / matricula-coches.com /
+  revisionvehiculos.com** — DNS/connection failures.
+- **ADEME (France)** — no public dataset with ES plate data; emissions
+  catalogue is FR-only and keyed by variant name.
+
+**Conclusion.** As of 2026-04-20, comprobarmatricula.com remains the only
+free public ES source that exposes VIN / make / model / engine / ITV per plate.
+The layered cache + UA rotation strategy described above is the correct
+mitigation — there is no second rich source to fall back to.
+
 ---
 
 ## Summary — what the resolver ships
@@ -185,6 +222,8 @@ exist either. Skipped.
 |------------------------------|---------------------------------------------------------------------------------|---------|
 | comprobarmatricula.com       | VIN, make, model, variant, fuel, kW, cc, body, gearbox, first reg, ITV, owners  | ✅      |
 | DGT distintivo ambiental     | Environmental badge (canonical)                                                 | ✅      |
+| `plate_cache` (local SQLite) | Full PlateResult persisted 30 days after a successful CM lookup                 | n/a     |
 
 These two sources in parallel deliver the complete PlateResult struct
 (minus fields no ES portal publishes publicly: CO2, gross weight, colour).
+The local cache extends this coverage across IP rate-limit windows.

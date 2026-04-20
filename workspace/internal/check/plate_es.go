@@ -26,6 +26,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -39,6 +40,7 @@ type esPlateResolver struct {
 	client  *http.Client
 	cmBase  string // comprobarmatricula.com base (no trailing slash)
 	dgtBase string // sede.dgt.gob.es distintivo-ambiental page base (trailing slash)
+	cache   *Cache // optional — when set, cache-first lookup survives CM rate-limits
 }
 
 func newESPlateResolver(client *http.Client) *esPlateResolver {
@@ -49,6 +51,13 @@ func newESPlateResolver(client *http.Client) *esPlateResolver {
 	}
 }
 
+// WithCache attaches a persistent plate cache so repeat lookups survive
+// comprobarmatricula's per-IP rate-limit.
+func (r *esPlateResolver) WithCache(c *Cache) *esPlateResolver {
+	r.cache = c
+	return r
+}
+
 // NewESPlateResolverWithBases creates an ES resolver with custom URL bases
 // (used by tests to substitute httptest servers).
 func NewESPlateResolverWithBases(cmBase, dgtBase string) *esPlateResolver {
@@ -57,6 +66,22 @@ func NewESPlateResolverWithBases(cmBase, dgtBase string) *esPlateResolver {
 		cmBase:  strings.TrimRight(cmBase, "/"),
 		dgtBase: dgtBase,
 	}
+}
+
+// cmUserAgents is a pool of current desktop browser UAs. comprobarmatricula
+// runs a simple anti-scrape heuristic that pattern-matches on UA strings; we
+// rotate to avoid all requests looking like the same client.
+var cmUserAgents = []string{
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
+	"Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
+	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0",
+}
+
+func pickCMUserAgent() string {
+	return cmUserAgents[rand.Intn(len(cmUserAgents))]
 }
 
 // validateESPlate ensures the plate has a plausible Spanish format.
@@ -77,6 +102,26 @@ func validateESPlate(plate string) error {
 func (r *esPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResult, error) {
 	if err := validateESPlate(plate); err != nil {
 		return nil, err
+	}
+
+	// Cache-first: serve a rich (full=true) cached result immediately. For
+	// partial cached entries, we still try the network so a later CM success
+	// can upgrade the cache, but we'll merge them if the network call fails.
+	var cached *PlateResult
+	var cachedFull bool
+	if r.cache != nil {
+		if cr, full, ok := r.cache.GetPlate(ctx, "ES", plate); ok {
+			if full {
+				metricPlateCacheHit.WithLabelValues("ES", "full").Inc()
+				fresh := *cr
+				fresh.FetchedAt = time.Now().UTC()
+				fresh.Source = cr.Source + " (cached)"
+				return &fresh, nil
+			}
+			metricPlateCacheHit.WithLabelValues("ES", "partial").Inc()
+			cached = cr
+			cachedFull = false
+		}
 	}
 
 	result := &PlateResult{
@@ -119,6 +164,15 @@ func (r *esPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 	}
 	result.Source = strings.Join(sources, " + ")
 
+	// If the live call landed nothing new but we have a prior partial cache,
+	// surface the cached data instead of failing the user outright.
+	if !haveCM && result.EnvironmentalBadge == "" && cached != nil {
+		fresh := *cached
+		fresh.FetchedAt = time.Now().UTC()
+		fresh.Source = cached.Source + " (stale cache — live sources unavailable)"
+		return &fresh, nil
+	}
+
 	// Nothing extracted at all → treat as plate not found, unless both sources
 	// errored transiently, in which case bubble an upstream-unavailable error.
 	if !haveCM && result.EnvironmentalBadge == "" {
@@ -132,6 +186,18 @@ func (r *esPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 
 	// Partial when primary source missing (CM provides the meaty fields).
 	result.Partial = !haveCM
+
+	// Persist. Rich (haveCM) results get the 30-day TTL; partial (DGT-only)
+	// results get a 1-hour TTL so we keep probing CM. Don't downgrade a
+	// richer prior cache if the new lookup is partial.
+	if r.cache != nil {
+		if haveCM {
+			_ = r.cache.SetPlate(ctx, "ES", plate, result, true)
+		} else if !cachedFull {
+			_ = r.cache.SetPlate(ctx, "ES", plate, result, false)
+		}
+	}
+
 	return result, nil
 }
 
@@ -172,6 +238,12 @@ var reCMToken = regexp.MustCompile(`id="_g_tk"\s+value="([^"]+)"`)
 func (r *esPlateResolver) fetchComprobarMatricula(ctx context.Context, plate string) (cmVehiculo, bool, bool, error) {
 	pageURL := r.cmBase + "/matricula/" + url.PathEscape(plate) + "/"
 
+	// Rotate UA per lookup — CM's anti-scrape heuristics cluster by UA string,
+	// so varying it makes requests look less like the same scripted client.
+	// Both the page fetch and the API call use the same UA (a real browser
+	// would not switch UAs between the two requests of a single navigation).
+	ua := pickCMUserAgent()
+
 	// Use a per-request cookie jar. The site sets anti-scrape cookies on the
 	// page hit that the API endpoint validates; without them the API answers
 	// "limit" even on the first call.
@@ -187,7 +259,7 @@ func (r *esPlateResolver) fetchComprobarMatricula(ctx context.Context, plate str
 		if rerr != nil {
 			return nil, 0, rerr
 		}
-		req.Header.Set("User-Agent", plateUA)
+		req.Header.Set("User-Agent", ua)
 		req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 		req.Header.Set("Accept-Language", "es-ES,es;q=0.9,en;q=0.5")
 		resp, rerr := client.Do(req)
@@ -220,7 +292,7 @@ func (r *esPlateResolver) fetchComprobarMatricula(ctx context.Context, plate str
 		if rerr != nil {
 			return nil, 0, rerr
 		}
-		req.Header.Set("User-Agent", plateUA)
+		req.Header.Set("User-Agent", ua)
 		req.Header.Set("Referer", pageURL)
 		req.Header.Set("Accept", "application/json")
 		req.Header.Set("X-Requested-With", "XMLHttpRequest")
@@ -247,7 +319,13 @@ func (r *esPlateResolver) fetchComprobarMatricula(ctx context.Context, plate str
 		// {"ok":0,"limit":true} → server IP has been rate-limited (per-IP
 		// anti-scrape bucket, documented in ES_ENDPOINTS.md). Surface this
 		// so the caller can show "rate-limited" instead of pretending only
-		// DGT was queried.
+		// DGT was queried. Also fires on {"ok":0,"err":"Forbidden"} when the
+		// API is called without a fresh page session.
+		if v.Limit {
+			metricCMRateLimited.WithLabelValues("limit").Inc()
+		} else {
+			metricCMRateLimited.WithLabelValues("other").Inc()
+		}
 		return cmVehiculo{}, false, v.Limit, nil
 	}
 	return v, true, false, nil
