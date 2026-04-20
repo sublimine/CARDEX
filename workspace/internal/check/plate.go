@@ -41,18 +41,52 @@ type PlateResult struct {
 	EuroNorm          string  `json:"euro_norm,omitempty"`
 	BodyType          string  `json:"body_type,omitempty"`
 	Color             string  `json:"color,omitempty"`
+	SecondaryColor    string  `json:"secondary_color,omitempty"`
 	NumberOfSeats     int     `json:"number_of_seats,omitempty"`
 	NumberOfCylinders int     `json:"number_of_cylinders,omitempty"`
+	NumberOfDoors     int     `json:"number_of_doors,omitempty"`
+	NumberOfAxles     int     `json:"number_of_axles,omitempty"`
+	NumberOfWheels    int     `json:"number_of_wheels,omitempty"`
+	WheelbaseCm       int     `json:"wheelbase_cm,omitempty"`
+
+	// Fuel consumption (L/100km) — NL RDW brandstof dataset
+	FuelConsumptionCombinedL100km   float64 `json:"fuel_consumption_combined_l100km,omitempty"`
+	FuelConsumptionCityL100km       float64 `json:"fuel_consumption_city_l100km,omitempty"`
+	FuelConsumptionExtraUrbanL100km float64 `json:"fuel_consumption_extra_urban_l100km,omitempty"`
+
+	// Emissions extras
+	StationaryNoiseDb float64 `json:"stationary_noise_db,omitempty"`
+	SootEmission      float64 `json:"soot_emission,omitempty"`
+	EmissionCode      string  `json:"emission_code,omitempty"`
+
+	// Trailer / classification / pricing
+	MaxTrailerWeightBrakedKg   int    `json:"max_trailer_weight_braked_kg,omitempty"`
+	MaxTrailerWeightUnbrakedKg int    `json:"max_trailer_weight_unbraked_kg,omitempty"`
+	EuropeanVehicleCategory    string `json:"european_vehicle_category,omitempty"`
+	VehicleType                string `json:"vehicle_type,omitempty"`
+	TypeApprovalNumber         string `json:"type_approval_number,omitempty"`
+	EnergyLabel                string `json:"energy_label,omitempty"`
+	CataloguePriceEUR          int    `json:"catalogue_price_eur,omitempty"`
 
 	// Registration
 	FirstRegistration  *time.Time `json:"first_registration,omitempty"`
 	Country            string     `json:"country,omitempty"`
 	RegistrationStatus string     `json:"registration_status,omitempty"` // active, cancelled, export …
 
+	// Odometer status (NL RDW: tellerstandoordeel)
+	OdometerStatus              string `json:"odometer_status,omitempty"` // Logisch, Onlogisch, Geen oordeel
+	LastMileageRegistrationYear int    `json:"last_mileage_registration_year,omitempty"`
+
+	// Status flags (NL RDW)
+	ExportIndicator bool `json:"export_indicator,omitempty"`
+	OpenRecall      bool `json:"open_recall,omitempty"`
+	TaxiIndicator   bool `json:"taxi_indicator,omitempty"`
+
 	// Inspection (APK / ITV / CT / TÜV / MFK)
-	LastInspectionDate   *time.Time `json:"last_inspection_date,omitempty"`
-	LastInspectionResult string     `json:"last_inspection_result,omitempty"` // pass, fail, pending
-	NextInspectionDate   *time.Time `json:"next_inspection_date,omitempty"`
+	LastInspectionDate   *time.Time      `json:"last_inspection_date,omitempty"`
+	LastInspectionResult string          `json:"last_inspection_result,omitempty"` // pass, fail, pending
+	NextInspectionDate   *time.Time      `json:"next_inspection_date,omitempty"`
+	APKHistory           []APKInspection `json:"apk_history,omitempty"`
 
 	// Mileage (exposed by some portals: NL via APK dataset, BE via Car-Pass)
 	MileageKm   int        `json:"mileage_km,omitempty"`
@@ -68,6 +102,16 @@ type PlateResult struct {
 	Source    string    `json:"source"`
 	FetchedAt time.Time `json:"fetched_at"`
 	Partial   bool      `json:"partial,omitempty"` // true when only a subset of fields is available
+}
+
+// APKInspection captures a single APK (MOT) inspection record.
+// Sources: NL RDW sgfe-77wx (dates/results) + a34c-vvps (defect counts).
+type APKInspection struct {
+	Date           *time.Time `json:"date,omitempty"`
+	Result         string     `json:"result,omitempty"` // pass, fail, pending, advisory
+	ExpiryDate     *time.Time `json:"expiry_date,omitempty"`
+	InspectionType string     `json:"inspection_type,omitempty"` // e.g. "APK Lichte voertuigen"
+	DefectsFound   int        `json:"defects_found,omitempty"`
 }
 
 // PlateResolver converts a normalised license plate into a PlateResult.
