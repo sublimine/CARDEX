@@ -402,8 +402,8 @@ func TestNLPlateResolver_FullEnrichment(t *testing.T) {
 	if result.NumberOfDoors != 5 {
 		t.Errorf("NumberOfDoors = %d, want 5", result.NumberOfDoors)
 	}
-	if result.OdometerStatus != "logical" {
-		t.Errorf("OdometerStatus = %q, want logical", result.OdometerStatus)
+	if result.OdometerStatus != "Logisch" {
+		t.Errorf("OdometerStatus = %q, want Logisch", result.OdometerStatus)
 	}
 
 	// Fuel enrichment from 8ys7-d773
@@ -419,8 +419,8 @@ func TestNLPlateResolver_FullEnrichment(t *testing.T) {
 	if result.CO2GPerKm != 116 {
 		t.Errorf("CO2GPerKm = %g, want 116", result.CO2GPerKm)
 	}
-	if result.FuelConsumptionL100km != 5.0 {
-		t.Errorf("FuelConsumptionL100km = %g, want 5.0", result.FuelConsumptionL100km)
+	if result.FuelConsumptionCombinedL100km != 5.0 {
+		t.Errorf("FuelConsumptionCombinedL100km = %g, want 5.0", result.FuelConsumptionCombinedL100km)
 	}
 
 	// Axles from 3huj-srit
@@ -454,8 +454,8 @@ func TestNLPlateResolver_OdometerIllogical(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if result.OdometerStatus != "illogical" {
-		t.Errorf("OdometerStatus = %q, want illogical", result.OdometerStatus)
+	if result.OdometerStatus != "Onlogisch" {
+		t.Errorf("OdometerStatus = %q, want Onlogisch", result.OdometerStatus)
 	}
 }
 
