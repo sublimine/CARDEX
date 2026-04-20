@@ -1,48 +1,26 @@
 package check
 
-// FR plate resolver — France
+// FR plate resolver — immatriculation-auto.info (SSR)
 //
-// Investigation summary (exhaustive):
+// The site renders vehicle data server-side. For any valid French plate
+// the SSR HTML always includes:
+//   <title>{PLATE} - {Make} {Year}</title>
+//   <meta name="description" content="{Make} {Model} immatriculée en France ...
+//     couleur extérieure {Color}, son carburant {Fuel}, ... capacité de {CC} cm³">
 //
-// 1. HistoVec (histovec.interieur.gouv.fr)
-//    - Official French government vehicle history portal (Ministère de l'Intérieur).
-//    - Old API (v1): required plate + SIV registration certificate formula number.
-//    - New design (2022+): requires plate + last name + first name + date of birth
-//      of the registered owner. Cannot be used for third-party plate lookup.
-//    - API endpoint probed: GET /histovec/api/v2/report?immatriculation=<PLATE>
-//      Returns HTTP 400/403 with "identification insuffisante" without owner data.
+// Not-found detection: page title contains "Téléchargez l'application" instead
+// of the plate number.
 //
-// 2. ANTS (Agence Nationale des Titres Sécurisés) / SIV
-//    - SIV (Système d'Immatriculation des Véhicules) is the national registry.
-//    - API access via api.gouv.fr requires: SIRET number, professional justification,
-//      ANTS approval. Not accessible to third parties without agreement.
-//    - immatriculation.ants.gouv.fr requires France Connect (digital identity login).
-//
-// 3. UTAC / Contrôle Technique
-//    - UTAC-OTC manages French technical inspection (CT) data.
-//    - No public individual plate lookup; professionals subscribe at utac.com.
-//
-// 4. data.gouv.fr
-//    - Open datasets available: vehicle registration STATISTICS (aggregated by month/model),
-//      NOT individual vehicle records. No plate → VIN lookup possible.
-//    - Dataset "Parc de véhicules" (sinoe.ademe.fr) is aggregate only.
-//
-// 5. Third-party services (carvxn.com, verif.com, plaque-immat.fr)
-//    - Commercial resellers of ANTS/SIV data. Require subscription or per-query payment.
-//    - Not publicly accessible without auth.
-//
-// Conclusion: France has NO public plate-to-vehicle lookup. GDPR + SIV access restrictions
-// prevent any third-party unauthenticated query. The resolver attempts the HistoVec
-// public endpoint and documents exactly what it receives.
-//
-// VIN availability: NOT available from any public FR source.
+// VIN availability: NOT available from this public source.
+// Data available: Make, Model, Year, Color, Fuel type, Displacement CC.
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
-	"net/url"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -70,86 +48,189 @@ func validateFRPlate(plate string) error {
 	return nil
 }
 
-// histovecResponse is the partial shape of a HistoVec API response when accessible.
-type histovecResponse struct {
-	Immatriculation string `json:"immatriculation"`
-	Marque          string `json:"marque"`
-	Modele          string `json:"modele"`
-	DateImmat       string `json:"dateImmatriculation"` // YYYY-MM-DD
-	Carburant       string `json:"carburant"`
-	Puissance       int    `json:"puissance"` // kW
-}
-
 func (r *frPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResult, error) {
 	if err := validateFRPlate(plate); err != nil {
 		return nil, err
 	}
 
-	// Attempt HistoVec public API — documented to require owner identity since 2022,
-	// but we probe it in case a public endpoint is restored in the future.
-	if result, err := r.tryHistoVec(ctx, plate); err == nil {
-		return result, nil
-	}
+	pageURL := "https://www.immatriculation-auto.info/vehicle/" + plate
 
-	// No public source succeeded.
-	return nil, fmt.Errorf(
-		"%w: France (FR) — HistoVec requires owner identity (name + DOB + plate). "+
-			"SIV/ANTS API requires professional SIRET agreement. "+
-			"No public plate→vehicle lookup exists in France. "+
-			"Investigated: histovec.interieur.gouv.fr, immatriculation.ants.gouv.fr, "+
-			"api.gouv.fr/les-apis/api-immatriculation-vehicule, data.gouv.fr/datasets/",
-		ErrPlateResolutionUnavailable,
-	)
-}
-
-// tryHistoVec probes the HistoVec API endpoint.
-// Returns a result if the API responds with vehicle data; returns an error otherwise.
-func (r *frPlateResolver) tryHistoVec(ctx context.Context, plate string) (*PlateResult, error) {
-	// HistoVec v2 API endpoint (probed — may require owner identity).
-	apiURL := fmt.Sprintf(
-		"https://histovec.interieur.gouv.fr/histovec/api/v2/report?immatriculation=%s",
-		url.QueryEscape(plate),
-	)
-
-	body, status, err := plateRetry(ctx, 1, func() ([]byte, int, error) {
-		return plateGetJSON(ctx, r.client, apiURL)
-	})
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, pageURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("HistoVec request: %w", err)
+		return nil, fmt.Errorf("FR request: %w", err)
 	}
-	if status == http.StatusForbidden || status == http.StatusUnauthorized || status == http.StatusBadRequest {
-		return nil, fmt.Errorf("HistoVec HTTP %d: requires owner identification", status)
+	req.Header.Set("User-Agent", plateUA)
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+	req.Header.Set("Accept-Language", "fr-FR,fr;q=0.9,en;q=0.8")
+
+	resp, err := r.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("%w: immatriculation-auto.info unreachable: %v", ErrPlateResolutionUnavailable, err)
 	}
-	if status != http.StatusOK {
-		return nil, fmt.Errorf("HistoVec HTTP %d", status)
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 512*1024))
+	if err != nil {
+		return nil, fmt.Errorf("FR read: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%w: immatriculation-auto.info HTTP %d", ErrPlateResolutionUnavailable, resp.StatusCode)
 	}
 
-	// Try to decode JSON response.
-	var hv histovecResponse
-	if err := json.Unmarshal(body, &hv); err != nil {
-		return nil, fmt.Errorf("HistoVec decode: %w", err)
-	}
-	if hv.Immatriculation == "" && hv.Marque == "" {
-		return nil, fmt.Errorf("HistoVec returned empty vehicle data")
+	bodyStr := string(body)
+
+	// Not-found: title doesn't contain the plate.
+	title := htmlExtract(bodyStr, "<title>", "</title>")
+	if title == "" || !strings.Contains(title, plate) {
+		return nil, fmt.Errorf("%w: plate %s not found in FR public registry", ErrPlateNotFound, plate)
 	}
 
 	result := &PlateResult{
 		Plate:     plate,
-		Make:      strings.TrimSpace(hv.Marque),
-		Model:     strings.TrimSpace(hv.Modele),
-		FuelType:  strings.TrimSpace(hv.Carburant),
 		Country:   "FR",
-		Source:    "HistoVec — histovec.interieur.gouv.fr",
+		Source:    "immatriculation-auto.info — registre SIV (scraping SSR)",
 		FetchedAt: time.Now().UTC(),
 		Partial:   true,
 	}
-	if hv.Puissance > 0 {
-		result.PowerKW = float64(hv.Puissance)
+
+	// Parse title: "{PLATE} - {Make} {Year}"
+	parsefrTitle(title, plate, result)
+
+	// Parse meta description for richer data.
+	metaDesc := extractMetaDescription(bodyStr)
+	if metaDesc != "" {
+		parseFRMetaDesc(metaDesc, result)
 	}
-	if hv.DateImmat != "" {
-		if t, err := time.Parse("2006-01-02", hv.DateImmat); err == nil {
-			result.FirstRegistration = &t
+
+	if result.Make != "" {
+		result.Partial = false
+	}
+
+	return result, nil
+}
+
+// parsefrTitle parses "{PLATE} - {Make} {Year}" from the <title> element.
+func parsefrTitle(title, plate string, r *PlateResult) {
+	prefix := plate + " - "
+	if !strings.HasPrefix(title, prefix) {
+		return
+	}
+	rest := strings.TrimSpace(title[len(prefix):])
+	parts := strings.Fields(rest)
+	if len(parts) == 0 {
+		return
+	}
+	// Last token may be the year.
+	last := parts[len(parts)-1]
+	if yr, err := strconv.Atoi(last); err == nil && yr >= 1950 && yr <= 2030 {
+		t := time.Date(yr, 1, 1, 0, 0, 0, 0, time.UTC)
+		r.FirstRegistration = &t
+		r.Make = strings.Join(parts[:len(parts)-1], " ")
+	} else {
+		r.Make = rest
+	}
+}
+
+var (
+	frReYear = regexp.MustCompile(`\b(19[5-9]\d|20[0-4]\d)\b`)
+	frReCC   = regexp.MustCompile(`(\d{3,5})\s*cm`)
+)
+
+// parseFRMetaDesc parses vehicle data from the SSR meta description.
+// Format: "{Make} {Model} immatriculée en France ... en {Year}.
+//
+//	Découvrez sa couleur extérieure {Color}, son carburant {Fuel},
+//	sa {Transmission} et sa capacité de {CC} cm³"
+func parseFRMetaDesc(desc string, r *PlateResult) {
+	// Model: text before "immatriculée"
+	if idx := strings.Index(desc, " immatriculée"); idx > 0 {
+		makeModel := strings.TrimSpace(desc[:idx])
+		if r.Make != "" && strings.HasPrefix(makeModel, r.Make) {
+			model := strings.TrimSpace(makeModel[len(r.Make):])
+			if model != "" && r.Model == "" {
+				r.Model = model
+			}
+		} else if r.Make == "" {
+			parts := strings.Fields(makeModel)
+			if len(parts) >= 2 {
+				r.Make = parts[0]
+				r.Model = strings.Join(parts[1:], " ")
+			} else {
+				r.Make = makeModel
+			}
 		}
 	}
-	return result, nil
+
+	// First registration year: "immatriculé... en YYYY."
+	if r.FirstRegistration == nil {
+		if i := strings.Index(desc, " en "); i >= 0 {
+			after := desc[i+4:]
+			if j := strings.IndexByte(after, '.'); j >= 0 {
+				after = after[:j]
+			}
+			if m := frReYear.FindString(after); m != "" {
+				if yr, _ := strconv.Atoi(m); yr > 1950 {
+					t := time.Date(yr, 1, 1, 0, 0, 0, 0, time.UTC)
+					r.FirstRegistration = &t
+				}
+			}
+		}
+	}
+
+	// Color: "couleur extérieure {Color},"
+	for _, marker := range []string{"couleur extérieure ", "couleur ext"} {
+		if i := strings.Index(desc, marker); i >= 0 {
+			after := desc[i+len(marker):]
+			// skip possible HTML entity suffix like "&#233;rieure "
+			if marker == "couleur ext" {
+				if j := strings.Index(after, " "); j >= 0 {
+					after = after[j+1:]
+				}
+			}
+			if j := strings.IndexAny(after, ",.\n"); j > 0 {
+				r.Color = strings.TrimSpace(after[:j])
+			}
+			break
+		}
+	}
+
+	// Fuel: "son carburant {Fuel},"
+	if i := strings.Index(desc, "son carburant "); i >= 0 {
+		after := desc[i+len("son carburant "):]
+		if j := strings.IndexAny(after, ",.\n"); j > 0 {
+			r.FuelType = strings.TrimSpace(after[:j])
+		}
+	}
+
+	// Displacement: "capacité de {CC} cm" or "capacit&#233; de {CC} cm"
+	for _, marker := range []string{"capacité de ", "capacit"} {
+		if i := strings.Index(desc, marker); i >= 0 {
+			after := desc[i:]
+			// Skip to the number
+			if j := strings.Index(after, " de "); j >= 0 {
+				after = after[j+4:]
+			}
+			if m := frReCC.FindStringSubmatch(after); len(m) >= 2 {
+				if cc, err := strconv.Atoi(m[1]); err == nil && cc > 0 {
+					r.DisplacementCC = cc
+				}
+			}
+			break
+		}
+	}
+}
+
+// extractMetaDescription finds the content of <meta name="description" content="...">
+func extractMetaDescription(body string) string {
+	needle := `<meta name="description" content="`
+	i := strings.Index(body, needle)
+	if i < 0 {
+		return ""
+	}
+	rest := body[i+len(needle):]
+	j := strings.IndexByte(rest, '"')
+	if j < 0 {
+		return ""
+	}
+	return rest[:j]
 }

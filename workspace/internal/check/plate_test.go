@@ -282,18 +282,12 @@ func TestCHPlateResolver_SpecialPlates(t *testing.T) {
 
 // ── FR plate resolver ─────────────────────────────────────────────────────────
 
-func TestFRPlateResolver_UnavailableWithoutHistoVec(t *testing.T) {
-	// HistoVec returns 401 → resolver returns ErrPlateResolutionUnavailable.
-	histoSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusUnauthorized)
-	}))
-	defer histoSrv.Close()
-	// We can't easily inject the HistoVec URL, so just verify a real FR plate returns
-	// ErrPlateResolutionUnavailable when the server is unreachable.
+// TestFRPlateResolver_InvalidFormat tests that a too-short plate returns an error.
+func TestFRPlateResolver_InvalidFormat(t *testing.T) {
 	reg := check.NewPlateRegistry("http://localhost:0")
-	_, err := reg.Resolve(context.Background(), "AB123CD", "FR")
-	if !errors.Is(err, check.ErrPlateResolutionUnavailable) {
-		t.Errorf("FR: want ErrPlateResolutionUnavailable, got %v", err)
+	_, err := reg.Resolve(context.Background(), "AB", "FR")
+	if err == nil {
+		t.Error("expected error for too-short FR plate")
 	}
 }
 

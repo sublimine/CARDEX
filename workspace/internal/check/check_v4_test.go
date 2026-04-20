@@ -94,9 +94,9 @@ func TestDecodeVIN_UnknownWMI_ReturnsUnknown(t *testing.T) {
 
 // ── NL provider additional tests ──────────────────────────────────────────────
 
-// newStolenRDWServer returns a mock RDW server where the vehicle IS in the
-// stolen dataset (8ys7-d773 returns a non-empty array).
-func newStolenRDWServer(t *testing.T) *httptest.Server {
+// newFuelRDWServer returns a mock RDW server where 8ys7-d773 serves
+// fuel/emission data (Benzine, EURO 6, 95 kW) for the vehicle.
+func newFuelRDWServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -107,16 +107,22 @@ func newStolenRDWServer(t *testing.T) *httptest.Server {
 		case strings.Contains(path, "sgfe-77wx"):
 			_ = json.NewEncoder(w).Encode(rdwFixtureAPK)
 		case strings.Contains(path, "8ys7-d773"):
-			// Vehicle IS reported stolen — return non-empty list.
-			_ = json.NewEncoder(w).Encode([]map[string]string{{"kenteken": "AB-123-C"}})
+			_ = json.NewEncoder(w).Encode([]map[string]string{{
+				"kenteken":               "TESTPL",
+				"brandstof_omschrijving": "Benzine",
+				"uitlaatemissieniveau":   "EURO 6",
+				"nettomaximumvermogen":   "95.00",
+			}})
 		default:
-			http.NotFound(w, r)
+			_ = json.NewEncoder(w).Encode([]map[string]string{})
 		}
 	}))
 }
 
-func TestNLProvider_StolenFlagTrue(t *testing.T) {
-	srv := newStolenRDWServer(t)
+// TestNLProvider_FuelDataPopulated verifies that 8ys7-d773 (brandstof dataset)
+// is correctly used to populate TechnicalSpecs fuel type and Euro norm.
+func TestNLProvider_FuelDataPopulated(t *testing.T) {
+	srv := newFuelRDWServer(t)
 	defer srv.Close()
 
 	p := check.NewNLProviderWithBase(srv.URL + "/resource")
@@ -124,8 +130,17 @@ func TestNLProvider_StolenFlagTrue(t *testing.T) {
 	if err != nil {
 		t.Fatalf("FetchHistory: %v", err)
 	}
-	if !data.StolenFlag {
-		t.Error("want StolenFlag=true when vehicle appears in stolen registry")
+	if data.TechnicalSpecs == nil {
+		t.Fatal("want non-nil TechnicalSpecs")
+	}
+	if data.TechnicalSpecs.FuelType != "Benzine" {
+		t.Errorf("FuelType: want Benzine, got %q", data.TechnicalSpecs.FuelType)
+	}
+	if data.TechnicalSpecs.EuroNorm != "EURO 6" {
+		t.Errorf("EuroNorm: want EURO 6, got %q", data.TechnicalSpecs.EuroNorm)
+	}
+	if data.TechnicalSpecs.PowerKw != 95 {
+		t.Errorf("PowerKw: want 95, got %d", data.TechnicalSpecs.PowerKw)
 	}
 }
 

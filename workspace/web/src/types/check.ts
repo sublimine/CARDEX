@@ -21,8 +21,8 @@ export interface VINDecodeResult {
 export interface VehicleAlert {
   id: string
   severity: 'critical' | 'warning' | 'info'
-  // Backend sends: stolen, recall_open, mileage_rollback, mileage_gap
-  type: 'stolen' | 'recall_open' | 'mileage_rollback' | 'mileage_gap' | string
+  // Backend sends: stolen, recall_open, mileage_rollback, mileage_gap, no_insurance, exported
+  type: 'stolen' | 'recall_open' | 'mileage_rollback' | 'mileage_gap' | 'no_insurance' | 'exported' | string
   title: string
   description: string
   recommendedAction?: string
@@ -66,6 +66,20 @@ export interface MileageConsistency {
   note?: string
 }
 
+export interface TechnicalSpecsRecord {
+  fuelType?: string
+  displacementCC?: number
+  powerKW?: number
+  emptyWeightKg?: number
+  grossWeightKg?: number
+  co2GPerKm?: number
+  euroNorm?: string
+  bodyType?: string
+  color?: string
+  numberOfSeats?: number
+  numberOfCylinders?: number
+}
+
 export interface CountryReport {
   country: string
   registrations: {
@@ -75,6 +89,7 @@ export interface CountryReport {
   }[]
   inspections: InspectionRecord[]
   stolenFlag: boolean
+  technicalSpecs?: TechnicalSpecsRecord | null
 }
 
 // Backend can send "error" in addition to the user-facing statuses.
@@ -94,9 +109,36 @@ export interface PlateInfo {
   plate?: string
   make?: string
   model?: string
+  variant?: string
   country?: string
   source: string
   partial?: boolean
+  // Technical specs — snake_case matches Go JSON tags
+  fuel_type?: string
+  displacement_cc?: number
+  power_kw?: number
+  empty_weight_kg?: number
+  gross_weight_kg?: number
+  co2_g_per_km?: number
+  euro_norm?: string
+  body_type?: string
+  color?: string
+  number_of_seats?: number
+  number_of_cylinders?: number
+  // Registration
+  first_registration?: string
+  registration_status?: string
+  // Inspection
+  last_inspection_date?: string
+  last_inspection_result?: string
+  next_inspection_date?: string
+  // Mileage
+  mileage_km?: number
+  mileage_date?: string
+  // Other
+  district?: string
+  environmental_badge?: string
+  fetched_at?: string
   [key: string]: unknown
 }
 

@@ -38,6 +38,7 @@ type RegistryData struct {
 	StolenFlag     bool
 	MileageRecords []MileageRecord
 	TechnicalSpecs *TechnicalSpecs
+	Alerts         []Alert // provider-specific alerts (insurance, export flag, etc.)
 }
 
 // Registration records a change of ownership or first entry into a national registry.
@@ -163,6 +164,8 @@ const (
 	AlertRecallOpen      AlertType = "recall_open"
 	AlertMileageRollback AlertType = "mileage_rollback"
 	AlertMileageGap      AlertType = "mileage_gap"
+	AlertNoInsurance     AlertType = "no_insurance"
+	AlertExported        AlertType = "exported"
 )
 
 // AlertSeverity grades the urgency of an alert.
