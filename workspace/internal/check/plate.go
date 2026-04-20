@@ -154,11 +154,22 @@ type PlateRegistry struct {
 // NewPlateRegistry builds the production registry.
 // rdwBaseURL is the RDW Open Data resource base, e.g. "https://opendata.rdw.nl/resource".
 func NewPlateRegistry(rdwBaseURL string) *PlateRegistry {
+	return NewPlateRegistryWithCache(rdwBaseURL, nil)
+}
+
+// NewPlateRegistryWithCache builds the production registry with an optional
+// persistent cache. Currently consumed by the ES resolver to survive
+// comprobarmatricula.com rate-limits; other resolvers may adopt it later.
+func NewPlateRegistryWithCache(rdwBaseURL string, cache *Cache) *PlateRegistry {
 	client := newPlateHTTPClient(15 * time.Second)
+	es := newESPlateResolver(client)
+	if cache != nil {
+		es = es.WithCache(cache)
+	}
 	return &PlateRegistry{
 		resolvers: map[string]PlateResolver{
 			"NL": newNLPlateResolver(client, rdwBaseURL),
-			"ES": newESPlateResolver(client),
+			"ES": es,
 			"FR": newFRPlateResolver(client),
 			"BE": newBEPlateResolver(client),
 			"DE": newDEPlateResolver(),

@@ -34,4 +34,18 @@ var (
 		Name:      "mileage_inconsistencies_total",
 		Help:      "Number of reports flagged for mileage inconsistency.",
 	})
+
+	metricPlateCacheHit = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "workspace",
+		Subsystem: "check",
+		Name:      "plate_cache_hits_total",
+		Help:      "Plate resolver served a cached PlateResult (full=rich CM data, partial=DGT-only fallback).",
+	}, []string{"country", "kind"})
+
+	metricCMRateLimited = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "workspace",
+		Subsystem: "check",
+		Name:      "cm_rate_limited_total",
+		Help:      "comprobarmatricula.com returned a non-success response (limit=rate-limit, other=forbidden/unknown).",
+	}, []string{"reason"})
 )

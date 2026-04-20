@@ -204,7 +204,7 @@ func main() {
 		check.NewCHProvider(),
 	}
 	checkEngine := check.NewEngine(checkCache, checkDecoder, checkProviders)
-	checkPlateRegistry := check.NewPlateRegistry(rdwBaseURL)
+	checkPlateRegistry := check.NewPlateRegistryWithCache(rdwBaseURL, checkCache)
 	checkHandler := check.NewHandlerWithValidatorAndPlates(checkEngine, checkCache, func(token string) bool {
 		_, err := jwtSvc.ValidateToken(token)
 		return err == nil

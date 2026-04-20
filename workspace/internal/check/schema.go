@@ -22,6 +22,17 @@ CREATE TABLE IF NOT EXISTS check_requests (
 );
 CREATE INDEX IF NOT EXISTS idx_check_requests_vin ON check_requests(vin);
 CREATE INDEX IF NOT EXISTS idx_check_requests_ip  ON check_requests(ip, requested_at);
+
+CREATE TABLE IF NOT EXISTS plate_cache (
+    country      TEXT NOT NULL,
+    plate        TEXT NOT NULL,
+    result_json  BLOB NOT NULL,
+    full         INTEGER NOT NULL DEFAULT 0, -- 1 when primary source succeeded (rich data)
+    fetched_at   TEXT NOT NULL,
+    expires_at   TEXT NOT NULL,
+    PRIMARY KEY (country, plate)
+);
+CREATE INDEX IF NOT EXISTS idx_plate_cache_expires ON plate_cache(expires_at);
 `
 
 // EnsureSchema creates the check_cache and check_requests tables if absent.

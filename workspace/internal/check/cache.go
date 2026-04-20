@@ -10,6 +10,15 @@ import (
 const (
 	reportTTL  = 24 * time.Hour
 	vinInfoTTL = 0 // permanent (VIN decode is immutable)
+
+	// plateCacheTTLFull applies when the primary (rich) source succeeded.
+	// Vehicle specs don't change, so 30 days is safe and protects us from
+	// comprobarmatricula.com rate-limits on repeat lookups.
+	plateCacheTTLFull = 30 * 24 * time.Hour
+	// plateCacheTTLPartial applies when only a fallback source answered
+	// (e.g. ES got only the DGT badge because CM rate-limited us). Short
+	// TTL so we retry the primary source soon.
+	plateCacheTTLPartial = 1 * time.Hour
 )
 
 // Cache provides read/write access to the check_cache SQLite table.
@@ -71,9 +80,60 @@ func (c *Cache) RecordRequest(ctx context.Context, vin, ip, tenantID string, cac
 func (c *Cache) cleanupLoop() {
 	ticker := time.NewTicker(1 * time.Hour)
 	for range ticker.C {
-		_, _ = c.db.Exec(
-			`DELETE FROM check_cache WHERE expires_at <= ?`,
-			time.Now().UTC().Format(time.RFC3339),
-		)
+		now := time.Now().UTC().Format(time.RFC3339)
+		_, _ = c.db.Exec(`DELETE FROM check_cache WHERE expires_at <= ?`, now)
+		_, _ = c.db.Exec(`DELETE FROM plate_cache WHERE expires_at <= ?`, now)
 	}
+}
+
+// GetPlate returns a cached PlateResult for (country, plate) if one exists
+// and has not expired. full=true means the primary rich source was captured
+// (so the cached data is worth surfacing as-is); full=false means the entry
+// is a partial fallback worth refreshing when possible.
+func (c *Cache) GetPlate(ctx context.Context, country, plate string) (result *PlateResult, full bool, ok bool) {
+	if c == nil || c.db == nil {
+		return nil, false, false
+	}
+	row := c.db.QueryRowContext(ctx,
+		`SELECT result_json, full FROM plate_cache
+		 WHERE country=? AND plate=? AND expires_at > ?`,
+		country, plate, time.Now().UTC().Format(time.RFC3339))
+	var blob []byte
+	var fullInt int
+	if err := row.Scan(&blob, &fullInt); err != nil {
+		return nil, false, false
+	}
+	var pr PlateResult
+	if err := json.Unmarshal(blob, &pr); err != nil {
+		return nil, false, false
+	}
+	return &pr, fullInt == 1, true
+}
+
+// SetPlate stores a PlateResult with the appropriate TTL. full=true applies
+// the 30-day TTL; full=false applies the 1-hour partial TTL so the caller
+// keeps probing the primary source.
+func (c *Cache) SetPlate(ctx context.Context, country, plate string, result *PlateResult, full bool) error {
+	if c == nil || c.db == nil || result == nil {
+		return nil
+	}
+	blob, err := json.Marshal(result)
+	if err != nil {
+		return err
+	}
+	ttl := plateCacheTTLPartial
+	fullInt := 0
+	if full {
+		ttl = plateCacheTTLFull
+		fullInt = 1
+	}
+	now := time.Now().UTC()
+	_, err = c.db.ExecContext(ctx,
+		`INSERT OR REPLACE INTO plate_cache(country, plate, result_json, full, fetched_at, expires_at)
+		 VALUES(?, ?, ?, ?, ?, ?)`,
+		country, plate, blob, fullInt,
+		now.Format(time.RFC3339),
+		now.Add(ttl).Format(time.RFC3339),
+	)
+	return err
 }

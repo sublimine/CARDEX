@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -771,6 +772,131 @@ func TestESPlateResolver_AllSourcesFail(t *testing.T) {
 	_, err := r.Resolve(context.Background(), "9999AAA")
 	if !errors.Is(err, check.ErrPlateNotFound) {
 		t.Errorf("want ErrPlateNotFound, got %v", err)
+	}
+}
+
+// TestESPlateResolver_CacheServesAfterCMRateLimit verifies the persistent
+// plate cache: once comprobarmatricula.com succeeds, subsequent lookups
+// should be served from cache even when CM later starts rate-limiting.
+func TestESPlateResolver_CacheServesAfterCMRateLimit(t *testing.T) {
+	const token = "tok-cache"
+	const cmSuccessJSON = `{"ok":1,"mat":"8000LVY","marca_oficial":"VW","model":"Tiguan",
+"modelo_completo":"TIGUAN (5N_)","version":"2.0 TDI 4motion","fuel":"Diésel",
+"potencia_cv":170,"potencia_kw":125,"cilindrada_cc":"1968 cc","carroceria":"SUV",
+"caja":"Manual","codigo_motor":"CFGB","vin":"WVGZZZ5NZAW021819",
+"fecha_matriculacion":"02/09/2009","annee_modelo":"2009","owners":3}`
+
+	// Serve success on first CM API call, then switch to limit=true.
+	var cmCalls int32
+	mux := http.NewServeMux()
+	mux.HandleFunc("/matricula/", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, `<html><input type="hidden" id="_g_tk" value="%s"></html>`, token)
+	})
+	mux.HandleFunc("/api/vehiculo.php", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("_tk") != token {
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = fmt.Fprint(w, `{"ok":0,"err":"Forbidden"}`)
+			return
+		}
+		if atomic.AddInt32(&cmCalls, 1) == 1 {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = fmt.Fprint(w, cmSuccessJSON)
+			return
+		}
+		_, _ = fmt.Fprint(w, `{"ok":0,"limit":true,"err":"limit"}`)
+	})
+	mux.HandleFunc("/dgt/", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = fmt.Fprint(w, `<img src="/img/distintivo_B_sin_fondo.svg">`)
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	cache := newCache(t)
+	r := check.NewESPlateResolverWithBases(srv.URL, srv.URL+"/dgt/").WithCache(cache)
+
+	// First call: live fetch, should succeed with full CM data.
+	r1, err := r.Resolve(context.Background(), "8000LVY")
+	if err != nil {
+		t.Fatalf("first resolve: %v", err)
+	}
+	if r1.VIN != "WVGZZZ5NZAW021819" {
+		t.Fatalf("first VIN = %q, want WVGZZZ5NZAW021819", r1.VIN)
+	}
+	if r1.Partial {
+		t.Fatal("first resolve should not be partial")
+	}
+
+	// Second call: CM would now rate-limit, but cache should serve.
+	r2, err := r.Resolve(context.Background(), "8000LVY")
+	if err != nil {
+		t.Fatalf("second resolve: %v", err)
+	}
+	if r2.VIN != "WVGZZZ5NZAW021819" {
+		t.Errorf("second VIN = %q, want cached WVGZZZ5NZAW021819", r2.VIN)
+	}
+	if r2.Make != "VW" || r2.Model != "TIGUAN (5N_)" || r2.PowerKW != 125 {
+		t.Errorf("cached fields lost: make=%q model=%q kw=%v", r2.Make, r2.Model, r2.PowerKW)
+	}
+	if !strings.Contains(r2.Source, "cached") {
+		t.Errorf("second Source = %q, want marker \"cached\"", r2.Source)
+	}
+	// Exactly one CM API call should have happened.
+	if got := atomic.LoadInt32(&cmCalls); got != 1 {
+		t.Errorf("CM API calls = %d, want 1 (second should be served from cache)", got)
+	}
+}
+
+// TestESPlateResolver_CachePartialUpgrades checks that a partial (DGT-only)
+// cache entry does NOT prevent a later successful CM call from populating
+// rich data.
+func TestESPlateResolver_CachePartialUpgrades(t *testing.T) {
+	const token = "tok-upgrade"
+	var cmOK int32 // 0 = limit, 1 = success
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/matricula/", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, `<html><input type="hidden" id="_g_tk" value="%s"></html>`, token)
+	})
+	mux.HandleFunc("/api/vehiculo.php", func(w http.ResponseWriter, _ *http.Request) {
+		if atomic.LoadInt32(&cmOK) == 0 {
+			_, _ = fmt.Fprint(w, `{"ok":0,"limit":true}`)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"ok":1,"mat":"1234BCJ","marca_oficial":"Seat","model":"Ibiza","vin":"VSSZZZ6KZ1R113828"}`)
+	})
+	mux.HandleFunc("/dgt/", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = fmt.Fprint(w, `<img src="/img/distintivo_B_sin_fondo.svg">`)
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	cache := newCache(t)
+	r := check.NewESPlateResolverWithBases(srv.URL, srv.URL+"/dgt/").WithCache(cache)
+
+	// First: CM rate-limits → partial (DGT only) cached.
+	r1, err := r.Resolve(context.Background(), "1234BCJ")
+	if err != nil {
+		t.Fatalf("first resolve: %v", err)
+	}
+	if !r1.Partial || r1.VIN != "" {
+		t.Fatalf("first resolve should be partial with no VIN, got partial=%v vin=%q", r1.Partial, r1.VIN)
+	}
+
+	// Flip CM to success; a second live lookup should upgrade the cache.
+	atomic.StoreInt32(&cmOK, 1)
+
+	r2, err := r.Resolve(context.Background(), "1234BCJ")
+	if err != nil {
+		t.Fatalf("second resolve: %v", err)
+	}
+	if r2.VIN != "VSSZZZ6KZ1R113828" {
+		t.Errorf("second VIN = %q, want VSSZZZ6KZ1R113828 (upgrade)", r2.VIN)
+	}
+	if r2.Partial {
+		t.Error("second resolve should be non-partial after CM success")
 	}
 }
 
