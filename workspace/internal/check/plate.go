@@ -43,6 +43,17 @@ type PlateResult struct {
 	Color             string  `json:"color,omitempty"`
 	NumberOfSeats     int     `json:"number_of_seats,omitempty"`
 	NumberOfCylinders int     `json:"number_of_cylinders,omitempty"`
+	NumberOfDoors     int     `json:"number_of_doors,omitempty"`
+	NumberOfAxles     int     `json:"number_of_axles,omitempty"`
+
+	// Fuel consumption (L/100km combined; populated by NL/RDW brandstof dataset)
+	FuelConsumptionL100km float64 `json:"fuel_consumption_l100km,omitempty"`
+
+	// Odometer reliability verdict (NL: "logical" / "illogical" from RDW tellerstandoordeel)
+	OdometerStatus string `json:"odometer_status,omitempty"`
+
+	// Full APK (MOT) history — populated by NL resolver from sgfe-77wx + a34c-vvps
+	APKHistory []APKEntry `json:"apk_history,omitempty"`
 
 	// Registration
 	FirstRegistration  *time.Time `json:"first_registration,omitempty"`
@@ -68,6 +79,22 @@ type PlateResult struct {
 	Source    string    `json:"source"`
 	FetchedAt time.Time `json:"fetched_at"`
 	Partial   bool      `json:"partial,omitempty"` // true when only a subset of fields is available
+}
+
+// APKDefect is a single defect found during an APK (MOT) inspection.
+type APKDefect struct {
+	Code    string `json:"code"`
+	Count   int    `json:"count"`
+	Station string `json:"station,omitempty"`
+}
+
+// APKEntry is one APK inspection with its pass/fail result and any defects.
+type APKEntry struct {
+	Date        time.Time   `json:"date"`
+	Result      string      `json:"result"` // "pass", "fail", "pending"
+	Station     string      `json:"station,omitempty"`
+	NextDueDate *time.Time  `json:"next_due,omitempty"`
+	Defects     []APKDefect `json:"defects,omitempty"`
 }
 
 // PlateResolver converts a normalised license plate into a PlateResult.
