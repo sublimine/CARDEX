@@ -19,7 +19,7 @@ import { SourceBadge } from '../../components/SourceBadge'
 import { cn } from '../../lib/cn'
 import type {
   VehicleReport, PlateInfo, InspectionRecord, RecallEntry, MileageRecord,
-  MileageConsistency, ReportOverallStatus, TechnicalSpecsRecord,
+  MileageConsistency, ReportOverallStatus, TechnicalSpecsRecord, APKInspection,
 } from '../../types/check'
 
 // ── Formatters ────────────────────────────────────────────────────────────────
@@ -213,6 +213,10 @@ function TechnicalSpecsSection({ p }: { p: PlateInfo }) {
     specs.push({ icon: <Settings2 className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Cilindrada', value: `${p.displacement_cc.toLocaleString()} cm³`, mono: true })
   if (p.power_kw)
     specs.push({ icon: <Zap className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Potencia', value: `${p.power_kw} kW · ${kwToCV(p.power_kw)} CV`, mono: true })
+  if (p.engine_code)
+    specs.push({ icon: <Hash className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Código motor', value: p.engine_code, mono: true })
+  if (p.transmission)
+    specs.push({ icon: <Settings2 className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Transmisión', value: p.transmission })
   if (p.empty_weight_kg)
     specs.push({ icon: <Weight className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Peso vacío', value: `${p.empty_weight_kg.toLocaleString()} kg`, mono: true })
   if (p.gross_weight_kg)
@@ -233,6 +237,8 @@ function TechnicalSpecsSection({ p }: { p: PlateInfo }) {
     specs.push({ icon: <Car className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Puertas', value: p.number_of_doors, mono: true })
   if (p.number_of_axles)
     specs.push({ icon: <Settings2 className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Ejes', value: p.number_of_axles, mono: true })
+  if (p.number_of_wheels)
+    specs.push({ icon: <Settings2 className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Ruedas', value: p.number_of_wheels, mono: true })
   if (p.wheelbase_cm)
     specs.push({ icon: <Settings2 className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Batalla', value: `${p.wheelbase_cm} cm`, mono: true })
   if (p.secondary_color)
@@ -251,6 +257,10 @@ function TechnicalSpecsSection({ p }: { p: PlateInfo }) {
     specs.push({ icon: <Leaf className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Etiqueta energía', value: p.energy_label })
   if (p.stationary_noise_db)
     specs.push({ icon: <Gauge className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Ruido estacionario', value: `${p.stationary_noise_db} dB`, mono: true })
+  if (p.soot_emission)
+    specs.push({ icon: <Leaf className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Emisión partículas', value: `${p.soot_emission} g/km`, mono: true })
+  if (p.emission_code)
+    specs.push({ icon: <Leaf className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Código emisiones', value: p.emission_code, mono: true })
   if (p.environmental_badge)
     specs.push({ icon: <Leaf className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Distintivo ambiental', value: p.environmental_badge })
 
@@ -311,11 +321,15 @@ function IdentificationSection({
   if (!d?.make && p?.make)  fields.push({ label: 'Marca', value: p.make })
   if (!d?.model && p?.model) fields.push({ label: 'Modelo', value: p.model })
   if (p?.variant) fields.push({ label: 'Variante', value: p.variant })
+  if (p?.model_year && p.model_year !== d?.year) fields.push({ label: 'Año modelo', value: p.model_year, mono: true })
+  if (p?.color) fields.push({ label: 'Color', value: p.color })
+  if (p?.country) fields.push({ label: 'País', value: `${COUNTRY_FLAG[p.country] ?? ''} ${p.country}`.trim() })
   if (p?.vehicle_type) fields.push({ label: 'Tipo vehículo', value: p.vehicle_type })
   if (p?.european_vehicle_category) fields.push({ label: 'Categoría UE', value: p.european_vehicle_category })
   if (p?.type_approval_number) fields.push({ label: 'Homologación', value: p.type_approval_number, mono: true })
   if (p?.first_registration) fields.push({ label: 'Primera matriculación', value: formatDate(p.first_registration) })
   if (p?.registration_status) fields.push({ label: 'Estado matrícula', value: p.registration_status })
+  if (p?.previous_owners) fields.push({ label: 'Propietarios previos', value: p.previous_owners, mono: true })
   if (p?.catalogue_price_eur) fields.push({ label: 'Precio catálogo', value: `€${p.catalogue_price_eur.toLocaleString()}`, mono: true })
   if (p?.district) fields.push({ label: 'Provincia/Distrito', value: p.district })
   if (p?.mileage_km) fields.push({ label: 'Km registrado', value: fmtKm(p.mileage_km), mono: true })
@@ -403,6 +417,91 @@ function InspectionStatusBanner({ p }: { p: PlateInfo }) {
             </p>
           )}
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ── APK history list ──────────────────────────────────────────────────────────
+
+function APKHistoryList({ entries }: { entries: APKInspection[] }) {
+  if (!entries || entries.length === 0) return null
+
+  const sorted = [...entries].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
+
+  return (
+    <div className="mt-4">
+      <p className="text-[10px] font-semibold text-text-muted uppercase tracking-widest mb-2.5">
+        Historial APK ({entries.length})
+      </p>
+      <div className="space-y-2">
+        {sorted.map((e, i) => {
+          const isPass = e.result === 'pass'
+          const isFail = e.result === 'fail'
+          return (
+            <div
+              key={`${e.date ?? ''}-${i}`}
+              className={cn(
+                'rounded-lg border p-3',
+                isPass ? 'border-emerald-500/20 bg-emerald-500/5' :
+                isFail ? 'border-rose-500/20 bg-rose-500/5' :
+                'border-border-subtle bg-glass-subtle',
+              )}
+            >
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Badge
+                    color={isPass ? 'green' : isFail ? 'red' : 'yellow'}
+                    dot={isFail}
+                    pulse={isFail}
+                  >
+                    {isPass ? 'APTO' : isFail ? 'NO APTO' : (e.result ?? 'AVISO').toUpperCase()}
+                  </Badge>
+                  {e.date && (
+                    <span className="text-xs font-mono text-text-secondary">
+                      {formatDate(e.date)}
+                    </span>
+                  )}
+                  {e.inspection_type && (
+                    <span className="text-[11px] text-text-muted truncate">
+                      {e.inspection_type}
+                    </span>
+                  )}
+                </div>
+                {e.defects_found !== undefined && e.defects_found > 0 && (
+                  <span className="text-[11px] font-medium text-amber-400 tabular-nums">
+                    {e.defects_found} defecto{e.defects_found === 1 ? '' : 's'}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-[10px] font-mono text-text-muted">
+                {e.station && <span>Estación: {e.station}</span>}
+                {e.expiry_date && <span>Válido hasta: {formatDateShort(e.expiry_date)}</span>}
+                {e.next_due && <span>Próxima: {formatDateShort(e.next_due)}</span>}
+              </div>
+              {e.defects && e.defects.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-border-subtle/50">
+                  <p className="text-[10px] text-text-muted uppercase tracking-widest mb-1">
+                    Defectos
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {e.defects.map((d, j) => (
+                      <span
+                        key={`${d.code}-${j}`}
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono border border-border-subtle bg-glass-subtle text-text-secondary"
+                      >
+                        <span>{d.code}</span>
+                        {d.count > 1 && (
+                          <span className="text-text-muted">×{d.count}</span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -891,13 +990,19 @@ export default function CheckReport({ report, onBack, onRefresh }: CheckReportPr
             <Section
               title="Historial de inspecciones"
               icon={<FileCheck className="w-3.5 h-3.5" strokeWidth={1.5} />}
-              count={inspections.length > 0 ? inspections.length : undefined}
+              count={(inspections.length + (p?.apk_history?.length ?? 0)) || undefined}
             >
               {p && <InspectionStatusBanner p={p} />}
-              <Timeline
-                items={inspectionItems(inspections)}
-                emptyMessage="No se encontraron datos de inspección en las fuentes disponibles."
-              />
+              {inspections.length > 0 ? (
+                <Timeline items={inspectionItems(inspections)} />
+              ) : (!p?.apk_history || p.apk_history.length === 0) && (
+                <p className="text-sm text-text-muted italic py-4">
+                  No se encontraron datos de inspección en las fuentes disponibles.
+                </p>
+              )}
+              {p?.apk_history && p.apk_history.length > 0 && (
+                <APKHistoryList entries={p.apk_history} />
+              )}
             </Section>
 
             {/* Recalls */}

@@ -104,12 +104,21 @@ export interface DataSource {
   latencyMs?: number
 }
 
+export interface APKDefect {
+  code: string
+  count: number
+  station?: string
+}
+
 export interface APKInspection {
   date?: string
   result?: 'pass' | 'fail' | 'pending' | 'advisory'
+  station?: string
+  next_due?: string
   expiry_date?: string
   inspection_type?: string
   defects_found?: number
+  defects?: APKDefect[]
 }
 
 export interface PlateInfo {

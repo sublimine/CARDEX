@@ -89,12 +89,12 @@ func (r *esPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 	var wg sync.WaitGroup
 	var cmErr, dgtErr error
 	var cm cmVehiculo
-	var haveCM bool
+	var haveCM, cmLimited bool
 
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		cm, haveCM, cmErr = r.fetchComprobarMatricula(ctx, plate)
+		cm, haveCM, cmLimited, cmErr = r.fetchComprobarMatricula(ctx, plate)
 	}()
 	go func() {
 		defer wg.Done()
@@ -107,8 +107,12 @@ func (r *esPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 	}
 
 	sources := make([]string, 0, 2)
-	if haveCM {
+	switch {
+	case haveCM:
 		sources = append(sources, "comprobarmatricula.com")
+	case cmLimited:
+		// Integration IS active but the server IP hit CM's per-IP rate limit.
+		sources = append(sources, "comprobarmatricula.com (rate-limited — retry later)")
 	}
 	if result.EnvironmentalBadge != "" {
 		sources = append(sources, "sede.dgt.gob.es (distintivo ambiental)")
@@ -137,6 +141,7 @@ func (r *esPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 // optional — older plates occasionally lack VIN or ITV date.
 type cmVehiculo struct {
 	OK                 int    `json:"ok"`
+	Limit              bool   `json:"limit"` // true when anti-scrape rate-limit fires
 	Mat                string `json:"mat"`
 	Brand              string `json:"brand"`
 	MarcaOficial       string `json:"marca_oficial"`
@@ -162,7 +167,9 @@ var reCMToken = regexp.MustCompile(`id="_g_tk"\s+value="([^"]+)"`)
 
 // fetchComprobarMatricula implements the two-step flow: (1) GET the plate page
 // to harvest the _g_tk token, (2) GET /api/vehiculo.php with that token.
-func (r *esPlateResolver) fetchComprobarMatricula(ctx context.Context, plate string) (cmVehiculo, bool, error) {
+// Returns (vehicle, ok, rateLimited, error). rateLimited=true means the server
+// responded with {"ok":0,"limit":true} — the IP has hit CM's anti-scrape budget.
+func (r *esPlateResolver) fetchComprobarMatricula(ctx context.Context, plate string) (cmVehiculo, bool, bool, error) {
 	pageURL := r.cmBase + "/matricula/" + url.PathEscape(plate) + "/"
 
 	// Use a per-request cookie jar. The site sets anti-scrape cookies on the
@@ -192,12 +199,12 @@ func (r *esPlateResolver) fetchComprobarMatricula(ctx context.Context, plate str
 		return b, 200, rerr // CM returns HTTP 404 even on success; normalise.
 	})
 	if err != nil {
-		return cmVehiculo{}, false, fmt.Errorf("comprobarmatricula page: %w", err)
+		return cmVehiculo{}, false, false, fmt.Errorf("comprobarmatricula page: %w", err)
 	}
 
 	m := reCMToken.FindSubmatch(pageBody)
 	if len(m) < 2 {
-		return cmVehiculo{}, false, fmt.Errorf("comprobarmatricula: token not found in page")
+		return cmVehiculo{}, false, false, fmt.Errorf("comprobarmatricula: token not found in page")
 	}
 	token := string(m[1])
 
@@ -226,20 +233,24 @@ func (r *esPlateResolver) fetchComprobarMatricula(ctx context.Context, plate str
 		return b, resp.StatusCode, rerr
 	})
 	if err != nil {
-		return cmVehiculo{}, false, fmt.Errorf("comprobarmatricula api: %w", err)
+		return cmVehiculo{}, false, false, fmt.Errorf("comprobarmatricula api: %w", err)
 	}
 	if status != http.StatusOK {
-		return cmVehiculo{}, false, fmt.Errorf("comprobarmatricula api: HTTP %d", status)
+		return cmVehiculo{}, false, false, fmt.Errorf("comprobarmatricula api: HTTP %d", status)
 	}
 
 	var v cmVehiculo
 	if err := json.Unmarshal(body, &v); err != nil {
-		return cmVehiculo{}, false, fmt.Errorf("comprobarmatricula decode: %w", err)
+		return cmVehiculo{}, false, false, fmt.Errorf("comprobarmatricula decode: %w", err)
 	}
 	if v.OK != 1 {
-		return cmVehiculo{}, false, nil
+		// {"ok":0,"limit":true} → server IP has been rate-limited (per-IP
+		// anti-scrape bucket, documented in ES_ENDPOINTS.md). Surface this
+		// so the caller can show "rate-limited" instead of pretending only
+		// DGT was queried.
+		return cmVehiculo{}, false, v.Limit, nil
 	}
-	return v, true, nil
+	return v, true, false, nil
 }
 
 // applyCMToResult maps a comprobarmatricula record onto PlateResult. Existing
