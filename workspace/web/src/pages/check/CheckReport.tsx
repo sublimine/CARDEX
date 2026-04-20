@@ -5,7 +5,7 @@ import {
   CheckCircle2, AlertTriangle, AlertOctagon,
   Car, MapPin, FileCheck, RotateCcw, Fuel, Gauge,
   Zap, Weight, Leaf, Globe, Calendar, Hash, Shield,
-  ShieldAlert, ShieldCheck, Settings2, Flag,
+  ShieldAlert, ShieldCheck, Settings2, Flag, Euro, Wind,
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -20,6 +20,7 @@ import { cn } from '../../lib/cn'
 import type {
   VehicleReport, PlateInfo, InspectionRecord, RecallEntry, MileageRecord,
   MileageConsistency, ReportOverallStatus, TechnicalSpecsRecord, APKInspection,
+  VehicleAlert,
 } from '../../types/check'
 
 // ── Formatters ────────────────────────────────────────────────────────────────
@@ -55,6 +56,93 @@ function deriveOverallStatus(alerts: VehicleReport['alerts']): ReportOverallStat
   if (list.some((a) => a.severity === 'critical')) return 'alerts'
   if (list.some((a) => a.severity === 'warning'))  return 'attention'
   return 'clean'
+}
+
+// Alerts synthesized from plateInfo state when backend doesn't pre-compute them.
+// Odometer status "Logisch" (NL) / similar translations = consistent; anything else is a red flag.
+function deriveAlertsFromPlate(p: PlateInfo | null | undefined): VehicleAlert[] {
+  if (!p) return []
+  const out: VehicleAlert[] = []
+
+  if (p.odometer_status) {
+    const s = p.odometer_status.toLowerCase()
+    const consistent = s === 'logisch' || s === 'logico' || s === 'lógico' || s === 'consistent'
+    if (!consistent) {
+      out.push({
+        id: 'derived-odometer',
+        severity: 'critical',
+        type: 'mileage_rollback',
+        title: 'Odómetro inconsistente',
+        description: `Estado del cuentakilómetros: "${p.odometer_status}". Puede indicar rollback o lagunas entre registros.`,
+        recommendedAction: 'Solicitar historial completo de kilometraje y revisión mecánica.',
+        source: 'CARDEX Check',
+      })
+    }
+  }
+
+  if (p.export_indicator) {
+    out.push({
+      id: 'derived-export',
+      severity: 'warning',
+      type: 'exported',
+      title: 'Vehículo marcado como exportado',
+      description: 'El registro nacional indica exportación. Puede haber restricciones de matriculación o importación.',
+      recommendedAction: 'Verificar la situación registral antes de comprar o matricular.',
+      source: 'CARDEX Check',
+    })
+  }
+
+  const lastApk = [...(p.apk_history ?? [])].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))[0]
+  if (lastApk?.defects_found && lastApk.defects_found > 0) {
+    const codes = (lastApk.defects ?? []).map((d) => d.code).join(', ')
+    out.push({
+      id: 'derived-defects',
+      severity: 'warning',
+      type: 'other',
+      title: `${lastApk.defects_found} defecto${lastApk.defects_found === 1 ? '' : 's'} en la última inspección`,
+      description: `Inspección del ${lastApk.date ? formatDate(lastApk.date) : 'registro más reciente'}${codes ? ` — códigos: ${codes}` : ''}.`,
+      recommendedAction: 'Pedir evidencia de las reparaciones realizadas desde la inspección.',
+      source: 'APK / RDW',
+    })
+  }
+
+  if (p.open_recall) {
+    out.push({
+      id: 'derived-recall',
+      severity: 'critical',
+      type: 'recall_open',
+      title: 'Llamada a revisión abierta',
+      description: 'El fabricante tiene una campaña de seguridad pendiente para este vehículo.',
+      recommendedAction: 'Contactar con un concesionario oficial para completar la campaña.',
+      source: 'CARDEX Check',
+    })
+  }
+
+  if (p.taxi_indicator) {
+    out.push({
+      id: 'derived-taxi',
+      severity: 'warning',
+      type: 'other',
+      title: 'Uso profesional registrado (taxi)',
+      description: 'El vehículo ha sido utilizado como taxi — kilometraje elevado y mayor desgaste esperados.',
+      recommendedAction: 'Considerar una inspección mecánica más exhaustiva.',
+      source: 'CARDEX Check',
+    })
+  }
+
+  if (p.registration_status && /uninsured|unins|sin seguro|niet verzekerd/i.test(p.registration_status)) {
+    out.push({
+      id: 'derived-uninsured',
+      severity: 'warning',
+      type: 'no_insurance',
+      title: 'Vehículo sin seguro activo',
+      description: `Estado de matriculación reportado: "${p.registration_status}".`,
+      recommendedAction: 'El vehículo no puede circular legalmente hasta que se contrate un seguro.',
+      source: 'CARDEX Check',
+    })
+  }
+
+  return out
 }
 
 function kwToCV(kw: number): number {
@@ -204,8 +292,28 @@ function DataField({ label, value, mono }: { label: string; value: string | numb
 
 // ── Technical specs ───────────────────────────────────────────────────────────
 
+type Spec = { icon: React.ReactNode; label: string; value: string | number; mono?: boolean }
+
+function SpecsGrid({ specs }: { specs: Spec[] }) {
+  const half = Math.ceil(specs.length / 2)
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 divide-border-subtle/0">
+      <div className="sm:pr-5 sm:border-r sm:border-border-subtle/50">
+        {specs.slice(0, half).map((s) => (
+          <SpecRow key={s.label} icon={s.icon} label={s.label} value={s.value} mono={s.mono} />
+        ))}
+      </div>
+      <div className="sm:pl-5">
+        {specs.slice(half).map((s) => (
+          <SpecRow key={s.label} icon={s.icon} label={s.label} value={s.value} mono={s.mono} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function TechnicalSpecsSection({ p }: { p: PlateInfo }) {
-  const specs: { icon: React.ReactNode; label: string; value: string | number; mono?: boolean }[] = []
+  const specs: Spec[] = []
 
   if (p.fuel_type)
     specs.push({ icon: <Fuel className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Combustible', value: p.fuel_type })
@@ -213,56 +321,40 @@ function TechnicalSpecsSection({ p }: { p: PlateInfo }) {
     specs.push({ icon: <Settings2 className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Cilindrada', value: `${p.displacement_cc.toLocaleString()} cm³`, mono: true })
   if (p.power_kw)
     specs.push({ icon: <Zap className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Potencia', value: `${p.power_kw} kW · ${kwToCV(p.power_kw)} CV`, mono: true })
+  if (p.number_of_cylinders)
+    specs.push({ icon: <Settings2 className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Cilindros', value: p.number_of_cylinders, mono: true })
   if (p.engine_code)
     specs.push({ icon: <Hash className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Código motor', value: p.engine_code, mono: true })
   if (p.transmission)
     specs.push({ icon: <Settings2 className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Transmisión', value: p.transmission })
-  if (p.empty_weight_kg)
-    specs.push({ icon: <Weight className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Peso vacío', value: `${p.empty_weight_kg.toLocaleString()} kg`, mono: true })
-  if (p.gross_weight_kg)
-    specs.push({ icon: <Weight className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'MMA', value: `${p.gross_weight_kg.toLocaleString()} kg`, mono: true })
-  if (p.co2_g_per_km)
-    specs.push({ icon: <Leaf className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'CO₂', value: `${p.co2_g_per_km} g/km`, mono: true })
-  if (p.euro_norm)
-    specs.push({ icon: <Leaf className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Norma Euro', value: p.euro_norm })
-  if (p.color)
-    specs.push({ icon: <Car className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Color', value: p.color })
   if (p.body_type)
     specs.push({ icon: <Car className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Carrocería', value: p.body_type })
-  if (p.number_of_seats)
-    specs.push({ icon: <Car className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Plazas', value: p.number_of_seats, mono: true })
-  if (p.number_of_cylinders)
-    specs.push({ icon: <Settings2 className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Cilindros', value: p.number_of_cylinders, mono: true })
   if (p.number_of_doors)
     specs.push({ icon: <Car className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Puertas', value: p.number_of_doors, mono: true })
+  if (p.number_of_seats)
+    specs.push({ icon: <Car className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Plazas', value: p.number_of_seats, mono: true })
   if (p.number_of_axles)
     specs.push({ icon: <Settings2 className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Ejes', value: p.number_of_axles, mono: true })
   if (p.number_of_wheels)
     specs.push({ icon: <Settings2 className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Ruedas', value: p.number_of_wheels, mono: true })
   if (p.wheelbase_cm)
     specs.push({ icon: <Settings2 className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Batalla', value: `${p.wheelbase_cm} cm`, mono: true })
-  if (p.secondary_color)
-    specs.push({ icon: <Car className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Color secundario', value: p.secondary_color })
-  if (p.fuel_consumption_combined_l100km)
-    specs.push({ icon: <Fuel className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Consumo medio', value: `${p.fuel_consumption_combined_l100km.toFixed(1)} L/100km`, mono: true })
-  if (p.fuel_consumption_city_l100km)
-    specs.push({ icon: <Fuel className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Consumo urbano', value: `${p.fuel_consumption_city_l100km.toFixed(1)} L/100km`, mono: true })
-  if (p.fuel_consumption_extra_urban_l100km)
-    specs.push({ icon: <Fuel className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Consumo extraurbano', value: `${p.fuel_consumption_extra_urban_l100km.toFixed(1)} L/100km`, mono: true })
+  if (p.empty_weight_kg)
+    specs.push({ icon: <Weight className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Peso vacío', value: `${p.empty_weight_kg.toLocaleString()} kg`, mono: true })
+  if (p.gross_weight_kg)
+    specs.push({ icon: <Weight className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'MMA', value: `${p.gross_weight_kg.toLocaleString()} kg`, mono: true })
+  if (p.empty_weight_kg && p.gross_weight_kg && p.gross_weight_kg > p.empty_weight_kg)
+    specs.push({ icon: <Weight className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Carga máxima', value: `${(p.gross_weight_kg - p.empty_weight_kg).toLocaleString()} kg`, mono: true })
   if (p.max_trailer_weight_braked_kg)
     specs.push({ icon: <Weight className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Remolque c/freno', value: `${p.max_trailer_weight_braked_kg.toLocaleString()} kg`, mono: true })
   if (p.max_trailer_weight_unbraked_kg)
     specs.push({ icon: <Weight className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Remolque s/freno', value: `${p.max_trailer_weight_unbraked_kg.toLocaleString()} kg`, mono: true })
-  if (p.energy_label)
-    specs.push({ icon: <Leaf className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Etiqueta energía', value: p.energy_label })
-  if (p.stationary_noise_db)
-    specs.push({ icon: <Gauge className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Ruido estacionario', value: `${p.stationary_noise_db} dB`, mono: true })
-  if (p.soot_emission)
-    specs.push({ icon: <Leaf className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Emisión partículas', value: `${p.soot_emission} g/km`, mono: true })
-  if (p.emission_code)
-    specs.push({ icon: <Leaf className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Código emisiones', value: p.emission_code, mono: true })
-  if (p.environmental_badge)
-    specs.push({ icon: <Leaf className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Distintivo ambiental', value: p.environmental_badge })
+  if (p.color)
+    specs.push({ icon: <Car className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Color', value: p.color })
+  if (p.secondary_color)
+    specs.push({ icon: <Car className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Color secundario', value: p.secondary_color })
+  if (p.catalogue_price_eur)
+    specs.push({ icon: <Euro className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'PVP catálogo', value: `€${p.catalogue_price_eur.toLocaleString('es-ES')}`, mono: true })
 
   if (specs.length === 0) return null
 
@@ -270,19 +362,46 @@ function TechnicalSpecsSection({ p }: { p: PlateInfo }) {
     <Section
       title="Especificaciones técnicas"
       icon={<Gauge className="w-3.5 h-3.5" strokeWidth={1.5} />}
+      count={specs.length}
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 divide-border-subtle/0">
-        <div className="sm:pr-5 sm:border-r sm:border-border-subtle/50">
-          {specs.slice(0, Math.ceil(specs.length / 2)).map((s) => (
-            <SpecRow key={s.label} icon={s.icon} label={s.label} value={s.value} mono={s.mono} />
-          ))}
-        </div>
-        <div className="sm:pl-5">
-          {specs.slice(Math.ceil(specs.length / 2)).map((s) => (
-            <SpecRow key={s.label} icon={s.icon} label={s.label} value={s.value} mono={s.mono} />
-          ))}
-        </div>
-      </div>
+      <SpecsGrid specs={specs} />
+    </Section>
+  )
+}
+
+function EmissionsSection({ p }: { p: PlateInfo }) {
+  const specs: Spec[] = []
+
+  if (p.co2_g_per_km)
+    specs.push({ icon: <Leaf className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'CO₂', value: `${p.co2_g_per_km} g/km`, mono: true })
+  if (p.euro_norm)
+    specs.push({ icon: <Leaf className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Norma Euro', value: p.euro_norm })
+  if (p.environmental_badge)
+    specs.push({ icon: <Leaf className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Distintivo ambiental', value: p.environmental_badge })
+  if (p.energy_label)
+    specs.push({ icon: <Leaf className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Etiqueta energética', value: p.energy_label })
+  if (p.fuel_consumption_combined_l100km)
+    specs.push({ icon: <Fuel className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Consumo combinado', value: `${p.fuel_consumption_combined_l100km.toFixed(1).replace('.', ',')} L/100km`, mono: true })
+  if (p.fuel_consumption_city_l100km)
+    specs.push({ icon: <Fuel className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Consumo urbano', value: `${p.fuel_consumption_city_l100km.toFixed(1).replace('.', ',')} L/100km`, mono: true })
+  if (p.fuel_consumption_extra_urban_l100km)
+    specs.push({ icon: <Fuel className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Consumo extraurbano', value: `${p.fuel_consumption_extra_urban_l100km.toFixed(1).replace('.', ',')} L/100km`, mono: true })
+  if (p.stationary_noise_db)
+    specs.push({ icon: <Gauge className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Ruido estacionario', value: `${p.stationary_noise_db} dB`, mono: true })
+  if (p.soot_emission)
+    specs.push({ icon: <Wind className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Emisión partículas', value: `${p.soot_emission.toString().replace('.', ',')} g/km`, mono: true })
+  if (p.emission_code)
+    specs.push({ icon: <Leaf className="w-3.5 h-3.5" strokeWidth={1.5} />, label: 'Código emisión', value: p.emission_code, mono: true })
+
+  if (specs.length === 0) return null
+
+  return (
+    <Section
+      title="Emisiones y medio ambiente"
+      icon={<Leaf className="w-3.5 h-3.5" strokeWidth={1.5} />}
+      count={specs.length}
+    >
+      <SpecsGrid specs={specs} />
     </Section>
   )
 }
@@ -330,7 +449,6 @@ function IdentificationSection({
   if (p?.first_registration) fields.push({ label: 'Primera matriculación', value: formatDate(p.first_registration) })
   if (p?.registration_status) fields.push({ label: 'Estado matrícula', value: p.registration_status })
   if (p?.previous_owners) fields.push({ label: 'Propietarios previos', value: p.previous_owners, mono: true })
-  if (p?.catalogue_price_eur) fields.push({ label: 'Precio catálogo', value: `€${p.catalogue_price_eur.toLocaleString()}`, mono: true })
   if (p?.district) fields.push({ label: 'Provincia/Distrito', value: p.district })
   if (p?.mileage_km) fields.push({ label: 'Km registrado', value: fmtKm(p.mileage_km), mono: true })
   if (p?.odometer_status) fields.push({ label: 'Estado cuentakm', value: p.odometer_status })
@@ -746,7 +864,11 @@ interface CheckReportProps {
 export default function CheckReport({ report, onBack, onRefresh }: CheckReportProps) {
   const d                   = report.vinDecode ?? undefined
   const p                   = report.plateInfo ?? undefined
-  const alerts              = report.alerts ?? []
+  const backendAlerts       = report.alerts ?? []
+  const derivedAlerts       = deriveAlertsFromPlate(p)
+  // Merge + de-dupe by alert type; backend entries win over derived ones.
+  const seenTypes           = new Set(backendAlerts.map((a) => a.type))
+  const alerts              = [...backendAlerts, ...derivedAlerts.filter((a) => !seenTypes.has(a.type))]
   const recalls             = report.recalls ?? []
   const mileageHistory      = report.mileageHistory ?? []
   const dataSources         = report.dataSources ?? []
@@ -853,6 +975,11 @@ export default function CheckReport({ report, onBack, onRefresh }: CheckReportPr
                 <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-text-primary leading-tight">
                   {vehicleTitle}
                 </h1>
+                {p?.variant && (
+                  <p className="mt-0.5 text-sm text-text-secondary font-medium">
+                    Variante <span className="font-mono">{p.variant}</span>
+                  </p>
+                )}
 
                 {/* VIN row */}
                 {report.vin && (
@@ -870,15 +997,19 @@ export default function CheckReport({ report, onBack, onRefresh }: CheckReportPr
                   </div>
                 )}
 
-                {/* Plate + partial warning */}
+                {/* Plate + data completeness badge */}
                 {p?.plate && (
                   <div className="flex items-center gap-2 mt-1.5">
                     <span className="font-mono text-xs text-text-muted tracking-widest border border-border-subtle rounded px-2 py-0.5 bg-glass-subtle">
                       {p.plate}
                     </span>
-                    {p.partial && (
+                    {p.partial ? (
                       <span className="text-[10px] text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
                         Datos parciales
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">
+                        Datos completos
                       </span>
                     )}
                   </div>
@@ -985,6 +1116,9 @@ export default function CheckReport({ report, onBack, onRefresh }: CheckReportPr
 
             {/* Technical specs (from plate resolver) */}
             {hasTechSpecs && p && <TechnicalSpecsSection p={p} />}
+
+            {/* Emissions & environment */}
+            {p && <EmissionsSection p={p} />}
 
             {/* Inspections */}
             <Section
