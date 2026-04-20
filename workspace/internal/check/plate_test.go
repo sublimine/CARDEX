@@ -206,6 +206,208 @@ func TestPlateRegistry_CountryNormalized(t *testing.T) {
 	}
 }
 
+// ── NL enrichment helpers ─────────────────────────────────────────────────────
+
+// rdwMultiServer routes requests by RDW dataset ID embedded in the URL path.
+// Any unregistered path returns an empty JSON array so best-effort fetches
+// degrade gracefully.
+func rdwMultiServer(t *testing.T, routes map[string][]map[string]string) *httptest.Server {
+	t.Helper()
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		for dsID, rows := range routes {
+			if strings.Contains(r.URL.Path, "/"+dsID+".json") {
+				_ = json.NewEncoder(w).Encode(rows)
+				return
+			}
+		}
+		_ = json.NewEncoder(w).Encode([]map[string]string{})
+	}))
+}
+
+func TestNLPlateResolver_FullEnrichment(t *testing.T) {
+	inspDate := "2024-03-15T10:00:00.000"
+	nextAPK := "2025-03-15T10:00:00.000"
+
+	srv := rdwMultiServer(t, map[string][]map[string]string{
+		"m9d7-ebf2": {{
+			"kenteken":                              "3TKZ08",
+			"voertuigidentificatienummer":           validVIN,
+			"merk":                                  "TOYOTA",
+			"handelsbenaming":                       "YARIS",
+			"inrichting":                            "HATCHBACK",
+			"eerste_kleur":                          "ROOD",
+			"massa_ledig_voertuig":                  "985",
+			"toegestane_maximum_massa_voertuig":     "1395",
+			"cilinderinhoud":                        "998",
+			"aantal_cilinders":                      "3",
+			"aantal_zitplaatsen":                    "5",
+			"aantal_deuren":                         "5",
+			"datum_eerste_toelating":                "20180301",
+			"vervaldatum_apk":                       "20250301",
+			"wam_verzekerd":                         "Ja",
+			"tellerstandoordeel":                    "Logisch",
+			"export_indicator":                      "Nee",
+			"openstaande_terugroepactie_indicator":  "Nee",
+		}},
+		"8ys7-d773": {{
+			"kenteken":                        "3TKZ08",
+			"brandstof_omschrijving":          "Benzine",
+			"nettomaximumvermogen":            "72",
+			"co2_uitstoot_gecombineerd":       "116",
+			"uitlaatemissieniveau":            "EURO 6",
+			"brandstofverbruik_gecombineerd":  "5.0",
+		}},
+		"sgfe-77wx": {{
+			"kenteken":                              "3TKZ08",
+			"meld_datum_door_keuringsinstantie_dt":  inspDate,
+			"soort_erkenning_omschrijving":          "GARAGE A",
+			"vervaldatum_keuring_dt":                nextAPK,
+		}},
+		"a34c-vvps": {},
+		"3huj-srit": {
+			{"kenteken": "3TKZ08", "as_nummer": "1", "spoorbreedte": "1485"},
+			{"kenteken": "3TKZ08", "as_nummer": "2", "spoorbreedte": "1480"},
+		},
+		"vezc-m2t6": {{
+			"kenteken":                                 "3TKZ08",
+			"type_carrosserie_europese_omschrijving":   "HATCHBACK",
+		}},
+	})
+	defer srv.Close()
+
+	r := check.NewNLPlateResolverWithBase(srv.URL)
+	result, err := r.Resolve(context.Background(), "3TKZ08")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Basic
+	if result.Make != "TOYOTA" {
+		t.Errorf("Make = %q, want TOYOTA", result.Make)
+	}
+	if result.NumberOfDoors != 5 {
+		t.Errorf("NumberOfDoors = %d, want 5", result.NumberOfDoors)
+	}
+	if result.OdometerStatus != "logical" {
+		t.Errorf("OdometerStatus = %q, want logical", result.OdometerStatus)
+	}
+
+	// Fuel enrichment from 8ys7-d773
+	if result.FuelType != "Benzine" {
+		t.Errorf("FuelType = %q, want Benzine", result.FuelType)
+	}
+	if result.EuroNorm != "EURO 6" {
+		t.Errorf("EuroNorm = %q, want EURO 6", result.EuroNorm)
+	}
+	if result.PowerKW != 72 {
+		t.Errorf("PowerKW = %g, want 72", result.PowerKW)
+	}
+	if result.CO2GPerKm != 116 {
+		t.Errorf("CO2GPerKm = %g, want 116", result.CO2GPerKm)
+	}
+	if result.FuelConsumptionL100km != 5.0 {
+		t.Errorf("FuelConsumptionL100km = %g, want 5.0", result.FuelConsumptionL100km)
+	}
+
+	// Axles from 3huj-srit
+	if result.NumberOfAxles != 2 {
+		t.Errorf("NumberOfAxles = %d, want 2", result.NumberOfAxles)
+	}
+
+	// APK history from sgfe-77wx
+	if len(result.APKHistory) != 1 {
+		t.Fatalf("APKHistory len = %d, want 1", len(result.APKHistory))
+	}
+	if result.APKHistory[0].Result != "pass" {
+		t.Errorf("APKHistory[0].Result = %q, want pass", result.APKHistory[0].Result)
+	}
+	if result.APKHistory[0].Station != "GARAGE A" {
+		t.Errorf("APKHistory[0].Station = %q, want GARAGE A", result.APKHistory[0].Station)
+	}
+	if result.LastInspectionResult != "pass" {
+		t.Errorf("LastInspectionResult = %q, want pass", result.LastInspectionResult)
+	}
+}
+
+func TestNLPlateResolver_OdometerIllogical(t *testing.T) {
+	srv := rdwMultiServer(t, map[string][]map[string]string{
+		"m9d7-ebf2": {{"kenteken": "XX0001", "merk": "SEAT", "tellerstandoordeel": "Onlogisch"}},
+	})
+	defer srv.Close()
+
+	r := check.NewNLPlateResolverWithBase(srv.URL)
+	result, err := r.Resolve(context.Background(), "XX0001")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.OdometerStatus != "illogical" {
+		t.Errorf("OdometerStatus = %q, want illogical", result.OdometerStatus)
+	}
+}
+
+func TestNLPlateResolver_APKWithDefects(t *testing.T) {
+	inspDate := "2024-06-10T09:00:00.000"
+
+	srv := rdwMultiServer(t, map[string][]map[string]string{
+		"m9d7-ebf2": {{"kenteken": "XX0002", "merk": "VW"}},
+		"sgfe-77wx": {{
+			"kenteken":                              "XX0002",
+			"meld_datum_door_keuringsinstantie_dt":  inspDate,
+			"soort_erkenning_omschrijving":          "GARAGE B",
+		}},
+		"a34c-vvps": {{
+			"kenteken":                              "XX0002",
+			"meld_datum_door_keuringsinstantie_dt":  inspDate,
+			"gebrek_identificatie":                  "G123",
+			"aantal_gebreken_geconstateerd":         "2",
+			"soort_erkenning_omschrijving":          "GARAGE B",
+		}},
+	})
+	defer srv.Close()
+
+	r := check.NewNLPlateResolverWithBase(srv.URL)
+	result, err := r.Resolve(context.Background(), "XX0002")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result.APKHistory) == 0 {
+		t.Fatal("expected APK history entries")
+	}
+	if result.APKHistory[0].Result != "fail" {
+		t.Errorf("APKHistory[0].Result = %q, want fail", result.APKHistory[0].Result)
+	}
+	if len(result.APKHistory[0].Defects) != 1 {
+		t.Fatalf("defects len = %d, want 1", len(result.APKHistory[0].Defects))
+	}
+	if result.APKHistory[0].Defects[0].Code != "G123" {
+		t.Errorf("defect code = %q, want G123", result.APKHistory[0].Defects[0].Code)
+	}
+	if result.APKHistory[0].Defects[0].Count != 2 {
+		t.Errorf("defect count = %d, want 2", result.APKHistory[0].Defects[0].Count)
+	}
+	if result.LastInspectionResult != "fail" {
+		t.Errorf("LastInspectionResult = %q, want fail", result.LastInspectionResult)
+	}
+}
+
+func TestNLPlateResolver_AxlesIgnoredWhenEmptyAsNummer(t *testing.T) {
+	// If the axles endpoint echoes back wrong/empty data, NumberOfAxles must stay 0.
+	srv := rdwPlateServer([]map[string]string{
+		{"kenteken": "XX0003", "merk": "BMW"},
+	})
+	defer srv.Close()
+
+	r := check.NewNLPlateResolverWithBase(srv.URL)
+	result, err := r.Resolve(context.Background(), "XX0003")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.NumberOfAxles != 0 {
+		t.Errorf("NumberOfAxles = %d, want 0 when as_nummer is empty", result.NumberOfAxles)
+	}
+}
+
 // ── DE plate resolver ─────────────────────────────────────────────────────────
 
 func TestDEPlateResolver_KnownPrefix(t *testing.T) {
