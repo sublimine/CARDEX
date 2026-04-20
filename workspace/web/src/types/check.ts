@@ -104,6 +104,14 @@ export interface DataSource {
   latencyMs?: number
 }
 
+export interface APKInspection {
+  date?: string
+  result?: 'pass' | 'fail' | 'pending' | 'advisory'
+  expiry_date?: string
+  inspection_type?: string
+  defects_found?: number
+}
+
 export interface PlateInfo {
   vin?: string
   plate?: string
@@ -123,15 +131,44 @@ export interface PlateInfo {
   euro_norm?: string
   body_type?: string
   color?: string
+  secondary_color?: string
   number_of_seats?: number
   number_of_cylinders?: number
+  number_of_doors?: number
+  number_of_axles?: number
+  number_of_wheels?: number
+  wheelbase_cm?: number
+  // Fuel consumption (L/100km)
+  fuel_consumption_combined_l100km?: number
+  fuel_consumption_city_l100km?: number
+  fuel_consumption_extra_urban_l100km?: number
+  // Emissions extras
+  stationary_noise_db?: number
+  soot_emission?: number
+  emission_code?: string
+  // Trailer / classification / pricing
+  max_trailer_weight_braked_kg?: number
+  max_trailer_weight_unbraked_kg?: number
+  european_vehicle_category?: string
+  vehicle_type?: string
+  type_approval_number?: string
+  energy_label?: string
+  catalogue_price_eur?: number
   // Registration
   first_registration?: string
   registration_status?: string
+  // Odometer status
+  odometer_status?: string
+  last_mileage_registration_year?: number
+  // Status flags
+  export_indicator?: boolean
+  open_recall?: boolean
+  taxi_indicator?: boolean
   // Inspection
   last_inspection_date?: string
   last_inspection_result?: string
   next_inspection_date?: string
+  apk_history?: APKInspection[]
   // Mileage
   mileage_km?: number
   mileage_date?: string

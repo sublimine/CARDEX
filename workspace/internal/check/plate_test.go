@@ -151,6 +151,118 @@ func TestNLPlateResolver_ServerError(t *testing.T) {
 	}
 }
 
+// TestNLPlateResolver_FullCoverage asserts that the resolver extracts every field
+// the RDW datasets expose for a real vehicle. Fixture is the recorded response
+// for plate 3TKZ08 (FIAT 500, 2014). If RDW adds new fields, the expectation list
+// below should be expanded.
+func TestNLPlateResolver_FullCoverage(t *testing.T) {
+	// Route Socrata dataset requests to the right fixture based on URL path.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case strings.Contains(r.URL.Path, "m9d7-ebf2"): // main vehicle
+			fmt.Fprint(w, `[{"kenteken":"3TKZ08","voertuigsoort":"Personenauto","merk":"FIAT","handelsbenaming":"FIAT 500","vervaldatum_apk":"20250504","inrichting":"hatchback","aantal_zitplaatsen":"4","eerste_kleur":"ZWART","tweede_kleur":"Niet geregistreerd","aantal_cilinders":"2","cilinderinhoud":"964","massa_ledig_voertuig":"840","toegestane_maximum_massa_voertuig":"1305","maximum_massa_trekken_ongeremd":"400","maximum_trekken_massa_geremd":"800","datum_eerste_toelating":"20140318","catalogusprijs":"15280","wam_verzekerd":"Nee","aantal_deuren":"2","aantal_wielen":"4","europese_voertuigcategorie":"M1","variant":"AXP1A","typegoedkeuringsnummer":"e3*2007/46*0064*16","wielbasis":"230","export_indicator":"Ja","openstaande_terugroepactie_indicator":"Nee","taxi_indicator":"Nee","jaar_laatste_registratie_tellerstand":"2024","tellerstandoordeel":"Logisch","zuinigheidsclassificatie":"A"}]`)
+		case strings.Contains(r.URL.Path, "8ys7-d773"): // fuel
+			fmt.Fprint(w, `[{"kenteken":"3TKZ08","brandstof_omschrijving":"Benzine","brandstofverbruik_buiten":"3.40","brandstofverbruik_gecombineerd":"3.80","brandstofverbruik_stad":"4.60","co2_uitstoot_gecombineerd":"88","geluidsniveau_stationair":"82","emissiecode_omschrijving":"6","nettomaximumvermogen":"44.00","roetuitstoot":"0.52","uitlaatemissieniveau":"EURO 6 W"}]`)
+		case strings.Contains(r.URL.Path, "sgfe-77wx"): // APK
+			fmt.Fprint(w, `[{"kenteken":"3TKZ08","soort_erkenning_omschrijving":"APK Lichte voertuigen","soort_melding_ki_omschrijving":"periodieke controle","meld_datum_door_keuringsinstantie_dt":"2024-04-16T15:37:00.000","vervaldatum_keuring_dt":"2025-05-04T00:00:00.000"}]`)
+		case strings.Contains(r.URL.Path, "a34c-vvps"): // defects
+			fmt.Fprint(w, `[{"kenteken":"3TKZ08","gebrek_identificatie":"210","aantal_gebreken_geconstateerd":"4","meld_datum_door_keuringsinstantie_dt":"2024-04-16T15:37:00.000"}]`)
+		case strings.Contains(r.URL.Path, "3huj-srit"): // axles
+			fmt.Fprint(w, `[{"kenteken":"3TKZ08","as_nummer":"1","aantal_assen":"2"},{"kenteken":"3TKZ08","as_nummer":"2","aantal_assen":"2"}]`)
+		case strings.Contains(r.URL.Path, "vezc-m2t6"): // body
+			fmt.Fprint(w, `[{"kenteken":"3TKZ08","carrosserietype":"AB","type_carrosserie_europese_omschrijving":"Hatchback"}]`)
+		default:
+			fmt.Fprint(w, "[]")
+		}
+	}))
+	defer srv.Close()
+
+	r := check.NewNLPlateResolverWithBase(srv.URL)
+	res, err := r.Resolve(context.Background(), "3TKZ08")
+	if err != nil {
+		t.Fatalf("Resolve: %v", err)
+	}
+
+	cases := []struct {
+		name string
+		got  interface{}
+		want interface{}
+	}{
+		// main dataset
+		{"Make", res.Make, "FIAT"},
+		{"Model", res.Model, "FIAT 500"},
+		{"Variant", res.Variant, "AXP1A"},
+		{"Color", res.Color, "ZWART"},
+		{"SecondaryColor (sentinel suppressed)", res.SecondaryColor, ""},
+		{"VehicleType", res.VehicleType, "Personenauto"},
+		{"EuropeanVehicleCategory", res.EuropeanVehicleCategory, "M1"},
+		{"TypeApprovalNumber", res.TypeApprovalNumber, "e3*2007/46*0064*16"},
+		{"EnergyLabel", res.EnergyLabel, "A"},
+		{"DisplacementCC", res.DisplacementCC, 964},
+		{"NumberOfCylinders", res.NumberOfCylinders, 2},
+		{"NumberOfSeats", res.NumberOfSeats, 4},
+		{"NumberOfDoors", res.NumberOfDoors, 2},
+		{"NumberOfWheels", res.NumberOfWheels, 4},
+		{"NumberOfAxles", res.NumberOfAxles, 2},
+		{"WheelbaseCm", res.WheelbaseCm, 230},
+		{"EmptyWeightKg", res.EmptyWeightKg, 840},
+		{"GrossWeightKg", res.GrossWeightKg, 1305},
+		{"CataloguePriceEUR", res.CataloguePriceEUR, 15280},
+		{"MaxTrailerWeightBrakedKg", res.MaxTrailerWeightBrakedKg, 800},
+		{"MaxTrailerWeightUnbrakedKg", res.MaxTrailerWeightUnbrakedKg, 400},
+		{"OdometerStatus", res.OdometerStatus, "Logisch"},
+		{"LastMileageRegistrationYear", res.LastMileageRegistrationYear, 2024},
+		{"ExportIndicator", res.ExportIndicator, true},
+		{"OpenRecall", res.OpenRecall, false},
+		{"TaxiIndicator", res.TaxiIndicator, false},
+		{"RegistrationStatus", res.RegistrationStatus, "uninsured"},
+		// fuel dataset
+		{"FuelType", res.FuelType, "Benzine"},
+		{"EuroNorm", res.EuroNorm, "EURO 6 W"},
+		{"PowerKW", res.PowerKW, 44.0},
+		{"CO2GPerKm", res.CO2GPerKm, 88.0},
+		{"FuelConsumptionCombinedL100km", res.FuelConsumptionCombinedL100km, 3.8},
+		{"FuelConsumptionCityL100km", res.FuelConsumptionCityL100km, 4.6},
+		{"FuelConsumptionExtraUrbanL100km", res.FuelConsumptionExtraUrbanL100km, 3.4},
+		{"StationaryNoiseDb", res.StationaryNoiseDb, 82.0},
+		{"SootEmission", res.SootEmission, 0.52},
+		{"EmissionCode", res.EmissionCode, "6"},
+		// body dataset (overrides inrichting)
+		{"BodyType (European)", res.BodyType, "Hatchback"},
+		// inspection
+		{"LastInspectionResult", res.LastInspectionResult, "pass"},
+	}
+	for _, tc := range cases {
+		if tc.got != tc.want {
+			t.Errorf("%s = %v (%T), want %v (%T)", tc.name, tc.got, tc.got, tc.want, tc.want)
+		}
+	}
+
+	if res.FirstRegistration == nil || res.FirstRegistration.Year() != 2014 {
+		t.Errorf("FirstRegistration: got %v, want year 2014", res.FirstRegistration)
+	}
+	if res.LastInspectionDate == nil || res.LastInspectionDate.Year() != 2024 {
+		t.Errorf("LastInspectionDate: got %v, want 2024", res.LastInspectionDate)
+	}
+	if res.NextInspectionDate == nil || res.NextInspectionDate.Year() != 2025 {
+		t.Errorf("NextInspectionDate: got %v, want 2025", res.NextInspectionDate)
+	}
+	if got := len(res.APKHistory); got != 1 {
+		t.Fatalf("APKHistory length = %d, want 1", got)
+	}
+	ins := res.APKHistory[0]
+	if ins.DefectsFound != 4 {
+		t.Errorf("APKHistory[0].DefectsFound = %d, want 4", ins.DefectsFound)
+	}
+	if ins.Result != "pass" {
+		t.Errorf("APKHistory[0].Result = %q, want pass", ins.Result)
+	}
+	if ins.InspectionType != "APK Lichte voertuigen" {
+		t.Errorf("APKHistory[0].InspectionType = %q", ins.InspectionType)
+	}
+}
+
 func TestNLPlateResolver_UppercasesVIN(t *testing.T) {
 	srv := rdwPlateServer([]map[string]string{
 		{"kenteken": "XX1234", "voertuigidentificatienummer": "wba3c5c5xdf773941"},
