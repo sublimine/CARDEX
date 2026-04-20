@@ -2,41 +2,61 @@ package check
 
 // ES plate resolver — Spain
 //
-// Data sources:
+// Data sources (all public, unauthenticated, free):
 //
-// 1. DGT Distintivo Ambiental (sede.dgt.gob.es) — PUBLIC, no auth required.
-//    GET sede.dgt.gob.es/.../distintivo-ambiental/index.html?matricula={PLATE}
-//    Returns: environmental badge (0/ECO/C/B) embedded in HTML.
-//    Not-found: "No se ha encontrado ningún resultado".
+// 1. comprobarmatricula.com/api/vehiculo.php — primary. Returns a rich JSON
+//    record (VIN, make, model, variant, fuel, kW, cc, body, gearbox, first
+//    registration, ITV date, owners, engine code, k-type). The page embeds a
+//    time-salted token in <input id="_g_tk">; we harvest it then call the
+//    JSON endpoint with a Referer matching the plate page.
 //
-// 2. infocar.dgt.es — as of 2025 requires Cl@ve/certificado. Skipped.
+// 2. sede.dgt.gob.es/…/distintivo-ambiental — canonical DGT environmental
+//    badge (0 / ECO / C / B). Much more reliable than the badge field in
+//    comprobarmatricula, which assigns "0" to old diesels that in fact have
+//    no badge at all.
 //
-// 3. ITV portals: each of Spain's 17 CCAA runs its own system, none public.
-//
-// 4. Commercial resellers (autoficha, cartell, etc.): not freely accessible.
-//
-// VIN availability: NOT available from any public Spanish source.
-//
-// What this resolver returns (partial):
-//   - Environmental badge (0 / ECO / C / B)
+// Blocked / skipped (documented in ES_ENDPOINTS.md):
+// - DGT "informe-vehiculo" — requires Cl@ve or digital certificate.
+// - vehiculodgt.es — SPA in front of a Stripe-gated backend.
+// - auto-info.gratis — Polish site, no ES coverage.
+// - ITV CCAA portals — 17 regional systems, none public.
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 )
 
 type esPlateResolver struct {
-	client *http.Client
+	client  *http.Client
+	cmBase  string // comprobarmatricula.com base (no trailing slash)
+	dgtBase string // sede.dgt.gob.es distintivo-ambiental page base (trailing slash)
 }
 
 func newESPlateResolver(client *http.Client) *esPlateResolver {
-	return &esPlateResolver{client: client}
+	return &esPlateResolver{
+		client:  client,
+		cmBase:  "https://comprobarmatricula.com",
+		dgtBase: "https://sede.dgt.gob.es/es/vehiculos/informacion-de-vehiculos/distintivo-ambiental/",
+	}
+}
+
+// NewESPlateResolverWithBases creates an ES resolver with custom URL bases
+// (used by tests to substitute httptest servers).
+func NewESPlateResolverWithBases(cmBase, dgtBase string) *esPlateResolver {
+	return &esPlateResolver{
+		client:  newPlateHTTPClient(5 * time.Second),
+		cmBase:  strings.TrimRight(cmBase, "/"),
+		dgtBase: dgtBase,
+	}
 }
 
 // validateESPlate ensures the plate has a plausible Spanish format.
@@ -62,31 +82,281 @@ func (r *esPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 	result := &PlateResult{
 		Plate:     plate,
 		Country:   "ES",
-		Source:    "DGT Sede Electrónica — distintivo ambiental (sede.dgt.gob.es)",
 		FetchedAt: time.Now().UTC(),
-		Partial:   true,
 	}
 
-	// DGT Distintivo Ambiental — public GET form, no auth required.
-	etiquetaErr := r.fetchDGTDistintivo(ctx, plate, result)
+	// Run both sources in parallel. Partial success on one source is fine.
+	var wg sync.WaitGroup
+	var cmErr, dgtErr error
+	var cm cmVehiculo
+	var haveCM bool
 
-	if result.EnvironmentalBadge == "" {
-		if etiquetaErr != nil {
-			return nil, fmt.Errorf("%w: DGT distintivo error: %v", ErrPlateResolutionUnavailable, etiquetaErr)
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		cm, haveCM, cmErr = r.fetchComprobarMatricula(ctx, plate)
+	}()
+	go func() {
+		defer wg.Done()
+		dgtErr = r.fetchDGTDistintivo(ctx, plate, result)
+	}()
+	wg.Wait()
+
+	if haveCM {
+		applyCMToResult(cm, result)
+	}
+
+	sources := make([]string, 0, 2)
+	if haveCM {
+		sources = append(sources, "comprobarmatricula.com")
+	}
+	if result.EnvironmentalBadge != "" {
+		sources = append(sources, "sede.dgt.gob.es (distintivo ambiental)")
+	}
+	result.Source = strings.Join(sources, " + ")
+
+	// Nothing extracted at all → treat as plate not found, unless both sources
+	// errored transiently, in which case bubble an upstream-unavailable error.
+	if !haveCM && result.EnvironmentalBadge == "" {
+		if cmErr != nil && dgtErr != nil {
+			return nil, fmt.Errorf("%w: ES sources unreachable (cm: %v; dgt: %v)",
+				ErrPlateResolutionUnavailable, cmErr, dgtErr)
 		}
-		return nil, fmt.Errorf("%w: DGT returned no data for plate %s — plate not found or no label assigned", ErrPlateNotFound, plate)
+		return nil, fmt.Errorf("%w: no ES source returned data for plate %s",
+			ErrPlateNotFound, plate)
 	}
 
-	result.Partial = false
+	// Partial when primary source missing (CM provides the meaty fields).
+	result.Partial = !haveCM
 	return result, nil
 }
+
+// ── comprobarmatricula.com ─────────────────────────────────────────────────────
+
+// cmVehiculo mirrors the JSON returned by /api/vehiculo.php. All fields are
+// optional — older plates occasionally lack VIN or ITV date.
+type cmVehiculo struct {
+	OK                 int    `json:"ok"`
+	Mat                string `json:"mat"`
+	Brand              string `json:"brand"`
+	MarcaOficial       string `json:"marca_oficial"`
+	Model              string `json:"model"`
+	ModeloCompleto     string `json:"modelo_completo"`
+	Version            string `json:"version"`
+	Fuel               string `json:"fuel"`
+	PotenciaCV         int    `json:"potencia_cv"`
+	PotenciaKW         int    `json:"potencia_kw"`
+	CilindradaCC       string `json:"cilindrada_cc"` // "1968 cc"
+	Carroceria         string `json:"carroceria"`
+	Caja               string `json:"caja"`
+	CodigoMotor        string `json:"codigo_motor"`
+	VIN                string `json:"vin"`
+	FechaMatriculacion string `json:"fecha_matriculacion"` // DD/MM/YYYY
+	AnneeModelo        string `json:"annee_modelo"`        // "2009"
+	Etiq               string `json:"etiq"`
+	ItvDate            string `json:"itv_date"` // DD/MM/YYYY
+	Owners             int    `json:"owners"`
+}
+
+var reCMToken = regexp.MustCompile(`id="_g_tk"\s+value="([^"]+)"`)
+
+// fetchComprobarMatricula implements the two-step flow: (1) GET the plate page
+// to harvest the _g_tk token, (2) GET /api/vehiculo.php with that token.
+func (r *esPlateResolver) fetchComprobarMatricula(ctx context.Context, plate string) (cmVehiculo, bool, error) {
+	pageURL := r.cmBase + "/matricula/" + url.PathEscape(plate) + "/"
+
+	// Use a per-request cookie jar. The site sets anti-scrape cookies on the
+	// page hit that the API endpoint validates; without them the API answers
+	// "limit" even on the first call.
+	jar, _ := cookiejar.New(nil)
+	client := &http.Client{
+		Timeout: r.client.Timeout,
+		Jar:     jar,
+	}
+
+	// Step 1 — fetch page for token.
+	pageBody, _, err := plateRetry(ctx, 2, func() ([]byte, int, error) {
+		req, rerr := http.NewRequestWithContext(ctx, http.MethodGet, pageURL, nil)
+		if rerr != nil {
+			return nil, 0, rerr
+		}
+		req.Header.Set("User-Agent", plateUA)
+		req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+		req.Header.Set("Accept-Language", "es-ES,es;q=0.9,en;q=0.5")
+		resp, rerr := client.Do(req)
+		if rerr != nil {
+			return nil, 0, rerr
+		}
+		defer resp.Body.Close()
+		b, rerr := io.ReadAll(io.LimitReader(resp.Body, 512*1024))
+		return b, 200, rerr // CM returns HTTP 404 even on success; normalise.
+	})
+	if err != nil {
+		return cmVehiculo{}, false, fmt.Errorf("comprobarmatricula page: %w", err)
+	}
+
+	m := reCMToken.FindSubmatch(pageBody)
+	if len(m) < 2 {
+		return cmVehiculo{}, false, fmt.Errorf("comprobarmatricula: token not found in page")
+	}
+	token := string(m[1])
+
+	// Step 2 — call JSON API with token and same jar (cookies attached
+	// automatically by the client).
+	apiURL := r.cmBase + "/api/vehiculo.php?m=" +
+		url.QueryEscape(plate) +
+		"&_tk=" + url.QueryEscape(token) +
+		"&_hp="
+
+	body, status, err := plateRetry(ctx, 2, func() ([]byte, int, error) {
+		req, rerr := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
+		if rerr != nil {
+			return nil, 0, rerr
+		}
+		req.Header.Set("User-Agent", plateUA)
+		req.Header.Set("Referer", pageURL)
+		req.Header.Set("Accept", "application/json")
+		req.Header.Set("X-Requested-With", "XMLHttpRequest")
+		resp, rerr := client.Do(req)
+		if rerr != nil {
+			return nil, 0, rerr
+		}
+		defer resp.Body.Close()
+		b, rerr := io.ReadAll(io.LimitReader(resp.Body, 256*1024))
+		return b, resp.StatusCode, rerr
+	})
+	if err != nil {
+		return cmVehiculo{}, false, fmt.Errorf("comprobarmatricula api: %w", err)
+	}
+	if status != http.StatusOK {
+		return cmVehiculo{}, false, fmt.Errorf("comprobarmatricula api: HTTP %d", status)
+	}
+
+	var v cmVehiculo
+	if err := json.Unmarshal(body, &v); err != nil {
+		return cmVehiculo{}, false, fmt.Errorf("comprobarmatricula decode: %w", err)
+	}
+	if v.OK != 1 {
+		return cmVehiculo{}, false, nil
+	}
+	return v, true, nil
+}
+
+// applyCMToResult maps a comprobarmatricula record onto PlateResult. Existing
+// fields on result (e.g. EnvironmentalBadge set by DGT) are preserved.
+func applyCMToResult(v cmVehiculo, result *PlateResult) {
+	if result.VIN == "" {
+		result.VIN = strings.ToUpper(strings.TrimSpace(v.VIN))
+	}
+	if result.Make == "" {
+		result.Make = firstNonEmpty(v.MarcaOficial, v.Brand)
+	}
+	if result.Model == "" {
+		result.Model = firstNonEmpty(v.ModeloCompleto, v.Model)
+	}
+	if result.Variant == "" {
+		result.Variant = v.Version
+	}
+	if result.FuelType == "" && v.Fuel != "" {
+		result.FuelType = v.Fuel
+	}
+	if result.PowerKW == 0 && v.PotenciaKW > 0 {
+		result.PowerKW = float64(v.PotenciaKW)
+	}
+	if result.PowerCV == 0 && v.PotenciaCV > 0 {
+		result.PowerCV = v.PotenciaCV
+	}
+	if result.DisplacementCC == 0 {
+		result.DisplacementCC = parseCCString(v.CilindradaCC)
+	}
+	if result.BodyType == "" && v.Carroceria != "" {
+		result.BodyType = v.Carroceria
+	}
+	if result.Transmission == "" && v.Caja != "" {
+		result.Transmission = v.Caja
+	}
+	if result.EngineCode == "" && v.CodigoMotor != "" {
+		result.EngineCode = strings.ToUpper(strings.TrimSpace(v.CodigoMotor))
+	}
+	if result.PreviousOwners == 0 && v.Owners > 0 {
+		result.PreviousOwners = v.Owners
+	}
+	if result.ModelYear == 0 {
+		if n := parsePositiveInt(v.AnneeModelo); n > 0 {
+			result.ModelYear = n
+		}
+	}
+	if result.FirstRegistration == nil {
+		if t := parseESDate(v.FechaMatriculacion); !t.IsZero() {
+			result.FirstRegistration = &t
+		}
+	}
+	if result.NextInspectionDate == nil {
+		if t := parseESDate(v.ItvDate); !t.IsZero() {
+			result.NextInspectionDate = &t
+		}
+	}
+}
+
+// parsePositiveInt returns the integer value of s, or 0 if not parseable or non-positive.
+func parsePositiveInt(s string) int {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return 0
+	}
+	var n int
+	if _, err := fmt.Sscanf(s, "%d", &n); err != nil {
+		return 0
+	}
+	if n <= 0 {
+		return 0
+	}
+	return n
+}
+
+// parseESDate parses DD/MM/YYYY → time.Time; returns zero time on failure.
+func parseESDate(s string) time.Time {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return time.Time{}
+	}
+	t, err := time.Parse("02/01/2006", s)
+	if err != nil {
+		return time.Time{}
+	}
+	return t
+}
+
+// parseCCString pulls the leading integer out of strings like "1968 cc".
+var reCC = regexp.MustCompile(`(\d+)`)
+
+func parseCCString(s string) int {
+	m := reCC.FindString(s)
+	if m == "" {
+		return 0
+	}
+	var n int
+	fmt.Sscanf(m, "%d", &n)
+	return n
+}
+
+func firstNonEmpty(a ...string) string {
+	for _, s := range a {
+		if strings.TrimSpace(s) != "" {
+			return strings.TrimSpace(s)
+		}
+	}
+	return ""
+}
+
+// ── DGT distintivo ambiental ──────────────────────────────────────────────────
 
 // fetchDGTDistintivo queries the DGT environmental badge using the public GET form.
 // URL: GET sede.dgt.gob.es/.../distintivo-ambiental/index.html?matricula={PLATE}
 // No authentication or CAPTCHA required.
-// Response HTML contains badge in SVG filename: distinctivo_{BADGE}_sin_fondo.svg
+// Response HTML contains badge in SVG filename: distintivo_{BADGE}_sin_fondo.svg
 func (r *esPlateResolver) fetchDGTDistintivo(ctx context.Context, plate string, result *PlateResult) error {
-	const pageBase = "https://sede.dgt.gob.es/es/vehiculos/informacion-de-vehiculos/distintivo-ambiental/"
+	pageBase := r.dgtBase
 	queryURL := pageBase + "index.html?matricula=" + url.QueryEscape(plate)
 
 	body, status, err := plateRetry(ctx, 2, func() ([]byte, int, error) {
@@ -123,7 +393,7 @@ func parseDGTDistintivoResponse(body string, result *PlateResult) error {
 
 	// Not found.
 	if strings.Contains(upper, "NO SE HA ENCONTRADO") {
-		return nil // return nil — Resolve will emit ErrPlateNotFound
+		return nil
 	}
 
 	// Extract badge from SVG filename: "DISTINTIVO_C_SIN_FONDO.SVG" or "DISTINTIVO_CERO_SIN_FONDO.SVG"
@@ -132,17 +402,8 @@ func parseDGTDistintivoResponse(body string, result *PlateResult) error {
 		if strings.Contains(upper, needle) {
 			if badge == "CERO" {
 				result.EnvironmentalBadge = "0"
-				result.FuelType = "Eléctrico / Hidrógeno"
 			} else {
 				result.EnvironmentalBadge = badge
-				switch badge {
-				case "ECO":
-					result.FuelType = "Gas Natural / Híbrido enchufable"
-				case "C":
-					result.FuelType = "Gasolina o Diésel Euro 6"
-				case "B":
-					result.FuelType = "Gasolina o Diésel Euro 5"
-				}
 			}
 			break
 		}
@@ -165,7 +426,7 @@ func parseDGTDistintivoResponse(body string, result *PlateResult) error {
 	return nil
 }
 
-// ── shared helpers ─────────────────────────────────────────────────────────────
+// ── shared helpers (also used by other resolvers) ─────────────────────────────
 
 // extractHiddenFields parses <input type="hidden" name="..." value="..."> from HTML
 // and populates vals.

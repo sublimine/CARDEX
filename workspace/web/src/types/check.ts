@@ -117,14 +117,18 @@ export interface PlateInfo {
   fuel_type?: string
   displacement_cc?: number
   power_kw?: number
+  power_cv?: number
   empty_weight_kg?: number
   gross_weight_kg?: number
   co2_g_per_km?: number
   euro_norm?: string
   body_type?: string
+  transmission?: string
+  engine_code?: string
   color?: string
   number_of_seats?: number
   number_of_cylinders?: number
+  model_year?: number
   // Registration
   first_registration?: string
   registration_status?: string
@@ -135,6 +139,8 @@ export interface PlateInfo {
   // Mileage
   mileage_km?: number
   mileage_date?: string
+  // Ownership
+  previous_owners?: number
   // Other
   district?: string
   environmental_badge?: string
