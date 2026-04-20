@@ -38,9 +38,10 @@ import (
 
 type esPlateResolver struct {
 	client  *http.Client
-	cmBase  string // comprobarmatricula.com base (no trailing slash)
-	dgtBase string // sede.dgt.gob.es distintivo-ambiental page base (trailing slash)
-	cache   *Cache // optional — when set, cache-first lookup survives CM rate-limits
+	cmBase  string        // comprobarmatricula.com base (no trailing slash)
+	dgtBase string        // sede.dgt.gob.es distintivo-ambiental page base (trailing slash)
+	cache   *Cache        // optional — when set, cache-first lookup survives CM rate-limits
+	matraba matrabaLookup // optional — DGT MATRABA store for post-VIN enrichment
 }
 
 func newESPlateResolver(client *http.Client) *esPlateResolver {
@@ -151,7 +152,17 @@ func (r *esPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 		applyCMToResult(cm, result)
 	}
 
-	sources := make([]string, 0, 2)
+	// Enrich with DGT MATRABA (post-VIN, so only meaningful when CM returned
+	// a VIN). Non-fatal — a MATRABA miss/error just leaves the result un-
+	// augmented; CM + DGT badge data still ship back to the caller.
+	haveMATRABA := false
+	if result.VIN != "" && r.matraba != nil {
+		if err := r.enrichWithMATRABA(ctx, result); err == nil {
+			haveMATRABA = true
+		}
+	}
+
+	sources := make([]string, 0, 3)
 	switch {
 	case haveCM:
 		sources = append(sources, "comprobarmatricula.com")
@@ -161,6 +172,9 @@ func (r *esPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 	}
 	if result.EnvironmentalBadge != "" {
 		sources = append(sources, "sede.dgt.gob.es (distintivo ambiental)")
+	}
+	if haveMATRABA {
+		sources = append(sources, "DGT MATRABA (microdatos)")
 	}
 	result.Source = strings.Join(sources, " + ")
 

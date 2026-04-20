@@ -161,10 +161,22 @@ func NewPlateRegistry(rdwBaseURL string) *PlateRegistry {
 // persistent cache. Currently consumed by the ES resolver to survive
 // comprobarmatricula.com rate-limits; other resolvers may adopt it later.
 func NewPlateRegistryWithCache(rdwBaseURL string, cache *Cache) *PlateRegistry {
+	return NewPlateRegistryWithOptions(rdwBaseURL, cache, nil)
+}
+
+// NewPlateRegistryWithOptions is the most-configurable constructor: the
+// optional matrabaStore turns on DGT MATRABA enrichment on the ES resolver,
+// filling fields that comprobarmatricula.com does not expose (weights,
+// homologation, Euro norm, CO₂, wheelbase, EU category, municipality).
+// Pass nil for any of cache/matrabaStore to disable that pathway.
+func NewPlateRegistryWithOptions(rdwBaseURL string, cache *Cache, matrabaStore matrabaLookup) *PlateRegistry {
 	client := newPlateHTTPClient(15 * time.Second)
 	es := newESPlateResolver(client)
 	if cache != nil {
 		es = es.WithCache(cache)
+	}
+	if matrabaStore != nil {
+		es = es.WithMATRABA(matrabaStore)
 	}
 	return &PlateRegistry{
 		resolvers: map[string]PlateResolver{
