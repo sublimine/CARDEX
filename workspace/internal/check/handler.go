@@ -252,22 +252,26 @@ func (h *Handler) plateReport(w http.ResponseWriter, r *http.Request) {
 
 		report, err := h.engine.GenerateReport(r.Context(), vin)
 		if err != nil {
-			if errors.Is(err, ErrInvalidVIN) {
-				jsonCheckErr(w, http.StatusInternalServerError, "resolver returned invalid VIN")
+			if !errors.Is(err, ErrInvalidVIN) {
+				jsonCheckErr(w, http.StatusInternalServerError, "report generation failed")
 				return
 			}
-			jsonCheckErr(w, http.StatusInternalServerError, "report generation failed")
+			// Resolver produced a VIN that fails ISO 3779 (common for VW Group
+			// cars where position 9 is a letter). Fall through to the partial-
+			// report path so the plate-resolver data (and MATRABA enrichment)
+			// still reach the client.
+			vin = ""
+		} else {
+			report.PlateInfo = plateResult
+
+			h.cache.RecordRequest(r.Context(), vin, ip, tenantID, false)
+			w.Header().Set("X-Cache-Hit", "false")
+			w.Header().Set("X-Plate-Resolved-VIN", vin)
+			w.Header().Set("X-Data-Sources", sourceHeader(report.DataSources))
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(report)
 			return
 		}
-		report.PlateInfo = plateResult
-
-		h.cache.RecordRequest(r.Context(), vin, ip, tenantID, false)
-		w.Header().Set("X-Cache-Hit", "false")
-		w.Header().Set("X-Plate-Resolved-VIN", vin)
-		w.Header().Set("X-Data-Sources", sourceHeader(report.DataSources))
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(report)
-		return
 	}
 
 	// No VIN — return a partial report built from the plate resolver data only.

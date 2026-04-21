@@ -44,6 +44,7 @@ import (
 
 	"cardex.eu/workspace/internal/auth"
 	"cardex.eu/workspace/internal/check"
+	"cardex.eu/workspace/internal/check/matraba"
 	"cardex.eu/workspace/internal/documents"
 	"cardex.eu/workspace/internal/finance"
 	"cardex.eu/workspace/internal/inbox"
@@ -204,7 +205,20 @@ func main() {
 		check.NewCHProvider(),
 	}
 	checkEngine := check.NewEngine(checkCache, checkDecoder, checkProviders)
-	checkPlateRegistry := check.NewPlateRegistryWithCache(rdwBaseURL, checkCache)
+
+	// DGT MATRABA store (optional) — once the matraba_vehicles table has
+	// been populated by `cmd/matraba-import`, the ES resolver enriches its
+	// PlateResult with DGT technical fields (Euro norm, CO₂, homologation,
+	// wheelbase, municipality). Absence of the table is not fatal: the
+	// resolver operates without it.
+	var matrabaStore *matraba.Store
+	if err := matraba.EnsureSchema(db); err == nil {
+		matrabaStore = matraba.NewStore(db)
+	} else {
+		slog.Warn("matraba schema init failed — ES enrichment disabled", "err", err)
+	}
+
+	checkPlateRegistry := check.NewPlateRegistryWithOptions(rdwBaseURL, checkCache, matrabaStore)
 	checkHandler := check.NewHandlerWithValidatorAndPlates(checkEngine, checkCache, func(token string) bool {
 		_, err := jwtSvc.ValidateToken(token)
 		return err == nil

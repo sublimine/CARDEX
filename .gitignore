@@ -1,7 +1,12 @@
 **/node_modules/
 **/.next/
 bin/
+data/
 *.exe
+*.zip
+*.db
+*.db-shm
+*.db-wal
 .env
 .env.*
 *.log
