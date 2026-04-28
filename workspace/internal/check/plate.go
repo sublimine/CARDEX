@@ -7,6 +7,7 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -266,6 +267,10 @@ func NewPlateRegistryWithCache(rdwBaseURL string, cache *Cache) *PlateRegistry {
 // NewPlateRegistryWithOptions is the most-configurable constructor.
 // cmProxyURL: when non-empty, ES plate lookups route through the Vercel edge
 // proxy (different IP per call → permanent elimination of CM rate limits).
+//
+// Optional env vars for unlocking additional country data:
+//   CH_PLATE_API_KEY — kennzeichenapi.ch username (register free at kennzeichenapi.ch)
+//   DE_PLATE_API_KEY — CarsXE API key (trial at carsxe.com, ~$0.05/query)
 func NewPlateRegistryWithOptions(rdwBaseURL string, cache *Cache, matrabaStore matrabaLookup, cmProxyURL string) *PlateRegistry {
 	client := newPlateHTTPClient(15 * time.Second)
 	es := newESPlateResolver(client)
@@ -278,14 +283,27 @@ func NewPlateRegistryWithOptions(rdwBaseURL string, cache *Cache, matrabaStore m
 	if matrabaStore != nil {
 		es = es.WithMATRABA(matrabaStore)
 	}
+
+	// CH: kennzeichenapi.ch when CH_PLATE_API_KEY is set; otherwise canton-only.
+	var chResolver PlateResolver = newCHPlateResolver(client)
+	if chKey := os.Getenv("CH_PLATE_API_KEY"); chKey != "" {
+		chResolver = newCHAPIResolver(client, chKey)
+	}
+
+	// DE: CarsXE when DE_PLATE_API_KEY is set; otherwise district-only.
+	var deResolver PlateResolver = newDEPlateResolver()
+	if deKey := os.Getenv("DE_PLATE_API_KEY"); deKey != "" {
+		deResolver = newDEAPIResolver(client, deKey)
+	}
+
 	return &PlateRegistry{
 		resolvers: map[string]PlateResolver{
 			"NL": newNLPlateResolver(client, rdwBaseURL),
 			"ES": es,
 			"FR": newFRPlateResolver(client),
 			"BE": newBEPlateResolver(client),
-			"DE": newDEPlateResolver(),
-			"CH": newCHPlateResolver(client),
+			"DE": deResolver,
+			"CH": chResolver,
 		},
 		ncap:  NewNCAPResolver(),
 		rapex: NewRAPEXResolver(),
