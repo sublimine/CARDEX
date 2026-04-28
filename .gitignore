@@ -1,12 +1,7 @@
-**/node_modules/
+﻿**/node_modules/
 **/.next/
 bin/
-data/
 *.exe
-*.zip
-*.db
-*.db-shm
-*.db-wal
 .env
 .env.*
 *.log
@@ -15,42 +10,10 @@ data/
 .claude/
 !.env.example
 
-# Compiled Go binaries
-*/cmd/*/discovery-service
-*/cmd/*/extraction-service
-*/cmd/*/quality-service
-
-# JWT keys and certificates
+# JWT keys (generated locally by 'make gen-keys')
 secrets/
 *.pem
 
-# PDF files (binary blobs — use external document storage)
-*.pdf
-
-# Python cache
-__pycache__/
+# Python
+**/__pycache__/
 *.pyc
-*.pyo
-
-# Go test artifacts
-*.test
-coverage.out
-coverage.html
-
-# Go workspace sum file (auto-generated, not needed in VCS)
-go.work.sum
-
-# Temporary audit files
-TEMP_AUDIT.md
-
-# Deploy environment files (explicit)
-deploy/.env
-deploy/.env.*
-!deploy/env.example
-
-# Runtime data (SQLite databases, uploads)
-workspace/data/
-
-# Puppeteer debug artifacts
-workspace/web/debug-*.png
-workspace/web/debug-*.html
