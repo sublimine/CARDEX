@@ -1,0 +1,27 @@
+{
+  "dealers": [
+    {
+      "id": "FR-PEU-001",
+      "name": "Peugeot Paris Île-de-France",
+      "address": {
+        "street": "10 Rue de Rivoli",
+        "postalCode": "75001",
+        "city": "Paris",
+        "countryCode": "FR"
+      },
+      "phone": "+33 1 40 00 00 01"
+    },
+    {
+      "dealerId": "FR-PEU-002",
+      "name": "Citroën Lyon Centre",
+      "address": {
+        "street": "20 Rue de la République",
+        "zipCode": "69001",
+        "city": "Lyon",
+        "country": "FR"
+      },
+      "phone": "+33 4 72 00 00 02"
+    }
+  ],
+  "total": 2
+}

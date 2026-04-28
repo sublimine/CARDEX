@@ -1,0 +1,44 @@
+{
+  "head": {
+    "vars": ["dealer", "dealerLabel", "coords", "website", "vatID"]
+  },
+  "results": {
+    "bindings": [
+      {
+        "dealer": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q12345"
+        },
+        "dealerLabel": {
+          "type": "literal",
+          "value": "Auto Müller GmbH",
+          "xml:lang": "de"
+        },
+        "coords": {
+          "type": "literal",
+          "value": "Point(8.5678 50.1234)",
+          "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral"
+        },
+        "website": {
+          "type": "uri",
+          "value": "https://automueller.de"
+        },
+        "vatID": {
+          "type": "literal",
+          "value": "DE123456789"
+        }
+      },
+      {
+        "dealer": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q67890"
+        },
+        "dealerLabel": {
+          "type": "literal",
+          "value": "KFZ-Betrieb Schmidt",
+          "xml:lang": "de"
+        }
+      }
+    ]
+  }
+}

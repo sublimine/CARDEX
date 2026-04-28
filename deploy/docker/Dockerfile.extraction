@@ -1,0 +1,44 @@
+# Dockerfile.extraction — CARDEX Extraction Service
+# Multi-stage build: Go 1.26.2 builder → distroless/static runtime
+# Note: Playwright/Chromium strategies (E06) require a non-distroless image when enabled.
+# Set BUILD_TAGS=playwright to include Chromium; default is headless-only.
+
+# ── Stage 1: build ───────────────────────────────────────────────
+FROM golang:1.26.2-bookworm AS builder
+
+WORKDIR /src
+
+COPY go.work go.work.sum ./
+COPY extraction/go.mod extraction/go.sum ./extraction/
+
+WORKDIR /src/extraction
+RUN go mod download
+
+WORKDIR /src
+COPY extraction/ ./extraction/
+COPY internal/ ./internal/
+
+WORKDIR /src/extraction
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOWORK=off \
+    go build \
+    -ldflags="-s -w -extldflags=-static" \
+    -trimpath \
+    -o /out/cardex-extraction \
+    ./cmd/extraction-service/
+
+# ── Stage 2: runtime ─────────────────────────────────────────────
+# Pin digest in production to prevent supply-chain substitution:
+# docker pull gcr.io/distroless/static-debian12:nonroot && docker inspect --format='{{index .RepoDigests 0}}'
+# Then replace :nonroot with :nonroot@sha256:<digest>
+FROM gcr.io/distroless/static-debian12:nonroot
+
+LABEL org.opencontainers.image.title="cardex-extraction"
+LABEL org.opencontainers.image.description="CARDEX Extraction Service — E01-E12"
+LABEL org.opencontainers.image.licenses="UNLICENSED"
+
+COPY --from=builder /out/cardex-extraction /cardex-extraction
+
+# Health + metrics ports
+EXPOSE 8080 9102
+
+ENTRYPOINT ["/cardex-extraction"]

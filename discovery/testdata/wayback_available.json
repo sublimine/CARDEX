@@ -1,0 +1,12 @@
+{
+  "url": "autohaus-example.de",
+  "archived_snapshots": {
+    "closest": {
+      "available": true,
+      "url": "http://web.archive.org/web/20230115120000/http://autohaus-example.de/",
+      "timestamp": "20230115120000",
+      "status": "200"
+    }
+  },
+  "timestamp": "20230101"
+}

@@ -1,0 +1,22 @@
+[
+  {
+    "issuer_ca_id": 16418,
+    "issuer_name": "C=US, O=Let's Encrypt, CN=R3",
+    "common_name": "autohaus-example.de",
+    "name_value": "autohaus-example.de\nwww.autohaus-example.de\nshop.autohaus-example.de",
+    "id": 5678912345,
+    "entry_timestamp": "2024-03-15T10:30:45.123",
+    "not_before": "2024-03-15T10:30:45",
+    "not_after": "2024-06-13T10:30:45"
+  },
+  {
+    "issuer_ca_id": 16418,
+    "issuer_name": "C=US, O=Let's Encrypt, CN=R3",
+    "common_name": "*.autohaus-example.de",
+    "name_value": "*.autohaus-example.de\nautohaus-example.de",
+    "id": 5678912346,
+    "entry_timestamp": "2024-03-20T10:30:45.123",
+    "not_before": "2024-03-20T10:30:45",
+    "not_after": "2024-06-18T10:30:45"
+  }
+]

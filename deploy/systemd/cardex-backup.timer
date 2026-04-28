@@ -1,0 +1,18 @@
+# /etc/systemd/system/cardex-backup.timer
+# Triggers cardex-backup.service daily at 03:00 UTC
+# (03:00 UTC = 04:00 CET / 05:00 CEST — low-traffic window, post-NLG-batch)
+#
+# Install: sudo systemctl enable --now cardex-backup.timer
+# Check:   systemctl list-timers cardex-backup.timer
+
+[Unit]
+Description=CARDEX daily backup timer — 03:00 UTC
+Requires=cardex-backup.service
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 UTC
+Persistent=true              # run immediately if missed (e.g. after VPS reboot)
+RandomizedDelaySec=600       # spread across ±10min to avoid thundering herd on Storage Box
+
+[Install]
+WantedBy=timers.target

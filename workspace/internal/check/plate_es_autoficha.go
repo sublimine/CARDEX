@@ -1,0 +1,557 @@
+package check
+
+// autofichaResolver queries the autoficha.com AWS AppSync backend for ES plate data.
+//
+// Source: DGT INTV data proxied through autoficha's GraphQL API.
+// API endpoint and key extracted from the Android APK (v1, Jan 2024).
+//
+// Used as a fallback when comprobarmatricula.com is unreachable (Cloudflare
+// blocks datacenter IPs). Both sources ultimately read from DGT INTV.
+//
+// Rotate key if this starts returning 401: extract new key from updated APK.
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+)
+
+// afLimiter enforces a global 1 req/s ceiling against autoficha's AppSync.
+// A token refills every second; the bucket holds 1 token max.
+// This prevents "Dame un respiro" rate-limit responses under any usage pattern.
+var afLimiter = &struct {
+	mu      sync.Mutex
+	lastReq time.Time
+}{}
+
+const (
+	afEndpoint = "https://2sq7c2ojwjcevkft3hv6uspfqq.appsync-api.eu-west-3.amazonaws.com/graphql"
+	afAPIKey   = "da2-5qw4535jhbbmzaslbspbpxcsma"
+)
+
+const afQuery = `
+query GetInfoVehiculo($id: String!) {
+  getInfoVehiculo(id: $id) {
+    __typename
+    ... on IHeader  { title subtitle description image }
+    ... on IContent { title icon values { title value textColor backgroundColor } }
+    ... on ITable   { title icon values { title textColor backgroundColor values { title value textColor backgroundColor } } }
+    ... on IAlert   { alert_type title description links { title value } }
+    ... on IBubbleGroup { bubbles { icon texts } }
+    ... on IThumbnail   { principalText title subtitle image }
+    ... on IChipGroup   { chips { title url } }
+  }
+}`
+
+// afBlock is a single polymorphic block from the autoficha response.
+type afBlock struct {
+	Typename    string     `json:"__typename"`
+	// IContent / ITable
+	Title       string     `json:"title,omitempty"`
+	Icon        string     `json:"icon,omitempty"`
+	Values      []afValue  `json:"values,omitempty"`
+	// IAlert
+	AlertType   string     `json:"alert_type,omitempty"`
+	Description []string   `json:"description,omitempty"`
+	// IBubbleGroup
+	Bubbles     []afBubble `json:"bubbles,omitempty"`
+	// IThumbnail
+	PrincipalText string   `json:"principalText,omitempty"`
+	Subtitle      string   `json:"subtitle,omitempty"`
+}
+
+type afValue struct {
+	Title  string     `json:"title"`
+	Value  string     `json:"value,omitempty"`
+	Values []afValue  `json:"values,omitempty"` // ITable nested rows
+}
+
+type afBubble struct {
+	Icon  string   `json:"icon"`
+	Texts []string `json:"texts"`
+}
+
+type afResponse struct {
+	Data struct {
+		GetInfoVehiculo []afBlock `json:"getInfoVehiculo"`
+	} `json:"data"`
+	Errors []struct {
+		Message string `json:"message"`
+	} `json:"errors"`
+}
+
+// fetchAutoficha queries the autoficha AppSync endpoint for a normalised plate.
+// Returns nil, false, nil when the plate is not found.
+// Returns nil, false, err on network/auth failures.
+// Retries once if the server returns a rate-limit ("Dame un respiro") response,
+// waiting 3 seconds between attempts.
+func (r *esPlateResolver) fetchAutoficha(ctx context.Context, plate string) (*PlateResult, bool, error) {
+	const maxAttempts = 2
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		// Throttle: ensure ≥1 s between autoficha requests globally.
+		afLimiter.mu.Lock()
+		since := time.Since(afLimiter.lastReq)
+		if since < time.Second {
+			wait := time.Second - since
+			afLimiter.mu.Unlock()
+			select {
+			case <-ctx.Done():
+				return nil, false, ctx.Err()
+			case <-time.After(wait):
+			}
+			afLimiter.mu.Lock()
+		}
+		afLimiter.lastReq = time.Now()
+		afLimiter.mu.Unlock()
+
+		result, ok, err := r.fetchAutofichaOnce(ctx, plate)
+		if err == nil {
+			return result, ok, nil
+		}
+		// Retry only on rate-limit; propagate other errors immediately.
+		if !strings.Contains(err.Error(), "rate-limited") || attempt == maxAttempts-1 {
+			return nil, false, err
+		}
+		// Back off 3 s before the retry.
+		select {
+		case <-ctx.Done():
+			return nil, false, ctx.Err()
+		case <-time.After(3 * time.Second):
+		}
+	}
+	return nil, false, nil
+}
+// fetchAutofichaOnce makes a single attempt against the AppSync endpoint.
+func (r *esPlateResolver) fetchAutofichaOnce(ctx context.Context, plate string) (*PlateResult, bool, error) {
+	body := map[string]interface{}{
+		"query":     afQuery,
+		"variables": map[string]string{"id": "P-" + plate},
+	}
+	b, err := json.Marshal(body)
+	if err != nil {
+		return nil, false, fmt.Errorf("autoficha marshal: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, afEndpoint, bytes.NewReader(b))
+	if err != nil {
+		return nil, false, fmt.Errorf("autoficha request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("x-api-key", afAPIKey)
+
+	resp, err := r.client.Do(req)
+	if err != nil {
+		return nil, false, fmt.Errorf("autoficha unreachable: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		return nil, false, fmt.Errorf("autoficha: API key expired (rotate from APK)")
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, false, fmt.Errorf("autoficha: HTTP %d", resp.StatusCode)
+	}
+
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, 512*1024))
+	if err != nil {
+		return nil, false, fmt.Errorf("autoficha read: %w", err)
+	}
+
+	var af afResponse
+	if err := json.Unmarshal(raw, &af); err != nil {
+		return nil, false, fmt.Errorf("autoficha decode: %w", err)
+	}
+	if len(af.Errors) > 0 {
+		return nil, false, fmt.Errorf("autoficha GQL error: %s", af.Errors[0].Message)
+	}
+	if len(af.Data.GetInfoVehiculo) == 0 {
+		return nil, false, nil // plate not found
+	}
+
+	// Detect autoficha server saturation — "Dame un respiro" single-alert response.
+	// This is a retriable condition, not a plate-not-found.
+	if len(af.Data.GetInfoVehiculo) == 1 && af.Data.GetInfoVehiculo[0].Typename == "IAlert" {
+		title := strings.ToLower(af.Data.GetInfoVehiculo[0].Title)
+		if strings.Contains(title, "respiro") || strings.Contains(title, "saturado") || strings.Contains(title, "espera") {
+			return nil, false, fmt.Errorf("autoficha rate-limited — retry in 2 min")
+		}
+	}
+
+	result := mapAutofichaToPlate(plate, af.Data.GetInfoVehiculo)
+	if result.Make == "" && result.Model == "" {
+		return nil, false, nil
+	}
+	return result, true, nil
+}
+
+// mapAutofichaToPlate converts the autoficha block list to a PlateResult.
+func mapAutofichaToPlate(plate string, blocks []afBlock) *PlateResult {
+	r := &PlateResult{
+		Plate:     plate,
+		Country:   "ES",
+		FetchedAt: time.Now().UTC(),
+		Source:    "autoficha.com (DGT INTV)",
+	}
+
+	kv := func(values []afValue) map[string]string {
+		m := make(map[string]string, len(values))
+		for _, v := range values {
+			if v.Title != "" && v.Value != "" {
+				m[v.Title] = v.Value
+			}
+		}
+		return m
+	}
+
+	// first returns the first non-empty value from the given keys in map m.
+	// Handles the DGT's inconsistent field naming across vehicle age/type.
+	first := func(m map[string]string, keys ...string) string {
+		for _, k := range keys {
+			if v := m[k]; v != "" {
+				return v
+			}
+		}
+		return ""
+	}
+
+	for _, b := range blocks {
+		switch b.Typename {
+		case "IThumbnail":
+			if r.Make == "" {
+				r.Make = strings.TrimSpace(b.Title)
+			}
+			if r.Model == "" {
+				r.Model = strings.TrimSpace(b.Subtitle)
+			}
+
+		case "IContent":
+			m := kv(b.Values)
+			switch b.Icon {
+			case "car-hatchback": // Información general
+				if r.Make == "" {
+					r.Make = first(m, "Marca")
+				}
+				if r.Model == "" {
+					r.Model = first(m, "Modelo")
+				}
+				if r.FuelType == "" {
+					r.FuelType = first(m, "Combustible")
+				}
+				if r.BodyType == "" {
+					r.BodyType = first(m, "Carrocería", "Carroceria")
+				}
+				if r.VehicleType == "" {
+					r.VehicleType = first(m, "Tipo de vehículo", "Tipo de vehiculo")
+				}
+				if r.VIN == "" {
+					r.VIN = first(m, "VIN", "Bastidor", "BASTIDOR")
+				}
+				if r.DisplacementCC == 0 {
+					r.DisplacementCC = parseCC(first(m, "Cilindrada", "CILINDRADA"))
+				}
+				if r.PowerCV == 0 {
+					r.PowerCV = parsePowerCV(first(m, "Potencia", "POTENCIA"))
+				}
+				if r.PowerKW == 0 {
+					r.PowerKW = parsePowerKW(first(m, "Potencia", "POTENCIA"))
+				}
+				if r.NumberOfSeats == 0 {
+					if n, err := strconv.Atoi(first(m, "Número de plazas", "Plazas", "NUM PLAZAS")); err == nil {
+						r.NumberOfSeats = n
+					}
+				}
+				if r.EuroNorm == "" {
+					r.EuroNorm = first(m, "Homologación", "Homologacion", "Nivel emisiones EURO")
+				}
+
+			case "calendar-clock": // Matriculación
+				if r.FirstRegistration == nil {
+					// DGT uses different keys depending on vehicle age
+					r.FirstRegistration = parseDMY(first(m,
+						"Primera matriculación",
+						"Primera matriculacion",
+						"Fecha de matriculación",
+						"Fecha de matriculacion",
+						"Fecha matriculación",
+						"Fecha matriculacion",
+						"FECHA MATRICULACION",
+					))
+				}
+				if r.LastRegistrationDate == nil {
+					r.LastRegistrationDate = parseDMY(first(m,
+						"Última matriculación",
+						"Ultima matriculacion",
+						"Última matriculacion",
+					))
+				}
+				if r.RegistrationType == "" {
+					r.RegistrationType = first(m, "Tipo de matriculación", "Tipo de matriculacion", "TIPO MAT")
+				}
+				if r.VehicleAge == "" {
+					r.VehicleAge = first(m, "Edad", "Antigüedad", "Antiguedad")
+				}
+				if r.District == "" {
+					r.District = first(m, "Provincia")
+				}
+				if r.Procedencia == "" {
+					r.Procedencia = first(m, "Procedencia", "PROCEDENCIA")
+				}
+
+			case "car-info": // Información detallada
+				if r.EmptyWeightKg == 0 {
+					// DGT uses TARA for older vehicles, Masa en circulación for newer
+					r.EmptyWeightKg = parseIntKg(first(m,
+						"Masa en circulación",
+						"Masa en circulacion",
+						"TARA",
+						"Tara",
+						"Masa orden marcha",
+					))
+				}
+				if r.GrossWeightKg == 0 {
+					r.GrossWeightKg = parseIntKg(first(m,
+						"Masa Máxima en carga",
+						"Masa Maxima en carga",
+						"Masa máxima autorizada",
+						"PESO MAX AUTORIZADO",
+						"Masa max. técnica",
+					))
+				}
+				if r.WheelbaseCm == 0 {
+					r.WheelbaseCm = parseMMtoCM(first(m,
+						"Distancia entre ejes",
+						"DISTANCIA ENTRE EJES",
+					))
+				}
+				if r.Variant == "" {
+					r.Variant = first(m, "Variante", "VARIANTE")
+				}
+				if r.Manufacturer == "" {
+					r.Manufacturer = first(m, "Fabricante", "FABRICANTE", "Fabricante/Importador")
+				}
+				if r.EuropeanVehicleCategory == "" {
+					r.EuropeanVehicleCategory = first(m,
+						"Categoría homologación Europea",
+						"Categoria homologacion Europea",
+						"Cat. homologación UE",
+					)
+				}
+
+			case "fuel": // Combustibles y emisiones
+				if r.CO2GPerKm == 0 {
+					r.CO2GPerKm = parseCO2(first(m, "Emisiones CO2", "CO2", "Emisiones de CO2"))
+				}
+				if r.FuelType == "" {
+					r.FuelType = first(m, "Combustible", "COMBUSTIBLE")
+				}
+				if r.Transmission == "" {
+					r.Transmission = first(m, "Tipo de alimentación", "Tipo de alimentacion")
+				}
+				if r.EuroNorm == "" {
+					r.EuroNorm = first(m, "Homologación", "Nivel emisiones EURO")
+				}
+
+			case "account-outline": // Propietario actual
+				if r.LastTransactionDate == nil {
+					r.LastTransactionDate = parseDMY(first(m, "Fecha trámite", "Fecha tramite", "Fecha del trámite"))
+				}
+				if r.ServiceCode == "" {
+					r.ServiceCode = first(m, "Servicio", "Tipo servicio")
+				}
+				if r.CurrentOwnerMunicipio == "" {
+					r.CurrentOwnerMunicipio = first(m, "Municipio", "MUNICIPIO")
+				}
+				if r.CurrentOwnerProvincia == "" {
+					r.CurrentOwnerProvincia = first(m, "Provincia", "PROVINCIA")
+				}
+				if r.CurrentOwnerTimeInPossession == "" {
+					r.CurrentOwnerTimeInPossession = first(m, "Tiempo en propiedad", "Tiempo propietario")
+				}
+				if r.CurrentOwnerPersonType == "" {
+					r.CurrentOwnerPersonType = first(m, "Tipo de persona", "Tipo persona")
+				}
+			}
+
+		case "ITable":
+			switch b.Icon {
+			case "account-switch": // Propietarios (N) — full ownership timeline
+				owners := parseOwnerTable(b.Values)
+				r.OwnerHistory = owners
+				r.TransferCount = len(owners)
+				if r.TransferCount > 0 {
+					r.PreviousOwners = r.TransferCount - 1
+				}
+
+			case "book-edit-outline": // Movimientos (N) — matriculaciones + transferencias
+				r.MovementHistory = parseMovementTable(b.Values)
+			}
+
+		case "IAlert":
+			desc := strings.ToLower(strings.Join(b.Description, " ") + " " + b.Title)
+			switch {
+			case strings.Contains(desc, "embargo"):
+				r.EmbargoFlag = true
+			case strings.Contains(desc, "robado") || strings.Contains(desc, "sustracción"):
+				r.StolenFlag = true
+			case strings.Contains(desc, "precinto"):
+				r.PrecintedFlag = true
+			case strings.Contains(desc, "renting"):
+				r.RentingFlag = true
+			case strings.Contains(desc, "importado") || strings.Contains(desc, "importación"):
+				r.ImportAlert = true
+			case strings.Contains(desc, "taxi") || strings.Contains(desc, "autoescuela"):
+				r.TaxiIndicator = true
+			}
+		}
+	}
+
+	return r
+}
+
+// ── field parsers ─────────────────────────────────────────────────────────────
+
+// parseCC extracts integer cc from "1968 cc".
+func parseCC(s string) int {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return 0
+	}
+	parts := strings.Fields(s)
+	if len(parts) == 0 {
+		return 0
+	}
+	n, _ := strconv.Atoi(parts[0])
+	return n
+}
+
+// parsePowerCV extracts CV from "170 CV (125.00 kW)".
+func parsePowerCV(s string) int {
+	idx := strings.Index(s, " CV")
+	if idx < 0 {
+		return 0
+	}
+	n, _ := strconv.Atoi(strings.TrimSpace(s[:idx]))
+	return n
+}
+
+// parsePowerKW extracts kW from "170 CV (125.00 kW)".
+func parsePowerKW(s string) float64 {
+	start := strings.Index(s, "(")
+	end := strings.Index(s, " kW")
+	if start < 0 || end < 0 || end <= start {
+		return 0
+	}
+	f, _ := strconv.ParseFloat(strings.TrimSpace(s[start+1:end]), 64)
+	return f
+}
+
+// parseDMY parses "DD/MM/YYYY" → *time.Time.
+func parseDMY(s string) *time.Time {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+	t, err := time.Parse("02/01/2006", s)
+	if err != nil {
+		return nil
+	}
+	return &t
+}
+
+// parseIntKg extracts an integer from "1681 kg".
+func parseIntKg(s string) int {
+	parts := strings.Fields(s)
+	if len(parts) == 0 {
+		return 0
+	}
+	n, _ := strconv.Atoi(parts[0])
+	return n
+}
+
+// parseMMtoCM converts "2605 mm" → cm integer.
+func parseMMtoCM(s string) int {
+	parts := strings.Fields(s)
+	if len(parts) == 0 {
+		return 0
+	}
+	mm, _ := strconv.Atoi(parts[0])
+	return mm / 10
+}
+
+// parseCO2 extracts g/km integer from "172 g/km".
+func parseCO2(s string) float64 {
+	parts := strings.Fields(s)
+	if len(parts) == 0 {
+		return 0
+	}
+	f, _ := strconv.ParseFloat(parts[0], 64)
+	return f
+}
+
+// countTableRows counts top-level rows in an ITable values list.
+func countTableRows(values []afValue) int {
+	count := 0
+	for _, v := range values {
+		if v.Title != "" {
+			count++
+		}
+	}
+	return count
+}
+
+// parseOwnerTable extracts the full owner history from the "Propietarios (N)" ITable.
+// Each top-level row has title=date and nested values with Municipio/Provincia/etc.
+func parseOwnerTable(rows []afValue) []OwnerEntry {
+	owners := make([]OwnerEntry, 0, len(rows))
+	for _, row := range rows {
+		entry := OwnerEntry{
+			Date: parseDMY(row.Title),
+		}
+		for _, v := range row.Values {
+			switch v.Title {
+			case "Municipio":
+				entry.Municipio = v.Value
+			case "Provincia":
+				entry.Provincia = v.Value
+			case "Tiempo en propiedad":
+				entry.TimeInPossession = v.Value
+			case "Tipo de persona":
+				entry.PersonType = v.Value
+			case "Servicio":
+				entry.ServiceCode = v.Value
+			}
+		}
+		owners = append(owners, entry)
+	}
+	return owners
+}
+
+// parseMovementTable extracts the full movement history from "Movimientos (N)" ITable.
+// Each top-level row has title=movement type and nested values with Fecha/Municipio/etc.
+func parseMovementTable(rows []afValue) []MovementEntry {
+	movements := make([]MovementEntry, 0, len(rows))
+	for _, row := range rows {
+		entry := MovementEntry{Type: row.Title}
+		for _, v := range row.Values {
+			switch v.Title {
+			case "Fecha":
+				entry.Date = parseDMY(v.Value)
+			case "Municipio":
+				entry.Municipio = v.Value
+			case "Provincia":
+				entry.Provincia = v.Value
+			case "Duración":
+				entry.Duration = v.Value
+			}
+		}
+		movements = append(movements, entry)
+	}
+	return movements
+}

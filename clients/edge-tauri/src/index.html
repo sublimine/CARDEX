@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CARDEX Edge</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ── Login screen ────────────────────────────────────────────────────────── -->
+<div id="screen-login" class="screen active">
+  <header>
+    <h1>CARDEX Edge</h1>
+    <p class="subtitle">Connect your DMS to CARDEX</p>
+  </header>
+  <form id="form-login">
+    <label>Dealer ID
+      <input type="text" id="inp-dealer-id" placeholder="01JFXYZ…" autocomplete="off" required />
+    </label>
+    <label>API Key
+      <input type="password" id="inp-api-key" placeholder="64-char hex key" autocomplete="off" required />
+    </label>
+    <label>Server Address
+      <input type="text" id="inp-server-addr" value="https://edge.cardex.eu:50051" required />
+    </label>
+    <button type="submit">Connect</button>
+    <p id="login-error" class="error hidden"></p>
+  </form>
+</div>
+
+<!-- ── Main screen ─────────────────────────────────────────────────────────── -->
+<div id="screen-main" class="screen hidden">
+
+  <aside class="sidebar">
+    <div class="logo">CARDEX Edge</div>
+    <nav>
+      <button class="nav-btn active" data-tab="add">Add Vehicle</button>
+      <button class="nav-btn" data-tab="bulk">Bulk Import</button>
+      <button class="nav-btn" data-tab="history">History</button>
+    </nav>
+    <div class="heartbeat" id="heartbeat-indicator">
+      <span class="dot"></span> <span id="heartbeat-label">Connecting…</span>
+    </div>
+    <button id="btn-logout" class="btn-ghost">Disconnect</button>
+  </aside>
+
+  <main>
+
+    <!-- ── Add Vehicle tab ──────────────────────────────────────────────── -->
+    <section id="tab-add" class="tab active">
+      <h2>Push a Vehicle</h2>
+      <form id="form-vehicle">
+        <div class="form-row">
+          <label>VIN <input type="text" id="v-vin" maxlength="17" minlength="17" placeholder="17 characters" required /></label>
+          <label>Make <input type="text" id="v-make" required /></label>
+          <label>Model <input type="text" id="v-model" required /></label>
+          <label>Year <input type="number" id="v-year" min="1900" max="2028" required /></label>
+        </div>
+        <div class="form-row">
+          <label>Price (cents) <input type="number" id="v-price-cents" min="0" placeholder="e.g. 2500000 = €25,000" /></label>
+          <label>Currency <input type="text" id="v-currency" value="EUR" maxlength="3" /></label>
+          <label>Mileage (km) <input type="number" id="v-mileage" min="0" /></label>
+        </div>
+        <div class="form-row">
+          <label>Fuel Type
+            <select id="v-fuel">
+              <option value="diesel">Diesel</option>
+              <option value="gasoline">Gasoline</option>
+              <option value="hybrid">Hybrid</option>
+              <option value="electric">Electric</option>
+              <option value="lpg">LPG</option>
+              <option value="cng">CNG</option>
+              <option value="hydrogen">Hydrogen</option>
+            </select>
+          </label>
+          <label>Transmission
+            <select id="v-transmission">
+              <option value="manual">Manual</option>
+              <option value="automatic">Automatic</option>
+              <option value="semi-automatic">Semi-automatic</option>
+            </select>
+          </label>
+          <label>Color <input type="text" id="v-color" /></label>
+        </div>
+        <div class="form-row full">
+          <label>Source URL <input type="url" id="v-source-url" placeholder="https://your-site.com/listing/123" /></label>
+        </div>
+        <div class="form-row full">
+          <label>Description <textarea id="v-description" rows="3"></textarea></label>
+        </div>
+        <div class="form-actions">
+          <button type="submit">Push to CARDEX</button>
+          <button type="reset" class="btn-ghost">Clear</button>
+        </div>
+        <div id="push-result" class="result hidden"></div>
+      </form>
+    </section>
+
+    <!-- ── Bulk Import tab ──────────────────────────────────────────────── -->
+    <section id="tab-bulk" class="tab hidden">
+      <h2>Bulk Import from CSV</h2>
+      <p class="hint">Required columns: <code>vin,make,model,year,price_cents,currency,mileage_km,fuel_type,transmission,color,source_url</code></p>
+      <div class="drop-zone" id="drop-zone">
+        <p>Drop a CSV file here, or <button type="button" id="btn-browse">browse</button></p>
+        <input type="file" id="file-input" accept=".csv" style="display:none" />
+      </div>
+      <textarea id="csv-preview" class="csv-preview" placeholder="Or paste CSV text here…" rows="10"></textarea>
+      <div class="form-actions">
+        <button id="btn-push-csv">Push All to CARDEX</button>
+      </div>
+      <div id="bulk-result" class="result hidden"></div>
+    </section>
+
+    <!-- ── History tab ─────────────────────────────────────────────────── -->
+    <section id="tab-history" class="tab hidden">
+      <h2>Push History</h2>
+      <table id="history-table">
+        <thead><tr><th>Time</th><th>Accepted</th><th>Rejected</th></tr></thead>
+        <tbody id="history-tbody"></tbody>
+      </table>
+    </section>
+
+  </main>
+</div>
+
+<script src="main.js"></script>
+</body>
+</html>

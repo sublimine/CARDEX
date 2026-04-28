@@ -1,0 +1,56 @@
+# /etc/systemd/system/cardex-quality.service
+# CARDEX Quality Pipeline — V01-V20 (Phase 4 complete, 20 validators)
+#
+# Install: sudo systemctl enable --now cardex-quality
+# Logs:    journalctl -u cardex-quality -f
+# Metrics: http://localhost:9103/metrics
+
+[Unit]
+Description=CARDEX Quality Pipeline — V01-V20
+Documentation=https://github.com/cardex/cardex/blob/main/quality/README.md
+After=network-online.target cardex-extraction.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cardex
+Group=cardex
+WorkingDirectory=/srv/cardex
+
+ExecStart=/usr/local/bin/cardex-quality
+Restart=on-failure
+RestartSec=15s
+StartLimitBurst=5
+StartLimitIntervalSec=60s
+TimeoutStartSec=60s
+TimeoutStopSec=30s
+
+# Watchdog: process must prove liveness every 30s (sd_notify WATCHDOG=1)
+WatchdogSec=60s
+
+MemoryMax=700M
+CPUQuota=200%
+LimitNOFILE=65536
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/srv/cardex/db
+ReadOnlyPaths=/srv/cardex/models /srv/cardex/data
+SystemCallFilter=@system-service
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cardex-quality
+
+Environment=QUALITY_DB_PATH=/srv/cardex/db/discovery.db
+Environment=QUALITY_METRICS_ADDR=:9103
+Environment=QUALITY_BATCH_SIZE=100
+Environment=QUALITY_WORKERS=4
+Environment=QUALITY_ONE_SHOT=false
+Environment=IMAGE_HEAD_TIMEOUT_MS=3000
+Environment=URL_LIVENESS_CACHE_TTL_HOURS=24
+
+[Install]
+WantedBy=multi-user.target

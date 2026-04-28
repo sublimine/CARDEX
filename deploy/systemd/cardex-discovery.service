@@ -1,0 +1,73 @@
+# /etc/systemd/system/cardex-discovery.service
+# CARDEX Discovery Service — familias A-O (Phase 2 — 11 families)
+#
+# Install: sudo systemctl enable --now cardex-discovery
+# Logs:    journalctl -u cardex-discovery -f
+# Metrics: http://localhost:9101/metrics
+
+[Unit]
+Description=CARDEX Discovery Service — familias A-O
+Documentation=https://github.com/cardex/cardex/blob/main/discovery/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cardex
+Group=cardex
+WorkingDirectory=/srv/cardex
+
+ExecStart=/usr/local/bin/cardex-discovery
+Restart=on-failure
+RestartSec=30s
+StartLimitBurst=5
+StartLimitIntervalSec=60s
+TimeoutStartSec=60s
+TimeoutStopSec=30s
+
+# Resource limits (CX42: 4 vCPU, 16 GB RAM)
+# MemoryMax=6G: Playwright/Chromium can use ~300 MB per instance.
+# With up to 3 concurrent browser instances (DISCOVERY_PLAYWRIGHT_MAX=3)
+# plus Go runtime overhead, 6 G is a safe ceiling that leaves 10 G for
+# extraction, quality, Prometheus/Grafana, and OS buffers.
+# Without this cap the OOM killer terminates the process silently.
+MemoryMax=6G
+MemorySwapMax=0
+CPUQuota=200%
+LimitNOFILE=65536
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/srv/cardex/db
+ReadOnlyPaths=/srv/cardex/data
+SystemCallFilter=@system-service
+# CAP_NET_BIND_SERVICE removed: metrics on :9101 (unprivileged port) — no capability needed (#39)
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cardex-discovery
+
+# Environment
+Environment=DISCOVERY_DB_PATH=/srv/cardex/db/discovery.db
+Environment=DISCOVERY_METRICS_ADDR=:9101
+Environment=DISCOVERY_CYCLE_INTERVAL=6h
+Environment=DISCOVERY_COUNTRIES=DE,FR,ES,BE,NL,CH,AT,IT
+# Concurrency: default 8 (was 20). Each Playwright instance uses ~300 MB.
+# At 8 concurrent workers with max 3 browser instances, peak RAM ~1.5 GB.
+# Increase only after verifying memory headroom in Grafana.
+Environment=SPIDER_CONCURRENCY=8
+# Hard cap on simultaneous Playwright/Chromium browser instances.
+# This is the key OOM guard: independent of SPIDER_CONCURRENCY.
+Environment=DISCOVERY_PLAYWRIGHT_MAX=3
+
+# Secrets via systemd-creds (encrypted at rest)
+# Provisioned with: systemd-creds encrypt --name=kv-api-key - /etc/cardex/credentials/kv-api-key
+LoadCredential=kv-api-key:/etc/cardex/credentials/kv-api-key
+LoadCredential=insee-token:/etc/cardex/credentials/insee-token
+
+[Install]
+WantedBy=multi-user.target

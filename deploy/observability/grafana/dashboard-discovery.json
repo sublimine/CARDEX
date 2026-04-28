@@ -1,0 +1,143 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {"type": "grafana", "id": "grafana", "name": "Grafana", "version": "11.0.0"},
+    {"type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0"}
+  ],
+  "annotations": {"list": []},
+  "description": "CARDEX Discovery Service — dealer discovery metrics",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "Service Status",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "auto",
+        "reduceOptions": {"calcs": ["lastNotNull"]}
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {"options": {"0": {"color": "red", "text": "DOWN"}, "1": {"color": "green", "text": "UP"}}, "type": "value"}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": 0}, {"color": "green", "value": 1}]}
+        }
+      },
+      "targets": [{"expr": "up{job=\"cardex_discovery\"}", "legendFormat": "Discovery"}]
+    },
+    {
+      "id": 2,
+      "title": "Dealers Discovered (Last 24h)",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
+      "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["sum"]}},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [{"expr": "increase(cardex_discovery_dealers_discovered_total[24h])", "legendFormat": "New dealers"}]
+    },
+    {
+      "id": 3,
+      "title": "Dealers Total (KG)",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
+      "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"]}},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [{"expr": "cardex_discovery_dealers_total", "legendFormat": "Total dealers"}]
+    },
+    {
+      "id": 4,
+      "title": "Active Families",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
+      "options": {"colorMode": "value", "reduceOptions": {"calcs": ["lastNotNull"]}},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [{"expr": "cardex_discovery_active_families", "legendFormat": "Families"}]
+    },
+    {
+      "id": 5,
+      "title": "Error Rate by Scraper Family",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "options": {"tooltip": {"mode": "multi"}},
+      "fieldConfig": {
+        "defaults": {"unit": "percentunit", "custom": {"lineWidth": 2}},
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "rate(cardex_discovery_scrape_errors_total[5m]) / (rate(cardex_discovery_scrape_requests_total[5m]) + 0.001)",
+          "legendFormat": "{{family}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Dealers Discovered per Family (24h)",
+      "type": "bargauge",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "options": {"orientation": "horizontal", "reduceOptions": {"calcs": ["sum"]}},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [
+        {
+          "expr": "increase(cardex_discovery_dealers_discovered_total[24h])",
+          "legendFormat": "{{family}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Scrape Duration (p95)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+      "fieldConfig": {"defaults": {"unit": "s"}},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(cardex_discovery_scrape_duration_seconds_bucket[5m]))",
+          "legendFormat": "p95 {{family}}"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Discovery Cycle Duration",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "fieldConfig": {"defaults": {"unit": "s"}},
+      "targets": [
+        {
+          "expr": "cardex_discovery_cycle_duration_seconds",
+          "legendFormat": "Cycle duration"
+        }
+      ]
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": ["cardex", "discovery"],
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "hide": 0,
+        "includeAll": false,
+        "multi": false
+      }
+    ]
+  },
+  "time": {"from": "now-24h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "CARDEX — Discovery",
+  "uid": "cardex-discovery",
+  "version": 1
+}

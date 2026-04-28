@@ -1,0 +1,48 @@
+# Dockerfile.discovery — CARDEX Discovery Service
+# Multi-stage build: Go 1.26.2 builder → distroless/static runtime
+# Result: ~15 MB statically-linked binary in a minimal container
+
+# ── Stage 1: build ───────────────────────────────────────────────
+FROM golang:1.26.2-bookworm AS builder
+
+WORKDIR /src
+
+# Copy module files first for layer cache
+COPY go.work go.work.sum ./
+COPY discovery/go.mod discovery/go.sum ./discovery/
+
+# Download dependencies (cached unless go.mod changes)
+WORKDIR /src/discovery
+RUN go mod download
+
+# Copy source
+WORKDIR /src
+COPY discovery/ ./discovery/
+COPY internal/ ./internal/
+
+# Build statically linked binary
+WORKDIR /src/discovery
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOWORK=off \
+    go build \
+    -ldflags="-s -w -extldflags=-static" \
+    -trimpath \
+    -o /out/cardex-discovery \
+    ./cmd/discovery-service/
+
+# ── Stage 2: runtime ─────────────────────────────────────────────
+# Pin digest in production to prevent supply-chain substitution:
+# docker pull gcr.io/distroless/static-debian12:nonroot && docker inspect --format='{{index .RepoDigests 0}}'
+# Then replace :nonroot with :nonroot@sha256:<digest>
+FROM gcr.io/distroless/static-debian12:nonroot
+
+LABEL org.opencontainers.image.title="cardex-discovery"
+LABEL org.opencontainers.image.description="CARDEX Discovery Service — familias A-O"
+LABEL org.opencontainers.image.licenses="UNLICENSED"
+
+# Non-root user already provided by distroless/static:nonroot (uid=65532)
+COPY --from=builder /out/cardex-discovery /cardex-discovery
+
+# Health + metrics ports
+EXPOSE 8080 9101
+
+ENTRYPOINT ["/cardex-discovery"]

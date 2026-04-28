@@ -1,0 +1,6 @@
+{
+  "name": "cardex-cm-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vercel Edge proxy for comprobarmatricula.com — auto IP rotation, zero rate-limit"
+}

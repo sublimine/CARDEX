@@ -1,173 +1,401 @@
 # =============================================================================
-# CARDEX Makefile — levanta todo con 'make dev'
+# CARDEX Makefile — Phase 2-5 MVP (discovery / extraction / quality)
+# =============================================================================
+#
+# Core commands:
+#   make build        Build all three Go services
+#   make test         Run all tests (GOWORK=off per module)
+#   make dev          Start full local stack via Docker Compose
+#   make smoke        Run local smoke tests
+#   make deploy       Deploy to VPS (requires HOST env var)
+#
 # =============================================================================
 
-.PHONY: all dev up down clean logs build test lint scrape gen-keys help \
-        build-api build-scheduler build-gateway build-pipeline
+.PHONY: all build test lint dev smoke deploy secrets help cli e2e proto \
+        build-discovery build-extraction build-quality build-edge \
+        test-discovery test-extraction test-quality \
+        lint-discovery lint-extraction lint-quality \
+        gnn-setup gnn-train gnn-serve gnn-test \
+        layoutlm-setup layoutlm-fixtures layoutlm-test \
+        forecast-pipeline forecast-serve forecast-test \
+        tax-build tax-serve tax-test \
+        routes-build routes-serve routes-test \
+        trust-build trust-serve trust-test \
+        workspace-build workspace-serve workspace-test media-test
 
 # ---------------------------------------------------------------------------
 # Variables
 # ---------------------------------------------------------------------------
-COMPOSE        = docker compose
-GO_SERVICES    = api scheduler gateway pipeline
-SCRAPER_TARGET ?= autoscout24_de   # override: make scrape TARGET=mobile_de
+COMPOSE     = docker compose
+COMPOSE_DEV = $(COMPOSE) -f deploy/docker/docker-compose.yml
+HOST        ?= cardex@cardex.io
 
 # ---------------------------------------------------------------------------
-# dev — primer arranque completo (genera claves JWT si no existen, luego up)
+# build — compile all three services (GOWORK=off per module)
 # ---------------------------------------------------------------------------
-dev: gen-keys
-	$(COMPOSE) up -d --build
-	@echo ""
-	@echo "  ✓ CARDEX dev environment running"
-	@echo ""
-	@echo "  Web app   →  http://localhost:3001"
-	@echo "  API       →  http://localhost:8080"
-	@echo "  Gateway   →  http://localhost:8090"
-	@echo "  Grafana   →  http://localhost:3000   (admin / cardex_dev_only)"
-	@echo "  Prometheus→  http://localhost:9090"
-	@echo "  MeiliSearch→ http://localhost:7700"
-	@echo "  ClickHouse→  http://localhost:8123"
-	@echo "  PostgreSQL→  localhost:5432"
-	@echo "  Redis     →  localhost:6379"
-	@echo ""
-	@echo "  Para scraper: make scrape TARGET=mobile_de"
-	@echo "  Para logs:    make logs SERVICE=api"
+build: build-discovery build-extraction build-quality
+
+build-discovery:
+	@echo "Building discovery..."
+	cd discovery && GOWORK=off go build -ldflags="-s -w" -o ../bin/discovery-service ./cmd/discovery-service/
+	@echo "  -> bin/discovery-service"
+
+build-extraction:
+	@echo "Building extraction..."
+	cd extraction && GOWORK=off go build -ldflags="-s -w" -o ../bin/extraction-service ./cmd/extraction-service/
+	@echo "  -> bin/extraction-service"
+
+build-quality:
+	@echo "Building quality..."
+	cd quality && GOWORK=off go build -ldflags="-s -w" -o ../bin/quality-service ./cmd/quality-service/
+	@echo "  -> bin/quality-service"
 
 # ---------------------------------------------------------------------------
-# up / down / clean
+# test — run tests for all three modules (GOWORK=off per module)
 # ---------------------------------------------------------------------------
-up:
-	$(COMPOSE) up -d
+test: test-discovery test-extraction test-quality
+
+test-discovery:
+	@echo "Testing discovery..."
+	cd discovery && GOWORK=off go test -race -count=1 ./...
+
+test-extraction:
+	@echo "Testing extraction..."
+	cd extraction && GOWORK=off go test -race -count=1 ./...
+
+test-quality:
+	@echo "Testing quality..."
+	cd quality && GOWORK=off go test -race -count=1 ./...
+
+# ---------------------------------------------------------------------------
+# lint — run golangci-lint on all three modules
+# ---------------------------------------------------------------------------
+lint: lint-discovery lint-extraction lint-quality
+
+lint-discovery:
+	cd discovery && GOWORK=off golangci-lint run --timeout=5m ./...
+
+lint-extraction:
+	cd extraction && GOWORK=off golangci-lint run --timeout=5m ./...
+
+lint-quality:
+	cd quality && GOWORK=off golangci-lint run --timeout=5m ./...
+
+# ---------------------------------------------------------------------------
+# dev — local Docker Compose stack (all 3 services + observability)
+# ---------------------------------------------------------------------------
+dev:
+	$(COMPOSE_DEV) up -d --build
+	@echo ""
+	@echo "  Discovery  ->  http://localhost:8080"
+	@echo "  Extraction ->  http://localhost:8081"
+	@echo "  Quality    ->  http://localhost:8082"
+	@echo "  Prometheus ->  http://localhost:9090"
+	@echo "  Grafana    ->  http://localhost:3001"
+	@echo ""
+	@echo "  Run: make smoke  (smoke tests)"
 
 down:
-	$(COMPOSE) down
+	$(COMPOSE_DEV) down
 
 clean:
-	$(COMPOSE) down -v --remove-orphans
-	rm -rf secrets/
+	$(COMPOSE_DEV) down -v --remove-orphans
 
-restart:
-	$(COMPOSE) restart $(SERVICE)
-
-# ---------------------------------------------------------------------------
-# logs — make logs SERVICE=api
-# ---------------------------------------------------------------------------
 logs:
-	$(COMPOSE) logs -f $(SERVICE)
-
-logs-all:
-	$(COMPOSE) logs -f
+	$(COMPOSE_DEV) logs -f $(SERVICE)
 
 # ---------------------------------------------------------------------------
-# gen-keys — genera par RSA-4096 para JWT si no existe ya
+# smoke — run local smoke tests
 # ---------------------------------------------------------------------------
-gen-keys:
-	@if [ ! -f secrets/jwt_private.pem ]; then \
-		echo "Generando claves JWT RS256..."; \
-		mkdir -p secrets; \
-		openssl genrsa -out secrets/jwt_private.pem 4096 2>/dev/null; \
-		openssl rsa -in secrets/jwt_private.pem -pubout -out secrets/jwt_public.pem 2>/dev/null; \
-		echo "  ✓ secrets/jwt_private.pem"; \
-		echo "  ✓ secrets/jwt_public.pem"; \
-		echo "  ⚠  Nunca subas estos archivos a git (están en .gitignore)"; \
-	else \
-		echo "  ✓ Claves JWT ya existen (secrets/)"; \
-	fi
+smoke:
+	./deploy/scripts/test-deploy-local.sh
 
 # ---------------------------------------------------------------------------
-# scrape — lanza un scraper concreto
-# Uso: make scrape TARGET=mobile_de
-#      make scrape TARGET=coches_net
-#      make scrape TARGET=discovery_es
+# secrets — generate age + TLS + SSH secrets for local dev
 # ---------------------------------------------------------------------------
-scrape:
-	$(COMPOSE) run --rm \
-		-e SCRAPER_TARGET=$(SCRAPER_TARGET) \
-		scraper
-
-# scrape-all — lanza todos los scrapers en paralelo (uno por país + portal)
-scrape-all:
-	@echo "Lanzando todos los scrapers..."
-	@for t in autoscout24_de mobile_de kleinanzeigen_de heycar_de pkw_de automobile_de \
-	           autoscout24_es coches_net wallapop milanuncios autocasion motor_es coches_com flexicar \
-	           autoscout24_fr leboncoin lacentrale paruvendu largus_fr caradisiac_fr \
-	           autoscout24_nl marktplaats autotrack gaspedaal \
-	           autoscout24_be 2dehands gocar \
-	           autoscout24_ch tutti comparis; do \
-		$(COMPOSE) run -d --rm -e SCRAPER_TARGET=$$t scraper & \
-	done; wait
-	@echo "  ✓ Todos los scrapers lanzados"
+secrets:
+	./deploy/scripts/secrets-generate.sh
 
 # ---------------------------------------------------------------------------
-# Build (servicios Go)
+# deploy — idempotent deploy to VPS
+# Usage: make deploy HOST=cardex@1.2.3.4
 # ---------------------------------------------------------------------------
-build: $(addprefix build-,$(GO_SERVICES))
-
-build-%:
-	@echo "Building services/$*..."
-	cd services/$* && go build -o ../../bin/$* ./cmd/$*/
+deploy:
+	./deploy/scripts/deploy.sh $(HOST) production
 
 # ---------------------------------------------------------------------------
-# Test
+# backup — trigger manual backup on VPS
 # ---------------------------------------------------------------------------
-test: $(addprefix test-,$(GO_SERVICES))
-
-test-%:
-	@echo "Testing services/$*..."
-	cd services/$* && go test -race -count=1 -coverprofile=coverage.out ./...
+backup:
+	./deploy/scripts/test-backup-restore.sh
 
 # ---------------------------------------------------------------------------
-# Lint
+# cli — build the terminal buyer CLI (cardex-cli)
 # ---------------------------------------------------------------------------
-lint: $(addprefix lint-,$(GO_SERVICES))
-
-lint-%:
-	cd services/$* && golangci-lint run --timeout=5m ./...
-
-# ---------------------------------------------------------------------------
-# Integration (requiere 'make dev' previamente)
-# ---------------------------------------------------------------------------
-integration:
-	@echo "Verificando PostgreSQL..."
-	@docker exec cardex-pg psql -U cardex -d cardex -c \
-		"SELECT count(*) AS tablas FROM pg_tables WHERE schemaname='public';"
-	@echo "Verificando ClickHouse..."
-	@docker exec cardex-ch clickhouse-client \
-		--query "SELECT count() AS tablas FROM system.tables WHERE database='cardex'"
-	@echo "Verificando Redis..."
-	@docker exec cardex-redis redis-cli PING
-	@echo "Verificando API..."
-	@curl -sf http://localhost:8080/healthz | python3 -m json.tool
-	@echo "  ✓ Todo OK"
+cli:
+	cd frontend/terminal && GOWORK=off go build -o ../../bin/cardex-cli ./cmd/cardex/
+	@echo "Built: bin/cardex-cli"
 
 # ---------------------------------------------------------------------------
-# Load test (datos sintéticos)
+# e2e — run end-to-end pipeline integration tests (no external network)
 # ---------------------------------------------------------------------------
-loadtest:
-	@echo "Generando 10.000 vehículos sintéticos..."
-	cd scripts && go run loadgen.go -count=10000
+e2e:
+	go test ./tests/e2e/... -tags=e2e -v -timeout=5m
 
 # ---------------------------------------------------------------------------
-# Help
+# proto — compile protobuf definitions to Go (+ Rust via cargo build)
+#
+# Prerequisites (one-time install):
+#   go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+#   go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+#   brew install protobuf   (or: apt install protobuf-compiler)
+# ---------------------------------------------------------------------------
+proto:
+	@echo "Compiling edge_push.proto -> Go (extraction/api/edgepb)..."
+	protoc \
+		--proto_path=extraction/api/proto \
+		--go_out=extraction/api/edgepb \
+		--go_opt=paths=source_relative \
+		--go-grpc_out=extraction/api/edgepb \
+		--go-grpc_opt=paths=source_relative \
+		extraction/api/proto/edge_push.proto
+	@echo "Done. Run 'cargo build' in clients/edge-tauri/ for Rust client."
+
+# ---------------------------------------------------------------------------
+# build-edge — build edge-push-server + cardex-dealer CLI
+# ---------------------------------------------------------------------------
+build-edge:
+	@echo "Building edge-push-server..."
+	cd extraction && GOWORK=off go build -ldflags="-s -w" \
+		-o ../bin/edge-push-server ./cmd/edge-push-server/
+	@echo "  -> bin/edge-push-server"
+	@echo "Building cardex-dealer..."
+	cd extraction && GOWORK=off go build -ldflags="-s -w" \
+		-o ../bin/cardex-dealer ./cmd/cardex-dealer/
+	@echo "  -> bin/cardex-dealer"
+
+# ---------------------------------------------------------------------------
+# gnn-setup — install GNN Python dependencies (CPU-only)
+# ---------------------------------------------------------------------------
+gnn-setup:
+	@echo "Installing GNN CPU-only dependencies..."
+	pip install torch --index-url https://download.pytorch.org/whl/cpu
+	pip install torch_geometric flask scikit-learn numpy
+	@echo "Attempting optional torch_scatter/torch_sparse (may fail on some platforms):"
+	pip install pyg_lib torch_scatter torch_sparse \
+	    -f https://data.pyg.org/whl/torch-$$(python -c "import torch; v=torch.__version__; print(v.split('+')[0])")+cpu.html \
+	    || echo "WARNING: torch_scatter/torch_sparse not installed — DGL fallback available"
+	@echo "GNN setup complete."
+
+# ---------------------------------------------------------------------------
+# gnn-train — train the GraphSAGE dealer link prediction model
+# ---------------------------------------------------------------------------
+gnn-train:
+	cd innovation/gnn_dealer_inference && \
+	    python train.py --db ../../data/discovery.db --output model.pt \
+	    --epochs 100 --lr 0.005
+
+# ---------------------------------------------------------------------------
+# gnn-serve — start the GNN inference server (port 8501)
+# ---------------------------------------------------------------------------
+gnn-serve:
+	cd innovation/gnn_dealer_inference && \
+	    GNN_DB_PATH=../../data/discovery.db \
+	    GNN_MODEL_PATH=model.pt \
+	    python serve.py
+
+# ---------------------------------------------------------------------------
+# gnn-test — run GNN pytest suite
+# ---------------------------------------------------------------------------
+gnn-test:
+	cd innovation/gnn_dealer_inference && python -m pytest tests/ -v
+
+# ---------------------------------------------------------------------------
+# layoutlm-setup — install LayoutLMv3 dependencies (CPU-only)
+# ---------------------------------------------------------------------------
+layoutlm-setup:
+	@echo "Installing LayoutLMv3 CPU-only dependencies..."
+	pip install torch --index-url https://download.pytorch.org/whl/cpu
+	pip install transformers Pillow pdf2image pytesseract
+	@echo "NOTE: also install system packages:"
+	@echo "  apt-get install poppler-utils tesseract-ocr tesseract-ocr-deu tesseract-ocr-fra tesseract-ocr-spa"
+
+# ---------------------------------------------------------------------------
+# layoutlm-fixtures — generate test PDF fixtures
+# ---------------------------------------------------------------------------
+layoutlm-fixtures:
+	cd innovation/layoutlm_pdf && python fixtures/generate_fixtures.py
+
+# ---------------------------------------------------------------------------
+# layoutlm-test — run LayoutLMv3 pytest suite
+# ---------------------------------------------------------------------------
+layoutlm-test:
+	cd innovation/layoutlm_pdf && python -m pytest tests/ -v
+
+# ---------------------------------------------------------------------------
+# forecast-pipeline — run the Chronos-2 data pipeline (SQLite → time-series CSVs)
+# ---------------------------------------------------------------------------
+forecast-pipeline:
+	cd innovation/chronos_forecasting && \
+	    python data_pipeline.py \
+	    --db ../../data/discovery.db \
+	    --out timeseries
+
+# ---------------------------------------------------------------------------
+# forecast-serve — start the Chronos-2 forecast API server (port 8503)
+# ---------------------------------------------------------------------------
+forecast-serve:
+	cd innovation/chronos_forecasting && \
+	    TIMESERIES_DIR=timeseries \
+	    uvicorn serve:app --host 0.0.0.0 --port 8503 --reload
+
+# ---------------------------------------------------------------------------
+# forecast-test — run Chronos-2 pytest suite
+# ---------------------------------------------------------------------------
+forecast-test:
+	cd innovation/chronos_forecasting && python -m pytest tests/ -v
+
+# ---------------------------------------------------------------------------
+# tax-build — compile the VAT cross-border optimiser server
+# ---------------------------------------------------------------------------
+tax-build:
+	@echo "Building tax-server..."
+	cd innovation/tax_engine && GOWORK=off go build -ldflags="-s -w" \
+	    -o ../../bin/tax-server ./cmd/tax-server/
+	@echo "  -> bin/tax-server"
+
+# ---------------------------------------------------------------------------
+# tax-serve — start the Tax Engine API server (port 8504)
+# ---------------------------------------------------------------------------
+tax-serve:
+	cd innovation/tax_engine && GOWORK=off go run ./cmd/tax-server/ \
+	    2>&1 | tee -a tax-server.log
+
+# ---------------------------------------------------------------------------
+# tax-test — run Tax Engine Go test suite (36 tests, -race)
+# ---------------------------------------------------------------------------
+tax-test:
+	cd innovation/tax_engine && GOWORK=off go test -race -count=1 -v ./...
+
+# ---------------------------------------------------------------------------
+# routes-build — compile the CARDEX Routes disposition server
+# ---------------------------------------------------------------------------
+routes-build:
+	@echo "Building routes-server..."
+	cd innovation/routes && GOWORK=off go build -ldflags="-s -w" \
+	    -o ../../bin/routes-server ./cmd/routes-server/
+	@echo "  -> bin/routes-server"
+
+# ---------------------------------------------------------------------------
+# routes-serve — start the Routes disposition API server (port 8504)
+# ---------------------------------------------------------------------------
+routes-serve:
+	cd innovation/routes && GOWORK=off go run ./cmd/routes-server/ \
+	    2>&1 | tee -a routes-server.log
+
+# ---------------------------------------------------------------------------
+# routes-test — run routes Go test suite
+# ---------------------------------------------------------------------------
+routes-test:
+	cd innovation/routes && GOWORK=off go test -race -count=1 -v ./...
+
+# ---------------------------------------------------------------------------
+# trust-build — compile the Dealer KYB Trust Profile server
+# ---------------------------------------------------------------------------
+trust-build:
+	@echo "Building trust-service..."
+	cd innovation/trust_kyb && GOWORK=off go build -ldflags="-s -w" \
+	    -o ../../bin/trust-service ./cmd/trust-service/
+	@echo "  -> bin/trust-service"
+
+# ---------------------------------------------------------------------------
+# trust-serve — start the Trust KYB API server (port 8505)
+# ---------------------------------------------------------------------------
+trust-serve:
+	cd innovation/trust_kyb && GOWORK=off go run ./cmd/trust-service/ \
+	    2>&1 | tee -a trust-service.log
+
+# ---------------------------------------------------------------------------
+# trust-test — run Trust KYB Go test suite (-race)
+# ---------------------------------------------------------------------------
+trust-test:
+	cd innovation/trust_kyb && GOWORK=off go test -race -count=1 -v ./...
+
+# ---------------------------------------------------------------------------
+# workspace-build — compile the CARDEX Workspace Service (documents + inbox)
+# ---------------------------------------------------------------------------
+workspace-build:
+	@echo "Building workspace-service..."
+	cd workspace && GOWORK=off go build -ldflags="-s -w" \
+	    -o ../bin/workspace-service ./cmd/workspace-service/
+	@echo "  -> bin/workspace-service"
+
+# ---------------------------------------------------------------------------
+# workspace-serve — start the Workspace API server (port 8506)
+# ---------------------------------------------------------------------------
+workspace-serve:
+	cd workspace && GOWORK=off go run ./cmd/workspace-service/ \
+	    2>&1 | tee -a workspace-service.log
+
+# ---------------------------------------------------------------------------
+# workspace-test — run Workspace Go test suite (documents + inbox + media, -race)
+# ---------------------------------------------------------------------------
+workspace-test:
+	cd workspace && GOWORK=off go test -race -count=1 -v ./...
+
+# ---------------------------------------------------------------------------
+# media-test — run photo pipeline tests only (fast subset, -race)
+# ---------------------------------------------------------------------------
+media-test:
+	cd workspace && GOWORK=off go test -race -count=1 -v ./internal/media/...
+
+# ---------------------------------------------------------------------------
+# help
 # ---------------------------------------------------------------------------
 help:
 	@echo ""
-	@echo "CARDEX — Comandos disponibles:"
+	@echo "CARDEX — Phase 2-5 MVP"
 	@echo ""
-	@echo "  make dev              Arranca todo (genera claves JWT + docker compose up)"
-	@echo "  make up               Docker compose up -d"
-	@echo "  make down             Docker compose down"
-	@echo "  make clean            Destruye volúmenes y secretos"
-	@echo "  make restart SERVICE= Reinicia un servicio concreto"
-	@echo "  make logs SERVICE=    Logs de un servicio (ej: make logs SERVICE=api)"
-	@echo "  make logs-all         Logs de todos los servicios"
+	@echo "  make build           Build discovery + extraction + quality binaries"
+	@echo "  make test            Run all tests (GOWORK=off per module)"
+	@echo "  make lint            Run golangci-lint on all three modules"
 	@echo ""
-	@echo "  make scrape TARGET=   Lanza un scraper (ej: make scrape TARGET=mobile_de)"
-	@echo "  make scrape-all       Lanza todos los scrapers en paralelo"
+	@echo "  make gnn-setup       Install GNN CPU-only dependencies (PyG/DGL)"
+	@echo "  make gnn-train       Train GraphSAGE dealer link model"
+	@echo "  make gnn-serve       Start GNN inference server (port 8501)"
+	@echo "  make gnn-test        Run GNN pytest suite"
 	@echo ""
-	@echo "  make gen-keys         Genera claves RSA-4096 para JWT en secrets/"
-	@echo "  make build            Compila todos los servicios Go"
-	@echo "  make test             Tests unitarios"
-	@echo "  make lint             Linter"
-	@echo "  make integration      Tests de integración (requiere dev running)"
+	@echo "  make layoutlm-setup    Install LayoutLMv3 CPU-only dependencies"
+	@echo "  make layoutlm-fixtures Generate test PDF fixtures (DE/FR/ES)"
+	@echo "  make layoutlm-test     Run LayoutLMv3 pytest suite"
+	@echo ""
+	@echo "  make forecast-pipeline Run Chronos-2 data pipeline (SQLite → CSVs)"
+	@echo "  make forecast-serve    Start Chronos-2 forecast API (port 8503)"
+	@echo "  make forecast-test     Run Chronos-2 pytest suite"
+	@echo ""
+	@echo "  make tax-build         Build tax-server binary"
+	@echo "  make tax-serve         Start VAT Tax Engine API (port 8504)"
+	@echo "  make tax-test          Run Tax Engine test suite (36 tests, -race)"
+	@echo ""
+	@echo "  make routes-build      Build routes-server binary"
+	@echo "  make routes-serve      Start Routes disposition API (port 8504)"
+	@echo "  make routes-test       Run routes Go test suite (35 tests, -race)"
+	@echo ""
+	@echo "  make trust-build       Build trust-service binary"
+	@echo "  make trust-serve       Start Dealer KYB Trust API (port 8505)"
+	@echo "  make trust-test        Run Trust KYB test suite (-race)"
+	@echo ""
+	@echo "  make workspace-build   Build workspace-service binary (documents + inbox)"
+	@echo "  make workspace-serve   Start Workspace API (port 8506)"
+	@echo "  make workspace-test    Run Workspace test suite (documents+inbox+media, -race)"
+	@echo "  make media-test        Run photo pipeline tests only (24 tests, -race)"
+	@echo ""
+	@echo "  make dev             Start local Docker Compose stack"
+	@echo "  make down            Stop local stack"
+	@echo "  make clean           Stop + remove volumes"
+	@echo "  make logs SERVICE=   Follow logs for a service"
+	@echo "  make smoke           Run smoke tests against local stack"
+	@echo ""
+	@echo "  make secrets         Generate age + TLS + SSH secrets"
+	@echo "  make deploy          Deploy to VPS (HOST=cardex@ip)"
 	@echo ""

@@ -1,0 +1,74 @@
+// edge.proto — CARDEX Edge Push service definition (Phase 4 target).
+//
+// Dealers running the Tauri desktop client call this gRPC service to push
+// their local DMS inventory directly to CARDEX. This is the highest-confidence
+// data source (dealer-signed) and is processed at priority 1500.
+//
+// Implemented server: extraction/internal/extractor/e12_edge/edge.go
+// Auth: per-dealer JWT issued via /admin/edge/token (RS256, 30-day expiry)
+// Transport: gRPC over TLS on EDGE_GRPC_PORT (default :9444)
+
+syntax = "proto3";
+
+package cardex.edge.v1;
+
+option go_package = "cardex.eu/extraction/internal/extractor/e12_edge/proto;edgepb";
+
+// EdgeService receives pushed vehicle inventory from Tauri desktop clients.
+service EdgeService {
+  // PushInventory accepts a batch of vehicle records from a dealer's local DMS.
+  // The server authenticates the dealer via the JWT in the request metadata
+  // (key: "authorization", value: "Bearer <token>").
+  rpc PushInventory(PushInventoryRequest) returns (PushInventoryResponse);
+
+  // Ping is a lightweight health check for the desktop client.
+  rpc Ping(PingRequest) returns (PingResponse);
+}
+
+// PushInventoryRequest contains a batch of vehicles from the dealer's DMS.
+message PushInventoryRequest {
+  string dealer_id = 1;
+  repeated VehicleRecord vehicles = 2;
+  // push_id is a client-generated UUID for idempotent retries.
+  string push_id = 3;
+  // dms_provider identifies the source DMS (e.g. "cdk", "reynolds").
+  string dms_provider = 4;
+}
+
+// PushInventoryResponse acknowledges the push.
+message PushInventoryResponse {
+  // accepted_count is the number of vehicles successfully ingested.
+  int32 accepted_count = 1;
+  // rejected_count is the number of vehicles rejected (invalid VIN, etc.).
+  int32 rejected_count = 2;
+  // message provides human-readable status for the desktop client UI.
+  string message = 3;
+}
+
+// VehicleRecord is a single vehicle from the dealer's local DMS export.
+message VehicleRecord {
+  string vin                = 1;
+  string make               = 2;
+  string model              = 3;
+  int32  year               = 4;
+  int32  mileage_km         = 5;
+  double price_gross        = 6;
+  string currency           = 7;
+  string fuel_type          = 8;
+  string transmission       = 9;
+  string color              = 10;
+  string body_type          = 11;
+  string source_listing_id  = 12;
+  string source_url         = 13;
+  repeated string image_urls = 14;
+}
+
+// PingRequest carries the dealer ID for client health checks.
+message PingRequest {
+  string dealer_id = 1;
+}
+
+// PingResponse confirms the server is alive and the dealer is recognized.
+message PingResponse {
+  bool ok = 1;
+}

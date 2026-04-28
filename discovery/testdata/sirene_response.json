@@ -1,0 +1,63 @@
+{
+  "header": {
+    "statut": 200,
+    "message": "ok",
+    "total": 2,
+    "debut": 0,
+    "nombre": 2
+  },
+  "etablissements": [
+    {
+      "siret": "12345678900014",
+      "siren": "123456789",
+      "dateCreationEtablissement": "2005-03-15",
+      "uniteLegale": {
+        "denominationUniteLegale": "GARAGE DUPONT AUTOMOBILES",
+        "nomUniteLegale": "",
+        "prenomUsuelUniteLegale": "",
+        "categorieJuridiqueUniteLegale": "5710",
+        "etatAdministratifUniteLegale": "A"
+      },
+      "adresseEtablissement": {
+        "numeroVoieEtablissement": "12",
+        "typeVoieEtablissement": "RUE",
+        "libelleVoieEtablissement": "DE LA REPUBLIQUE",
+        "codePostalEtablissement": "75001",
+        "libelleCommuneEtablissement": "PARIS",
+        "libelleRegionEtablissement": "ILE-DE-FRANCE"
+      },
+      "periodesEtablissement": [
+        {
+          "etatAdministratifEtablissement": "A",
+          "activitePrincipaleEtablissement": "45.11Z"
+        }
+      ]
+    },
+    {
+      "siret": "98765432100021",
+      "siren": "987654321",
+      "dateCreationEtablissement": "2012-07-22",
+      "uniteLegale": {
+        "denominationUniteLegale": "AUTO MARTIN SAS",
+        "nomUniteLegale": "",
+        "prenomUsuelUniteLegale": "",
+        "categorieJuridiqueUniteLegale": "5200",
+        "etatAdministratifUniteLegale": "A"
+      },
+      "adresseEtablissement": {
+        "numeroVoieEtablissement": "47",
+        "typeVoieEtablissement": "AVENUE",
+        "libelleVoieEtablissement": "DES CHAMPS ELYSEES",
+        "codePostalEtablissement": "69001",
+        "libelleCommuneEtablissement": "LYON",
+        "libelleRegionEtablissement": "AUVERGNE-RHONE-ALPES"
+      },
+      "periodesEtablissement": [
+        {
+          "etatAdministratifEtablissement": "A",
+          "activitePrincipaleEtablissement": "45.11Z"
+        }
+      ]
+    }
+  ]
+}

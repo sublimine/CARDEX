@@ -1,18 +1,15 @@
-go 1.24.1
+go 1.26.2
 
-toolchain go1.24.7
+toolchain go1.26.2
 
 use (
-	./e2e
+	./discovery
+	./extraction
+	./frontend/terminal
+	./innovation/tax_engine
+	./innovation/trust_kyb
 	./internal/shared
-	./services/alpha
-	./services/api
-	./services/census
-	./services/forensics
-	./services/frontier
-	./services/imgproxy
-	./services/gateway
-	./services/legal
-	./services/pipeline
-	./services/scheduler
+	./quality
+	./tests/e2e
+	./workspace
 )

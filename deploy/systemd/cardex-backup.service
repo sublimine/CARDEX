@@ -1,0 +1,40 @@
+# /etc/systemd/system/cardex-backup.service
+# CARDEX daily backup to Hetzner Storage Box
+# Triggered by cardex-backup.timer (daily at 03:00 UTC)
+#
+# Manual run:  sudo systemctl start cardex-backup
+# Check last:  systemctl status cardex-backup
+# Logs:        journalctl -u cardex-backup -n 100
+
+[Unit]
+Description=CARDEX daily backup — SQLite → Hetzner Storage Box (age-encrypted)
+After=network-online.target
+Wants=network-online.target
+# Ensure core services are stopped/quiesced before backup to avoid WAL corruption
+# (backup.sh issues PRAGMA wal_checkpoint(FULL) instead of stopping services)
+
+[Service]
+Type=oneshot
+User=cardex
+Group=cardex
+WorkingDirectory=/srv/cardex
+
+ExecStart=/opt/cardex/scripts/backup.sh
+TimeoutStartSec=3600        # 1h max for full backup + rsync to Storage Box
+
+# Minimal permissions needed for backup
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ReadWritePaths=/srv/cardex/db /srv/cardex/backups /tmp
+ReadOnlyPaths=/etc/cardex
+SystemCallFilter=@system-service
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cardex-backup
+
+# Credentials
+LoadCredential=storage-box-host:/etc/cardex/credentials/storage-box-host
+LoadCredential=storage-box-user:/etc/cardex/credentials/storage-box-user
+LoadCredential=backup-pubkey:/etc/cardex/credentials/backup-pubkey

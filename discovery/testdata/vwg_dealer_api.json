@@ -1,0 +1,30 @@
+{
+  "dealers": [
+    {
+      "id": "DE-VW-00123",
+      "name": "VW Autohaus Berlin GmbH",
+      "address": {
+        "street": "Berliner Allee 1",
+        "postalCode": "10115",
+        "city": "Berlin",
+        "countryCode": "DE"
+      },
+      "phone": "+49 30 11111111",
+      "brands": ["VW"]
+    },
+    {
+      "dealerId": "DE-VW-00456",
+      "name": "Autohaus Mitte VW",
+      "address": {
+        "street": "Mitte Str. 22",
+        "zipCode": "10117",
+        "city": "Berlin",
+        "country": "DE"
+      },
+      "phone": "+49 30 22222222",
+      "brands": ["VW", "AUDI"]
+    }
+  ],
+  "total": 2,
+  "page": 1
+}
