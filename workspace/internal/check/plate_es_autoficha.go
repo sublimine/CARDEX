@@ -127,6 +127,15 @@ func (r *esPlateResolver) fetchAutoficha(ctx context.Context, plate string) (*Pl
 		return nil, false, nil // plate not found
 	}
 
+	// Detect autoficha server saturation — "Dame un respiro" single-alert response.
+	// This is a retriable condition, not a plate-not-found.
+	if len(af.Data.GetInfoVehiculo) == 1 && af.Data.GetInfoVehiculo[0].Typename == "IAlert" {
+		title := strings.ToLower(af.Data.GetInfoVehiculo[0].Title)
+		if strings.Contains(title, "respiro") || strings.Contains(title, "saturado") || strings.Contains(title, "espera") {
+			return nil, false, fmt.Errorf("autoficha rate-limited — retry in 2 min")
+		}
+	}
+
 	result := mapAutofichaToPlate(plate, af.Data.GetInfoVehiculo)
 	if result.Make == "" && result.Model == "" {
 		return nil, false, nil
