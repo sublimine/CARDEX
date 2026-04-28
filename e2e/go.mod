@@ -24,9 +24,3 @@ require (
 	golang.org/x/text v0.21.0 // indirect
 )
 
-replace (
-	github.com/cardex/alpha => ../alpha
-	github.com/cardex/forensics => ../forensics
-	github.com/cardex/gateway => ../gateway
-	github.com/cardex/pipeline => ../pipeline
-)
