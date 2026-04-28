@@ -153,6 +153,17 @@ func mapAutofichaToPlate(plate string, blocks []afBlock) *PlateResult {
 		return m
 	}
 
+	// first returns the first non-empty value from the given keys in map m.
+	// Handles the DGT's inconsistent field naming across vehicle age/type.
+	first := func(m map[string]string, keys ...string) string {
+		for _, k := range keys {
+			if v := m[k]; v != "" {
+				return v
+			}
+		}
+		return ""
+	}
+
 	for _, b := range blocks {
 		switch b.Typename {
 		case "IThumbnail":
@@ -168,110 +179,146 @@ func mapAutofichaToPlate(plate string, blocks []afBlock) *PlateResult {
 			switch b.Icon {
 			case "car-hatchback": // Información general
 				if r.Make == "" {
-					r.Make = m["Marca"]
+					r.Make = first(m, "Marca")
 				}
 				if r.Model == "" {
-					r.Model = m["Modelo"]
+					r.Model = first(m, "Modelo")
 				}
 				if r.FuelType == "" {
-					r.FuelType = m["Combustible"]
+					r.FuelType = first(m, "Combustible")
 				}
 				if r.BodyType == "" {
-					r.BodyType = m["Carrocería"]
+					r.BodyType = first(m, "Carrocería", "Carroceria")
 				}
 				if r.VehicleType == "" {
-					r.VehicleType = m["Tipo de vehículo"]
+					r.VehicleType = first(m, "Tipo de vehículo", "Tipo de vehiculo")
 				}
 				if r.VIN == "" {
-					r.VIN = m["VIN"]
+					r.VIN = first(m, "VIN", "Bastidor", "BASTIDOR")
 				}
 				if r.DisplacementCC == 0 {
-					r.DisplacementCC = parseCC(m["Cilindrada"])
+					r.DisplacementCC = parseCC(first(m, "Cilindrada", "CILINDRADA"))
 				}
 				if r.PowerCV == 0 {
-					r.PowerCV = parsePowerCV(m["Potencia"])
+					r.PowerCV = parsePowerCV(first(m, "Potencia", "POTENCIA"))
 				}
 				if r.PowerKW == 0 {
-					r.PowerKW = parsePowerKW(m["Potencia"])
+					r.PowerKW = parsePowerKW(first(m, "Potencia", "POTENCIA"))
 				}
 				if r.NumberOfSeats == 0 {
-					if n, err := strconv.Atoi(m["Número de plazas"]); err == nil {
+					if n, err := strconv.Atoi(first(m, "Número de plazas", "Plazas", "NUM PLAZAS")); err == nil {
 						r.NumberOfSeats = n
 					}
 				}
 				if r.EuroNorm == "" {
-					r.EuroNorm = m["Homologación"]
+					r.EuroNorm = first(m, "Homologación", "Homologacion", "Nivel emisiones EURO")
 				}
 
 			case "calendar-clock": // Matriculación
 				if r.FirstRegistration == nil {
-					r.FirstRegistration = parseDMY(m["Primera matriculación"])
+					// DGT uses different keys depending on vehicle age
+					r.FirstRegistration = parseDMY(first(m,
+						"Primera matriculación",
+						"Primera matriculacion",
+						"Fecha de matriculación",
+						"Fecha de matriculacion",
+						"Fecha matriculación",
+						"Fecha matriculacion",
+						"FECHA MATRICULACION",
+					))
 				}
 				if r.LastRegistrationDate == nil {
-					r.LastRegistrationDate = parseDMY(m["Última matriculación"])
+					r.LastRegistrationDate = parseDMY(first(m,
+						"Última matriculación",
+						"Ultima matriculacion",
+						"Última matriculacion",
+					))
 				}
 				if r.RegistrationType == "" {
-					r.RegistrationType = m["Tipo de matriculación"]
+					r.RegistrationType = first(m, "Tipo de matriculación", "Tipo de matriculacion", "TIPO MAT")
 				}
 				if r.VehicleAge == "" {
-					r.VehicleAge = m["Edad"]
+					r.VehicleAge = first(m, "Edad", "Antigüedad", "Antiguedad")
 				}
 				if r.District == "" {
-					r.District = m["Provincia"]
+					r.District = first(m, "Provincia")
 				}
 				if r.Procedencia == "" {
-					r.Procedencia = m["Procedencia"]
+					r.Procedencia = first(m, "Procedencia", "PROCEDENCIA")
 				}
 
 			case "car-info": // Información detallada
 				if r.EmptyWeightKg == 0 {
-					r.EmptyWeightKg = parseIntKg(m["Masa en circulación"])
+					// DGT uses TARA for older vehicles, Masa en circulación for newer
+					r.EmptyWeightKg = parseIntKg(first(m,
+						"Masa en circulación",
+						"Masa en circulacion",
+						"TARA",
+						"Tara",
+						"Masa orden marcha",
+					))
 				}
 				if r.GrossWeightKg == 0 {
-					r.GrossWeightKg = parseIntKg(m["Masa Máxima en carga"])
+					r.GrossWeightKg = parseIntKg(first(m,
+						"Masa Máxima en carga",
+						"Masa Maxima en carga",
+						"Masa máxima autorizada",
+						"PESO MAX AUTORIZADO",
+						"Masa max. técnica",
+					))
 				}
 				if r.WheelbaseCm == 0 {
-					r.WheelbaseCm = parseMMtoCM(m["Distancia entre ejes"])
+					r.WheelbaseCm = parseMMtoCM(first(m,
+						"Distancia entre ejes",
+						"DISTANCIA ENTRE EJES",
+					))
 				}
 				if r.Variant == "" {
-					r.Variant = m["Variante"]
+					r.Variant = first(m, "Variante", "VARIANTE")
 				}
 				if r.Manufacturer == "" {
-					r.Manufacturer = m["Fabricante"]
+					r.Manufacturer = first(m, "Fabricante", "FABRICANTE", "Fabricante/Importador")
 				}
 				if r.EuropeanVehicleCategory == "" {
-					r.EuropeanVehicleCategory = m["Categoría homologación Europea"]
+					r.EuropeanVehicleCategory = first(m,
+						"Categoría homologación Europea",
+						"Categoria homologacion Europea",
+						"Cat. homologación UE",
+					)
 				}
 
 			case "fuel": // Combustibles y emisiones
 				if r.CO2GPerKm == 0 {
-					r.CO2GPerKm = parseCO2(m["Emisiones CO2"])
+					r.CO2GPerKm = parseCO2(first(m, "Emisiones CO2", "CO2", "Emisiones de CO2"))
 				}
 				if r.FuelType == "" {
-					r.FuelType = m["Combustible"]
+					r.FuelType = first(m, "Combustible", "COMBUSTIBLE")
 				}
 				if r.Transmission == "" {
-					r.Transmission = m["Tipo de alimentación"]
+					r.Transmission = first(m, "Tipo de alimentación", "Tipo de alimentacion")
+				}
+				if r.EuroNorm == "" {
+					r.EuroNorm = first(m, "Homologación", "Nivel emisiones EURO")
 				}
 
 			case "account-outline": // Propietario actual
 				if r.LastTransactionDate == nil {
-					r.LastTransactionDate = parseDMY(m["Fecha trámite"])
+					r.LastTransactionDate = parseDMY(first(m, "Fecha trámite", "Fecha tramite", "Fecha del trámite"))
 				}
 				if r.ServiceCode == "" {
-					r.ServiceCode = m["Servicio"]
+					r.ServiceCode = first(m, "Servicio", "Tipo servicio")
 				}
 				if r.CurrentOwnerMunicipio == "" {
-					r.CurrentOwnerMunicipio = m["Municipio"]
+					r.CurrentOwnerMunicipio = first(m, "Municipio", "MUNICIPIO")
 				}
 				if r.CurrentOwnerProvincia == "" {
-					r.CurrentOwnerProvincia = m["Provincia"]
+					r.CurrentOwnerProvincia = first(m, "Provincia", "PROVINCIA")
 				}
 				if r.CurrentOwnerTimeInPossession == "" {
-					r.CurrentOwnerTimeInPossession = m["Tiempo en propiedad"]
+					r.CurrentOwnerTimeInPossession = first(m, "Tiempo en propiedad", "Tiempo propietario")
 				}
 				if r.CurrentOwnerPersonType == "" {
-					r.CurrentOwnerPersonType = m["Tipo de persona"]
+					r.CurrentOwnerPersonType = first(m, "Tipo de persona", "Tipo persona")
 				}
 			}
 
