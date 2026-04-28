@@ -96,6 +96,9 @@ SITEMAP_SOURCES: list[tuple[str, str, str, str, str | None]] = [
     ("marktplaats","NL","https://www.marktplaats.nl/sitemap/sitemap.xml",r"/v/auto-s/",r"\.auto-s\."),
     # ── 2dehands (BE) — master sitemap, filter only auto-s children ──
     ("2dehands","BE","https://www.2dehands.be/sitemap/sitemap.xml",r"/v/auto-s/",r"\.auto-s\."),
+    # ── Autotrack (NL) — 219 make-specific sitemaps, all contain vehicle listings ──
+    # Verified 2026-04-28: sitemap accessible, URL pattern /a/{make-model-fuel-year-id}
+    ("autotrack","NL","https://www.autotrack.nl/sitemap.xml",r"autotrack\.nl/a/[a-z]",None),
 ]
 
 # ── Streaming XML — O(1) ───────────────────────────────────────────────────
