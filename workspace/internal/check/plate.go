@@ -284,6 +284,13 @@ func NewPlateRegistryWithOptions(rdwBaseURL string, cache *Cache, matrabaStore m
 		es = es.WithMATRABA(matrabaStore)
 	}
 
+	// FR: apiplaqueimmatriculation.com when FR_PLATE_API_KEY is set;
+	// otherwise falls back to immatriculation-auto.info SSR scraping.
+	var frResolver PlateResolver = newFRPlateResolver(client)
+	if frKey := os.Getenv("FR_PLATE_API_KEY"); frKey != "" {
+		frResolver = newFRAPIResolver(client, frKey)
+	}
+
 	// CH: kennzeichenapi.ch when CH_PLATE_API_KEY is set; otherwise canton-only.
 	var chResolver PlateResolver = newCHPlateResolver(client)
 	if chKey := os.Getenv("CH_PLATE_API_KEY"); chKey != "" {
@@ -300,7 +307,7 @@ func NewPlateRegistryWithOptions(rdwBaseURL string, cache *Cache, matrabaStore m
 		resolvers: map[string]PlateResolver{
 			"NL": newNLPlateResolver(client, rdwBaseURL),
 			"ES": es,
-			"FR": newFRPlateResolver(client),
+			"FR": frResolver,
 			"BE": newBEPlateResolver(client),
 			"DE": deResolver,
 			"CH": chResolver,
