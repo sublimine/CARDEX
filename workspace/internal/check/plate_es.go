@@ -140,7 +140,7 @@ func (r *esPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 		FetchedAt: time.Now().UTC(),
 	}
 
-	// Run both sources in parallel. Partial success on one source is fine.
+	// Run CM and DGT badge in parallel. Partial success on one source is fine.
 	var wg sync.WaitGroup
 	var cmErr, dgtErr error
 	var cm cmVehiculo
@@ -161,6 +161,19 @@ func (r *esPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 		applyCMToResult(cm, result)
 	}
 
+	// When CM is unavailable (Cloudflare blocks datacenter IPs), fall back to
+	// autoficha.com which proxies the same DGT INTV data over AppSync.
+	var haveAutoficha bool
+	if !haveCM {
+		if af, ok, err := r.fetchAutoficha(ctx, plate); ok && err == nil && af != nil {
+			// Merge: autoficha is the primary source, badge from DGT fills the gap.
+			af.EnvironmentalBadge = result.EnvironmentalBadge
+			af.Country = "ES"
+			*result = *af
+			haveAutoficha = true
+		}
+	}
+
 	// Enrich with DGT MATRABA (post-VIN, so only meaningful when CM returned
 	// a VIN). Non-fatal — a MATRABA miss/error just leaves the result un-
 	// augmented; CM + DGT badge data still ship back to the caller.
@@ -171,12 +184,15 @@ func (r *esPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 		}
 	}
 
-	sources := make([]string, 0, 3)
+	haveRich := haveCM || haveAutoficha
+
+	sources := make([]string, 0, 4)
 	switch {
 	case haveCM:
 		sources = append(sources, "comprobarmatricula.com")
+	case haveAutoficha:
+		sources = append(sources, "autoficha.com (DGT INTV)")
 	case cmLimited:
-		// Integration IS active but the server IP hit CM's per-IP rate limit.
 		sources = append(sources, "comprobarmatricula.com (rate-limited — retry later)")
 	}
 	if result.EnvironmentalBadge != "" {
@@ -189,16 +205,15 @@ func (r *esPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 
 	// If the live call landed nothing new but we have a prior partial cache,
 	// surface the cached data instead of failing the user outright.
-	if !haveCM && result.EnvironmentalBadge == "" && cached != nil {
+	if !haveRich && result.EnvironmentalBadge == "" && cached != nil {
 		fresh := *cached
 		fresh.FetchedAt = time.Now().UTC()
 		fresh.Source = cached.Source + " (stale cache — live sources unavailable)"
 		return &fresh, nil
 	}
 
-	// Nothing extracted at all → treat as plate not found, unless both sources
-	// errored transiently, in which case bubble an upstream-unavailable error.
-	if !haveCM && result.EnvironmentalBadge == "" {
+	// Nothing extracted at all → treat as plate not found.
+	if !haveRich && result.EnvironmentalBadge == "" {
 		if cmErr != nil && dgtErr != nil {
 			return nil, fmt.Errorf("%w: ES sources unreachable (cm: %v; dgt: %v)",
 				ErrPlateResolutionUnavailable, cmErr, dgtErr)
@@ -207,14 +222,12 @@ func (r *esPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 			ErrPlateNotFound, plate)
 	}
 
-	// Partial when primary source missing (CM provides the meaty fields).
-	result.Partial = !haveCM
+	// Partial only when no rich source succeeded.
+	result.Partial = !haveRich
 
-	// Persist. Rich (haveCM) results get the 30-day TTL; partial (DGT-only)
-	// results get a 1-hour TTL so we keep probing CM. Don't downgrade a
-	// richer prior cache if the new lookup is partial.
+	// Persist. Rich results get the 30-day TTL; partial (DGT-only) get 1-hour.
 	if r.cache != nil {
-		if haveCM {
+		if haveRich {
 			_ = r.cache.SetPlate(ctx, "ES", plate, result, true)
 		} else if !cachedFull {
 			_ = r.cache.SetPlate(ctx, "ES", plate, result, false)
