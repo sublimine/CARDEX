@@ -1,4 +1,4 @@
-import type { VehicleDossier, SectionStatus, APKEntry } from '../../types/dossier'
+import type { VehicleDossier, SectionStatus, APKEntry, OwnerEntry, MovementEntry } from '../../types/dossier'
 
 interface Props {
   dossier: VehicleDossier
@@ -47,6 +47,70 @@ function NcapStars({ stars, year }: { stars: number; year?: number }) {
         <span key={i} className={i < stars ? 'text-yellow-400 text-base' : 'text-neutral-700 text-base'}>★</span>
       ))}
       {year && <span className="text-neutral-500 text-xs ml-1">({year})</span>}
+    </div>
+  )
+}
+
+function OwnerHistoryTable({ owners }: { owners: OwnerEntry[] }) {
+  if (!owners.length) return null
+  return (
+    <div className="mt-2 overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="text-neutral-500 border-b border-neutral-800">
+            <th className="text-left pb-1 pr-3">Desde</th>
+            <th className="text-left pb-1 pr-3">Municipio</th>
+            <th className="text-left pb-1 pr-3">Provincia</th>
+            <th className="text-left pb-1 pr-3">Tiempo</th>
+            <th className="text-left pb-1">Tipo</th>
+          </tr>
+        </thead>
+        <tbody>
+          {owners.map((o, i) => (
+            <tr key={i} className="border-b border-neutral-800/50">
+              <td className="py-0.5 pr-3 font-mono text-neutral-300">{o.date ? o.date.slice(0, 10) : '—'}</td>
+              <td className="py-0.5 pr-3 text-neutral-300">{o.municipio || '—'}</td>
+              <td className="py-0.5 pr-3 text-neutral-400">{o.provincia || '—'}</td>
+              <td className="py-0.5 pr-3 text-neutral-400 max-w-[140px]">{o.time_in_possession || '—'}</td>
+              <td className="py-0.5 text-neutral-500">{o.person_type || '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function MovementHistoryTable({ movements }: { movements: MovementEntry[] }) {
+  if (!movements.length) return null
+  const typeColor = (t: string) => {
+    const l = t.toLowerCase()
+    if (l.includes('transferencia')) return 'text-blue-400'
+    if (l.includes('baja')) return 'text-red-400'
+    return 'text-green-400'
+  }
+  return (
+    <div className="mt-2 overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="text-neutral-500 border-b border-neutral-800">
+            <th className="text-left pb-1 pr-3">Tipo</th>
+            <th className="text-left pb-1 pr-3">Fecha</th>
+            <th className="text-left pb-1 pr-3">Municipio</th>
+            <th className="text-left pb-1">Duración</th>
+          </tr>
+        </thead>
+        <tbody>
+          {movements.map((m, i) => (
+            <tr key={i} className="border-b border-neutral-800/50">
+              <td className={`py-0.5 pr-3 font-medium ${typeColor(m.type)}`}>{m.type}</td>
+              <td className="py-0.5 pr-3 font-mono text-neutral-300">{m.date ? m.date.slice(0, 10) : '—'}</td>
+              <td className="py-0.5 pr-3 text-neutral-300">{m.municipio || '—'}{m.provincia ? `, ${m.provincia}` : ''}</td>
+              <td className="py-0.5 text-neutral-400">{m.duration || '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
@@ -179,6 +243,20 @@ export function DossierReport({ dossier }: Props) {
       <Row label="Propietarios anteriores" value={ownership.previous_owners} />
       <Row label="Último trámite" value={ownership.last_transaction_date ? ownership.last_transaction_date.slice(0, 10) : undefined} />
       <Row label="Tipo servicio" value={ownership.service_code} />
+
+      {(ownership.owner_history?.length ?? 0) > 0 && (
+        <div className="mt-2">
+          <div className="text-xs text-neutral-500 mb-1">Historial de propietarios</div>
+          <OwnerHistoryTable owners={ownership.owner_history!} />
+        </div>
+      )}
+
+      {(ownership.movement_history?.length ?? 0) > 0 && (
+        <div className="mt-3">
+          <div className="text-xs text-neutral-500 mb-1">Movimientos DGT</div>
+          <MovementHistoryTable movements={ownership.movement_history!} />
+        </div>
+      )}
 
       {/* Legal */}
       <SectionHeader label="Situación legal" status={completeness.legal} />

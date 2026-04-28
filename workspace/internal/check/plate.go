@@ -154,10 +154,35 @@ type PlateResult struct {
 	// EU Safety Gate (RAPEX) alerts matching this make/model
 	EURAPEXAlerts []EURAPEXAlert `json:"eu_rapex_alerts,omitempty"`
 
+	// Ownership history — full list of owners with dates and location (ES: DGT INTV)
+	OwnerHistory []OwnerEntry `json:"owner_history,omitempty"`
+
+	// Movement history — matriculaciones, transferencias, bajas (ES: DGT INTV)
+	MovementHistory []MovementEntry `json:"movement_history,omitempty"`
+
 	// Metadata
 	Source    string    `json:"source"`
 	FetchedAt time.Time `json:"fetched_at"`
 	Partial   bool      `json:"partial,omitempty"` // true when only a subset of fields is available
+}
+
+// OwnerEntry is a single ownership period for a vehicle.
+type OwnerEntry struct {
+	Date             *time.Time `json:"date,omitempty"`
+	Municipio        string     `json:"municipio,omitempty"`
+	Provincia        string     `json:"provincia,omitempty"`
+	TimeInPossession string     `json:"time_in_possession,omitempty"`
+	PersonType       string     `json:"person_type,omitempty"` // Física / Jurídica
+	ServiceCode      string     `json:"service_code,omitempty"`
+}
+
+// MovementEntry is a single administrative event (matriculación, transferencia, baja).
+type MovementEntry struct {
+	Type      string     `json:"type"`             // "Matriculación ordinaria", "Transferencia", "Baja"…
+	Date      *time.Time `json:"date,omitempty"`
+	Municipio string     `json:"municipio,omitempty"`
+	Provincia string     `json:"provincia,omitempty"`
+	Duration  string     `json:"duration,omitempty"`
 }
 
 // APKDefect is a single defect found during an APK (MOT) inspection.

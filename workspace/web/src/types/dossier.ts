@@ -48,11 +48,30 @@ export interface DossierRegistration {
   environmental_badge?: string
 }
 
+export interface OwnerEntry {
+  date?: string
+  municipio?: string
+  provincia?: string
+  time_in_possession?: string
+  person_type?: string
+  service_code?: string
+}
+
+export interface MovementEntry {
+  type: string
+  date?: string
+  municipio?: string
+  provincia?: string
+  duration?: string
+}
+
 export interface DossierOwnership {
   transfer_count?: number
   previous_owners?: number
   last_transaction_date?: string
   service_code?: string
+  owner_history?: OwnerEntry[]
+  movement_history?: MovementEntry[]
 }
 
 export interface DossierLegal {

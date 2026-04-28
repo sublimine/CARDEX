@@ -87,10 +87,12 @@ type DossierRegistration struct {
 
 // DossierOwnership holds ownership history data.
 type DossierOwnership struct {
-	TransferCount       int        `json:"transfer_count,omitempty"`
-	PreviousOwners      int        `json:"previous_owners,omitempty"`
-	LastTransactionDate *time.Time `json:"last_transaction_date,omitempty"`
-	ServiceCode         string     `json:"service_code,omitempty"` // B00=private,A04=taxi,...
+	TransferCount       int           `json:"transfer_count,omitempty"`
+	PreviousOwners      int           `json:"previous_owners,omitempty"`
+	LastTransactionDate *time.Time    `json:"last_transaction_date,omitempty"`
+	ServiceCode         string        `json:"service_code,omitempty"`
+	OwnerHistory        []OwnerEntry  `json:"owner_history,omitempty"`
+	MovementHistory     []MovementEntry `json:"movement_history,omitempty"`
 }
 
 // DossierLegal holds legal and administrative flags.
@@ -222,6 +224,8 @@ func dossierFromPlate(p *PlateResult, sources []DataSource) *VehicleDossier {
 		PreviousOwners:      p.PreviousOwners,
 		LastTransactionDate: p.LastTransactionDate,
 		ServiceCode:         p.ServiceCode,
+		OwnerHistory:        p.OwnerHistory,
+		MovementHistory:     p.MovementHistory,
 	}
 
 	legal := DossierLegal{

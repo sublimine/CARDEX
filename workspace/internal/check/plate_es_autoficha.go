@@ -239,11 +239,16 @@ func mapAutofichaToPlate(plate string, blocks []afBlock) *PlateResult {
 
 		case "ITable":
 			switch b.Icon {
-			case "account-switch": // Propietarios
-				r.TransferCount = countTableRows(b.Values)
+			case "account-switch": // Propietarios (N) — full ownership timeline
+				owners := parseOwnerTable(b.Values)
+				r.OwnerHistory = owners
+				r.TransferCount = len(owners)
 				if r.TransferCount > 0 {
 					r.PreviousOwners = r.TransferCount - 1
 				}
+
+			case "book-edit-outline": // Movimientos (N) — matriculaciones + transferencias
+				r.MovementHistory = parseMovementTable(b.Values)
 			}
 
 		case "IAlert":
@@ -355,4 +360,54 @@ func countTableRows(values []afValue) int {
 		}
 	}
 	return count
+}
+
+// parseOwnerTable extracts the full owner history from the "Propietarios (N)" ITable.
+// Each top-level row has title=date and nested values with Municipio/Provincia/etc.
+func parseOwnerTable(rows []afValue) []OwnerEntry {
+	owners := make([]OwnerEntry, 0, len(rows))
+	for _, row := range rows {
+		entry := OwnerEntry{
+			Date: parseDMY(row.Title),
+		}
+		for _, v := range row.Values {
+			switch v.Title {
+			case "Municipio":
+				entry.Municipio = v.Value
+			case "Provincia":
+				entry.Provincia = v.Value
+			case "Tiempo en propiedad":
+				entry.TimeInPossession = v.Value
+			case "Tipo de persona":
+				entry.PersonType = v.Value
+			case "Servicio":
+				entry.ServiceCode = v.Value
+			}
+		}
+		owners = append(owners, entry)
+	}
+	return owners
+}
+
+// parseMovementTable extracts the full movement history from "Movimientos (N)" ITable.
+// Each top-level row has title=movement type and nested values with Fecha/Municipio/etc.
+func parseMovementTable(rows []afValue) []MovementEntry {
+	movements := make([]MovementEntry, 0, len(rows))
+	for _, row := range rows {
+		entry := MovementEntry{Type: row.Title}
+		for _, v := range row.Values {
+			switch v.Title {
+			case "Fecha":
+				entry.Date = parseDMY(v.Value)
+			case "Municipio":
+				entry.Municipio = v.Value
+			case "Provincia":
+				entry.Provincia = v.Value
+			case "Duración":
+				entry.Duration = v.Value
+			}
+		}
+		movements = append(movements, entry)
+	}
+	return movements
 }
