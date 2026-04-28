@@ -19,8 +19,17 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
+
+// afLimiter enforces a global 1 req/s ceiling against autoficha's AppSync.
+// A token refills every second; the bucket holds 1 token max.
+// This prevents "Dame un respiro" rate-limit responses under any usage pattern.
+var afLimiter = &struct {
+	mu      sync.Mutex
+	lastReq time.Time
+}{}
 
 const (
 	afEndpoint = "https://2sq7c2ojwjcevkft3hv6uspfqq.appsync-api.eu-west-3.amazonaws.com/graphql"
@@ -81,7 +90,46 @@ type afResponse struct {
 // fetchAutoficha queries the autoficha AppSync endpoint for a normalised plate.
 // Returns nil, false, nil when the plate is not found.
 // Returns nil, false, err on network/auth failures.
+// Retries once if the server returns a rate-limit ("Dame un respiro") response,
+// waiting 3 seconds between attempts.
 func (r *esPlateResolver) fetchAutoficha(ctx context.Context, plate string) (*PlateResult, bool, error) {
+	const maxAttempts = 2
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		// Throttle: ensure ≥1 s between autoficha requests globally.
+		afLimiter.mu.Lock()
+		since := time.Since(afLimiter.lastReq)
+		if since < time.Second {
+			wait := time.Second - since
+			afLimiter.mu.Unlock()
+			select {
+			case <-ctx.Done():
+				return nil, false, ctx.Err()
+			case <-time.After(wait):
+			}
+			afLimiter.mu.Lock()
+		}
+		afLimiter.lastReq = time.Now()
+		afLimiter.mu.Unlock()
+
+		result, ok, err := r.fetchAutofichaOnce(ctx, plate)
+		if err == nil {
+			return result, ok, nil
+		}
+		// Retry only on rate-limit; propagate other errors immediately.
+		if !strings.Contains(err.Error(), "rate-limited") || attempt == maxAttempts-1 {
+			return nil, false, err
+		}
+		// Back off 3 s before the retry.
+		select {
+		case <-ctx.Done():
+			return nil, false, ctx.Err()
+		case <-time.After(3 * time.Second):
+		}
+	}
+	return nil, false, nil
+}
+// fetchAutofichaOnce makes a single attempt against the AppSync endpoint.
+func (r *esPlateResolver) fetchAutofichaOnce(ctx context.Context, plate string) (*PlateResult, bool, error) {
 	body := map[string]interface{}{
 		"query":     afQuery,
 		"variables": map[string]string{"id": "P-" + plate},
