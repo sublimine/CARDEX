@@ -320,7 +320,7 @@ func processMessage(ctx context.Context, rdb *redis.Client, pool *pgxpool.Pool, 
 
 	var returnedULID string
 	var thumbURL *string
-	err = pool.QueryRow(ctx, `
+	row := pool.QueryRow(ctx, `
 		INSERT INTO vehicles (
 			vehicle_ulid, fingerprint_sha256, vin, source_id, source_platform, ingestion_channel,
 			source_url, source_country, photo_urls, listing_status,
@@ -350,18 +350,87 @@ func processMessage(ctx context.Context, rdb *redis.Client, pool *pgxpool.Pool, 
 				ELSE vehicles.price_drop_count
 			END,
 			last_price_eur            = EXCLUDED.gross_physical_cost_eur
-		RETURNING vehicle_ulid, thumb_url
+		RETURNING vehicle_ulid, thumb_url,
+		           (xmax = 0) AS is_insert,                    -- true on first insert
+		           (gross_physical_cost_eur < last_price_eur
+		            AND xmax != 0)                             AS price_dropped,
+		           last_price_eur                              AS prev_price_eur
 	`,
 		vehicleULID, fingerprint, nullStr(v.VIN), nullStr(coalesce(v.SourceID, v.SourceListingID)), source, channel,
 		nullStr(v.SourceURL), nullStr(v.SourceCountry), v.PhotoURLs, listingStatus,
 		v.Make, v.Model, nullStr(v.Variant), v.Year, v.MileageKM, nullStr(v.Color), nullStr(v.FuelType), nullStr(v.Transmission), v.CO2GKM, v.PowerKW,
 		v.PriceRaw, v.CurrencyRaw, priceEUR, nullFloat(v.Lat), nullFloat(v.Lng), nullStr(h3Res4), nullStr(h3Res7),
 		nullStr(v.Description), nullStr(v.SellerType), nullStr(v.SellerVATID),
-	).Scan(&returnedULID, &thumbURL)
+	)
+	var isInsert, priceDropped bool
+	var prevPriceEUR float64
+	err = row.Scan(&returnedULID, &thumbURL, &isInsert, &priceDropped, &prevPriceEUR)
 	if err != nil {
 		slog.Error("pipeline: insert vehicles failed", "fingerprint", fingerprint, "error", err)
 		ackMessage(ctx, rdb, msg.ID)
 		return
+	}
+
+	// ── Write proprietary history events ────────────────────────────────────
+	// vin_history_cache is the CARDEX-owned longitudinal record of every vehicle.
+	// We only write when VIN is known (no VIN = can't correlate across listings).
+	if v.VIN != "" {
+		eventDate := time.Now().UTC().Format("2006-01-02")
+
+		if isInsert {
+			// First time this fingerprint is seen: LISTING_START event.
+			listingData, _ := json.Marshal(map[string]interface{}{
+				"source_platform": source,
+				"source_country":  v.SourceCountry,
+				"source_url":      v.SourceURL,
+				"mileage_km":      v.MileageKM,
+				"price_eur":       priceEUR,
+				"make":            v.Make,
+				"model":           v.Model,
+				"year":            v.Year,
+			})
+			if _, herr := pool.Exec(ctx, `
+				INSERT INTO vin_history_cache (vin, event_type, event_date, data, source, confidence)
+				VALUES ($1, 'LISTING', $2, $3, $4, 0.95)
+			`, v.VIN, eventDate, listingData, source); herr != nil {
+				slog.Warn("pipeline: vin_history_cache LISTING insert failed", "vin", v.VIN, "error", herr)
+			}
+		}
+
+		if priceDropped && prevPriceEUR > 0 {
+			// Price reduction detected: PRICE_CHANGE event.
+			priceData, _ := json.Marshal(map[string]interface{}{
+				"price_eur_prev":    prevPriceEUR,
+				"price_eur_new":     priceEUR,
+				"price_drop_eur":    prevPriceEUR - priceEUR,
+				"source_platform":   source,
+				"source_country":    v.SourceCountry,
+				"mileage_km":        v.MileageKM,
+			})
+			if _, herr := pool.Exec(ctx, `
+				INSERT INTO vin_history_cache (vin, event_type, event_date, data, source, confidence)
+				VALUES ($1, 'PRICE_CHANGE', $2, $3, $4, 1.0)
+			`, v.VIN, eventDate, priceData, source); herr != nil {
+				slog.Warn("pipeline: vin_history_cache PRICE_CHANGE insert failed", "vin", v.VIN, "error", herr)
+			}
+		}
+
+		if v.MileageKM > 0 {
+			// Record mileage observation — base for odometer consistency checks.
+			mileageData, _ := json.Marshal(map[string]interface{}{
+				"mileage_km":      v.MileageKM,
+				"source_platform": source,
+				"source_country":  v.SourceCountry,
+				"price_eur":       priceEUR,
+			})
+			if _, herr := pool.Exec(ctx, `
+				INSERT INTO vin_history_cache (vin, event_type, event_date, data, source, confidence)
+				VALUES ($1, 'MILEAGE', $2, $3, $4, 0.80)
+				ON CONFLICT DO NOTHING
+			`, v.VIN, eventDate, mileageData, source); herr != nil {
+				slog.Warn("pipeline: vin_history_cache MILEAGE insert failed", "vin", v.VIN, "error", herr)
+			}
+		}
 	}
 
 	// Publish to stream:db_write (forensics consumer) — best-effort
