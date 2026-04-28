@@ -238,6 +238,13 @@ func main() {
 	// Vehicle history check — public with built-in per-IP rate limiting
 	checkHandler.Register(mux)
 
+	// Vehicle dossier — public with built-in per-IP rate limiting (same as check)
+	dossierHandler := check.NewDossierHandler(checkPlateRegistry, func(token string) bool {
+		_, err := jwtSvc.ValidateToken(token)
+		return err == nil
+	})
+	dossierHandler.Register(mux)
+
 	// All other handlers wrapped with RequireAuth
 	// Documents
 	mux.Handle("/api/v1/documents/", requireAuth(documents.Handler(docSvc)))

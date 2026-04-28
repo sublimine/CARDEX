@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Car, AlertTriangle, Clock } from 'lucide-react'
 import CheckLanding from './check/CheckLanding'
 import CheckReport from './check/CheckReport'
+import { DossierReport } from './check/DossierReport'
 import { useCheck } from '../hooks/useCheck'
+import { useDossier } from '../hooks/useDossier'
 
 // ── Shimmer skeleton ──────────────────────────────────────────────────────────
 
@@ -113,6 +115,8 @@ export default function CheckPage() {
   const { vin: vinParam } = useParams<{ vin?: string }>()
   const navigate = useNavigate()
   const { report, loading, error, checkVIN, checkByPlate, reset } = useCheck(vinParam)
+  const { dossier, loading: dossierLoading, fetchDossier, reset: resetDossier } = useDossier()
+  const [activeTab, setActiveTab] = useState<'report' | 'dossier'>('dossier')
 
   useEffect(() => {
     if (report) {
@@ -134,10 +138,13 @@ export default function CheckPage() {
   function handleSearchByPlate(country: string, plate: string) {
     navigate('/check', { replace: vinParam !== undefined })
     checkByPlate(country, plate)
+    fetchDossier(country, plate)
+    setActiveTab('dossier')
   }
 
   function handleBack() {
     reset()
+    resetDossier()
     navigate('/check', { replace: true })
   }
 
@@ -184,13 +191,54 @@ export default function CheckPage() {
             </motion.div>
           )}
 
-          {!loading && !error && report && (
+          {!loading && !error && (report || dossier) && (
             <motion.div key="report" {...fadeSlide}>
-              <CheckReport
-                report={report}
-                onBack={handleBack}
-                onRefresh={handleRefresh}
-              />
+              {/* Tab bar — shown when both report and dossier are available */}
+              {report && dossier && (
+                <div className="flex items-center gap-1 px-5 pt-4 pb-0 max-w-3xl mx-auto">
+                  {(['dossier', 'report'] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`px-4 py-1.5 rounded-t-md text-xs font-semibold transition-all duration-150 ${
+                        activeTab === tab
+                          ? 'bg-neutral-900 text-neutral-100 border border-b-0 border-neutral-700'
+                          : 'text-neutral-500 hover:text-neutral-300'
+                      }`}
+                    >
+                      {tab === 'dossier' ? 'Autoficha' : 'Informe completo'}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Dossier view */}
+              {(activeTab === 'dossier' || !report) && dossier && (
+                <div className="max-w-3xl mx-auto px-5 pt-4 pb-16">
+                  {dossierLoading ? (
+                    <div className="text-neutral-500 text-sm py-8 text-center">Cargando autoficha…</div>
+                  ) : (
+                    <DossierReport dossier={dossier} />
+                  )}
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      onClick={handleBack}
+                      className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+                    >
+                      ← Nueva búsqueda
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Full report view */}
+              {(activeTab === 'report' || !dossier) && report && (
+                <CheckReport
+                  report={report}
+                  onBack={handleBack}
+                  onRefresh={handleRefresh}
+                />
+              )}
             </motion.div>
           )}
 
