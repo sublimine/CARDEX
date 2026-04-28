@@ -158,6 +158,9 @@ export function DossierReport({ dossier }: Props) {
   if (legal.temp_cancelled) legalAlerts.push('Baja temporal')
   if (legal.taxi_indicator) legalAlerts.push('Taxi')
 
+  const infoAlerts: string[] = []
+  if (legal.import_alert) infoAlerts.push('Importado')
+
   return (
     <div className="bg-neutral-900 rounded-xl p-5 text-sm space-y-1 max-w-2xl w-full mx-auto">
 
@@ -201,13 +204,16 @@ export function DossierReport({ dossier }: Props) {
 
       {/* Technical */}
       <SectionHeader label="Técnica" status={completeness.technical} />
+      <Row label="Tipo vehículo" value={technical.vehicle_type} />
+      <Row label="Carrocería" value={technical.body_type} />
       <Row label="Combustible" value={technical.fuel_type} />
       <Row label="Cilindrada (cc)" value={technical.displacement_cc} />
       <Row label="Potencia (kW)" value={technical.power_kw} />
       <Row label="Potencia (CV)" value={technical.power_cv} />
       <Row label="CO₂ (g/km)" value={technical.co2_g_per_km} />
       <Row label="Norma Euro" value={technical.euro_norm} />
-      <Row label="Carrocería" value={technical.body_type} />
+      <Row label="Cat. homologación UE" value={technical.european_vehicle_category} />
+      <Row label="Fabricante / importador" value={technical.manufacturer} />
       <Row label="Transmisión" value={technical.transmission} />
       <Row label="Plazas" value={technical.number_of_seats} />
       <Row label="Puertas" value={technical.number_of_doors} />
@@ -232,15 +238,32 @@ export function DossierReport({ dossier }: Props) {
       {/* Registration */}
       <SectionHeader label="Matriculación" status={completeness.registration} />
       <Row label="1ª matrícula" value={registration.first_registration ? registration.first_registration.slice(0, 10) : undefined} />
+      <Row label="Última matrícula" value={registration.last_registration_date ? registration.last_registration_date.slice(0, 10) : undefined} />
       <Row label="1ª matrícula NL" value={registration.first_dutch_registration ? registration.first_dutch_registration.slice(0, 10) : undefined} />
+      <Row label="Tipo matriculación" value={registration.registration_type} />
+      <Row label="Procedencia" value={registration.procedencia} />
+      <Row label="Antigüedad" value={registration.vehicle_age} />
       <Row label="Estado" value={registration.registration_status} />
       <Row label="País" value={registration.country} />
       <Row label="Distintivo ambiental" value={registration.environmental_badge} />
+      {infoAlerts.length > 0 && (
+        <div className="flex flex-wrap mt-1">
+          {infoAlerts.map(a => (
+            <span key={a} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-900/40 text-amber-300 border border-amber-700/40 mr-1 mb-1">
+              ⚠ {a}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Ownership */}
       <SectionHeader label="Titularidad" status={completeness.ownership} />
       <Row label="Nº transmisiones" value={ownership.transfer_count} />
       <Row label="Propietarios anteriores" value={ownership.previous_owners} />
+      <Row label="Titular actual — municipio" value={ownership.current_owner_municipio} />
+      <Row label="Titular actual — provincia" value={ownership.current_owner_provincia} />
+      <Row label="Tiempo en propiedad (actual)" value={ownership.current_owner_time_in_possession} />
+      <Row label="Tipo persona" value={ownership.current_owner_person_type} />
       <Row label="Último trámite" value={ownership.last_transaction_date ? ownership.last_transaction_date.slice(0, 10) : undefined} />
       <Row label="Tipo servicio" value={ownership.service_code} />
 

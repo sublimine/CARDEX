@@ -17,12 +17,15 @@ export interface DossierTechnical {
   co2_g_per_km?: number
   euro_norm?: string
   body_type?: string
+  vehicle_type?: string
   transmission?: string
   number_of_seats?: number
   number_of_doors?: number
   number_of_cylinders?: number
   engine_code?: string
   energy_label?: string
+  european_vehicle_category?: string
+  manufacturer?: string
   fuel_consumption_combined_l100km?: number
   fuel_consumption_city_l100km?: number
   fuel_consumption_extra_urban_l100km?: number
@@ -42,9 +45,13 @@ export interface DossierDimensions {
 
 export interface DossierRegistration {
   first_registration?: string
+  last_registration_date?: string
   first_dutch_registration?: string
   country?: string
   registration_status?: string
+  registration_type?: string
+  procedencia?: string
+  vehicle_age?: string
   environmental_badge?: string
 }
 
@@ -70,6 +77,10 @@ export interface DossierOwnership {
   previous_owners?: number
   last_transaction_date?: string
   service_code?: string
+  current_owner_municipio?: string
+  current_owner_provincia?: string
+  current_owner_time_in_possession?: string
+  current_owner_person_type?: string
   owner_history?: OwnerEntry[]
   movement_history?: MovementEntry[]
 }
@@ -84,6 +95,7 @@ export interface DossierLegal {
   export_indicator?: boolean
   open_recall?: boolean
   taxi_indicator?: boolean
+  import_alert?: boolean
   has_alerts: boolean
 }
 

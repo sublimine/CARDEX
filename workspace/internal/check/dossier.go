@@ -44,19 +44,22 @@ type DossierIdentity struct {
 
 // DossierTechnical holds mechanical and regulatory specs.
 type DossierTechnical struct {
-	FuelType          string  `json:"fuel_type,omitempty"`
-	DisplacementCC    int     `json:"displacement_cc,omitempty"`
-	PowerKW           float64 `json:"power_kw,omitempty"`
-	PowerCV           int     `json:"power_cv,omitempty"`
-	CO2GPerKm         float64 `json:"co2_g_per_km,omitempty"`
-	EuroNorm          string  `json:"euro_norm,omitempty"`
-	BodyType          string  `json:"body_type,omitempty"`
-	Transmission      string  `json:"transmission,omitempty"`
-	NumberOfSeats     int     `json:"number_of_seats,omitempty"`
-	NumberOfDoors     int     `json:"number_of_doors,omitempty"`
-	NumberOfCylinders int     `json:"number_of_cylinders,omitempty"`
-	EngineCode        string  `json:"engine_code,omitempty"`
-	EnergyLabel       string  `json:"energy_label,omitempty"`
+	FuelType                    string  `json:"fuel_type,omitempty"`
+	DisplacementCC              int     `json:"displacement_cc,omitempty"`
+	PowerKW                     float64 `json:"power_kw,omitempty"`
+	PowerCV                     int     `json:"power_cv,omitempty"`
+	CO2GPerKm                   float64 `json:"co2_g_per_km,omitempty"`
+	EuroNorm                    string  `json:"euro_norm,omitempty"`
+	BodyType                    string  `json:"body_type,omitempty"`
+	VehicleType                 string  `json:"vehicle_type,omitempty"`
+	Transmission                string  `json:"transmission,omitempty"`
+	NumberOfSeats               int     `json:"number_of_seats,omitempty"`
+	NumberOfDoors               int     `json:"number_of_doors,omitempty"`
+	NumberOfCylinders           int     `json:"number_of_cylinders,omitempty"`
+	EngineCode                  string  `json:"engine_code,omitempty"`
+	EnergyLabel                 string  `json:"energy_label,omitempty"`
+	EuropeanVehicleCategory     string  `json:"european_vehicle_category,omitempty"`
+	Manufacturer                string  `json:"manufacturer,omitempty"`
 
 	FuelConsumptionCombinedL100km   float64 `json:"fuel_consumption_combined_l100km,omitempty"`
 	FuelConsumptionCityL100km       float64 `json:"fuel_consumption_city_l100km,omitempty"`
@@ -79,20 +82,28 @@ type DossierDimensions struct {
 // DossierRegistration holds registration and administrative data.
 type DossierRegistration struct {
 	FirstRegistration      *time.Time `json:"first_registration,omitempty"`
+	LastRegistrationDate   *time.Time `json:"last_registration_date,omitempty"`
 	FirstDutchRegistration *time.Time `json:"first_dutch_registration,omitempty"`
 	Country                string     `json:"country,omitempty"`
 	RegistrationStatus     string     `json:"registration_status,omitempty"`
+	RegistrationType       string     `json:"registration_type,omitempty"`
+	Procedencia            string     `json:"procedencia,omitempty"`
+	VehicleAge             string     `json:"vehicle_age,omitempty"`
 	EnvironmentalBadge     string     `json:"environmental_badge,omitempty"`
 }
 
 // DossierOwnership holds ownership history data.
 type DossierOwnership struct {
-	TransferCount       int           `json:"transfer_count,omitempty"`
-	PreviousOwners      int           `json:"previous_owners,omitempty"`
-	LastTransactionDate *time.Time    `json:"last_transaction_date,omitempty"`
-	ServiceCode         string        `json:"service_code,omitempty"`
-	OwnerHistory        []OwnerEntry  `json:"owner_history,omitempty"`
-	MovementHistory     []MovementEntry `json:"movement_history,omitempty"`
+	TransferCount                int             `json:"transfer_count,omitempty"`
+	PreviousOwners               int             `json:"previous_owners,omitempty"`
+	LastTransactionDate          *time.Time      `json:"last_transaction_date,omitempty"`
+	ServiceCode                  string          `json:"service_code,omitempty"`
+	CurrentOwnerMunicipio        string          `json:"current_owner_municipio,omitempty"`
+	CurrentOwnerProvincia        string          `json:"current_owner_provincia,omitempty"`
+	CurrentOwnerTimeInPossession string          `json:"current_owner_time_in_possession,omitempty"`
+	CurrentOwnerPersonType       string          `json:"current_owner_person_type,omitempty"`
+	OwnerHistory                 []OwnerEntry    `json:"owner_history,omitempty"`
+	MovementHistory              []MovementEntry `json:"movement_history,omitempty"`
 }
 
 // DossierLegal holds legal and administrative flags.
@@ -106,6 +117,7 @@ type DossierLegal struct {
 	ExportIndicator  bool   `json:"export_indicator,omitempty"`
 	OpenRecall       bool   `json:"open_recall,omitempty"`
 	TaxiIndicator    bool   `json:"taxi_indicator,omitempty"`
+	ImportAlert      bool   `json:"import_alert,omitempty"` // vehicle was imported — warrants km scrutiny
 
 	// HasAlerts is true when any flag above is set — shortcut for UI.
 	HasAlerts bool `json:"has_alerts"`
@@ -188,12 +200,15 @@ func dossierFromPlate(p *PlateResult, sources []DataSource) *VehicleDossier {
 		CO2GPerKm:                       p.CO2GPerKm,
 		EuroNorm:                        p.EuroNorm,
 		BodyType:                        p.BodyType,
+		VehicleType:                     p.VehicleType,
 		Transmission:                    p.Transmission,
 		NumberOfSeats:                   p.NumberOfSeats,
 		NumberOfDoors:                   p.NumberOfDoors,
 		NumberOfCylinders:               p.NumberOfCylinders,
 		EngineCode:                      p.EngineCode,
 		EnergyLabel:                     p.EnergyLabel,
+		EuropeanVehicleCategory:         p.EuropeanVehicleCategory,
+		Manufacturer:                    p.Manufacturer,
 		FuelConsumptionCombinedL100km:   p.FuelConsumptionCombinedL100km,
 		FuelConsumptionCityL100km:       p.FuelConsumptionCityL100km,
 		FuelConsumptionExtraUrbanL100km: p.FuelConsumptionExtraUrbanL100km,
@@ -213,19 +228,27 @@ func dossierFromPlate(p *PlateResult, sources []DataSource) *VehicleDossier {
 
 	d.Registration = DossierRegistration{
 		FirstRegistration:      p.FirstRegistration,
+		LastRegistrationDate:   p.LastRegistrationDate,
 		FirstDutchRegistration: p.FirstDutchRegistration,
 		Country:                p.Country,
 		RegistrationStatus:     p.RegistrationStatus,
+		RegistrationType:       p.RegistrationType,
+		Procedencia:            p.Procedencia,
+		VehicleAge:             p.VehicleAge,
 		EnvironmentalBadge:     p.EnvironmentalBadge,
 	}
 
 	d.Ownership = DossierOwnership{
-		TransferCount:       p.TransferCount,
-		PreviousOwners:      p.PreviousOwners,
-		LastTransactionDate: p.LastTransactionDate,
-		ServiceCode:         p.ServiceCode,
-		OwnerHistory:        p.OwnerHistory,
-		MovementHistory:     p.MovementHistory,
+		TransferCount:                p.TransferCount,
+		PreviousOwners:               p.PreviousOwners,
+		LastTransactionDate:          p.LastTransactionDate,
+		ServiceCode:                  p.ServiceCode,
+		CurrentOwnerMunicipio:        p.CurrentOwnerMunicipio,
+		CurrentOwnerProvincia:        p.CurrentOwnerProvincia,
+		CurrentOwnerTimeInPossession: p.CurrentOwnerTimeInPossession,
+		CurrentOwnerPersonType:       p.CurrentOwnerPersonType,
+		OwnerHistory:                 p.OwnerHistory,
+		MovementHistory:              p.MovementHistory,
 	}
 
 	legal := DossierLegal{
@@ -239,6 +262,7 @@ func dossierFromPlate(p *PlateResult, sources []DataSource) *VehicleDossier {
 		OpenRecall:       p.OpenRecall,
 		TaxiIndicator:    p.TaxiIndicator,
 	}
+	legal.ImportAlert = p.ImportAlert
 	legal.HasAlerts = p.EmbargoFlag || p.StolenFlag || p.PrecintedFlag ||
 		p.OpenRecall || p.ExportIndicator
 	d.Legal = legal

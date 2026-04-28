@@ -109,6 +109,27 @@ type PlateResult struct {
 	// Last administrative transaction date (ES: MATRABA FecTramite — most recent transfer/mutation)
 	LastTransactionDate *time.Time `json:"last_transaction_date,omitempty"`
 
+	// Last registration date (ES: DGT — when the vehicle was last registered in Spain)
+	LastRegistrationDate *time.Time `json:"last_registration_date,omitempty"`
+	// RegistrationType (ES: DGT — "Ordinaria", "Baja temporal", etc.)
+	RegistrationType string `json:"registration_type,omitempty"`
+	// Origin of the vehicle (ES: DGT — "Importación U.E.", "Nacional", "Importación extra-UE")
+	Procedencia string `json:"procedencia,omitempty"`
+	// VehicleAge as computed by DGT (e.g. "16 años, 8 meses y 2 días")
+	VehicleAge string `json:"vehicle_age,omitempty"`
+
+	// Current owner location and tenure (ES: DGT INTV)
+	CurrentOwnerMunicipio        string `json:"current_owner_municipio,omitempty"`
+	CurrentOwnerProvincia        string `json:"current_owner_provincia,omitempty"`
+	CurrentOwnerTimeInPossession string `json:"current_owner_time_in_possession,omitempty"`
+	CurrentOwnerPersonType       string `json:"current_owner_person_type,omitempty"`
+
+	// Manufacturer/importer (ES: DGT — may differ from Make when imported via a dealer)
+	Manufacturer string `json:"manufacturer,omitempty"`
+
+	// ImportAlert is true when DGT flags the vehicle as imported (affects buyer due-diligence)
+	ImportAlert bool `json:"import_alert,omitempty"`
+
 	// DGT MATRABA legal/administrative status flags (ES)
 	// Source: DGT microdatos abiertos (matraba) — free, no auth required.
 	EmbargoFlag      bool   `json:"embargo_flag,omitempty"`       // IndEmbargo: has active judicial/administrative lien

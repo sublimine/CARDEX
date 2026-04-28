@@ -179,6 +179,9 @@ func mapAutofichaToPlate(plate string, blocks []afBlock) *PlateResult {
 				if r.BodyType == "" {
 					r.BodyType = m["Carrocería"]
 				}
+				if r.VehicleType == "" {
+					r.VehicleType = m["Tipo de vehículo"]
+				}
 				if r.VIN == "" {
 					r.VIN = m["VIN"]
 				}
@@ -204,8 +207,20 @@ func mapAutofichaToPlate(plate string, blocks []afBlock) *PlateResult {
 				if r.FirstRegistration == nil {
 					r.FirstRegistration = parseDMY(m["Primera matriculación"])
 				}
+				if r.LastRegistrationDate == nil {
+					r.LastRegistrationDate = parseDMY(m["Última matriculación"])
+				}
+				if r.RegistrationType == "" {
+					r.RegistrationType = m["Tipo de matriculación"]
+				}
+				if r.VehicleAge == "" {
+					r.VehicleAge = m["Edad"]
+				}
 				if r.District == "" {
 					r.District = m["Provincia"]
+				}
+				if r.Procedencia == "" {
+					r.Procedencia = m["Procedencia"]
 				}
 
 			case "car-info": // Información detallada
@@ -221,6 +236,12 @@ func mapAutofichaToPlate(plate string, blocks []afBlock) *PlateResult {
 				if r.Variant == "" {
 					r.Variant = m["Variante"]
 				}
+				if r.Manufacturer == "" {
+					r.Manufacturer = m["Fabricante"]
+				}
+				if r.EuropeanVehicleCategory == "" {
+					r.EuropeanVehicleCategory = m["Categoría homologación Europea"]
+				}
 
 			case "fuel": // Combustibles y emisiones
 				if r.CO2GPerKm == 0 {
@@ -229,11 +250,28 @@ func mapAutofichaToPlate(plate string, blocks []afBlock) *PlateResult {
 				if r.FuelType == "" {
 					r.FuelType = m["Combustible"]
 				}
+				if r.Transmission == "" {
+					r.Transmission = m["Tipo de alimentación"]
+				}
 
 			case "account-outline": // Propietario actual
-				r.LastTransactionDate = parseDMY(m["Fecha trámite"])
+				if r.LastTransactionDate == nil {
+					r.LastTransactionDate = parseDMY(m["Fecha trámite"])
+				}
 				if r.ServiceCode == "" {
 					r.ServiceCode = m["Servicio"]
+				}
+				if r.CurrentOwnerMunicipio == "" {
+					r.CurrentOwnerMunicipio = m["Municipio"]
+				}
+				if r.CurrentOwnerProvincia == "" {
+					r.CurrentOwnerProvincia = m["Provincia"]
+				}
+				if r.CurrentOwnerTimeInPossession == "" {
+					r.CurrentOwnerTimeInPossession = m["Tiempo en propiedad"]
+				}
+				if r.CurrentOwnerPersonType == "" {
+					r.CurrentOwnerPersonType = m["Tipo de persona"]
 				}
 			}
 
@@ -252,18 +290,20 @@ func mapAutofichaToPlate(plate string, blocks []afBlock) *PlateResult {
 			}
 
 		case "IAlert":
-			switch b.AlertType {
-			case "HIGH", "CRITICAL":
-				desc := strings.Join(b.Description, " ")
-				lower := strings.ToLower(desc)
-				switch {
-				case strings.Contains(lower, "embargo"):
-					r.EmbargoFlag = true
-				case strings.Contains(lower, "robado") || strings.Contains(lower, "sustracción"):
-					r.StolenFlag = true
-				case strings.Contains(lower, "precinto"):
-					r.PrecintedFlag = true
-				}
+			desc := strings.ToLower(strings.Join(b.Description, " ") + " " + b.Title)
+			switch {
+			case strings.Contains(desc, "embargo"):
+				r.EmbargoFlag = true
+			case strings.Contains(desc, "robado") || strings.Contains(desc, "sustracción"):
+				r.StolenFlag = true
+			case strings.Contains(desc, "precinto"):
+				r.PrecintedFlag = true
+			case strings.Contains(desc, "renting"):
+				r.RentingFlag = true
+			case strings.Contains(desc, "importado") || strings.Contains(desc, "importación"):
+				r.ImportAlert = true
+			case strings.Contains(desc, "taxi") || strings.Contains(desc, "autoescuela"):
+				r.TaxiIndicator = true
 			}
 		}
 	}
