@@ -191,6 +191,45 @@ export interface PlateInfo {
   district?: string
   environmental_badge?: string
   fetched_at?: string
+  // Dimensions (NL RDW)
+  length_cm?: number
+  width_cm?: number
+  height_cm?: number
+  curb_weight_kg?: number
+  technical_max_mass_kg?: number
+  load_capacity_kg?: number
+  max_speed_kmh?: number
+  import_tax_eur?: number
+  type_approval_variant?: string
+  type_approval_execution?: string
+  first_dutch_registration?: string
+  // DGT MATRABA legal flags (ES)
+  embargo_flag?: boolean
+  precinted_flag?: boolean
+  stolen_flag?: boolean
+  renting_flag?: boolean
+  cancellation_type?: string
+  temp_cancelled?: boolean
+  transfer_count?: number
+  service_code?: string
+  last_transaction_date?: string
+  // EuroNCAP safety rating (all countries, model-level)
+  ncap_stars?: number
+  ncap_adult_occupant_pct?: number
+  ncap_child_occupant_pct?: number
+  ncap_vulnerable_road_user_pct?: number
+  ncap_safety_assist_pct?: number
+  ncap_rating_year?: number
+  // EU Safety Gate (RAPEX) alerts
+  eu_rapex_alerts?: {
+    case_number: string
+    category: string
+    brand: string
+    product: string
+    risk_type: string
+    danger: string
+    detail_url: string
+  }[]
   [key: string]: unknown
 }
 

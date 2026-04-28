@@ -288,9 +288,9 @@ export default function CheckLanding({
                           className="h-full appearance-none pl-3 pr-7 py-3 rounded-lg bg-bg-surface ring-1 ring-border-subtle text-sm font-semibold text-text-primary focus:ring-accent-blue/60 focus:outline-none transition-shadow cursor-pointer disabled:opacity-50"
                         >
                           {PLATE_COUNTRIES.map(({ code, name }) => (
-                            <option key={code} value={code} disabled={code === 'FR'}>
+                            <option key={code} value={code}>
                               {code}
-                              {code === 'FR' ? ' (no disp.)' : PLATE_PARTIAL_COUNTRIES.has(code) ? ' (parcial)' : ''}
+                              {PLATE_PARTIAL_COUNTRIES.has(code) ? ' (parcial)' : ''}
                             </option>
                           ))}
                         </select>

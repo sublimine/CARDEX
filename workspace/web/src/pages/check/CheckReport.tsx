@@ -142,6 +142,57 @@ function deriveAlertsFromPlate(p: PlateInfo | null | undefined): VehicleAlert[] 
     })
   }
 
+  // DGT MATRABA legal flags (ES)
+  if (p.embargo_flag) {
+    out.push({
+      id: 'derived-embargo',
+      severity: 'critical',
+      type: 'other',
+      title: 'Embargo activo registrado',
+      description: 'El Registro de la DGT indica un embargo judicial o administrativo sobre este vehículo.',
+      recommendedAction: 'No comprar sin verificar y cancelar el embargo con un profesional legal.',
+      source: 'DGT MATRABA',
+    })
+  }
+
+  if (p.stolen_flag) {
+    out.push({
+      id: 'derived-stolen',
+      severity: 'critical',
+      type: 'stolen',
+      title: 'Vehículo declarado robado',
+      description: 'El registro DGT indica sustracción declarada para este vehículo.',
+      recommendedAction: 'Verificar con la Guardia Civil y no adquirir el vehículo.',
+      source: 'DGT MATRABA',
+    })
+  }
+
+  if (p.precinted_flag) {
+    out.push({
+      id: 'derived-precinto',
+      severity: 'critical',
+      type: 'other',
+      title: 'Vehículo precintado',
+      description: 'El vehículo tiene un precinto administrativo o judicial activo.',
+      recommendedAction: 'No circular ni adquirir hasta resolver el precinto.',
+      source: 'DGT MATRABA',
+    })
+  }
+
+  // EU RAPEX recalls
+  const rapexAlerts = p.eu_rapex_alerts ?? []
+  rapexAlerts.forEach((alert, i) => {
+    out.push({
+      id: `rapex-${i}`,
+      severity: 'warning',
+      type: 'recall_open',
+      title: `Alerta UE Safety Gate: ${alert.brand} — ${alert.risk_type}`,
+      description: alert.danger?.slice(0, 200) || alert.product,
+      recommendedAction: 'Consultar con el fabricante o concesionario oficial.',
+      source: `EU Safety Gate (${alert.case_number})`,
+    })
+  })
+
   return out
 }
 
@@ -456,6 +507,22 @@ function IdentificationSection({
   if (p?.export_indicator) fields.push({ label: 'Exportación', value: 'Sí' })
   if (p?.open_recall) fields.push({ label: 'Llamada abierta', value: 'Sí' })
   if (p?.taxi_indicator) fields.push({ label: 'Uso taxi', value: 'Sí' })
+  // NL extended fields
+  if (p?.length_cm) fields.push({ label: 'Longitud', value: `${p.length_cm} cm`, mono: true })
+  if (p?.width_cm) fields.push({ label: 'Anchura', value: `${p.width_cm} cm`, mono: true })
+  if (p?.height_cm) fields.push({ label: 'Altura', value: `${p.height_cm} cm`, mono: true })
+  if (p?.curb_weight_kg) fields.push({ label: 'Masa en marcha', value: `${p.curb_weight_kg} kg`, mono: true })
+  if (p?.max_speed_kmh) fields.push({ label: 'Vel. máx.', value: `${p.max_speed_kmh} km/h`, mono: true })
+  if (p?.import_tax_eur) fields.push({ label: 'BPM (imp. matric.)', value: `${p.import_tax_eur.toLocaleString()} €`, mono: true })
+  if (p?.first_dutch_registration) fields.push({ label: 'Primera matriculación NL', value: formatDate(p.first_dutch_registration) })
+  // ES MATRABA legal flags
+  if (p?.transfer_count) fields.push({ label: 'Nº transmisiones', value: p.transfer_count, mono: true })
+  if (p?.last_transaction_date) fields.push({ label: 'Última transacción', value: formatDate(p.last_transaction_date) })
+  if (p?.renting_flag) fields.push({ label: 'Renting', value: 'Sí' })
+  if (p?.cancellation_type && p.cancellation_type !== '0' && p.cancellation_type !== '') fields.push({ label: 'Tipo baja', value: p.cancellation_type })
+  if (p?.temp_cancelled) fields.push({ label: 'Baja temporal', value: 'Sí' })
+  // EuroNCAP
+  if (p?.ncap_stars) fields.push({ label: `NCAP ${p.ncap_rating_year ?? ''}`, value: `${'★'.repeat(p.ncap_stars)}${'☆'.repeat(5 - p.ncap_stars)}` })
 
   if (fields.length === 0) return null
 
