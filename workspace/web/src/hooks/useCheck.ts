@@ -101,7 +101,7 @@ function mapPlateError(err: unknown): CheckError {
       message = 'Matrícula no encontrada en el registro.'
     } else if (err.status === 503) {
       code = 'plate_unavailable'
-      message = 'La consulta por matrícula no está disponible para este país todavía.'
+      message = 'Los datos de registro completos no están disponibles públicamente para este país. Se muestran datos NCAP y alertas EU cuando están disponibles.'
     } else if (err.status === 429) {
       code = 'rate_limit'
       message = 'Límite de consultas alcanzado. Inténtalo en breve.'

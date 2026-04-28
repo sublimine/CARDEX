@@ -8,6 +8,7 @@ import (
 	"math"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -105,6 +106,54 @@ type PlateResult struct {
 	// Environmental badge (ES: DGT label — Zero / Eco / C / B)
 	EnvironmentalBadge string `json:"environmental_badge,omitempty"`
 
+	// Last administrative transaction date (ES: MATRABA FecTramite — most recent transfer/mutation)
+	LastTransactionDate *time.Time `json:"last_transaction_date,omitempty"`
+
+	// DGT MATRABA legal/administrative status flags (ES)
+	// Source: DGT microdatos abiertos (matraba) — free, no auth required.
+	EmbargoFlag      bool   `json:"embargo_flag,omitempty"`       // IndEmbargo: has active judicial/administrative lien
+	PrecintedFlag    bool   `json:"precinted_flag,omitempty"`     // IndPrecinto: vehicle is seized
+	StolenFlag       bool   `json:"stolen_flag,omitempty"`        // IndSustraccion: reported stolen
+	RentingFlag      bool   `json:"renting_flag,omitempty"`       // Renting: is/was a renting vehicle
+	CancellationType string `json:"cancellation_type,omitempty"` // IndBajaDef: 0=active,1=scrapped,2=exported,3=admin baja...
+	TempCancelled    bool   `json:"temp_cancelled,omitempty"`     // IndBajaTemp: temporarily off the road
+	TransferCount    int    `json:"transfer_count,omitempty"`     // NumTransmisiones: number of ownership changes
+	ServiceCode      string `json:"service_code,omitempty"`      // Servicio: B00=private,A04=taxi,A01=driving school,...
+
+	// Dimensions (NL RDW m9d7-ebf2)
+	LengthCm int `json:"length_cm,omitempty"`
+	WidthCm  int `json:"width_cm,omitempty"`
+	HeightCm int `json:"height_cm,omitempty"`
+
+	// Mass and capacity (NL RDW m9d7-ebf2)
+	CurbWeightKg       int `json:"curb_weight_kg,omitempty"`        // massa_rijklaar
+	TechnicalMaxMassKg int `json:"technical_max_mass_kg,omitempty"` // technische_max_massa_voertuig
+	LoadCapacityKg     int `json:"load_capacity_kg,omitempty"`      // laadvermogen
+
+	// Performance (NL RDW m9d7-ebf2)
+	MaxSpeedKmh int `json:"max_speed_kmh,omitempty"` // maximale_constructiesnelheid
+
+	// Fiscal (NL RDW m9d7-ebf2 — import tax paid at first Dutch registration)
+	ImportTaxEUR int `json:"import_tax_eur,omitempty"` // bruto_bpm
+
+	// Type approval variant/execution codes (NL RDW m9d7-ebf2)
+	TypeApprovalVariant   string `json:"type_approval_variant,omitempty"`   // variant code
+	TypeApprovalExecution string `json:"type_approval_execution,omitempty"` // uitvoering code
+
+	// NL: first Dutch registration date (may differ from first_registration when imported)
+	FirstDutchRegistration *time.Time `json:"first_dutch_registration,omitempty"`
+
+	// EuroNCAP safety rating (model-level, not per-vehicle)
+	NCAPStars                 int     `json:"ncap_stars,omitempty"`
+	NCAPAdultOccupantPct      float64 `json:"ncap_adult_occupant_pct,omitempty"`
+	NCAPChildOccupantPct      float64 `json:"ncap_child_occupant_pct,omitempty"`
+	NCAPVulnerableRoadUserPct float64 `json:"ncap_vulnerable_road_user_pct,omitempty"`
+	NCAPSafetyAssistPct       float64 `json:"ncap_safety_assist_pct,omitempty"`
+	NCAPRatingYear            int     `json:"ncap_rating_year,omitempty"`
+
+	// EU Safety Gate (RAPEX) alerts matching this make/model
+	EURAPEXAlerts []EURAPEXAlert `json:"eu_rapex_alerts,omitempty"`
+
 	// Metadata
 	Source    string    `json:"source"`
 	FetchedAt time.Time `json:"fetched_at"`
@@ -147,8 +196,12 @@ func NormalizePlate(plate string) string {
 }
 
 // PlateRegistry maps ISO-3166-1 alpha-2 country codes to PlateResolver implementations.
+// After plate resolution it enriches the result with EuroNCAP safety ratings and
+// EU Safety Gate (RAPEX) recall alerts — both model-level, not per-VIN.
 type PlateRegistry struct {
 	resolvers map[string]PlateResolver
+	ncap      *NCAPResolver
+	rapex     *RAPEXResolver
 }
 
 // NewPlateRegistry builds the production registry.
@@ -161,19 +214,20 @@ func NewPlateRegistry(rdwBaseURL string) *PlateRegistry {
 // persistent cache. Currently consumed by the ES resolver to survive
 // comprobarmatricula.com rate-limits; other resolvers may adopt it later.
 func NewPlateRegistryWithCache(rdwBaseURL string, cache *Cache) *PlateRegistry {
-	return NewPlateRegistryWithOptions(rdwBaseURL, cache, nil)
+	return NewPlateRegistryWithOptions(rdwBaseURL, cache, nil, "")
 }
 
-// NewPlateRegistryWithOptions is the most-configurable constructor: the
-// optional matrabaStore turns on DGT MATRABA enrichment on the ES resolver,
-// filling fields that comprobarmatricula.com does not expose (weights,
-// homologation, Euro norm, CO₂, wheelbase, EU category, municipality).
-// Pass nil for any of cache/matrabaStore to disable that pathway.
-func NewPlateRegistryWithOptions(rdwBaseURL string, cache *Cache, matrabaStore matrabaLookup) *PlateRegistry {
+// NewPlateRegistryWithOptions is the most-configurable constructor.
+// cmProxyURL: when non-empty, ES plate lookups route through the Vercel edge
+// proxy (different IP per call → permanent elimination of CM rate limits).
+func NewPlateRegistryWithOptions(rdwBaseURL string, cache *Cache, matrabaStore matrabaLookup, cmProxyURL string) *PlateRegistry {
 	client := newPlateHTTPClient(15 * time.Second)
 	es := newESPlateResolver(client)
 	if cache != nil {
 		es = es.WithCache(cache)
+	}
+	if cmProxyURL != "" {
+		es = es.WithProxy(cmProxyURL)
 	}
 	if matrabaStore != nil {
 		es = es.WithMATRABA(matrabaStore)
@@ -187,6 +241,8 @@ func NewPlateRegistryWithOptions(rdwBaseURL string, cache *Cache, matrabaStore m
 			"DE": newDEPlateResolver(),
 			"CH": newCHPlateResolver(client),
 		},
+		ncap:  NewNCAPResolver(),
+		rapex: NewRAPEXResolver(),
 	}
 }
 
@@ -195,13 +251,59 @@ func NewPlateRegistryFromMap(resolvers map[string]PlateResolver) *PlateRegistry 
 	return &PlateRegistry{resolvers: resolvers}
 }
 
-// Resolve normalises plate, selects the resolver for country, and delegates.
+// ErrPlateCountryNotSupported is returned when the country code is not
+// recognised by CARDEX at all (as opposed to recognised but with no
+// public data source available).
+var ErrPlateCountryNotSupported = errors.New("country not supported by CARDEX plate resolver")
+
+// Resolve normalises plate, delegates to the country resolver, then enriches
+// the result in parallel with EuroNCAP safety ratings and EU RAPEX alerts.
+// Enrichment failures are non-fatal — they leave the NCAP/RAPEX fields empty.
 func (r *PlateRegistry) Resolve(ctx context.Context, plate, country string) (*PlateResult, error) {
 	resolver, ok := r.resolvers[strings.ToUpper(country)]
 	if !ok {
-		return nil, ErrPlateResolutionUnavailable
+		return nil, ErrPlateCountryNotSupported
 	}
-	return resolver.Resolve(ctx, NormalizePlate(plate))
+	result, err := resolver.Resolve(ctx, NormalizePlate(plate))
+	if err != nil {
+		return nil, err
+	}
+
+	// Enrich with model-level data in parallel when make+model are available.
+	if result.Make != "" && result.Model != "" {
+		var wg sync.WaitGroup
+		wg.Add(2)
+
+		go func() {
+			defer wg.Done()
+			if r.ncap == nil {
+				return
+			}
+			if ncapRes, e := r.ncap.Resolve(ctx, result.Make, result.Model); e == nil && ncapRes != nil {
+				result.NCAPStars = ncapRes.Stars
+				result.NCAPAdultOccupantPct = ncapRes.AdultOccupantPct
+				result.NCAPChildOccupantPct = ncapRes.ChildOccupantPct
+				result.NCAPVulnerableRoadUserPct = ncapRes.VulnerableRoadUserPct
+				result.NCAPSafetyAssistPct = ncapRes.SafetyAssistPct
+				result.NCAPRatingYear = ncapRes.RatingYear
+			}
+		}()
+
+		go func() {
+			defer wg.Done()
+			if r.rapex == nil {
+				return
+			}
+			if alerts, e := r.rapex.Resolve(ctx, result.Make, result.Model); e == nil && len(alerts) > 0 {
+				result.EURAPEXAlerts = alerts
+				result.OpenRecall = true // escalate: at least one EU-wide alert
+			}
+		}()
+
+		wg.Wait()
+	}
+
+	return result, nil
 }
 
 // ── shared HTTP helpers ───────────────────────────────────────────────────────

@@ -94,6 +94,17 @@ type rdwPlateVehicle struct {
 	EuropeseVoertuigcategorie      string `json:"europese_voertuigcategorie"`
 	Zuinigheidsclassificatie       string `json:"zuinigheidsclassificatie"`
 	Catalogusprijs                 string `json:"catalogusprijs"`
+	// Extended fields — dimensions, mass, performance, fiscal
+	Lengte                      string `json:"lengte"`                                    // vehicle length in cm
+	Breedte                     string `json:"breedte"`                                   // vehicle width in cm
+	HoogteVoertuig              string `json:"hoogte_voertuig"`                           // vehicle height in cm
+	MassaRijklaar               string `json:"massa_rijklaar"`                            // curb/ready-to-drive mass kg
+	TechnischeMaxMassaVoertuig  string `json:"technische_max_massa_voertuig"`             // technical max mass kg
+	Laadvermogen                string `json:"laadvermogen"`                              // load capacity kg
+	MaximaleConstructiesnelheid string `json:"maximale_constructiesnelheid"`              // max construction speed km/h
+	BrutoBPM                    string `json:"bruto_bpm"`                                 // import tax EUR
+	Uitvoering                  string `json:"uitvoering"`                                // type approval execution code
+	DatumEersteTenaamstellingNL string `json:"datum_eerste_tenaamstelling_in_nederland"`  // first Dutch registration
 }
 
 // rdwPlateFuel captures 8ys7-d773 fuel/emission rows.
@@ -161,9 +172,23 @@ func (r *nlPlateResolver) Resolve(ctx context.Context, plate string) (*PlateResu
 		MaxTrailerWeightUnbrakedKg:  parseInt(vehicle.MaximumMassaTrekkenOngeremd),
 		OdometerStatus:              strings.TrimSpace(vehicle.Tellerstandoordeel),
 		LastMileageRegistrationYear: parseInt(vehicle.JaarLaatsteRegistratie),
-		Country:                     "NL",
-		Source:                      "RDW Open Data — m9d7-ebf2 + 8ys7-d773 + sgfe-77wx + a34c-vvps + 3huj-srit + vezc-m2t6",
-		FetchedAt:                   time.Now().UTC(),
+		// Extended fields
+		LengthCm:              parseInt(vehicle.Lengte),
+		WidthCm:               parseInt(vehicle.Breedte),
+		HeightCm:              parseInt(vehicle.HoogteVoertuig),
+		CurbWeightKg:          parseInt(vehicle.MassaRijklaar),
+		TechnicalMaxMassKg:    parseInt(vehicle.TechnischeMaxMassaVoertuig),
+		LoadCapacityKg:        parseInt(vehicle.Laadvermogen),
+		MaxSpeedKmh:           parseInt(vehicle.MaximaleConstructiesnelheid),
+		ImportTaxEUR:          parseInt(vehicle.BrutoBPM),
+		TypeApprovalExecution: strings.TrimSpace(vehicle.Uitvoering),
+		TypeApprovalVariant:   strings.TrimSpace(vehicle.Variant),
+		Country:               "NL",
+		Source:                "RDW Open Data — m9d7-ebf2 + 8ys7-d773 + sgfe-77wx + a34c-vvps + 3huj-srit + vezc-m2t6",
+		FetchedAt:             time.Now().UTC(),
+	}
+	if t := parseRDWDate(vehicle.DatumEersteTenaamstellingNL); !t.IsZero() {
+		result.FirstDutchRegistration = &t
 	}
 
 	// Secondary colour — RDW sentinel "Niet geregistreerd" → treat as empty.

@@ -37,11 +37,12 @@ import (
 )
 
 type esPlateResolver struct {
-	client  *http.Client
-	cmBase  string        // comprobarmatricula.com base (no trailing slash)
-	dgtBase string        // sede.dgt.gob.es distintivo-ambiental page base (trailing slash)
-	cache   *Cache        // optional — when set, cache-first lookup survives CM rate-limits
-	matraba matrabaLookup // optional — DGT MATRABA store for post-VIN enrichment
+	client   *http.Client
+	cmBase   string        // comprobarmatricula.com base (no trailing slash)
+	dgtBase  string        // sede.dgt.gob.es distintivo-ambiental page base (trailing slash)
+	cache    *Cache        // optional — when set, cache-first lookup survives CM rate-limits
+	matraba  matrabaLookup // optional — DGT MATRABA store for post-VIN enrichment
+	proxyURL string        // optional — Vercel edge proxy URL (bypasses per-IP rate-limit)
 }
 
 func newESPlateResolver(client *http.Client) *esPlateResolver {
@@ -50,6 +51,14 @@ func newESPlateResolver(client *http.Client) *esPlateResolver {
 		cmBase:  "https://comprobarmatricula.com",
 		dgtBase: "https://sede.dgt.gob.es/es/vehiculos/informacion-de-vehiculos/distintivo-ambiental/",
 	}
+}
+
+// WithProxy attaches a Vercel edge proxy URL for comprobarmatricula.com lookups.
+// The proxy rotates IPs automatically, eliminating per-IP rate limits.
+// proxyURL should be the full base, e.g. "https://cardex-cm-proxy.vercel.app".
+func (r *esPlateResolver) WithProxy(proxyURL string) *esPlateResolver {
+	r.proxyURL = strings.TrimRight(proxyURL, "/")
+	return r
 }
 
 // WithCache attaches a persistent plate cache so repeat lookups survive
@@ -247,9 +256,14 @@ var reCMToken = regexp.MustCompile(`id="_g_tk"\s+value="([^"]+)"`)
 
 // fetchComprobarMatricula implements the two-step flow: (1) GET the plate page
 // to harvest the _g_tk token, (2) GET /api/vehiculo.php with that token.
+// When a proxyURL is configured the entire flow is delegated to the Vercel edge
+// function (different IP per call → no rate limit ever fires).
 // Returns (vehicle, ok, rateLimited, error). rateLimited=true means the server
 // responded with {"ok":0,"limit":true} — the IP has hit CM's anti-scrape budget.
 func (r *esPlateResolver) fetchComprobarMatricula(ctx context.Context, plate string) (cmVehiculo, bool, bool, error) {
+	if r.proxyURL != "" {
+		return r.fetchComprobarMatriculaViaProxy(ctx, plate)
+	}
 	pageURL := r.cmBase + "/matricula/" + url.PathEscape(plate) + "/"
 
 	// Rotate UA per lookup — CM's anti-scrape heuristics cluster by UA string,
@@ -587,6 +601,55 @@ var (
 	reDateISO = regexp.MustCompile(`(\d{4})-(\d{2})-(\d{2})`)
 	reDateDMY = regexp.MustCompile(`(\d{2})/(\d{2})/(\d{4})`)
 )
+
+// ── Vercel edge proxy path ────────────────────────────────────────────────────
+
+// fetchComprobarMatriculaViaProxy calls the Vercel edge function instead of CM
+// directly. The edge function runs on a different IP per invocation, which
+// eliminates comprobarmatricula.com's per-IP rate limit permanently.
+func (r *esPlateResolver) fetchComprobarMatriculaViaProxy(ctx context.Context, plate string) (cmVehiculo, bool, bool, error) {
+	proxyEndpoint := r.proxyURL + "/api/es-plate?plate=" + url.QueryEscape(plate)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, proxyEndpoint, nil)
+	if err != nil {
+		return cmVehiculo{}, false, false, fmt.Errorf("proxy request build: %w", err)
+	}
+	req.Header.Set("User-Agent", plateUA)
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := r.client.Do(req)
+	if err != nil {
+		return cmVehiculo{}, false, false, fmt.Errorf("proxy call: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 256*1024))
+	if err != nil {
+		return cmVehiculo{}, false, false, fmt.Errorf("proxy read: %w", err)
+	}
+
+	if resp.StatusCode == http.StatusTooManyRequests {
+		metricCMRateLimited.WithLabelValues("proxy_limit").Inc()
+		return cmVehiculo{}, false, true, nil
+	}
+	if resp.StatusCode != http.StatusOK {
+		return cmVehiculo{}, false, false, fmt.Errorf("proxy HTTP %d", resp.StatusCode)
+	}
+
+	var v cmVehiculo
+	if err := json.Unmarshal(body, &v); err != nil {
+		return cmVehiculo{}, false, false, fmt.Errorf("proxy decode: %w", err)
+	}
+	if v.OK != 1 {
+		if v.Limit {
+			metricCMRateLimited.WithLabelValues("proxy_limit").Inc()
+		} else {
+			metricCMRateLimited.WithLabelValues("proxy_other").Inc()
+		}
+		return cmVehiculo{}, false, v.Limit, nil
+	}
+	return v, true, false, nil
+}
 
 // extractDateAfterMarker looks for a date string in body after the first occurrence of marker.
 func extractDateAfterMarker(body, marker string) time.Time {

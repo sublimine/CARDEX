@@ -302,8 +302,8 @@ func TestPlateRegistry_NL_Live(t *testing.T) {
 func TestPlateRegistry_UnknownCountry(t *testing.T) {
 	reg := check.NewPlateRegistry("http://localhost:0")
 	_, err := reg.Resolve(context.Background(), "AB1234", "IT")
-	if !errors.Is(err, check.ErrPlateResolutionUnavailable) {
-		t.Errorf("want ErrPlateResolutionUnavailable for unknown country, got %v", err)
+	if !errors.Is(err, check.ErrPlateCountryNotSupported) {
+		t.Errorf("want ErrPlateCountryNotSupported for unknown country, got %v", err)
 	}
 }
 
@@ -1074,8 +1074,10 @@ func TestHandlerPlateRoute_CountryUnavailable(t *testing.T) {
 	rr := httptest.NewRecorder()
 	mux.ServeHTTP(rr, req)
 
-	if rr.Code != http.StatusServiceUnavailable {
-		t.Errorf("want 503, got %d", rr.Code)
+	// Known country with no public data returns 200 partial instead of 503,
+	// so the frontend can still display NCAP/EU-recall data when available.
+	if rr.Code != http.StatusOK {
+		t.Errorf("want 200 partial for known-but-unavailable country, got %d", rr.Code)
 	}
 }
 

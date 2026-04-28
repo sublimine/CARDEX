@@ -218,7 +218,11 @@ func main() {
 		slog.Warn("matraba schema init failed — ES enrichment disabled", "err", err)
 	}
 
-	checkPlateRegistry := check.NewPlateRegistryWithOptions(rdwBaseURL, checkCache, matrabaStore)
+	// CM_PROXY_URL: when set, ES plate lookups route through the Vercel edge
+	// proxy instead of calling comprobarmatricula.com directly, eliminating the
+	// per-IP rate limit. Example: "https://cardex-cm-proxy.vercel.app"
+	cmProxyURL := os.Getenv("CM_PROXY_URL")
+	checkPlateRegistry := check.NewPlateRegistryWithOptions(rdwBaseURL, checkCache, matrabaStore, cmProxyURL)
 	checkHandler := check.NewHandlerWithValidatorAndPlates(checkEngine, checkCache, func(token string) bool {
 		_, err := jwtSvc.ValidateToken(token)
 		return err == nil

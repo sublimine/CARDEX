@@ -221,12 +221,38 @@ func (h *Handler) plateReport(w http.ResponseWriter, r *http.Request) {
 
 	plateResult, err := h.plates.Resolve(r.Context(), plate, country)
 	if err != nil {
-		if errors.Is(err, ErrPlateResolutionUnavailable) {
+		if errors.Is(err, ErrPlateCountryNotSupported) {
 			jsonCheckErr(w, http.StatusServiceUnavailable, "plate lookup unavailable for "+country)
 			return
 		}
 		if errors.Is(err, ErrPlateNotFound) {
 			jsonCheckErr(w, http.StatusNotFound, "plate not found: "+plate)
+			return
+		}
+		if errors.Is(err, ErrPlateResolutionUnavailable) {
+			// Return a partial report with the limitation noted — lets the
+			// frontend show NCAP/EU recall data for any make/model it already
+			// knows, rather than a hard error with no information.
+			partial := &VehicleReport{
+				VIN:         "",
+				GeneratedAt: time.Now().UTC(),
+				PlateInfo: &PlateResult{
+					Plate:     plate,
+					Country:   country,
+					Source:    err.Error(),
+					FetchedAt: time.Now().UTC(),
+					Partial:   true,
+				},
+				DataSources: []DataSource{{
+					ID:      "plate-resolver",
+					Name:    "No hay fuente pública disponible para " + country,
+					Country: country,
+					Status:  StatusUnavailable,
+				}},
+			}
+			w.Header().Set("X-Cache-Hit", "false")
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(partial)
 			return
 		}
 		jsonCheckErr(w, http.StatusInternalServerError, "plate resolution failed")

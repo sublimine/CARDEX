@@ -74,17 +74,16 @@ const COUNTRIES = [
   { code: 'CH', name: 'Suiza',       sources: 1 },
 ]
 
-// Countries with live plate lookup (may return partial data without VIN).
-// NL: full VIN + rich data (RDW Open Data)
-// ES: badge + fuel type (DGT etiqueta medioambiental — no VIN)
-// BE: inspection data via GOCA; km history via Car-Pass if chassis available
-// DE: Zulassungsbezirk (registration district) from plate prefix — no VIN
-// CH: make/type + next MFK date for free-portal cantons (ZH/AG/LU/SH/ZG)
-// FR: unavailable — HistoVec requires owner identity; no public plate API
-const PLATE_LIVE_COUNTRIES = new Set(['NL', 'ES', 'BE', 'DE', 'CH'])
+// Countries with live plate lookup support.
+// NL: full data (RDW Open Data) — make/model/dims/APK/recall/NCAP
+// ES: badge + specs (DGT + comprobarmatricula) — NCAP included
+// FR: make/model/year/fuel (immatriculation-auto.info) — NCAP included
+// DE: Zulassungsbezirk from plate prefix (§33 StVG blocks VIN lookup)
+// BE/CH: limited (structural blockers in registries)
+const PLATE_LIVE_COUNTRIES = new Set(['NL', 'ES', 'FR', 'BE', 'DE', 'CH'])
 
-// Countries where only certain plates work (e.g. CH depends on canton).
-const PLATE_PARTIAL_COUNTRIES = new Set(['ES', 'BE', 'DE', 'CH'])
+// Countries where results are partial or best-effort.
+const PLATE_PARTIAL_COUNTRIES = new Set(['ES', 'FR', 'BE', 'DE', 'CH'])
 
 type PlateCountryInfo = {
   code: string
@@ -93,12 +92,12 @@ type PlateCountryInfo = {
 }
 
 const PLATE_COUNTRIES: PlateCountryInfo[] = [
-  { code: 'NL', name: 'Países Bajos', note: 'VIN + datos completos (RDW)' },
-  { code: 'ES', name: 'España',        note: 'Etiqueta DGT + combustible (sin VIN)' },
-  { code: 'BE', name: 'Bélgica',      note: 'Datos ITV GOCA + historial km' },
-  { code: 'DE', name: 'Alemania',     note: 'Distrito de registro (sin VIN — §33 StVG)' },
-  { code: 'CH', name: 'Suiza',        note: 'Cantones ZH/AG/LU/SH/ZG gratuitos' },
-  { code: 'FR', name: 'Francia',      note: 'No disponible — HistoVec requiere identidad del propietario' },
+  { code: 'NL', name: 'Países Bajos', note: 'Datos completos — RDW + NCAP + recalls' },
+  { code: 'ES', name: 'España',        note: 'Etiqueta DGT + especificaciones + NCAP' },
+  { code: 'FR', name: 'Francia',       note: 'Marca/modelo/año + NCAP (parcial)' },
+  { code: 'DE', name: 'Alemania',      note: 'Distrito de registro (§33 StVG)' },
+  { code: 'BE', name: 'Bélgica',       note: 'NCAP + recalls EU (limitado)' },
+  { code: 'CH', name: 'Suiza',         note: 'NCAP + recalls EU (limitado)' },
 ]
 
 // ── Plate validation ──────────────────────────────────────────────────────────

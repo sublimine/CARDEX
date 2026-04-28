@@ -117,6 +117,45 @@ func applyMATRABAToResult(rec matraba.Record, result *PlateResult) {
 		t := rec.FecPrimMatriculacion
 		result.FirstRegistration = &t
 	}
+
+	// Last administrative transaction (transfer, baja, etc.)
+	if result.LastTransactionDate == nil && !rec.FecTramite.IsZero() {
+		t := rec.FecTramite
+		result.LastTransactionDate = &t
+	}
+
+	// ── DGT legal/administrative flags ────────────────────────────────────
+	// These come directly from the official DGT microdatos MATRABA file
+	// (published monthly under Open Data licence, no authentication required).
+
+	if rec.IndEmbargo {
+		result.EmbargoFlag = true
+	}
+	if rec.IndPrecinto {
+		result.PrecintedFlag = true
+	}
+	if rec.IndSustraccion {
+		result.StolenFlag = true
+	}
+	if rec.Renting {
+		result.RentingFlag = true
+	}
+	// Baja definitiva codes: 0=active, 1=desguace(scrapped), 2=export, 3=admin,
+	// 4=embargo, 5=court order, 7=voluntary, 8=insurer, 9=transit plate, A=old plates, B=suspension
+	if result.CancellationType == "" && rec.IndBajaDef != "" && rec.IndBajaDef != "0" {
+		result.CancellationType = rec.IndBajaDef
+	}
+	if rec.IndBajaTemp {
+		result.TempCancelled = true
+	}
+	if result.TransferCount == 0 && rec.NumTransmisiones > 0 {
+		result.TransferCount = rec.NumTransmisiones
+	}
+	// Servicio codes: B00=private use, A04=taxi, A01=driving school, A05=rental,
+	// A02=ambulance, A03=hearse, C00=goods, etc.
+	if result.ServiceCode == "" && rec.Servicio != "" && rec.Servicio != "B00" {
+		result.ServiceCode = rec.Servicio
+	}
 }
 
 // enrichWithMATRABA queries the store for the given VIN and, on a hit,
