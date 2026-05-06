@@ -1,0 +1,21 @@
+# Data — MATRABA zips, SQLite, datasets
+data/
+*.db
+*.zip
+
+# Debug artifacts
+web/debug-*.html
+web/debug-*.png
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Binaries
+workspace
+*.exe
+
+# Logs
+*.log
+logs/
