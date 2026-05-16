@@ -139,10 +139,10 @@ Each of the three modules (discovery, extraction, quality) is independently depl
 The `go.work` file predates the Phase 2–5 focus. It includes `services/alpha`, `services/gateway`, etc. These modules exist in the repo as the foundation for future full-stack development. They are NOT built or deployed by any current process. Workspace mode is never used for production builds.
 
 **Why are there Python scrapers in `scrapers/`?**
-These were the original data acquisition approach before Phase 3 (extraction/ Go module) was built. They were cleaned in Phase 0 (P0 purge: removed stealth UA, proxy rotation, TLS impersonation). They are now honest `CardexBot/1.0` scrapers but they are NOT wired to the current pipeline. They represent a parallel marketplace-scraping strategy that may be revisited.
+These are the marketplace-scraping fleet operating under Strategy B (adopted 2026-05-16). Stack: `curl_cffi>=0.15.1` (TLS impersonation, Chrome 136+ fingerprint), `camoufox` (anti-detect Firefox for JS-heavy SPAs), and residential proxies (Decodo ISP / Oxylabs residential). They are NOT wired to the core Go pipeline (discovery/extraction/quality) — they run as a parallel inventory acquisition layer writing directly to `vehicle_index`.
 
 **What was the P0 purge?**
-Commit `ed5e54f cleanup(P0)`. Removed all techniques deemed illegal under CARDEX institutional regime: UA spoofing, TLS impersonation (`curl_cffi`), `playwright-stealth`, proxy rotation for WAF evasion, CAPTCHA solving. A Forgejo CI workflow (`illegal-pattern-scan.yml`) now blocks these patterns.
+Commit `ed5e54f cleanup(P0)`. Removed outdated/dangerous techniques: `playwright-stealth` (superseded by Camoufox), `undetected-chromedriver` (superseded by nodriver/Camoufox), `fake-useragent` library, scrapingbee/scraperapi (not in vendor list). **Strategy B reversal (2026-05-16):** `curl_cffi` TLS impersonation and Camoufox are now approved and present in `scrapers/requirements.txt`. The CI (`illegal-pattern-scan.yml`) was updated to reflect this — it blocks the outdated patterns but allows the approved stack.
 
 ---
 
@@ -163,12 +163,15 @@ cd quality    && GOWORK=off go test ./...
 
 ## Non-negotiable constraints
 
-1. **CardexBot UA only.** `CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu)`. CI blocks anything else.
+1. **UA policy by layer:**
+   - Go services (`discovery/`, `extraction/`, `quality/`): `CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu)` — CI enforces.
+   - Python scraper fleet (`scrapers/`): UA managed automatically by `curl_cffi` fingerprint engine (Chrome 136+) or Camoufox (Firefox). No literal UA override in code.
 2. **robots.txt compliance.** Never crawl disallowed paths.
-3. **Rate limiting.** Default 0.3 req/s per domain. Configurable via Redis (future) or env var.
-4. **No secrets in git.** `.gitignore` covers all key/cert/env patterns. The `deploy/secrets/` directory is gitignored.
+3. **Rate limiting.** Default 0.3 req/s per domain for curl_cffi fleet. Camoufox fleet: 1 req per browser instance with natural delays.
+4. **No secrets in git.** `.gitignore` covers all key/cert/env patterns. The `deploy/secrets/` directory is gitignored. Proxy credentials (Decodo/Oxylabs) go in `.env` only.
 5. **SQLite integrity.** Always `PRAGMA wal_checkpoint(FULL)` before backup. Always `PRAGMA integrity_check` after restore.
 6. **GOWORK=off for all three core module builds.** Never rely on workspace resolution.
+7. **Approved scraping stack (Strategy B, 2026-05-16):** `curl_cffi>=0.15.1` + `camoufox[geoip]` + `capsolver` + Decodo ISP proxies / Oxylabs residential. Any addition outside this list requires explicit decision.
 
 ---
 

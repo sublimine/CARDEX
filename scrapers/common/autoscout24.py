@@ -12,7 +12,9 @@ Per-country listing path prefixes:
   DE: /angebote/    FR: /annonces/    ES: /anuncios/
   NL: /aanbod/      BE: /annonces/ or /aanbod/    CH: /annonces/ or /angebote/
 
-JA3 invariant: single AsyncSession(impersonate="chrome124") throughout.
+JA3 invariant: single AsyncSession(impersonate="chrome") throughout.
+  "chrome" alias = latest Chrome fingerprint in curl_cffi (currently Chrome 136+).
+  Never pass impersonate per-request — session-level ensures coherent JA3 across all pages.
 """
 from __future__ import annotations
 
@@ -73,7 +75,7 @@ def _extract_listing_urls(html: str, json_re: re.Pattern, base_url: str) -> list
 
 async def _fetch_page(sess: AsyncSession, url: str, json_re: re.Pattern, base_url: str) -> list[str]:
     try:
-        r = await sess.get(url, impersonate="chrome124", timeout=20)
+        r = await sess.get(url, timeout=20)
     except Exception as exc:
         log.debug("fetch error %s: %s", url[:80], exc)
         return []
@@ -116,7 +118,7 @@ async def _collect(config: dict[str, Any]) -> list[str]:
     total_segments = 0
     t0 = time.monotonic()
 
-    async with AsyncSession() as sess:
+    async with AsyncSession(impersonate="chrome", http_version=3) as sess:
         for (year_from, year_to), price_to in product(_YEAR_BANDS, _PRICE_CEILINGS):
             urls = await _paginate_segment(sess, base, year_from, year_to, price_to, "", json_re, base_url)
             pre = len(collected)

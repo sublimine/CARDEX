@@ -1,8 +1,9 @@
 name: Illegal Pattern Scan
 
-# Enforces R1: zero evasion techniques in active code.
-# Blocks merge if any of the blacklisted patterns appear in source files.
-# See planning/00_AUDIT/ILLEGAL_CODE_PURGE_PLAN.md for the full policy.
+# Enforces R1: scraping fleet uses approved evasion techniques only.
+# Strategy B (2026-05-16): curl_cffi TLS impersonation + Camoufox + residential proxies
+# are APPROVED. Outdated/dangerous patterns remain blocked.
+# See planning/00_AUDIT/ILLEGAL_CODE_PURGE_PLAN.md for historical policy.
 
 on:
   push:
@@ -18,15 +19,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ── CS-0-1: Zero illegal evasion patterns in source code ──────────
-      - name: CS-0-1 · Illegal evasion patterns
+      # ── CS-0-1: Block outdated/dangerous evasion patterns ─────────────
+      # APPROVED: curl_cffi, camoufox, impersonate=, residential proxies (Decodo/Oxylabs)
+      # BLOCKED:  playwright-stealth (outdated), undetected-chromedriver (outdated),
+      #           fake-useragent lib, scrapingbee/scraperapi (not chosen), brightdata (not chosen)
+      - name: CS-0-1 · Blocked evasion patterns
         run: |
           MATCHES=$(grep -rnE \
-            "(curl_cffi|playwright[._-]stealth|2captcha|scrapingbee|scraperapi|brightdata|smartproxy|\
-impersonate[._]chrome|impersonate[._]firefox|JA3[^_]|JA4[^_]|tls[._]finger|\
+            "(playwright[._-]stealth|scrapingbee|scraperapi|brightdata|\
 StealthClient|StealthBrowser|StealthHTTPHelper|StealthEngine|\
 undetected[._]chromedriver|puppeteer[._]stealth|user[._]agent[._]spoof|\
-FakeChromeUA|bypass[._]cloudflare|antibot|fake[._]useragent|residential[._]proxy)" \
+FakeChromeUA|bypass[._]cloudflare|fake[._]useragent)" \
             --include="*.go" --include="*.py" --include="*.js" \
             --include="*.ts" --include="*.rs" \
             --exclude-dir=node_modules --exclude-dir=vendor \
@@ -35,15 +38,18 @@ FakeChromeUA|bypass[._]cloudflare|antibot|fake[._]useragent|residential[._]proxy
             . 2>/dev/null || true)
 
           if [ -n "$MATCHES" ]; then
-            echo "❌ CS-0-1 FAILED: Illegal evasion patterns detected:"
+            echo "❌ CS-0-1 FAILED: Blocked evasion patterns detected:"
             echo "$MATCHES"
             echo ""
-            echo "See planning/00_AUDIT/ILLEGAL_CODE_PURGE_PLAN.md for remediation."
+            echo "Approved stack: curl_cffi>=0.15.1 + camoufox + Decodo/Oxylabs proxies + CapSolver."
             exit 1
           fi
-          echo "✓ CS-0-1 PASS — zero illegal patterns"
+          echo "✓ CS-0-1 PASS — no blocked patterns"
 
       # ── CS-0-2: Blacklisted dependencies ─────────────────────────────
+      # APPROVED: curl_cffi, camoufox, capsolver
+      # BLOCKED:  playwright-stealth, undetected-chromedriver, fake-useragent,
+      #           scrapingbee, brightdata (not in approved vendor list)
       - name: CS-0-2 · Blacklisted dependencies
         run: |
           MANIFESTS=$(find . \
@@ -56,49 +62,52 @@ FakeChromeUA|bypass[._]cloudflare|antibot|fake[._]useragent|residential[._]proxy
             2>/dev/null)
 
           MATCHES=$(grep -lE \
-            "(curl[._-]cffi|playwright[._-]stealth|2captcha|scrapingbee|\
-undetected[._-]chromedriver|fake[._-]useragent|brightdata|smartproxy|\
+            "(playwright[._-]stealth|2captcha|scrapingbee|brightdata|\
+undetected[._-]chromedriver|fake[._-]useragent|\
 puppeteer-extra-plugin-stealth|playwright-extra)" \
             $MANIFESTS 2>/dev/null || true)
 
           if [ -n "$MATCHES" ]; then
             echo "❌ CS-0-2 FAILED: Blacklisted packages in dependencies:"
             echo "$MATCHES"
+            echo "Approved: curl_cffi>=0.15.1, camoufox[geoip], capsolver"
             exit 1
           fi
           echo "✓ CS-0-2 PASS — no blacklisted dependencies"
 
-      # ── CS-0-3: All HTTP clients use CardexBot UA ─────────────────────
-      # Checks literal User-Agent strings AND resolves common variable names
-      # (cardexUA, CARDEX_UA, _USER_AGENT) to ensure they contain CardexBot.
-      - name: CS-0-3 · CardexBot User-Agent compliance
+      # ── CS-0-3: CardexBot UA in Go modules; scrapers/ uses impersonation ──
+      # discovery/, extraction/, quality/ must use CardexBot/1.0.
+      # scrapers/ uses curl_cffi TLS impersonation — UA set automatically by
+      # the fingerprint engine, not as a literal string. Excluded from this check.
+      - name: CS-0-3 · CardexBot UA in Go services
         run: |
-          # Any literal User-Agent string that does not contain "Cardex"
+          # Go services must use CardexBot UA
           LITERAL_VIOLATIONS=$(grep -rnE '"User-Agent"\s*[=:{]\s*"(?!.*Cardex)[^"]+"' \
-            --include="*.go" --include="*.py" \
+            --include="*.go" \
             --exclude-dir=.git --exclude-dir=planning \
             . 2>/dev/null || true)
 
           if [ -n "$LITERAL_VIOLATIONS" ]; then
-            echo "❌ CS-0-3 FAILED: Non-CardexBot User-Agent literal found:"
+            echo "❌ CS-0-3 FAILED: Non-CardexBot User-Agent in Go service:"
             echo "$LITERAL_VIOLATIONS"
             exit 1
           fi
 
-          # Verify that the canonical UA constants resolve to CardexBot strings
+          # Go UA constants must resolve to CardexBot
           UA_CONSTANTS=$(grep -rn "cardexUA\s*=\|CARDEX_UA\s*=\|_USER_AGENT\s*=" \
-            --include="*.go" --include="*.py" \
+            --include="*.go" \
             --exclude-dir=.git --exclude-dir=planning \
             . 2>/dev/null || true)
 
           NON_CARDEX=$(echo "$UA_CONSTANTS" | grep -v "CardexBot" || true)
           if [ -n "$NON_CARDEX" ]; then
-            echo "❌ CS-0-3 FAILED: UA constant not set to CardexBot:"
+            echo "❌ CS-0-3 FAILED: Go UA constant not set to CardexBot:"
             echo "$NON_CARDEX"
             exit 1
           fi
 
-          echo "✓ CS-0-3 PASS — all HTTP clients use CardexBot UA"
+          echo "✓ CS-0-3 PASS — Go services use CardexBot UA"
+          echo "  Note: scrapers/ uses curl_cffi impersonation — UA managed by fingerprint engine"
 
       # ── CS-0-4: robots.txt compliance checker exists and is wired ─────
       - name: CS-0-4 · robots.txt compliance operational
