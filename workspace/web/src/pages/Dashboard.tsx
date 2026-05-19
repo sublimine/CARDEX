@@ -88,65 +88,74 @@ function KpiCard({ label, value, prefix, suffix, decimals, sub, accent, trend, t
       initial={{ opacity: 0, y: 18, filter: 'blur(6px)' }}
       animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
       transition={{ duration: 0.55, ease: [0.32, 0.72, 0, 1] }}
-      whileHover={{ y: -2, boxShadow: `0 0 0 1px ${accent}33, 0 12px 40px rgba(0,0,0,0.7), 0 0 40px ${accent}12` }}
+      whileHover={{ y: -4 }}
       style={{
-        /* Outer bezel shell */
-        background: 'rgba(255,255,255,0.025)',
-        border: '1px solid rgba(255,255,255,0.07)',
-        borderRadius: 20,
-        padding: 2,
+        /* Real glass — mesh colors visible through */
+        background: 'rgba(255,255,255,0.08)',
+        backdropFilter: 'blur(24px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+        border: '1px solid rgba(255,255,255,0.14)',
+        borderRadius: 22,
+        padding: '22px 22px 18px',
         cursor: 'default',
-        transition: 'box-shadow 0.3s cubic-bezier(0.32,0.72,0,1), transform 0.3s cubic-bezier(0.32,0.72,0,1)',
-      }}
-    >
-      {/* Inner core */}
-      <div style={{
-        background: '#0e0e18',
-        borderRadius: 18,
-        padding: '20px 20px 18px',
-        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.07)`,
         position: 'relative',
         overflow: 'hidden',
-      }}>
-        {/* Accent glow blob */}
+        boxShadow: '0 8px 32px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.16)',
+        transition: 'all 0.3s cubic-bezier(0.32,0.72,0,1)',
+      }}
+      onMouseEnter={e => {
+        const el = e.currentTarget as HTMLDivElement
+        el.style.background = 'rgba(255,255,255,0.12)'
+        el.style.borderColor = `${accent}66`
+        el.style.boxShadow = `0 24px 60px rgba(0,0,0,0.4), 0 0 0 1px ${accent}33, 0 0 40px ${accent}22, inset 0 1px 0 rgba(255,255,255,0.22)`
+      }}
+      onMouseLeave={e => {
+        const el = e.currentTarget as HTMLDivElement
+        el.style.background = 'rgba(255,255,255,0.08)'
+        el.style.borderColor = 'rgba(255,255,255,0.14)'
+        el.style.boxShadow = '0 8px 32px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.16)'
+      }}
+    >
+      {/* Accent glow blob — vivid color washes the card from within */}
+      <div style={{
+        position: 'absolute', top: -40, right: -30, width: 160, height: 160,
+        borderRadius: '50%', background: accent, opacity: 0.22, filter: 'blur(45px)',
+        pointerEvents: 'none',
+      }} />
+
+      {/* Top row */}
+      <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#cbd5e1' }}>
+          {label}
+        </span>
         <div style={{
-          position: 'absolute', top: -30, right: -20, width: 100, height: 100,
-          borderRadius: '50%', background: accent, opacity: 0.08, filter: 'blur(28px)',
-          pointerEvents: 'none',
-        }} />
+          width: 30, height: 30, borderRadius: 9,
+          background: `${accent}33`, border: `1px solid ${accent}66`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          backdropFilter: 'blur(12px)',
+          boxShadow: `0 0 16px ${accent}44, inset 0 1px 0 rgba(255,255,255,0.18)`,
+        }}>
+          <div style={{ width: 9, height: 9, borderRadius: '50%', background: accent, boxShadow: `0 0 10px ${accent}` }} />
+        </div>
+      </div>
 
-        {/* Top row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#38385a' }}>
-            {label}
+      {/* Big number */}
+      <div style={{ position: 'relative', fontSize: 46, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1, color: '#f8fafc', marginBottom: 6 }}>
+        <AnimNum to={value} prefix={prefix} suffix={suffix} decimals={decimals} />
+      </div>
+      <div style={{ position: 'relative', fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>{sub}</div>
+
+      {/* Footer */}
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.10)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          {trend === 'up'   && <ArrowUpRight    style={{ width: 12, height: 12, color: '#6ee7b7' }} />}
+          {trend === 'down' && <ArrowDownRight  style={{ width: 12, height: 12, color: '#fca5a5' }} />}
+          {trend === 'flat' && <Minus           style={{ width: 12, height: 12, color: '#94a3b8' }} />}
+          <span style={{ fontSize: 11, fontWeight: 700, color: trend === 'up' ? '#6ee7b7' : trend === 'down' ? '#fca5a5' : '#94a3b8' }}>
+            {trendLabel}
           </span>
-          <div style={{
-            width: 28, height: 28, borderRadius: 8,
-            background: `${accent}20`, border: `1px solid ${accent}30`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: accent, boxShadow: `0 0 8px ${accent}` }} />
-          </div>
         </div>
-
-        {/* Big number */}
-        <div style={{ fontSize: 46, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1, color: '#f0f0fa', marginBottom: 6 }}>
-          <AnimNum to={value} prefix={prefix} suffix={suffix} decimals={decimals} />
-        </div>
-        <div style={{ fontSize: 12, color: '#38385a', marginBottom: 16 }}>{sub}</div>
-
-        {/* Footer */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            {trend === 'up'   && <ArrowUpRight   style={{ width: 12, height: 12, color: '#00d68a' }} />}
-            {trend === 'down' && <ArrowDownRight  style={{ width: 12, height: 12, color: '#ff5577' }} />}
-            {trend === 'flat' && <Minus style={{ width: 12, height: 12, color: '#38385a' }} />}
-            <span style={{ fontSize: 11, fontWeight: 600, color: trend === 'up' ? '#00d68a' : trend === 'down' ? '#ff5577' : '#38385a' }}>
-              {trendLabel}
-            </span>
-          </div>
-          <Spark values={spark} color={accent} />
-        </div>
+        <Spark values={spark} color={accent} />
       </div>
     </motion.div>
   )
