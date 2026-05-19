@@ -27,6 +27,7 @@ export default function App() {
     <Routes>
       {/* Public routes */}
       <Route path="/"         element={<RootRedirect />} />
+      <Route path="/landing"  element={<Landing />} />
       <Route path="/login"    element={<LoginPage />} />
       <Route path="/check"    element={<CheckPage />} />
       <Route path="/check/:vin" element={<CheckPage />} />
