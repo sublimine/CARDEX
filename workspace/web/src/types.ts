@@ -24,6 +24,7 @@ export interface Vehicle {
   fuelType?: string
   transmission?: string
   mileageKm?: number
+  powerKw?: number
 }
 
 export interface Deal {

@@ -52,11 +52,16 @@ function NavItem({ to, label, icon: Icon, end, collapsed, onClick }: NavItemProp
             gap: collapsed ? 0 : 10,
             justifyContent: collapsed ? 'center' : 'flex-start',
             padding: collapsed ? '10px' : '9px 12px',
-            borderRadius: 12,
-            background: isActive ? 'rgba(91,141,248,0.14)' : 'transparent',
-            border: isActive ? '1px solid rgba(91,141,248,0.26)' : '1px solid transparent',
+            borderRadius: 11,
+            background: isActive
+              ? 'rgba(59,130,246,0.1)'
+              : 'transparent',
+            border: isActive
+              ? '1px solid rgba(59,130,246,0.22)'
+              : '1px solid transparent',
+            boxShadow: isActive ? '0 0 20px rgba(59,130,246,0.08)' : 'none',
             cursor: 'pointer',
-            transition: 'all 0.15s cubic-bezier(0.32,0.72,0,1)',
+            transition: 'all 0.18s cubic-bezier(0.22,1,0.36,1)',
           }}
           onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.04)' }}
           onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'transparent' }}
@@ -64,8 +69,8 @@ function NavItem({ to, label, icon: Icon, end, collapsed, onClick }: NavItemProp
           <Icon
             style={{
               width: 16, height: 16, flexShrink: 0,
-              color: isActive ? '#7aabff' : '#2e2e4e',
-              transition: 'color 0.15s',
+              color: isActive ? '#3b82f6' : '#334155',
+              transition: 'color 0.18s',
             }}
             strokeWidth={isActive ? 2.2 : 1.7}
           />
@@ -80,10 +85,10 @@ function NavItem({ to, label, icon: Icon, end, collapsed, onClick }: NavItemProp
                 style={{
                   fontSize: 13,
                   fontWeight: isActive ? 700 : 500,
-                  color: isActive ? '#c8d8ff' : '#2e2e4e',
+                  color: isActive ? '#bfdbfe' : '#334155',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
-                  fontFamily: 'Plus Jakarta Sans',
+                  fontFamily: 'Inter, system-ui, sans-serif',
                 }}
               >
                 {label}
@@ -112,14 +117,14 @@ function SidebarInner({ collapsed, onToggle, onClose }: { collapsed: boolean; on
           {!collapsed && (
             <motion.div key="logo" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
               <div style={{
-                fontSize: 15, fontWeight: 800, letterSpacing: '0.18em',
-                background: 'linear-gradient(120deg, #5b8df8 0%, #9b9fff 55%, #e0e8ff 100%)',
+                fontSize: 15, fontWeight: 900, letterSpacing: '0.18em',
+                background: 'linear-gradient(120deg, #3b82f6 0%, #818cf8 55%, #e2e8f0 100%)',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-                fontFamily: 'Plus Jakarta Sans',
+                fontFamily: 'Inter, system-ui, sans-serif',
               }}>
                 CARDEX
               </div>
-              <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.3em', color: '#1e1e38', textTransform: 'uppercase', marginTop: 1, fontFamily: 'Plus Jakarta Sans' }}>
+              <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.3em', color: '#1e293b', textTransform: 'uppercase', marginTop: 1, fontFamily: 'Inter, system-ui, sans-serif' }}>
                 Workspace
               </div>
             </motion.div>
@@ -153,8 +158,8 @@ function SidebarInner({ collapsed, onToggle, onClose }: { collapsed: boolean; on
           <AnimatePresence initial={false}>
             {!collapsed && (
               <motion.div key="uinfo" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.15 }} style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#9090b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'Plus Jakarta Sans' }}>{user?.name ?? 'User'}</div>
-                <div style={{ fontSize: 10, color: '#1e1e38', textTransform: 'capitalize', fontFamily: 'Plus Jakarta Sans' }}>{user?.role ?? 'dealer'}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'Inter, system-ui' }}>{user?.name ?? 'User'}</div>
+                <div style={{ fontSize: 10, color: '#334155', textTransform: 'capitalize', fontFamily: 'Inter, system-ui' }}>{user?.role ?? 'dealer'}</div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -181,7 +186,7 @@ export default function Shell() {
   const W = collapsed ? 64 : 240
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#05050a', fontFamily: 'Plus Jakarta Sans' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#020208', fontFamily: 'Inter, system-ui, sans-serif' }}>
 
       {/* Mobile overlay */}
       <AnimatePresence>
@@ -200,7 +205,13 @@ export default function Shell() {
         animate={{ width: W }}
         transition={{ duration: 0.28, ease: EASE }}
         className="hidden md:flex flex-col flex-shrink-0 overflow-hidden"
-        style={{ background: '#09090f', borderRight: '1px solid rgba(255,255,255,0.06)' }}
+        style={{
+          background: 'rgba(3,3,10,0.92)',
+          backdropFilter: 'blur(32px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(32px) saturate(180%)',
+          borderRight: '1px solid rgba(255,255,255,0.06)',
+          boxShadow: '4px 0 24px rgba(0,0,0,0.3)',
+        }}
       >
         <SidebarInner collapsed={collapsed} onToggle={() => setCollapsed(c => !c)} />
       </motion.aside>
@@ -211,8 +222,11 @@ export default function Shell() {
         {/* Topbar */}
         <header style={{
           flexShrink: 0, height: 56, display: 'flex', alignItems: 'center', gap: 12, padding: '0 20px',
-          background: '#05050a', borderBottom: '1px solid rgba(255,255,255,0.05)',
-          fontFamily: 'Plus Jakarta Sans',
+          background: 'rgba(2,2,8,0.85)',
+          backdropFilter: 'blur(24px) saturate(160%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(160%)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          fontFamily: 'Inter, system-ui, sans-serif',
         }}>
           <button onClick={() => setMobileOpen(true)} className="md:hidden" style={{ padding: 8, borderRadius: 8, color: '#1e1e38', background: 'transparent', border: 'none', cursor: 'pointer' }}>
             <Menu style={{ width: 18, height: 18 }} />
@@ -240,7 +254,7 @@ export default function Shell() {
         </header>
 
         {/* Content */}
-        <main style={{ flex: 1, overflowY: 'auto', background: '#05050a', backgroundImage: 'radial-gradient(ellipse 80% 50% at 15% 15%, rgba(79,126,248,0.055) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 85% 85%, rgba(155,109,255,0.04) 0%, transparent 60%)' }}>
+        <main style={{ flex: 1, overflowY: 'auto', background: '#020208', backgroundImage: 'radial-gradient(ellipse 70% 45% at 10% 10%, rgba(59,130,246,0.06) 0%, transparent 55%), radial-gradient(ellipse 55% 35% at 90% 90%, rgba(168,85,247,0.04) 0%, transparent 55%)' }}>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}

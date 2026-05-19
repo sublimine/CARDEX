@@ -279,7 +279,7 @@ function GridCard({ vehicle, idx, onClick }: { vehicle: Vehicle; idx: number; on
             vehicle.fuelType ?? '—',
             `${vehicle.powerKw ?? '—'} kW`,
           ].map(tag => (
-            <span key={tag} style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: '#5050708', color: '#50507a' }}>
+            <span key={tag} style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: '#50507a' }}>
               {tag}
             </span>
           ))}
