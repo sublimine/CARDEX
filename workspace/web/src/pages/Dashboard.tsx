@@ -1,29 +1,24 @@
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion'
 import React, { useEffect, useState } from 'react'
 import {
-  Car, GitPullRequest, TrendingUp, AlertTriangle,
-  ArrowUpRight, ArrowDownRight, Minus, Plus, ClipboardList, Search, Zap,
+  TrendingUp, AlertTriangle, ArrowUpRight, ArrowDownRight,
+  Minus, Search, Zap, ClipboardList,
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip as ChartTooltip, ResponsiveContainer,
+  Tooltip as ChartTooltip, ResponsiveContainer, BarChart, Bar,
 } from 'recharts'
-import Card from '../components/Card'
-import Button from '../components/Button'
-import { Badge } from '../components/Badge'
-import { Tabs } from '../components/Tabs'
 import { PageSkeleton } from '../components/LoadingSpinner'
 import { useApi } from '../hooks/useApi'
 import { useNavigate } from 'react-router-dom'
-import { cn } from '../lib/cn'
 import type { KpiData } from '../types'
 
-// ── Mock data ─────────────────────────────────────────────────────────────────
+// ── Mock ──────────────────────────────────────────────────────────────────────
 const MOCK_KPI: KpiData = {
-  stockCount: 148,
-  activeDeals: 34,
+  stockCount: 270,
+  activeDeals: 55,
   monthMargin: 87400,
-  pendingAlerts: 5,
+  pendingAlerts: 3,
   marginHistory: [
     { month: 'Nov', margin: 61000, revenue: 310000, cost: 249000 },
     { month: 'Dec', margin: 72000, revenue: 360000, cost: 288000 },
@@ -33,320 +28,394 @@ const MOCK_KPI: KpiData = {
     { month: 'Apr', margin: 87400, revenue: 437000, cost: 349600 },
   ],
   recentActivities: [
-    { id: '1', tenantId: 't', dealId: 'd1', type: 'inquiry',  body: 'New inquiry for BMW 320d from Maria S.',       createdAt: '2026-04-18T10:15:00Z' },
-    { id: '2', tenantId: 't', dealId: 'd2', type: 'call',     body: 'Call with John D. — scheduled test drive',     createdAt: '2026-04-18T09:42:00Z' },
-    { id: '3', tenantId: 't', dealId: 'd3', type: 'reply',    body: 'Offer sent for Audi A4 (€26,500)',             createdAt: '2026-04-18T09:10:00Z' },
-    { id: '4', tenantId: 't', dealId: 'd4', type: 'note',     body: 'Client wants black interior — check stock',    createdAt: '2026-04-17T16:55:00Z' },
-    { id: '5', tenantId: 't', dealId: 'd5', type: 'reminder', body: 'Follow up with Peter K. on Mercedes C220',    createdAt: '2026-04-17T14:30:00Z' },
+    { id: '1', tenantId: 't', dealId: 'd1', type: 'inquiry',  body: 'New inquiry — BMW 320d, Maria S.',       createdAt: '2026-04-18T10:15:00Z' },
+    { id: '2', tenantId: 't', dealId: 'd2', type: 'call',     body: 'Test drive scheduled — John D.',         createdAt: '2026-04-18T09:42:00Z' },
+    { id: '3', tenantId: 't', dealId: 'd3', type: 'reply',    body: 'Offer sent — Audi A4 2.0 TDI €26,500',  createdAt: '2026-04-18T09:10:00Z' },
+    { id: '4', tenantId: 't', dealId: 'd4', type: 'note',     body: 'Client: black interior, check stock',    createdAt: '2026-04-17T16:55:00Z' },
+    { id: '5', tenantId: 't', dealId: 'd5', type: 'reminder', body: 'Follow up — Peter K., Mercedes C220d',  createdAt: '2026-04-17T14:30:00Z' },
   ],
 }
 
-// ── Animation variants ────────────────────────────────────────────────────────
-const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } }
-const fadeUp  = {
-  hidden: { opacity: 0, y: 14 },
-  show:   { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' as const } },
-}
-
-// ── Sparkline ─────────────────────────────────────────────────────────────────
-function Sparkline({ values, color }: { values: number[]; color: string }) {
-  if (values.length < 2) return null
-  const max = Math.max(...values)
-  const min = Math.min(...values)
-  const range = max - min || 1
-  const W = 72, H = 32
-  const pts = values.map((v, i): [number, number] => [
-    (i / (values.length - 1)) * W,
-    H - ((v - min) / range) * (H - 6) + 3,
-  ])
-  const lineStr  = pts.map(([x, y]) => `${x},${y}`).join(' ')
-  const areaPath = `M${pts[0][0]},${H} ` + pts.map(([x, y]) => `L${x},${y}`).join(' ') + ` L${pts[pts.length - 1][0]},${H} Z`
-  return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="shrink-0">
-      <path d={areaPath} fill={color} fillOpacity="0.12" />
-      <polyline points={lineStr} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
 // ── Animated number ───────────────────────────────────────────────────────────
-function AnimatedNumber({ to, prefix = '', suffix = '', decimals = 0 }: {
-  to: number; prefix?: string; suffix?: string; decimals?: number
-}) {
-  const mv      = useMotionValue(0)
-  const spring  = useSpring(mv, { stiffness: 80, damping: 18 })
-  const display = useTransform(spring, (v) =>
-    `${prefix}${decimals > 0 ? v.toFixed(decimals) : Math.round(v)}${suffix}`,
-  )
-  useEffect(() => { mv.set(to) }, [to, mv])
-  return <motion.span>{display}</motion.span>
+function AnimNum({ to, prefix = '', suffix = '', decimals = 0 }: { to: number; prefix?: string; suffix?: string; decimals?: number }) {
+  const mv = useMotionValue(0)
+  const sp = useSpring(mv, { stiffness: 60, damping: 14 })
+  const d  = useTransform(sp, v => `${prefix}${decimals ? v.toFixed(decimals) : Math.round(v)}${suffix}`)
+  useEffect(() => { mv.set(to) }, [to])
+  return <motion.span>{d}</motion.span>
 }
 
 function timeAgo(iso: string) {
   const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
-  if (m < 60) return `${m}m ago`
+  if (m < 60) return `${m}m`
   const h = Math.floor(m / 60)
-  if (h < 24) return `${h}h ago`
-  return `${Math.floor(h / 24)}d ago`
+  return h < 24 ? `${h}h` : `${Math.floor(h / 24)}d`
 }
 
-const activityColorMap: Record<string, 'blue' | 'green' | 'purple' | 'yellow' | 'orange'> = {
-  inquiry: 'blue', call: 'green', reply: 'purple', note: 'yellow', reminder: 'orange', visit: 'green',
+const TYPE_COLOR: Record<string, string> = {
+  inquiry: '#5b8df8', call: '#00d68a', reply: '#9b6dff', note: '#ffb347', reminder: '#ff5577',
 }
 
-// ── Margin chart ──────────────────────────────────────────────────────────────
+// ── Sparkline ─────────────────────────────────────────────────────────────────
+function Spark({ values, color }: { values: number[]; color: string }) {
+  if (values.length < 2) return null
+  const max = Math.max(...values), min = Math.min(...values), range = max - min || 1
+  const W = 56, H = 24
+  const pts = values.map((v, i): [number, number] => [
+    (i / (values.length - 1)) * W,
+    H - ((v - min) / range) * (H - 3) + 1.5,
+  ])
+  const line = pts.map(([x, y]) => `${x},${y}`).join(' ')
+  const area = `M${pts[0][0]},${H} ` + pts.map(([x, y]) => `L${x},${y}`).join(' ') + ` L${pts.at(-1)![0]},${H} Z`
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+      <path d={area} fill={color} fillOpacity={0.14} />
+      <polyline points={line} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+// ── Double-Bezel KPI card ──────────────────────────────────────────────────────
+interface KpiProps {
+  label: string; value: number; prefix?: string; suffix?: string; decimals?: number
+  sub: string; accent: string; trend: 'up' | 'down' | 'flat'
+  trendLabel: string; spark: number[]
+}
+
+function KpiCard({ label, value, prefix, suffix, decimals, sub, accent, trend, trendLabel, spark }: KpiProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 18, filter: 'blur(6px)' }}
+      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+      transition={{ duration: 0.55, ease: [0.32, 0.72, 0, 1] }}
+      whileHover={{ y: -2, boxShadow: `0 0 0 1px ${accent}33, 0 12px 40px rgba(0,0,0,0.7), 0 0 40px ${accent}12` }}
+      style={{
+        /* Outer bezel shell */
+        background: 'rgba(255,255,255,0.025)',
+        border: '1px solid rgba(255,255,255,0.07)',
+        borderRadius: 20,
+        padding: 2,
+        cursor: 'default',
+        transition: 'box-shadow 0.3s cubic-bezier(0.32,0.72,0,1), transform 0.3s cubic-bezier(0.32,0.72,0,1)',
+      }}
+    >
+      {/* Inner core */}
+      <div style={{
+        background: '#0e0e18',
+        borderRadius: 18,
+        padding: '20px 20px 18px',
+        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.07)`,
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        {/* Accent glow blob */}
+        <div style={{
+          position: 'absolute', top: -30, right: -20, width: 100, height: 100,
+          borderRadius: '50%', background: accent, opacity: 0.08, filter: 'blur(28px)',
+          pointerEvents: 'none',
+        }} />
+
+        {/* Top row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#38385a' }}>
+            {label}
+          </span>
+          <div style={{
+            width: 28, height: 28, borderRadius: 8,
+            background: `${accent}20`, border: `1px solid ${accent}30`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: accent, boxShadow: `0 0 8px ${accent}` }} />
+          </div>
+        </div>
+
+        {/* Big number */}
+        <div style={{ fontSize: 46, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1, color: '#f0f0fa', marginBottom: 6 }}>
+          <AnimNum to={value} prefix={prefix} suffix={suffix} decimals={decimals} />
+        </div>
+        <div style={{ fontSize: 12, color: '#38385a', marginBottom: 16 }}>{sub}</div>
+
+        {/* Footer */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            {trend === 'up'   && <ArrowUpRight   style={{ width: 12, height: 12, color: '#00d68a' }} />}
+            {trend === 'down' && <ArrowDownRight  style={{ width: 12, height: 12, color: '#ff5577' }} />}
+            {trend === 'flat' && <Minus style={{ width: 12, height: 12, color: '#38385a' }} />}
+            <span style={{ fontSize: 11, fontWeight: 600, color: trend === 'up' ? '#00d68a' : trend === 'down' ? '#ff5577' : '#38385a' }}>
+              {trendLabel}
+            </span>
+          </div>
+          <Spark values={spark} color={accent} />
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+// ── Area chart ────────────────────────────────────────────────────────────────
 function MarginChart({ data }: { data: KpiData['marginHistory'] }) {
   return (
-    <ResponsiveContainer width="100%" height={200}>
-      <AreaChart data={data} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
+    <ResponsiveContainer width="100%" height={160}>
+      <AreaChart data={data} margin={{ top: 4, right: 0, left: -28, bottom: 0 }}>
         <defs>
-          <linearGradient id="dash-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%"  stopColor="var(--color-blue)" stopOpacity="0.25" />
-            <stop offset="95%" stopColor="var(--color-blue)" stopOpacity="0" />
+          <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stopColor="#5b8df8" stopOpacity={0.3} />
+            <stop offset="100%" stopColor="#5b8df8" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-        <XAxis
-          dataKey="month"
-          tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
-          axisLine={false} tickLine={false}
-        />
-        <YAxis
-          tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
-          axisLine={false} tickLine={false}
-          tickFormatter={(v: number) => `€${(v / 1000).toFixed(0)}k`}
-        />
+        <CartesianGrid strokeDasharray="1 6" stroke="rgba(255,255,255,0.04)" />
+        <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#38385a', fontFamily: 'Plus Jakarta Sans' }} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fontSize: 10, fill: '#38385a', fontFamily: 'Plus Jakarta Sans' }} axisLine={false} tickLine={false} tickFormatter={v => `€${(v/1000).toFixed(0)}k`} />
         <ChartTooltip
+          contentStyle={{ background: '#0e0e18', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, fontSize: 12, color: '#f0f0fa', fontFamily: 'Plus Jakarta Sans', boxShadow: '0 8px 32px rgba(0,0,0,0.7)' }}
           formatter={(v: number) => [`€${v.toLocaleString()}`, 'Margin']}
-          contentStyle={{
-            background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)',
-            borderRadius: '8px', fontSize: '12px', color: 'var(--text-primary)',
-          }}
-          labelStyle={{ color: 'var(--text-muted)', fontSize: '11px', marginBottom: 2 }}
-          itemStyle={{ color: 'var(--text-secondary)' }}
-          cursor={{ stroke: 'var(--border-active)', strokeWidth: 1 }}
+          cursor={{ stroke: 'rgba(255,255,255,0.06)' }}
         />
-        <Area type="monotone" dataKey="margin" stroke="var(--color-blue)"
-          strokeWidth={2} fill="url(#dash-grad)" dot={false} activeDot={{ r: 4, fill: 'var(--color-blue)' }} />
+        <Area type="monotone" dataKey="margin" stroke="#5b8df8" strokeWidth={2} fill="url(#g1)" dot={false} activeDot={{ r: 3, fill: '#5b8df8', strokeWidth: 0 }} />
       </AreaChart>
     </ResponsiveContainer>
   )
 }
 
-// ── KPI card ──────────────────────────────────────────────────────────────────
-interface KpiCardProps {
-  label: string
-  numericValue: number
-  prefix?: string
-  suffix?: string
-  decimals?: number
-  sub: string
-  icon: React.ReactNode
-  iconBg: string
-  trend: 'up' | 'down' | 'neutral'
-  sparkValues: number[]
-  sparkColor: string
-}
-
-function KpiCard({ label, numericValue, prefix, suffix, decimals, sub, icon, iconBg, trend, sparkValues, sparkColor }: KpiCardProps) {
+function BarChartComp({ data }: { data: KpiData['marginHistory'] }) {
   return (
-    <motion.div variants={fadeUp}>
-      <Card hover className="relative overflow-hidden">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-1">{label}</p>
-            <p className="text-2xl font-bold text-text-primary tabular-nums">
-              <AnimatedNumber to={numericValue} prefix={prefix} suffix={suffix} decimals={decimals} />
-            </p>
-            <p className="text-xs text-text-muted mt-0.5">{sub}</p>
-          </div>
-          <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center shrink-0', iconBg)}>
-            {icon}
-          </div>
-        </div>
-        <div className="flex items-center justify-between mt-3">
-          <div className="flex items-center gap-1">
-            {trend === 'up'      && <ArrowUpRight   className="w-3.5 h-3.5 text-accent-emerald" />}
-            {trend === 'down'    && <ArrowDownRight  className="w-3.5 h-3.5 text-accent-rose" />}
-            {trend === 'neutral' && <Minus className="w-3.5 h-3.5 text-text-muted" />}
-            <span className={cn('text-xs font-medium',
-              trend === 'up' ? 'text-accent-emerald' : trend === 'down' ? 'text-accent-rose' : 'text-text-muted'
-            )}>
-              vs last month
-            </span>
-          </div>
-          <Sparkline values={sparkValues} color={sparkColor} />
-        </div>
-      </Card>
-    </motion.div>
+    <ResponsiveContainer width="100%" height={160}>
+      <BarChart data={data} margin={{ top: 4, right: 0, left: -28, bottom: 0 }} barSize={14}>
+        <CartesianGrid strokeDasharray="1 6" stroke="rgba(255,255,255,0.04)" />
+        <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#38385a', fontFamily: 'Plus Jakarta Sans' }} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fontSize: 10, fill: '#38385a', fontFamily: 'Plus Jakarta Sans' }} axisLine={false} tickLine={false} tickFormatter={v => `€${(v/1000).toFixed(0)}k`} />
+        <ChartTooltip
+          contentStyle={{ background: '#0e0e18', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, fontSize: 12, color: '#f0f0fa', fontFamily: 'Plus Jakarta Sans' }}
+          cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+        />
+        <Bar dataKey="revenue" fill="rgba(91,141,248,0.18)" radius={[4,4,0,0]} />
+        <Bar dataKey="cost"    fill="rgba(155,109,255,0.15)" radius={[4,4,0,0]} />
+      </BarChart>
+    </ResponsiveContainer>
   )
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────────
+// ── Quick action button ───────────────────────────────────────────────────────
+function ActionBtn({ label, icon, color, onClick }: { label: string; icon: React.ReactNode; color: string; onClick: () => void }) {
+  return (
+    <motion.button
+      onClick={onClick}
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: 'spring', stiffness: 420, damping: 22 }}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 12,
+        width: '100%', padding: '11px 14px',
+        background: 'rgba(255,255,255,0.025)',
+        border: '1px solid rgba(255,255,255,0.07)',
+        borderRadius: 12, cursor: 'pointer',
+        transition: 'background 150ms',
+        fontFamily: 'Plus Jakarta Sans',
+      }}
+      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+      onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.025)')}
+    >
+      <div style={{ width: 30, height: 30, borderRadius: 9, background: `${color}18`, border: `1px solid ${color}28`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        {icon}
+      </div>
+      <span style={{ fontSize: 13, fontWeight: 600, color: '#9090b8' }}>{label}</span>
+      <div style={{ marginLeft: 'auto', width: 20, height: 20, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <ArrowUpRight style={{ width: 10, height: 10, color: '#38385a' }} />
+      </div>
+    </motion.button>
+  )
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const { data, loading } = useApi<KpiData>('/kpi')
   const navigate = useNavigate()
-  const [chartRange, setChartRange] = useState('ytd')
-  const kpi: KpiData = data ? { ...MOCK_KPI, ...data } : MOCK_KPI
+  const [chartTab, setChartTab] = useState<'area' | 'bar'>('area')
+  const kpi = data ? { ...MOCK_KPI, ...data } : MOCK_KPI
 
   if (loading && !data) return <PageSkeleton />
 
-  const rangeSlice: Record<string, number> = { '7d': 2, '30d': 3, '90d': 4, 'ytd': 6 }
-  const chartData = kpi.marginHistory.slice(-rangeSlice[chartRange])
-
-  const chartTabs = ['7d', '30d', '90d', 'ytd'].map((r) => ({
-    value: r,
-    label: r.toUpperCase(),
-    content: <MarginChart data={kpi.marginHistory.slice(-rangeSlice[r])} />,
-  }))
-
   return (
-    <motion.div
-      variants={stagger}
-      initial="hidden"
-      animate="show"
-      className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto"
-    >
+    <div style={{ padding: '28px 28px 40px', maxWidth: 1280, margin: '0 auto' }}>
+
       {/* Header */}
-      <motion.div variants={fadeUp} className="flex items-end justify-between gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+        style={{ marginBottom: 28, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}
+      >
         <div>
-          <h1 className="text-xl font-bold text-text-primary">Dashboard</h1>
-          <p className="text-sm text-text-muted mt-0.5">
-            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', background: 'rgba(91,141,248,0.08)', border: '1px solid rgba(91,141,248,0.18)', borderRadius: 999, marginBottom: 10 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#5b8df8', display: 'block', boxShadow: '0 0 8px #5b8df8' }} />
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#5b8df8' }}>
+              {kpi.stockCount} vehicles live
+            </span>
+          </div>
+          <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em', color: '#f0f0fa', lineHeight: 1 }}>
+            Overview
+          </h1>
+          <p style={{ fontSize: 13, color: '#38385a', marginTop: 4 }}>
+            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
-        <Badge color="blue" dot pulse>{kpi.stockCount} vehicles live</Badge>
       </motion.div>
 
-      {/* KPI grid */}
-      <motion.div variants={stagger} className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <KpiCard
-          label="In Stock"
-          numericValue={kpi.stockCount}
-          sub="vehicles active"
-          icon={<Car className="w-4 h-4 text-accent-blue" />}
-          iconBg="bg-blue-500/10"
-          trend="up"
-          sparkValues={[130, 138, 142, 145, 147, kpi.stockCount]}
-          sparkColor="var(--color-blue)"
-        />
-        <KpiCard
-          label="Active Deals"
-          numericValue={kpi.activeDeals}
-          sub="in pipeline"
-          icon={<GitPullRequest className="w-4 h-4 text-purple-400" />}
-          iconBg="bg-purple-500/10"
-          trend="neutral"
-          sparkValues={[28, 31, 29, 33, 35, kpi.activeDeals]}
-          sparkColor="#a855f7"
-        />
-        <KpiCard
-          label="Month Margin"
-          numericValue={kpi.monthMargin / 1000}
-          prefix="€"
-          suffix="k"
-          decimals={1}
-          sub={new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
-          icon={<TrendingUp className="w-4 h-4 text-accent-emerald" />}
-          iconBg="bg-emerald-500/10"
-          trend="up"
-          sparkValues={kpi.marginHistory.map((m) => m.margin / 1000)}
-          sparkColor="var(--color-emerald)"
-        />
-        <KpiCard
-          label="Alerts"
-          numericValue={kpi.pendingAlerts}
-          sub="require action"
-          icon={<AlertTriangle className="w-4 h-4 text-accent-amber" />}
-          iconBg="bg-amber-500/10"
-          trend="down"
-          sparkValues={[8, 7, 6, 7, 5, kpi.pendingAlerts]}
-          sparkColor="var(--color-amber)"
-        />
-      </motion.div>
+      {/* ── Bento grid ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gridTemplateRows: 'auto auto auto', gap: 14 }}>
 
-      {/* Revenue chart */}
-      <motion.div variants={fadeUp}>
-        <Card>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-text-primary">Margin Performance</h2>
-          </div>
-          <Tabs
-            value={chartRange}
-            onValueChange={setChartRange}
-            items={chartTabs}
-            className="[&_.mb-4]:mb-3"
+        {/* KPI 1 */}
+        <div style={{ gridColumn: '1', gridRow: '1' }}>
+          <KpiCard
+            label="In Stock" value={kpi.stockCount} sub="vehicles active"
+            accent="#5b8df8" trend="up" trendLabel="+12 this month"
+            spark={[220, 235, 248, 260, 265, kpi.stockCount]}
           />
-        </Card>
-      </motion.div>
+        </div>
 
-      {/* Bottom row: Activity + Quick actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Activity feed */}
-        <motion.div variants={fadeUp} className="lg:col-span-2">
-          <Card>
-            <h2 className="text-sm font-semibold text-text-primary mb-4">Recent Activity</h2>
-            <div className="space-y-3">
-              {kpi.recentActivities.slice(0, 5).map((a, idx) => (
-                <motion.div
-                  key={a.id}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 + idx * 0.06 }}
-                  className="flex items-start gap-3"
-                >
-                  <Badge color={activityColorMap[a.type] ?? 'gray'} className="shrink-0 mt-0.5">
-                    {a.type}
-                  </Badge>
-                  <p className="text-sm text-text-secondary flex-1 leading-snug">{a.body}</p>
-                  <span className="text-xs text-text-muted shrink-0">{timeAgo(a.createdAt)}</span>
-                </motion.div>
-              ))}
+        {/* KPI 2 */}
+        <div style={{ gridColumn: '2', gridRow: '1' }}>
+          <KpiCard
+            label="Active Deals" value={kpi.activeDeals} sub="in pipeline"
+            accent="#9b6dff" trend="flat" trendLabel="stable"
+            spark={[42, 48, 51, 53, 54, kpi.activeDeals]}
+          />
+        </div>
+
+        {/* KPI 3 */}
+        <div style={{ gridColumn: '3', gridRow: '1' }}>
+          <KpiCard
+            label="Month Margin" value={kpi.monthMargin / 1000} prefix="€" suffix="k" decimals={1}
+            sub={new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+            accent="#00d68a" trend="up" trendLabel="+8% vs last month"
+            spark={kpi.marginHistory.map(m => m.margin / 1000)}
+          />
+        </div>
+
+        {/* KPI 4 */}
+        <div style={{ gridColumn: '4', gridRow: '1' }}>
+          <KpiCard
+            label="Alerts" value={kpi.pendingAlerts} sub="require action"
+            accent="#ffb347" trend="down" trendLabel="down from 8"
+            spark={[8, 7, 6, 5, 4, kpi.pendingAlerts]}
+          />
+        </div>
+
+        {/* Chart — spans 3 cols */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
+          style={{
+            gridColumn: '1 / 4', gridRow: '2',
+            background: 'rgba(255,255,255,0.025)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 20, padding: 2,
+          }}
+        >
+          <div style={{ background: '#0e0e18', borderRadius: 18, padding: '22px 22px 18px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <div>
+                <h2 style={{ fontSize: 14, fontWeight: 700, color: '#f0f0fa', marginBottom: 2 }}>Margin Performance</h2>
+                <p style={{ fontSize: 11, color: '#38385a' }}>6-month gross margin trend</p>
+              </div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {(['area', 'bar'] as const).map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setChartTab(t)}
+                    style={{
+                      padding: '5px 14px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                      fontFamily: 'Plus Jakarta Sans', letterSpacing: '0.04em', textTransform: 'uppercase',
+                      background: chartTab === t ? 'rgba(91,141,248,0.18)' : 'transparent',
+                      border: chartTab === t ? '1px solid rgba(91,141,248,0.3)' : '1px solid transparent',
+                      color: chartTab === t ? '#5b8df8' : '#38385a',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
             </div>
-          </Card>
+            {chartTab === 'area' ? <MarginChart data={kpi.marginHistory} /> : <BarChartComp data={kpi.marginHistory} />}
+          </div>
         </motion.div>
 
         {/* Quick actions */}
-        <motion.div variants={fadeUp}>
-          <Card className="h-full">
-            <h2 className="text-sm font-semibold text-text-primary mb-4">Quick Actions</h2>
-            <div className="flex flex-col gap-2">
-              <Button
-                variant="secondary"
-                className="w-full justify-start gap-3"
-                icon={<Car className="w-4 h-4" />}
-                onClick={() => navigate('/vehicles')}
-              >
-                Add Vehicle
-              </Button>
-              <Button
-                variant="secondary"
-                className="w-full justify-start gap-3"
-                icon={<ClipboardList className="w-4 h-4" />}
-                onClick={() => navigate('/deals')}
-              >
-                New Deal
-              </Button>
-              <Button
-                variant="secondary"
-                className="w-full justify-start gap-3"
-                icon={<Search className="w-4 h-4" />}
-                onClick={() => navigate('/check')}
-              >
-                Check VIN
-              </Button>
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-3 mt-1"
-                icon={<Zap className="w-4 h-4 text-accent-amber" />}
-                onClick={() => navigate('/kanban')}
-              >
-                Open Board
-              </Button>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
+          style={{
+            gridColumn: '4', gridRow: '2',
+            background: 'rgba(255,255,255,0.025)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 20, padding: 2,
+          }}
+        >
+          <div style={{ background: '#0e0e18', borderRadius: 18, padding: '22px 18px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07)', height: '100%' }}>
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: '#f0f0fa', marginBottom: 14, letterSpacing: '-0.01em' }}>Quick Actions</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <ActionBtn label="Add Vehicle"  color="#5b8df8"  icon={<TrendingUp  style={{ width: 14, height: 14, color: '#5b8df8'  }} />} onClick={() => navigate('/vehicles')} />
+              <ActionBtn label="New Deal"     color="#9b6dff"  icon={<ClipboardList style={{ width: 14, height: 14, color: '#9b6dff' }} />} onClick={() => navigate('/deals')} />
+              <ActionBtn label="Check VIN"    color="#00d68a"  icon={<Search       style={{ width: 14, height: 14, color: '#00d68a'  }} />} onClick={() => navigate('/check')} />
+              <ActionBtn label="Open Board"   color="#ffb347"  icon={<Zap          style={{ width: 14, height: 14, color: '#ffb347'  }} />} onClick={() => navigate('/kanban')} />
             </div>
-          </Card>
+          </div>
         </motion.div>
+
+        {/* Activity feed — full width */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
+          style={{
+            gridColumn: '1 / 5', gridRow: '3',
+            background: 'rgba(255,255,255,0.025)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 20, padding: 2,
+          }}
+        >
+          <div style={{ background: '#0e0e18', borderRadius: 18, padding: '22px 24px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+              <h2 style={{ fontSize: 13, fontWeight: 700, color: '#f0f0fa' }}>Recent Activity</h2>
+              <span style={{ fontSize: 11, color: '#38385a' }}>{kpi.recentActivities.length} events today</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
+              {kpi.recentActivities.map((a, i) => (
+                <motion.div
+                  key={a.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.35 + i * 0.06, duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+                  style={{
+                    padding: '14px 14px',
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                    borderRadius: 12,
+                    borderLeft: `2px solid ${TYPE_COLOR[a.type] ?? '#5b8df8'}`,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span style={{
+                      fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+                      color: TYPE_COLOR[a.type] ?? '#5b8df8',
+                      padding: '2px 8px', borderRadius: 999,
+                      background: `${TYPE_COLOR[a.type] ?? '#5b8df8'}18`,
+                    }}>
+                      {a.type}
+                    </span>
+                    <span style={{ fontSize: 10, color: '#38385a', fontVariantNumeric: 'tabular-nums' }}>{timeAgo(a.createdAt)}</span>
+                  </div>
+                  <p style={{ fontSize: 12, color: '#7070a0', lineHeight: 1.5 }}>{a.body}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+
       </div>
-    </motion.div>
+    </div>
   )
 }

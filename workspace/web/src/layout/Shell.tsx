@@ -2,22 +2,9 @@ import React, { useState, useCallback } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  LayoutDashboard,
-  Car,
-  KanbanSquare,
-  Users,
-  GitPullRequest,
-  MessageSquare,
-  Calendar,
-  BarChart3,
-  Settings,
-  FileSearch,
-  PanelLeftOpen,
-  Sun,
-  Moon,
-  LogOut,
-  X,
-  Menu,
+  LayoutDashboard, Car, KanbanSquare, Users, GitPullRequest,
+  MessageSquare, Calendar, BarChart3, Settings, FileSearch,
+  ChevronLeft, ChevronRight, Sun, Moon, LogOut, X, Menu,
 } from 'lucide-react'
 import MobileNav from './MobileNav'
 import Breadcrumb from './Breadcrumb'
@@ -27,27 +14,21 @@ import Avatar from '../components/Avatar'
 import { useAuthContext } from '../auth/AuthContext'
 import { cn } from '../lib/cn'
 
-// ── Nav definition ─────────────────────────────────────────────────────────────
-
-const NAV_ITEMS = [
-  { to: '/',          label: 'Dashboard',  icon: LayoutDashboard, end: true  },
-  { to: '/vehicles',  label: 'Vehicles',   icon: Car,             end: false },
-  { to: '/kanban',    label: 'Kanban',     icon: KanbanSquare,    end: false },
-  { to: '/contacts',  label: 'Contacts',   icon: Users,           end: false },
-  { to: '/deals',     label: 'Deals',      icon: GitPullRequest,  end: false },
-  { to: '/inbox',     label: 'Inbox',      icon: MessageSquare,   end: false },
-  { to: '/calendar',  label: 'Calendar',   icon: Calendar,        end: false },
-  { to: '/finance',   label: 'Finance',    icon: BarChart3,       end: false },
-  { to: '/check',     label: 'VIN Check',  icon: FileSearch,      end: false },
-  { to: '/settings',  label: 'Settings',   icon: Settings,        end: false },
+const NAV = [
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true  },
+  { to: '/vehicles',  label: 'Vehicles',  icon: Car,             end: false },
+  { to: '/kanban',    label: 'Kanban',    icon: KanbanSquare,    end: false },
+  { to: '/contacts',  label: 'Contacts',  icon: Users,           end: false },
+  { to: '/deals',     label: 'Deals',     icon: GitPullRequest,  end: false },
+  { to: '/inbox',     label: 'Inbox',     icon: MessageSquare,   end: false },
+  { to: '/calendar',  label: 'Calendar',  icon: Calendar,        end: false },
+  { to: '/finance',   label: 'Finance',   icon: BarChart3,       end: false },
+  { to: '/check',     label: 'VIN Check', icon: FileSearch,      end: false },
+  { to: '/settings',  label: 'Settings',  icon: Settings,        end: false },
 ] as const
 
-// ── Dark mode hook ─────────────────────────────────────────────────────────────
-
 function useDark() {
-  const [dark, setDark] = useState(
-    () => !document.documentElement.classList.contains('light'),
-  )
+  const [dark, setDark] = useState(() => !document.documentElement.classList.contains('light'))
   const toggle = useCallback(() => {
     const next = !dark
     document.documentElement.classList.toggle('dark', next)
@@ -58,225 +39,129 @@ function useDark() {
   return { dark, toggle }
 }
 
-// ── NavItem ────────────────────────────────────────────────────────────────────
-
-interface NavItemProps {
-  to: string
-  label: string
-  icon: React.ElementType
-  end?: boolean
-  collapsed: boolean
-  onClick?: () => void
-}
+interface NavItemProps { to: string; label: string; icon: React.ElementType; end?: boolean; collapsed: boolean; onClick?: () => void }
 
 function NavItem({ to, label, icon: Icon, end, collapsed, onClick }: NavItemProps) {
   return (
-    <NavLink to={to} end={end} onClick={onClick} className="block px-2 mb-0.5">
+    <NavLink to={to} end={end} onClick={onClick} style={{ display: 'block', padding: '0 8px', marginBottom: 2 }}>
       {({ isActive }) => (
         <div
-          className={cn(
-            'relative flex items-center rounded-md transition-colors duration-150 cursor-pointer select-none',
-            collapsed ? 'justify-center py-2.5 px-2' : 'gap-3 py-2.5 px-3',
-            isActive ? 'bg-glass-medium' : 'hover:bg-glass-subtle',
-          )}
+          title={collapsed ? label : undefined}
+          style={{
+            display: 'flex', alignItems: 'center',
+            gap: collapsed ? 0 : 10,
+            justifyContent: collapsed ? 'center' : 'flex-start',
+            padding: collapsed ? '10px' : '9px 12px',
+            borderRadius: 12,
+            background: isActive ? 'rgba(91,141,248,0.14)' : 'transparent',
+            border: isActive ? '1px solid rgba(91,141,248,0.26)' : '1px solid transparent',
+            cursor: 'pointer',
+            transition: 'all 0.15s cubic-bezier(0.32,0.72,0,1)',
+          }}
+          onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.04)' }}
+          onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'transparent' }}
         >
-          {/* Active left-edge indicator */}
-          {isActive && (
-            <motion.div
-              layoutId="sidebar-active"
-              className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-accent-blue"
-              style={{ boxShadow: '0 0 12px 2px rgba(59,130,246,0.4)' }}
-              transition={{ type: 'spring', stiffness: 420, damping: 36 }}
-            />
-          )}
-
-          {/* Icon */}
           <Icon
-            className={cn(
-              'flex-shrink-0 transition-colors duration-150',
-              collapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]',
-              isActive ? 'text-accent-blue' : 'text-text-muted',
-            )}
-            strokeWidth={isActive ? 2.1 : 1.7}
+            style={{
+              width: 16, height: 16, flexShrink: 0,
+              color: isActive ? '#7aabff' : '#2e2e4e',
+              transition: 'color 0.15s',
+            }}
+            strokeWidth={isActive ? 2.2 : 1.7}
           />
-
-          {/* Label — fades when collapsed */}
           <AnimatePresence initial={false}>
             {!collapsed && (
               <motion.span
-                key="label"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.14 }}
-                className={cn(
-                  'text-sm font-medium whitespace-nowrap overflow-hidden',
-                  isActive ? 'text-text-primary' : 'text-text-secondary',
-                )}
+                key="lbl"
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 'auto' }}
+                exit={{ opacity: 0, width: 0 }}
+                transition={{ duration: 0.15 }}
+                style={{
+                  fontSize: 13,
+                  fontWeight: isActive ? 700 : 500,
+                  color: isActive ? '#c8d8ff' : '#2e2e4e',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  fontFamily: 'Plus Jakarta Sans',
+                }}
               >
                 {label}
               </motion.span>
             )}
           </AnimatePresence>
-
-          {/* Subtle active tint */}
-          {isActive && (
-            <div className="absolute inset-0 rounded-md bg-accent-blue/5 pointer-events-none" />
-          )}
         </div>
       )}
     </NavLink>
   )
 }
 
-// ── SidebarInner ───────────────────────────────────────────────────────────────
-
-interface SidebarInnerProps {
-  collapsed: boolean
-  onToggleCollapse?: () => void
-  onClose?: () => void
-}
-
-function SidebarInner({ collapsed, onToggleCollapse, onClose }: SidebarInnerProps) {
+function SidebarInner({ collapsed, onToggle, onClose }: { collapsed: boolean; onToggle?: () => void; onClose?: () => void }) {
   const { user, logout } = useAuthContext()
-
   return (
-    <div className="flex flex-col h-full">
-      {/* ── Logo row ── */}
-      <div
-        className={cn(
-          'flex items-center h-[57px] border-b border-border-subtle flex-shrink-0',
-          collapsed ? 'justify-center px-2' : 'px-4',
-        )}
-      >
-        {/* CARDEX wordmark */}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+
+      {/* Logo */}
+      <div style={{
+        display: 'flex', alignItems: 'center', height: 57, flexShrink: 0,
+        padding: collapsed ? '0 12px' : '0 16px',
+        justifyContent: collapsed ? 'center' : 'space-between',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+      }}>
         <AnimatePresence initial={false}>
           {!collapsed && (
-            <motion.div
-              key="wordmark"
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: 'auto' }}
-              exit={{ opacity: 0, width: 0 }}
-              transition={{ duration: 0.18 }}
-              className="mr-auto flex flex-col overflow-hidden"
-            >
-              <span
-                className="font-bold text-[13px] tracking-[0.22em] leading-tight"
-                style={{
-                  background: 'linear-gradient(125deg, var(--color-blue) 0%, #c8d8ff 60%, #ffffff 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
+            <motion.div key="logo" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+              <div style={{
+                fontSize: 15, fontWeight: 800, letterSpacing: '0.18em',
+                background: 'linear-gradient(120deg, #5b8df8 0%, #9b9fff 55%, #e0e8ff 100%)',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                fontFamily: 'Plus Jakarta Sans',
+              }}>
                 CARDEX
-              </span>
-              <span className="text-[8px] font-semibold tracking-[0.3em] text-text-muted uppercase leading-tight mt-0.5">
+              </div>
+              <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.3em', color: '#1e1e38', textTransform: 'uppercase', marginTop: 1, fontFamily: 'Plus Jakarta Sans' }}>
                 Workspace
-              </span>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Collapse toggle (desktop) or close (mobile drawer) */}
-        {onClose ? (
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-md text-text-muted hover:text-text-primary hover:bg-glass-medium transition-colors duration-150"
-            aria-label="Close sidebar"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        ) : (
-          <button
-            onClick={onToggleCollapse}
-            className={cn(
-              'p-1.5 rounded-md text-text-muted hover:text-text-primary hover:bg-glass-medium transition-colors duration-150',
-              collapsed && 'mx-auto',
-            )}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            <motion.div
-              animate={{ rotate: collapsed ? 180 : 0 }}
-              transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-            >
-              <PanelLeftOpen className="w-4 h-4" />
-            </motion.div>
-          </button>
-        )}
+        <button
+          onClick={onClose ?? onToggle}
+          style={{ padding: 6, borderRadius: 8, color: '#1e1e38', cursor: 'pointer', background: 'transparent', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          {onClose
+            ? <X style={{ width: 15, height: 15 }} />
+            : <motion.div animate={{ rotate: collapsed ? 180 : 0 }} transition={{ duration: 0.25 }}>
+                <ChevronLeft style={{ width: 15, height: 15 }} />
+              </motion.div>
+          }
+        </button>
       </div>
 
-      {/* Car icon shown only when collapsed */}
-      <AnimatePresence initial={false}>
-        {collapsed && (
-          <motion.div
-            key="car-icon"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.14 }}
-            className="flex justify-center py-3 border-b border-border-subtle"
-          >
-            <Car className="w-5 h-5 text-accent-blue" strokeWidth={1.75} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Navigation ── */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 scrollbar-none">
-        {NAV_ITEMS.map((item) => (
-          <NavItem
-            key={item.to}
-            {...item}
-            collapsed={collapsed}
-            onClick={onClose}
-          />
+      {/* Nav */}
+      <nav style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '10px 0' }}>
+        {NAV.map(item => (
+          <NavItem key={item.to} {...item} collapsed={collapsed} onClick={onClose} />
         ))}
       </nav>
 
-      {/* ── User section ── */}
-      <div className="border-t border-border-subtle p-3 flex-shrink-0">
-        <div
-          className={cn(
-            'flex items-center gap-2.5 px-2 py-2 rounded-md',
-            collapsed && 'justify-center',
-          )}
-        >
+      {/* User */}
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '10px 8px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 12 }}>
           <Avatar name={user?.name ?? 'User'} size="sm" />
-
           <AnimatePresence initial={false}>
             {!collapsed && (
-              <motion.div
-                key="user-info"
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: 'auto' }}
-                exit={{ opacity: 0, width: 0 }}
-                transition={{ duration: 0.15 }}
-                className="flex-1 min-w-0 overflow-hidden"
-              >
-                <p className="text-xs font-semibold text-text-primary truncate leading-tight">
-                  {user?.name ?? 'User'}
-                </p>
-                <p className="text-2xs text-text-muted truncate leading-tight capitalize mt-0.5">
-                  {user?.role ?? 'dealer'}
-                </p>
+              <motion.div key="uinfo" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.15 }} style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#9090b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'Plus Jakarta Sans' }}>{user?.name ?? 'User'}</div>
+                <div style={{ fontSize: 10, color: '#1e1e38', textTransform: 'capitalize', fontFamily: 'Plus Jakarta Sans' }}>{user?.role ?? 'dealer'}</div>
               </motion.div>
             )}
           </AnimatePresence>
-
           <AnimatePresence initial={false}>
             {!collapsed && (
-              <motion.button
-                key="logout-btn"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.12 }}
-                onClick={logout}
-                className="p-1.5 rounded-md text-text-muted hover:text-accent-rose hover:bg-glass-medium transition-colors duration-150 flex-shrink-0"
-                aria-label="Sign out"
-              >
-                <LogOut className="w-3.5 h-3.5" />
+              <motion.button key="logout" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={logout} style={{ padding: 6, borderRadius: 8, color: '#1e1e38', background: 'transparent', border: 'none', cursor: 'pointer', flexShrink: 0 }}>
+                <LogOut style={{ width: 13, height: 13 }} />
               </motion.button>
             )}
           </AnimatePresence>
@@ -286,151 +171,84 @@ function SidebarInner({ collapsed, onToggleCollapse, onClose }: SidebarInnerProp
   )
 }
 
-// ── Shell ──────────────────────────────────────────────────────────────────────
-
-const SIDEBAR_SPRING = { duration: 0.32, ease: [0.25, 0.46, 0.45, 0.94] as const }
+const EASE = [0.32, 0.72, 0, 1] as const
 
 export default function Shell() {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const { dark, toggle } = useDark()
   const location = useLocation()
-
-  const sidebarWidth = collapsed ? 72 : 260
+  const W = collapsed ? 64 : 240
 
   return (
-    <div
-      className="flex h-screen overflow-hidden"
-      style={{ background: 'var(--bg-primary)' }}
-    >
-      {/* ── Mobile drawer overlay ── */}
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#05050a', fontFamily: 'Plus Jakarta Sans' }}>
+
+      {/* Mobile overlay */}
       <AnimatePresence>
         {mobileOpen && (
           <>
-            <motion.div
-              key="overlay"
-              className="fixed inset-0 z-[60] bg-black/60 md:hidden"
-              style={{ backdropFilter: 'blur(4px)' }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setMobileOpen(false)}
-            />
-            <motion.aside
-              key="drawer"
-              className="fixed top-0 left-0 h-full z-[70] w-72 md:hidden border-r border-border-subtle overflow-hidden"
-              style={{
-                background: 'rgba(18, 18, 30, 0.98)',
-                backdropFilter: 'blur(24px)',
-              }}
-              initial={{ x: -288 }}
-              animate={{ x: 0 }}
-              exit={{ x: -288 }}
-              transition={{ type: 'spring', stiffness: 310, damping: 32 }}
-            >
-              <SidebarInner
-                collapsed={false}
-                onClose={() => setMobileOpen(false)}
-              />
+            <motion.div key="ov" style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }} className="md:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMobileOpen(false)} />
+            <motion.aside key="dr" style={{ position: 'fixed', top: 0, left: 0, height: '100%', zIndex: 70, width: 240, background: '#09090f', borderRight: '1px solid rgba(255,255,255,0.06)' }} className="md:hidden" initial={{ x: -240 }} animate={{ x: 0 }} exit={{ x: -240 }} transition={{ type: 'spring', stiffness: 320, damping: 32 }}>
+              <SidebarInner collapsed={false} onClose={() => setMobileOpen(false)} />
             </motion.aside>
           </>
         )}
       </AnimatePresence>
 
-      {/* ── Desktop sidebar (in flex flow, always visible) ── */}
+      {/* Desktop sidebar */}
       <motion.aside
-        className="hidden md:flex flex-col flex-shrink-0 border-r border-border-subtle overflow-hidden"
-        animate={{ width: sidebarWidth }}
-        transition={SIDEBAR_SPRING}
-        style={{
-          background: 'rgba(22, 22, 38, 0.82)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-        }}
+        animate={{ width: W }}
+        transition={{ duration: 0.28, ease: EASE }}
+        className="hidden md:flex flex-col flex-shrink-0 overflow-hidden"
+        style={{ background: '#09090f', borderRight: '1px solid rgba(255,255,255,0.06)' }}
       >
-        <SidebarInner
-          collapsed={collapsed}
-          onToggleCollapse={() => setCollapsed((c) => !c)}
-        />
+        <SidebarInner collapsed={collapsed} onToggle={() => setCollapsed(c => !c)} />
       </motion.aside>
 
-      {/* ── Main area ── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      {/* Main */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
 
         {/* Topbar */}
-        <header
-          className="flex-shrink-0 h-14 flex items-center gap-3 px-4 border-b border-border-subtle z-20"
-          style={{
-            background: 'rgba(14, 14, 20, 0.80)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-          }}
-        >
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="md:hidden w-9 h-9 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-glass-medium transition-colors duration-150"
-            aria-label="Open menu"
-          >
-            <Menu className="w-5 h-5" />
+        <header style={{
+          flexShrink: 0, height: 56, display: 'flex', alignItems: 'center', gap: 12, padding: '0 20px',
+          background: '#05050a', borderBottom: '1px solid rgba(255,255,255,0.05)',
+          fontFamily: 'Plus Jakarta Sans',
+        }}>
+          <button onClick={() => setMobileOpen(true)} className="md:hidden" style={{ padding: 8, borderRadius: 8, color: '#1e1e38', background: 'transparent', border: 'none', cursor: 'pointer' }}>
+            <Menu style={{ width: 18, height: 18 }} />
           </button>
 
-          {/* Breadcrumb */}
-          <div className="flex-1 min-w-0 hidden sm:block">
+          <div style={{ flex: 1, minWidth: 0 }} className="hidden sm:block">
             <Breadcrumb />
           </div>
 
-          {/* Right cluster */}
-          <div className="flex items-center gap-1.5 ml-auto">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
             <SearchCommand />
-
-            <div className="w-px h-5 bg-border-subtle mx-0.5" />
-
+            <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.06)', margin: '0 4px' }} />
             <NotificationBell />
-
-            {/* Dark mode toggle */}
             <button
               onClick={toggle}
-              className="w-9 h-9 rounded-md flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-glass-medium transition-colors duration-150"
-              aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+              style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1e1e38', background: 'transparent', border: 'none', cursor: 'pointer' }}
             >
               <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={dark ? 'moon' : 'sun'}
-                  initial={{ rotate: -30, opacity: 0, scale: 0.7 }}
-                  animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                  exit={{ rotate: 30, opacity: 0, scale: 0.7 }}
-                  transition={{ duration: 0.18 }}
-                >
-                  {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                <motion.div key={dark ? 'd' : 'l'} initial={{ rotate: -20, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 20, opacity: 0 }} transition={{ duration: 0.15 }}>
+                  {dark ? <Sun style={{ width: 14, height: 14 }} /> : <Moon style={{ width: 14, height: 14 }} />}
                 </motion.div>
               </AnimatePresence>
             </button>
           </div>
         </header>
 
-        {/* Page content with route transition */}
-        <main
-          className="flex-1 overflow-y-auto pb-20 md:pb-0"
-          style={{ background: 'var(--bg-primary)' }}
-        >
-          {/* Subtle gradient overlay at top */}
-          <div
-            className="pointer-events-none fixed top-14 left-0 right-0 h-24 z-10 md:hidden"
-            style={{
-              background: 'linear-gradient(to bottom, var(--bg-primary) 0%, transparent 100%)',
-            }}
-          />
-
+        {/* Content */}
+        <main style={{ flex: 1, overflowY: 'auto', background: '#05050a', backgroundImage: 'radial-gradient(ellipse 80% 50% at 15% 15%, rgba(79,126,248,0.055) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 85% 85%, rgba(155,109,255,0.04) 0%, transparent 60%)' }}>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0, y: 7 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
-              className="min-h-full"
+              transition={{ duration: 0.2, ease: EASE }}
+              style={{ minHeight: '100%' }}
             >
               <Outlet />
             </motion.div>
@@ -438,7 +256,6 @@ export default function Shell() {
         </main>
       </div>
 
-      {/* Mobile bottom navigation */}
       <MobileNav />
     </div>
   )

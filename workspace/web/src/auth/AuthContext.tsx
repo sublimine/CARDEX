@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { api, setAccessToken, setTenantId, setTokenExpiry } from '../api/client'
+import { api, setAccessToken, setTenantId, setTokenExpiry, getStoredToken, getStoredTenantId, isTokenValid } from '../api/client'
 import type { User } from '../types'
 
 interface AuthState {
@@ -15,18 +15,33 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-interface LoginResponse {
-  token: string
-  expires_in: number
-  user: User
-}
+interface LoginResponse { token: string; expires_in: number; user: User }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    isLoading: false,
-    isAuthenticated: false,
+  const [state, setState] = useState<AuthState>(() => {
+    // Restore session from localStorage on init
+    if (isTokenValid()) {
+      const tid = getStoredTenantId()
+      if (tid) setTenantId(tid)
+      return { user: null, isLoading: true, isAuthenticated: false }
+    }
+    return { user: null, isLoading: false, isAuthenticated: false }
   })
+
+  // Hydrate user from /auth/me if we have a stored token
+  useEffect(() => {
+    if (!isTokenValid()) return
+    api.get<{ user: User }>('/auth/me')
+      .then(data => {
+        const raw = data.user as unknown as Record<string, unknown>
+        const user = { ...data.user, tenantId: (raw.tenantId ?? raw.tenant_id ?? '') as string }
+        setState({ user, isLoading: false, isAuthenticated: true })
+      })
+      .catch(() => {
+        setAccessToken(null)
+        setState({ user: null, isLoading: false, isAuthenticated: false })
+      })
+  }, [])
 
   const logout = useCallback(() => {
     setAccessToken(null)
@@ -34,27 +49,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState({ user: null, isLoading: false, isAuthenticated: false })
   }, [])
 
-  const login = useCallback(
-    async (email: string, password: string) => {
-      setState((s) => ({ ...s, isLoading: true }))
-      try {
-        const data = await api.post<LoginResponse>('/auth/login', { email, password })
-        // Backend returns snake_case; normalize tenant_id → tenantId
-        const raw = data.user as unknown as Record<string, unknown>
-        const user = { ...data.user, tenantId: (raw.tenantId ?? raw.tenant_id ?? '') as string }
-        setAccessToken(data.token)
-        setTokenExpiry(data.expires_in)
-        setTenantId(user.tenantId)
-        setState({ user, isLoading: false, isAuthenticated: true })
-      } catch (err) {
-        setState((s) => ({ ...s, isLoading: false }))
-        throw err
-      }
-    },
-    [],
-  )
+  const login = useCallback(async (email: string, password: string) => {
+    setState(s => ({ ...s, isLoading: true }))
+    try {
+      const data = await api.post<LoginResponse>('/auth/login', { email, password })
+      const raw  = data.user as unknown as Record<string, unknown>
+      const user = { ...data.user, tenantId: (raw.tenantId ?? raw.tenant_id ?? '') as string }
+      setAccessToken(data.token)
+      setTokenExpiry(data.expires_in)
+      setTenantId(user.tenantId)
+      setState({ user, isLoading: false, isAuthenticated: true })
+    } catch (err) {
+      setState(s => ({ ...s, isLoading: false }))
+      throw err
+    }
+  }, [])
 
-  // Auto-logout on 401 from any API call
   useEffect(() => {
     window.addEventListener('auth:unauthorized', logout)
     return () => window.removeEventListener('auth:unauthorized', logout)
