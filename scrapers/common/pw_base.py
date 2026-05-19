@@ -98,7 +98,25 @@ _STEALTH_JS = """
     return _getParam.call(this, param);
   };
 
-  // 7. Iframe contentWindow — prevent cross-frame detection
+  // 7. window.outerWidth/outerHeight — headless has outerWidth === innerWidth (dead giveaway)
+  //    Real Chrome: outerWidth = innerWidth + scrollbar (~17px), outerHeight = innerHeight + toolbar (~74px)
+  Object.defineProperty(window, 'outerWidth',  {get: () => window.innerWidth  + 17});
+  Object.defineProperty(window, 'outerHeight', {get: () => window.innerHeight + 74});
+
+  // 8. Battery API — headless Chrome exposes it, but level/charging must look real
+  if (navigator.getBattery) {
+    const _orig = navigator.getBattery.bind(navigator);
+    navigator.getBattery = () => _orig().then(b => {
+      Object.defineProperty(b, 'level',   {get: () => 0.95});
+      Object.defineProperty(b, 'charging',{get: () => true});
+      return b;
+    }).catch(() => Promise.resolve({level:0.95, charging:true, chargingTime:0, dischargingTime:Infinity}));
+  }
+
+  // 9. navigator.connection — hide NetworkInformation, headless exposes it inconsistently
+  try { Object.defineProperty(navigator, 'connection', {get: () => undefined}); } catch(_) {}
+
+  // 10. Iframe contentWindow — prevent cross-frame detection
   const _origContentWindow = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'contentWindow');
   Object.defineProperty(HTMLIFrameElement.prototype, 'contentWindow', {
     get: function() {

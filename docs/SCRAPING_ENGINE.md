@@ -1,6 +1,6 @@
 # CARDEX SCRAPING ENGINE — Diseño Definitivo 360°
 
-<!-- v1.0.0 | 2026-05-16 | Owner: Elias Karrouch -->
+<!-- v1.1.0 | 2026-05-19 | Owner: Elias Karrouch -->
 <!-- Documento de arquitectura. No implementación. La implementación está en scrapers/engine/ (pendiente). -->
 
 ## Principio rector
@@ -124,6 +124,32 @@ new → warming (24-72h tráfico orgánico) → active → degraded → quaranti
                                             └──── recuperación ────┘
 ```
 
+**Protocolo de warming — 3 fases:**
+
+```
+FASE 1 — Ambient (48h)
+  Objetivo: que la IP parezca usuario residencial orgánico antes de tocar portales.
+  Tráfico: 40-60 requests/día a news (spiegel.de, lemonde.fr, rtve.es...),
+           búsquedas Google (no sobre coches), YouTube.
+  Sin visitas a portales objetivo.
+  Resultado: ISP/AS ve patrón de navegación orgánica. IP no "fresca".
+
+FASE 2 — Portal familiarization (24h)
+  Objetivo: generar cookies reales y primera _abck en el portal objetivo.
+  Tráfico: homepage del portal + categorías (sin extracción).
+           1 o 2 listings visitados (dwell 30-60s, scroll, salir).
+  Resultado: storage_state con cookies reales. _abck generado y persistido.
+             Akamai registra la identidad como "usuario recurrente nivel 1".
+
+FASE 3 — Active (trust_score ≥ 3.0, warming_done = true)
+  Extracción permitida vía Intent Engine.
+  Cada sesión: entry point → homepage → search → extract → exit (§A5).
+  _abck refreshed con hyper-sdk-go si age > 1h.
+
+Regla de warming: una identidad que extrae antes de completar Fase 2 es quemada.
+  No existe recovery — se retira directamente.
+```
+
 ---
 
 ### A2. Proxy Fleet
@@ -159,6 +185,44 @@ CAPA 2 — TLS + HTTP (curl_cffi ≥ 0.15.1)
 CAPA 3 — Browser (Camoufox — patches C++, no JS)
   browser = AsyncCamoufox(os=..., fingerprint=..., proxy=..., geoip=True)
   geoip=True: alinea WebRTC + timezone + locale automáticamente con la IP del proxy.
+
+  Señales cubiertas por Camoufox nativamente (C++, sin JS inyectado):
+  ┌─────────────────────────────────────┬──────────────────────────────────────┐
+  │ Señal                               │ Implementación                       │
+  ├─────────────────────────────────────┼──────────────────────────────────────┤
+  │ Canvas fingerprint                  │ Ruido determinista por identity seed  │
+  │ Audio fingerprint (OfflineAudio)    │ Ruido determinista por identity seed  │
+  │ Fonts disponibles                   │ Subset real Windows/macOS             │
+  │ WebGL vendor/renderer               │ Coherente con tcp_profile             │
+  │ navigator.webdriver                 │ Ausente — parchado a nivel C++        │
+  │ navigator.plugins                   │ PluginArray real de Firefox           │
+  │ Battery API                         │ Firefox no expone getBattery() → OK   │
+  │ navigator.connection                │ Firefox no expone NetworkInfo → OK    │
+  │ screen geometry coherencia          │ outerWidth/innerWidth con chrome real │
+  │ performance.now() precision         │ Resolución normal, no reducida        │
+  │ PointerEvent.pointerType            │ "mouse" coherente                     │
+  └─────────────────────────────────────┴──────────────────────────────────────┘
+
+  Señales adicionales SOLO para Chromium fallback (JS en pw_base.py):
+  ┌─────────────────────────────────────┬──────────────────────────────────────┐
+  │ Señal                               │ Solución aplicada                    │
+  ├─────────────────────────────────────┼──────────────────────────────────────┤
+  │ navigator.webdriver                 │ delete + Object.defineProperty       │
+  │ navigator.plugins (PluginArray)     │ 3 PDF plugins con prototype correcto  │
+  │ chrome.runtime completo             │ Objeto con connect/sendMessage/id    │
+  │ permissions.query notifications     │ Devuelve Notification.permission      │
+  │ WebGL vendor Intel                  │ getParameter override                 │
+  │ iframe.contentWindow.webdriver      │ Override en cross-frame access        │
+  │ hardwareConcurrency / deviceMemory  │ 8 / 8                                 │
+  │ window.outerWidth/outerHeight       │ innerWidth+17 / innerHeight+74 (chrome bar) │
+  │ Battery API (getBattery)            │ Promise resolve {level:0.95,charging:true}  │
+  │ navigator.connection                │ undefined (no exponer NetworkInfo)    │
+  └─────────────────────────────────────┴──────────────────────────────────────┘
+
+  Señales NO cubiertas en ningún tier — aceptadas como riesgo residual:
+  - Behavioral entropy (mouse movement, scroll velocity): cubierto en T3 por Oxymouse
+  - CSS media query fingerprint (prefers-color-scheme): varianza baja, riesgo bajo
+  - DNS-over-HTTPS coherencia: proxy maneja DNS, sin gap
 
 CAPA 4 — Sensor (Akamai _abck)
   Si token previo existe → cargar en storageState → usuario recurrente para Akamai
@@ -253,6 +317,63 @@ CLOSED → 3 fallos en 60s → OPEN (120s) → HALF_OPEN → 1 probe → CLOSED|
 ```
 
 Cuando tier entra en OPEN → escalator activa siguiente tier. Cambio persiste en engine.db.
+
+---
+
+---
+
+## SUBSISTEMA A7 — MOBILE REVERSE ENGINEERING (T0 Bypass)
+
+> T0 no tiene anti-bot porque no usa el web. Accede a la API interna de la app móvil.
+> Un request de API es 50-200x más barato que un request de browser con Camoufox.
+
+### Proceso de RE (una vez por portal, resultado permanente)
+
+```
+PASO 1 — Intercepción de tráfico
+  Herramienta: mitmproxy con certificado instalado en emulador Android
+  Bypass certificate pinning: frida-gadget + script unpinning universal
+  Resultado: dump de todos los requests HTTP/2 de la app
+
+PASO 2 — Spec generation
+  mitmproxy2swagger → spec OpenAPI preliminar
+  Revisión manual: identificar endpoints de búsqueda y listing
+  Documentar: auth flow, headers requeridos, rate limits observados
+
+PASO 3 — Client generado
+  scrapers/mobile_re/portals/<portal>.py
+  Auth: Bearer token (OAuth2 app) o API key embebida en la app
+  Endpoint: búsqueda paginada → lista de IDs → detalle por ID
+
+PASO 4 — Token refresh
+  Tokens de app expiran (normalmente 24-72h)
+  Refresh automático: scrapers/mobile_re/interceptor.py con frida headless
+```
+
+### Portales con RE confirmado / viable
+
+```
+mobile.de:     Ad-Stream WebSocket (WSS) — ya documentado en clients/mobile_de/
+autoscout24:   App usa misma API que web pero con app-specific headers
+               → mismo endpoint pero requiere X-AS24-App: ios/2.x.x header
+               RE viable: bypassea Akamai completamente
+
+Portales pendientes de RE:
+  leboncoin.fr  — DataDome en web → RE móvil = bypass total
+  lacentrale.fr — idem
+  wallapop.com  — app muy activa, API bien documentada externamente
+```
+
+### Coste vs Browser
+
+```
+T0 Mobile API:   0.001 req/s proxy cost, 0 browser RAM, 0 Camoufox warming
+T2 Camoufox:     0.08 req/s proxy cost, 200MB RAM, 24-72h warming
+Ratio:           T0 es 80x más barato operacionalmente que T2
+
+Inversión inicial RE: ~4h por portal (una vez)
+ROI: amortizado en primera semana de producción
+```
 
 ---
 
@@ -635,11 +756,12 @@ scrapers/
 │   │   ├── affinity.py      # Mismo proxy por dominio por sesión
 │   │   └── health.py        # Ban detector
 │   ├── antidetect/
-│   │   ├── tcp.py           # httpcloak: TCP SYN Windows/macOS fingerprint
-│   │   ├── tls.py           # curl_cffi session factory
-│   │   ├── browser.py       # Camoufox instance pool
-│   │   ├── sensor.py        # Akamai _abck store + hyper-sdk-go
-│   │   └── behavioral.py    # Oxymouse + dwell simulation
+│   │   ├── tcp.py           # httpcloak: TCP SYN Windows/macOS fingerprint (npcap en Windows)
+│   │   ├── tls.py           # curl_cffi session factory — impersonate por identity.tls_profile
+│   │   ├── browser.py       # Camoufox instance pool — señales C++, no JS
+│   │   ├── stealth_js.py    # Stealth JS Chromium fallback — outerWidth, battery, connection...
+│   │   ├── sensor.py        # Akamai _abck store + hyper-sdk-go refresh sin browser
+│   │   └── behavioral.py    # Oxymouse + dwell + scroll simulation para T3
 │   ├── session/
 │   │   ├── state.py         # storageState persistence
 │   │   ├── warming.py       # Protocolo de warming 24-72h
