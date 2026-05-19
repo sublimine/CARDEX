@@ -22,7 +22,9 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
+from scrapers.common.indexer import run_portal
 from scrapers.engine.router.domain_map import Tier
+from scrapers.engine.session.warming import enforce_no_extraction_before_warming
 
 log = logging.getLogger(__name__)
 

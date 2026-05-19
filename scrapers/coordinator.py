@@ -21,6 +21,15 @@ import asyncio
 import logging
 from dataclasses import dataclass
 
+from scrapers.db import connect, migrate
+from scrapers.engine.identity import store as identity_store
+from scrapers.engine.identity.aging import release_quarantine
+from scrapers.engine.proxy import pool as proxy_pool
+from scrapers.engine.router import domain_map, escalator
+from scrapers.engine.router.circuit import is_open
+from scrapers.engine.monitoring import metrics
+from scrapers.engine.session.warming import enforce_no_extraction_before_warming
+
 log = logging.getLogger(__name__)
 
 

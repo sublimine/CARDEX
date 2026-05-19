@@ -23,7 +23,9 @@ import asyncio
 import sqlite3
 import logging
 
+from scrapers.common.pw_base import intercept_paginate, dom_paginate
 from scrapers.engine.identity.profile import Identity
+from scrapers.engine.session.state import load as load_state, save as save_state
 
 log = logging.getLogger(__name__)
 
