@@ -585,7 +585,7 @@ export default function Landing() {
                   title={p.name}
                   style={{
                     width: 30, height: 30, borderRadius: '50%',
-                    background: 'rgba(255,255,255,0.92)',
+                    background: p.bg,
                     border: '2px solid rgba(7,7,15,0.55)',
                     marginLeft: i > 0 ? -8 : 0,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
