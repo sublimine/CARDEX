@@ -584,20 +584,17 @@ export default function Landing() {
                   key={p.name}
                   title={p.name}
                   style={{
-                    width: 30, height: 30, borderRadius: '50%',
-                    background: p.bg,
-                    border: '2px solid rgba(7,7,15,0.55)',
-                    marginLeft: i > 0 ? -8 : 0,
+                    width: 24, height: 24,
+                    marginLeft: i > 0 ? 6 : 0,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     position: 'relative', zIndex: PORTALS.length - i,
-                    overflow: 'hidden', flexShrink: 0,
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                    flexShrink: 0,
                   }}
                 >
                   <img
                     src={p.favicon}
                     alt={p.name}
-                    style={{ width: 18, height: 18, objectFit: 'contain' }}
+                    style={{ width: 22, height: 22, objectFit: 'contain' }}
                   />
                 </div>
               ))}
