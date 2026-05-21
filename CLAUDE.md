@@ -469,25 +469,83 @@ Cambio de engine HTTP mid-session = ban garantizado del proveedor. Cualquier mod
 
 **Design system activo** (tokens cx-*):
 - Glassmorphism: `backdrop-filter: blur()` + `background: rgba(..., 0.1)` + `border: 1px solid rgba(255,255,255,0.1)`
-- Mesh global: 4 orbs (violet, blue, teal, fuchsia) + grain overlay — definidos en `GlobalMesh` en `App.tsx`
+- Mesh global: 4 orbs (violet, blue, teal, fuchsia) + grain overlay — `GlobalMesh` en `App.tsx`
 - Animaciones: `cxFloat1–4` keyframes CSS, Framer Motion para micro-interactions
-- Componentes base en `workspace/web/src/components/`: Button, Card, Badge, Table, Modal, ScoreGauge, Toast, Tooltip, VINInput
+- Componentes base: `workspace/web/src/components/` — Button, Card, Badge, Table, Modal, ScoreGauge, Toast, Tooltip, VINInput
+- Páginas: Dashboard, Vehicles, Kanban, Contacts, Deals, Inbox, Calendar, Finance, Settings, Landing, Check
 
-**Skills activas para cualquier tarea frontend**:
-1. `impeccable` — auditar output antes de entregar. 27 anti-patrones.
-2. `emil-design-eng` — todas las animaciones pasan por su framework de decisión:
-   - ¿Se anima? (¿frecuencia de uso?)
-   - Easing correcto: `cubic-bezier(0.23, 1, 0.32, 1)` para ease-out
-   - Duración: botón 100-160ms, modal 200-500ms
-   - Framer Motion: usar `animate={{ transform: "..." }}` no `animate={{ x: ... }}` (hardware accel)
-   - Nunca `scale(0)` — siempre `scale(0.95) + opacity: 0`
-3. `high-end-visual-design` — prohibido output de template genérico
+**Regla invariante**: leer los componentes existentes ANTES de escribir cualquier código frontend. Respetar el sistema cx-*. Prohibido output de template genérico.
 
-**Antes de crear cualquier componente nuevo**:
-- Leer los componentes existentes en `workspace/web/src/components/`
-- Respetar el sistema cx-* y el glassmorphism
-- No introducir librerías de UI externas sin decisión explícita
-- Verificar que la animación pasa el test de frecuencia de Emil antes de implementarla
+---
+
+**MAPA COMPLETO DE SKILLS DE DISEÑO/FRONTEND — activar según situación:**
+
+**CORE — activar en TODA tarea frontend sin excepción:**
+| Skill | Propósito |
+|---|---|
+| `impeccable` | Auditoría con 27 anti-patrones. Siempre el último filtro antes de entregar. Comandos: `/impeccable audit`, `/impeccable polish`, `/impeccable critique` |
+| `high-end-visual-design` | Reglas para no generar output genérico/template. Fuentes, sombras, cards, spacing premium |
+| `full-output-enforcement` | Prohibe truncar código. Entrega archivos completos, sin placeholders |
+| `frontend-design` | Patrones de componentes React production-grade |
+| `frontend-patterns` | React, Next.js, state management, performance |
+
+**ANIMACIONES — activar cuando haya motion, transitions, interacciones:**
+| Skill | Propósito |
+|---|---|
+| `emil-design-eng` | Framework completo: cuándo animar, easing custom `cubic-bezier(0.23,1,0.32,1)`, duraciones (botón 100-160ms / modal 200-500ms), springs, clip-path, hardware accel en Framer Motion (`transform:"..."` no `x:`), stagger 30-80ms, `scale(0.95)+opacity:0` nunca `scale(0)` |
+| `gpt-taste` | GSAP ScrollTriggers, pinning, scrubbing, bento grids, tipografía editorial wide |
+
+**DIRECCIÓN VISUAL Y ESTILO:**
+| Skill | Cuándo usar |
+|---|---|
+| `design-taste-frontend` | Reglas de jerarquía, ritmo, profundidad. Senior UI/UX enforcer |
+| `stitch-design-taste` | Patrones de composición visual y coherencia |
+| `liquid-glass-design` | Glassmorphism avanzado — cuando se extiende el sistema cx-* |
+| `minimalist-ui` | Cuando el diseño debe ser Notion/Linear style |
+| `industrial-brutalist-ui` | Para superficies de datos densos estilo terminal |
+| `ui-ux-pro-max` | shadcn/Radix UI + Tailwind — cuando se añaden componentes accesibles |
+| `ckm-ui-styling` | shadcn/ui components, Tailwind utility-first, canvas designs |
+
+**DESIGN SYSTEM Y TOKENS:**
+| Skill | Cuándo usar |
+|---|---|
+| `ckm-design-system` | Token architecture (primitive→semantic→component), CSS variables, spacing/type scales |
+| `ckm-design` | Logo, CIP, identidad visual, social photos, banner design |
+| `ckm-brand` | Brand voice, consistency, style guides |
+| `design-consultation` | Crear o revisar DESIGN.md — fuente de verdad del design system |
+
+**REVIEW Y QA VISUAL:**
+| Skill | Cuándo usar |
+|---|---|
+| `design-review` | QA visual iterativo con before/after screenshots. Bugs de spacing, jerarquía, AI slop |
+| `plan-design-review` | Revisar diseño ANTES de implementar (plan mode) |
+| `plan-ceo-review` | Review ejecutivo de producto/diseño completo |
+| `impeccable` (CLI) | `npx impeccable detect` — escaneo estático de anti-patrones en el código |
+
+**GENERACIÓN Y PROTOTIPADO:**
+| Skill | Cuándo usar |
+|---|---|
+| `huashu-design` | Prototipos HTML interactivos, animaciones MP4/GIF, mockups iPhone/Android, presentaciones PPTX — para explorar dirección visual antes de implementar |
+| `design-shotgun` | Múltiples variantes de diseño para comparar opciones |
+| `design-html` | Finalizar diseños aprobados a HTML/CSS production-quality |
+| `image-to-code` | Convertir captura/imagen de UI a código React |
+| `imagegen-frontend-web` | Generar imágenes de referencia para componentes web |
+| `imagegen-frontend-mobile` | Generar imágenes de referencia para vistas móviles |
+| `redesign-existing-projects` | Rediseñar páginas existentes del workspace |
+
+**ACCESIBILIDAD Y PERFORMANCE:**
+| Skill | Cuándo usar |
+|---|---|
+| `a11y-architect` (agent) | WCAG 2.2 compliance en componentes nuevos |
+| `seo` | Meta tags, structured data, Core Web Vitals |
+| `devex-review` | Auditar DX del workspace (onboarding, CLI, docs) |
+
+**Reglas de composición para frontend**:
+- Toda tarea frontend: `impeccable` + `high-end-visual-design` + `full-output-enforcement` — siempre los 3
+- Nueva página o componente complejo: añadir `frontend-design` + `design-taste-frontend`
+- Cualquier animación: añadir `emil-design-eng` obligatorio antes de escribir código de motion
+- Exploración visual nueva: `huashu-design` + `design-shotgun` → aprobar dirección → `design-html`
+- Review de calidad final: `design-review` + `impeccable audit`
 
 ### 28. Protocolo de testing y quality gates
 - **Antes de implementar**: `test-driven-development` — test rojo primero, siempre.
