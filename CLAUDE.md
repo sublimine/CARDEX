@@ -161,6 +161,10 @@ Claude clasifica la tarea según tres ejes simultáneos y activa las skills corr
 | Seguridad, credenciales, TLS, JA3, autenticación, tokens, secretos | `security-review` |
 | Docker, docker-compose, despliegue, variables de entorno | `deployment-patterns` + `docker-patterns` |
 | Nueva integración, proveedor externo, API de tercero | `search-first` + `api-design` |
+| Workspace frontend, React, componente, página, UI, diseño, animación, motion | `impeccable` + `emil-design-eng` + `high-end-visual-design` |
+| Crear o rediseñar página, landing, componente visual, dashboard, layout | `impeccable` + `high-end-visual-design` + `frontend-design` |
+| Animación, motion, transition, framer-motion, spring, easing, micro-interaction | `emil-design-eng` — leer framework de decisión antes de escribir código de animación |
+| Explorar dirección visual nueva, prototipo, mockup, variantes de diseño | `huashu-design` + `brainstorming` |
 
 ---
 
@@ -202,6 +206,8 @@ Claude clasifica la tarea según tres ejes simultáneos y activa las skills corr
 | "JA3", "fingerprint", "TLS", "HTTP engine", "motor HTTP" | Mismo engine de página 1 a N. `security-review` si hay cambio propuesto. |
 | "sitemap", "paginación", "paginar", "exhaustion" | Nunca abandonar un dominio antes de agotar su inventario completo. |
 | "UPDATE", escribir cualquier SQL de actualización | Verificar invariante MVCC: solo INSERT nuevo + DELETE stale. |
+| "workspace", "frontend", "Dashboard", "Kanban", "Vehicles", "Inbox", "Finance", "Landing" | Activar `impeccable` + `emil-design-eng`. Leer `workspace/web/src/` antes de escribir cualquier componente. Respetar tokens cx-* y glassmorphism existente. |
+| "componente", "página", "animación", "diseño", "bonito", "visual", "UI", "UX" | Activar `impeccable` + `emil-design-eng` + `high-end-visual-design`. Prohibido output genérico. Ver §DISEÑO-WORKSPACE. |
 | "Redis", "SET", "inventario", "estado en cache" | Redis prohibido para estado de inventario. Solo Streams para eventos. |
 | "ClickHouse", "escribir", "insertar datos analíticos" | Verificar que no hay escritura directa desde flujo crítico. |
 | "browser", "Playwright", "headless", "Chromium" | Solo con stealth activo. `security-review` si es nuevo componente. |
@@ -456,6 +462,32 @@ Cambio de engine HTTP mid-session = ban garantizado del proveedor. Cualquier mod
 | AI en el critical path del pipeline (tiempo real) | LLM es clasificador offline, no componente en tiempo real |
 | `SDIFFSTORE` para operaciones de inventario | Bloquea el thread único de Redis |
 | Mezclar responsabilidades entre Spider, Reaper, e Indexer | Separación estricta de microservicios. Spider ingesta, Reaper purga, Indexer sincroniza. |
+
+### §DISEÑO-WORKSPACE — Sistema visual del workspace frontend
+
+**Stack**: React + Vite + TypeScript + Framer Motion + Recharts + Lucide React. Puerto dev: `pnpm dev` en `workspace/web/`.
+
+**Design system activo** (tokens cx-*):
+- Glassmorphism: `backdrop-filter: blur()` + `background: rgba(..., 0.1)` + `border: 1px solid rgba(255,255,255,0.1)`
+- Mesh global: 4 orbs (violet, blue, teal, fuchsia) + grain overlay — definidos en `GlobalMesh` en `App.tsx`
+- Animaciones: `cxFloat1–4` keyframes CSS, Framer Motion para micro-interactions
+- Componentes base en `workspace/web/src/components/`: Button, Card, Badge, Table, Modal, ScoreGauge, Toast, Tooltip, VINInput
+
+**Skills activas para cualquier tarea frontend**:
+1. `impeccable` — auditar output antes de entregar. 27 anti-patrones.
+2. `emil-design-eng` — todas las animaciones pasan por su framework de decisión:
+   - ¿Se anima? (¿frecuencia de uso?)
+   - Easing correcto: `cubic-bezier(0.23, 1, 0.32, 1)` para ease-out
+   - Duración: botón 100-160ms, modal 200-500ms
+   - Framer Motion: usar `animate={{ transform: "..." }}` no `animate={{ x: ... }}` (hardware accel)
+   - Nunca `scale(0)` — siempre `scale(0.95) + opacity: 0`
+3. `high-end-visual-design` — prohibido output de template genérico
+
+**Antes de crear cualquier componente nuevo**:
+- Leer los componentes existentes en `workspace/web/src/components/`
+- Respetar el sistema cx-* y el glassmorphism
+- No introducir librerías de UI externas sin decisión explícita
+- Verificar que la animación pasa el test de frecuencia de Emil antes de implementarla
 
 ### 28. Protocolo de testing y quality gates
 - **Antes de implementar**: `test-driven-development` — test rojo primero, siempre.
