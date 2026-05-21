@@ -6,15 +6,15 @@ import { useAuthContext } from '../auth/AuthContext'
 const EXPO = [0.16, 1, 0.3, 1] as const
 const HERO_IMG = 'https://i.pinimg.com/originals/8f/67/ad/8f67ad9d7fef82b5943608def344573b.jpg'
 /* ─── Source portals — one per country + AS24 global ──────────────────── */
-interface Portal { name: string; favicon?: string; initial?: string; bg: string; textColor?: string }
+interface Portal { name: string; favicon?: string; initial?: string; bg: string; border?: string; textColor?: string }
 const PORTALS: Portal[] = [
-  { name: 'AutoScout24', favicon: 'https://www.google.com/s2/favicons?domain=autoscout24.com&sz=64', bg: '#e85c00' },
+  { name: 'AutoScout24', favicon: 'https://www.google.com/s2/favicons?domain=autoscout24.com&sz=64', bg: '#0d1117', border: '#FFCD00' },
   { name: 'mobile.de',   favicon: 'https://www.google.com/s2/favicons?domain=mobile.de&sz=64',       bg: '#003a78' },
-  { name: 'coches.net',  favicon: 'https://www.google.com/s2/favicons?domain=coches.net&sz=64',      bg: '#b30000' },
-  { name: 'La Centrale', favicon: 'https://www.google.com/s2/favicons?domain=lacentrale.fr&sz=64',   bg: '#111827' },
-  { name: 'marktplaats', initial: 'M', bg: '#00285a', textColor: '#4db8a4' },
-  { name: '2dehands',    favicon: 'https://www.google.com/s2/favicons?domain=2dehands.be&sz=64',     bg: '#b30000' },
-  { name: 'tutti.ch',    favicon: 'https://www.google.com/s2/favicons?domain=tutti.ch&sz=64',        bg: '#111111' },
+  { name: 'coches.net',  favicon: 'https://www.google.com/s2/favicons?domain=coches.net&sz=64',      bg: '#cc0000' },
+  { name: 'La Centrale', favicon: 'https://www.google.com/s2/favicons?domain=lacentrale.fr&sz=64',   bg: '#c8102e' },
+  { name: 'marktplaats', initial: 'M', bg: '#002b5c', textColor: '#4db8a4' },
+  { name: '2dehands',    favicon: 'https://www.google.com/s2/favicons?domain=2dehands.be&sz=64',     bg: '#003a78' },
+  { name: 'tutti.ch',    favicon: 'https://www.google.com/s2/favicons?domain=tutti.ch&sz=64',        bg: '#1a1a1a' },
 ]
 
 /* Diamond layout: 1 + 2 + 3 + 1 */
@@ -652,11 +652,12 @@ export default function Landing() {
                       background: p.bg,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       marginLeft: i > 0 ? -5 : 0,
-                      boxShadow: '0 3px 10px rgba(0,0,0,0.5)',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.55)',
                       position: 'relative',
                       zIndex: PORTALS.length - i,
                       flexShrink: 0,
-                      outline: '1.5px solid rgba(255,255,255,0.08)',
+                      border: `1.5px solid ${p.border ?? 'rgba(255,255,255,0.10)'}`,
+                      transform: 'rotate(8deg)',
                     }}
                   >
                     {p.favicon
