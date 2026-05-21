@@ -626,19 +626,54 @@ export default function Landing() {
               Mostrar {count.toLocaleString('de-DE')} resultados
             </motion.button>
 
-            {/* Portal logos — below results button */}
+            {/* Portal logos — diamond staggered grid */}
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               transition={{ duration: 0.5, ease: EXPO, delay: 0.44 }}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 10 }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 10 }}
             >
-              {PORTALS.map((p, i) => (
-                <div key={p.name} title={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <img src={p.favicon} alt={p.name} style={{ width: 20, height: 20, objectFit: 'contain' }} />
+              {/* 2-row staggered grid */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
+                {/* Row 1 — 4 logos */}
+                <div style={{ display: 'flex', gap: 0 }}>
+                  {PORTALS.slice(0, 4).map((p, i) => (
+                    <div key={p.name} title={p.name} style={{
+                      width: 26, height: 26, borderRadius: 7,
+                      background: 'rgba(255,255,255,0.07)',
+                      border: '1px solid rgba(255,255,255,0.10)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      marginLeft: i > 0 ? -4 : 0,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+                      position: 'relative', zIndex: 4 - i,
+                      backdropFilter: 'blur(8px)',
+                    }}>
+                      <img src={p.favicon} alt={p.name}
+                        style={{ width: 15, height: 15, objectFit: 'contain', filter: p.name === 'marktplaats' ? 'brightness(0) invert(1)' : 'none' }} />
+                    </div>
+                  ))}
                 </div>
-              ))}
-              <span style={{ fontSize: 12, fontWeight: 400, color: 'rgba(255,255,255,0.38)', whiteSpace: 'nowrap' }}>
-                1.550.000+ vehículos indexados
+                {/* Row 2 — 3 logos, offset */}
+                <div style={{ display: 'flex', gap: 0, marginLeft: 15 }}>
+                  {PORTALS.slice(4).map((p, i) => (
+                    <div key={p.name} title={p.name} style={{
+                      width: 26, height: 26, borderRadius: 7,
+                      background: 'rgba(255,255,255,0.07)',
+                      border: '1px solid rgba(255,255,255,0.10)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      marginLeft: i > 0 ? -4 : 0,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+                      position: 'relative', zIndex: 3 - i,
+                      backdropFilter: 'blur(8px)',
+                    }}>
+                      <img src={p.favicon} alt={p.name}
+                        style={{ width: 15, height: 15, objectFit: 'contain' }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <span style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.42)', whiteSpace: 'nowrap', letterSpacing: '0.01em' }}>
+                28.000+ dealers indexados
               </span>
             </motion.div>
           </motion.div>
