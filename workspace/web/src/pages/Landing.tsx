@@ -10,7 +10,7 @@ const PORTALS = [
   { name: 'AutoScout24', favicon: 'https://www.google.com/s2/favicons?domain=autoscout24.com&sz=64',   bg: '#ff6600' },
   { name: 'mobile.de',   favicon: 'https://www.google.com/s2/favicons?domain=mobile.de&sz=64',         bg: '#003a78' },
   { name: 'coches.net',  favicon: 'https://www.google.com/s2/favicons?domain=coches.net&sz=64',        bg: '#e30613' },
-  { name: 'leboncoin',   favicon: 'https://www.google.com/s2/favicons?domain=leboncoin.fr&sz=64',      bg: '#f56b2a' },
+  { name: 'La Centrale', favicon: 'https://www.google.com/s2/favicons?domain=lacentrale.fr&sz=64',    bg: '#e30613' },
   { name: 'marktplaats', favicon: 'https://www.google.com/s2/favicons?domain=marktplaats.nl&sz=64',    bg: '#00407a' },
   { name: '2dehands',    favicon: 'https://www.google.com/s2/favicons?domain=2dehands.be&sz=64',       bg: '#e30613' },
   { name: 'tutti.ch',    favicon: 'https://www.google.com/s2/favicons?domain=tutti.ch&sz=64',          bg: '#1a1a1a' },
@@ -575,34 +575,6 @@ export default function Landing() {
 
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 clamp(16px,4vw,40px)', textAlign: 'center', paddingTop: 60 }}>
 
-          {/* Social proof — portal logos */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: EXPO, delay: 0.1 }}
-            style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              {PORTALS.map((p, i) => (
-                <div
-                  key={p.name}
-                  title={p.name}
-                  style={{
-                    width: 24, height: 24,
-                    marginLeft: i > 0 ? 6 : 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    position: 'relative', zIndex: PORTALS.length - i,
-                    flexShrink: 0,
-                  }}
-                >
-                  <img
-                    src={p.favicon}
-                    alt={p.name}
-                    style={{ width: 22, height: 22, objectFit: 'contain' }}
-                  />
-                </div>
-              ))}
-            </div>
-            <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.72)' }}>
-              1.550.000+ vehículos indexados en la UE
-            </span>
-          </motion.div>
 
           {/* Search bar */}
           <motion.form onSubmit={handleSearch} initial={{ opacity: 0, y: 14, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.5, ease: EXPO, delay: 0.2 }}
@@ -653,6 +625,22 @@ export default function Landing() {
             >
               Mostrar {count.toLocaleString('de-DE')} resultados
             </motion.button>
+
+            {/* Portal logos — below results button */}
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, ease: EXPO, delay: 0.44 }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 10 }}
+            >
+              {PORTALS.map((p, i) => (
+                <div key={p.name} title={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <img src={p.favicon} alt={p.name} style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                </div>
+              ))}
+              <span style={{ fontSize: 12, fontWeight: 400, color: 'rgba(255,255,255,0.38)', whiteSpace: 'nowrap' }}>
+                1.550.000+ vehículos indexados
+              </span>
+            </motion.div>
           </motion.div>
         </div>
       </div>
