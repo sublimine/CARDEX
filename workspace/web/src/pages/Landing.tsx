@@ -8,7 +8,7 @@ const EXPO = [0.16, 1, 0.3, 1] as const
 
 /* ─── hero image — car in outdoor/landscape setting ─────────────────────── */
 const HERO_IMG =
-  'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1800&q=95&auto=format&fit=crop'
+  'https://i.pinimg.com/originals/8f/67/ad/8f67ad9d7fef82b5943608def344573b.jpg'
 
 /* ─── stat strip data ───────────────────────────────────────────────────── */
 const STATS = [
