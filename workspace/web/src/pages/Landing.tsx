@@ -6,14 +6,23 @@ import { useAuthContext } from '../auth/AuthContext'
 const EXPO = [0.16, 1, 0.3, 1] as const
 const HERO_IMG = 'https://i.pinimg.com/originals/8f/67/ad/8f67ad9d7fef82b5943608def344573b.jpg'
 /* ─── Source portals — one per country + AS24 global ──────────────────── */
-const PORTALS = [
-  { name: 'AutoScout24', favicon: 'https://www.google.com/s2/favicons?domain=autoscout24.com&sz=64',   bg: '#ff6600' },
-  { name: 'mobile.de',   favicon: 'https://www.google.com/s2/favicons?domain=mobile.de&sz=64',         bg: '#003a78' },
-  { name: 'coches.net',  favicon: 'https://www.google.com/s2/favicons?domain=coches.net&sz=64',        bg: '#e30613' },
-  { name: 'La Centrale', favicon: 'https://www.google.com/s2/favicons?domain=lacentrale.fr&sz=64',    bg: '#e30613' },
-  { name: 'marktplaats', favicon: 'https://www.google.com/s2/favicons?domain=marktplaats.nl&sz=64',    bg: '#00407a' },
-  { name: '2dehands',    favicon: 'https://www.google.com/s2/favicons?domain=2dehands.be&sz=64',       bg: '#e30613' },
-  { name: 'tutti.ch',    favicon: 'https://www.google.com/s2/favicons?domain=tutti.ch&sz=64',          bg: '#1a1a1a' },
+interface Portal { name: string; favicon?: string; initial?: string; bg: string; textColor?: string }
+const PORTALS: Portal[] = [
+  { name: 'AutoScout24', favicon: 'https://www.google.com/s2/favicons?domain=autoscout24.com&sz=64', bg: '#e85c00' },
+  { name: 'mobile.de',   favicon: 'https://www.google.com/s2/favicons?domain=mobile.de&sz=64',       bg: '#003a78' },
+  { name: 'coches.net',  favicon: 'https://www.google.com/s2/favicons?domain=coches.net&sz=64',      bg: '#b30000' },
+  { name: 'La Centrale', favicon: 'https://www.google.com/s2/favicons?domain=lacentrale.fr&sz=64',   bg: '#111827' },
+  { name: 'marktplaats', initial: 'M', bg: '#00285a', textColor: '#4db8a4' },
+  { name: '2dehands',    favicon: 'https://www.google.com/s2/favicons?domain=2dehands.be&sz=64',     bg: '#b30000' },
+  { name: 'tutti.ch',    favicon: 'https://www.google.com/s2/favicons?domain=tutti.ch&sz=64',        bg: '#111111' },
+]
+
+/* Diamond layout: 1 + 2 + 3 + 1 */
+const DIAMOND_ROWS = [
+  PORTALS.slice(0, 1),
+  PORTALS.slice(1, 3),
+  PORTALS.slice(3, 6),
+  PORTALS.slice(6, 7),
 ]
 
 /* ─── Countries with flag images ──────────────────────────────────────── */
@@ -626,50 +635,40 @@ export default function Landing() {
               Mostrar {count.toLocaleString('de-DE')} resultados
             </motion.button>
 
-            {/* Portal logos — diamond staggered grid */}
+            {/* Portal logos — true diamond 1+2+3+1 */}
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               transition={{ duration: 0.5, ease: EXPO, delay: 0.44 }}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 10 }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 10 }}
             >
-              {/* 2-row staggered grid */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
-                {/* Row 1 — 4 logos */}
-                <div style={{ display: 'flex', gap: 0 }}>
-                  {PORTALS.slice(0, 4).map((p, i) => (
-                    <div key={p.name} title={p.name} style={{
-                      width: 26, height: 26, borderRadius: 7,
-                      background: 'rgba(255,255,255,0.07)',
-                      border: '1px solid rgba(255,255,255,0.10)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      marginLeft: i > 0 ? -4 : 0,
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
-                      position: 'relative', zIndex: 4 - i,
-                      backdropFilter: 'blur(8px)',
-                    }}>
-                      <img src={p.favicon} alt={p.name}
-                        style={{ width: 15, height: 15, objectFit: 'contain', filter: p.name === 'marktplaats' ? 'brightness(0) invert(1)' : 'none' }} />
-                    </div>
-                  ))}
-                </div>
-                {/* Row 2 — 3 logos, offset */}
-                <div style={{ display: 'flex', gap: 0, marginLeft: 15 }}>
-                  {PORTALS.slice(4).map((p, i) => (
-                    <div key={p.name} title={p.name} style={{
-                      width: 26, height: 26, borderRadius: 7,
-                      background: 'rgba(255,255,255,0.07)',
-                      border: '1px solid rgba(255,255,255,0.10)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      marginLeft: i > 0 ? -4 : 0,
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
-                      position: 'relative', zIndex: 3 - i,
-                      backdropFilter: 'blur(8px)',
-                    }}>
-                      <img src={p.favicon} alt={p.name}
-                        style={{ width: 15, height: 15, objectFit: 'contain' }} />
-                    </div>
-                  ))}
-                </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
+                {DIAMOND_ROWS.map((row, ri) => (
+                  <div key={ri} style={{ display: 'flex', marginTop: ri > 0 ? -5 : 0 }}>
+                    {row.map((p, i) => (
+                      <div
+                        key={p.name}
+                        title={p.name}
+                        style={{
+                          width: 26, height: 26,
+                          borderRadius: 7,
+                          background: p.bg,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          marginLeft: i > 0 ? -5 : 0,
+                          boxShadow: '0 3px 10px rgba(0,0,0,0.5)',
+                          position: 'relative',
+                          zIndex: 10 - i,
+                          flexShrink: 0,
+                          outline: '1.5px solid rgba(255,255,255,0.08)',
+                        }}
+                      >
+                        {p.favicon
+                          ? <img src={p.favicon} alt={p.name} style={{ width: 16, height: 16, objectFit: 'contain' }} />
+                          : <span style={{ fontSize: 11, fontWeight: 800, color: p.textColor ?? '#fff', letterSpacing: '-0.03em', lineHeight: 1, fontFamily: 'Inter, sans-serif' }}>{p.initial}</span>
+                        }
+                      </div>
+                    ))}
+                  </div>
+                ))}
               </div>
 
               <span style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.42)', whiteSpace: 'nowrap', letterSpacing: '0.01em' }}>
