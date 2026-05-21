@@ -641,32 +641,28 @@ export default function Landing() {
               transition={{ duration: 0.5, ease: EXPO, delay: 0.44 }}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 10 }}
             >
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
-                {DIAMOND_ROWS.map((row, ri) => (
-                  <div key={ri} style={{ display: 'flex', marginTop: ri > 0 ? -5 : 0 }}>
-                    {row.map((p, i) => (
-                      <div
-                        key={p.name}
-                        title={p.name}
-                        style={{
-                          width: 26, height: 26,
-                          borderRadius: 7,
-                          background: p.bg,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          marginLeft: i > 0 ? -5 : 0,
-                          boxShadow: '0 3px 10px rgba(0,0,0,0.5)',
-                          position: 'relative',
-                          zIndex: 10 - i,
-                          flexShrink: 0,
-                          outline: '1.5px solid rgba(255,255,255,0.08)',
-                        }}
-                      >
-                        {p.favicon
-                          ? <img src={p.favicon} alt={p.name} style={{ width: 16, height: 16, objectFit: 'contain' }} />
-                          : <span style={{ fontSize: 11, fontWeight: 800, color: p.textColor ?? '#fff', letterSpacing: '-0.03em', lineHeight: 1, fontFamily: 'Inter, sans-serif' }}>{p.initial}</span>
-                        }
-                      </div>
-                    ))}
+              <div style={{ display: 'flex' }}>
+                {PORTALS.map((p, i) => (
+                  <div
+                    key={p.name}
+                    title={p.name}
+                    style={{
+                      width: 26, height: 26,
+                      borderRadius: 7,
+                      background: p.bg,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      marginLeft: i > 0 ? -5 : 0,
+                      boxShadow: '0 3px 10px rgba(0,0,0,0.5)',
+                      position: 'relative',
+                      zIndex: PORTALS.length - i,
+                      flexShrink: 0,
+                      outline: '1.5px solid rgba(255,255,255,0.08)',
+                    }}
+                  >
+                    {p.favicon
+                      ? <img src={p.favicon} alt={p.name} style={{ width: 16, height: 16, objectFit: 'contain' }} />
+                      : <span style={{ fontSize: 11, fontWeight: 800, color: p.textColor ?? '#fff', letterSpacing: '-0.03em', lineHeight: 1, fontFamily: 'Inter, sans-serif' }}>{p.initial}</span>
+                    }
                   </div>
                 ))}
               </div>
