@@ -486,33 +486,6 @@ services:
     profiles: ["seed"]
 
   # ---------------------------------------------------------------------------
-  # Next.js Web App (marketplace + analytics + history + dealer SaaS)
-  # ---------------------------------------------------------------------------
-  web:
-    build:
-      context: apps/web
-      dockerfile: Dockerfile
-      target: runner
-    container_name: cardex-web
-    ports:
-      - "3001:3000"
-    depends_on:
-      - api
-      - meilisearch
-    environment:
-      NODE_ENV: production
-      PORT: "3000"
-      HOSTNAME: "0.0.0.0"
-      NEXT_TELEMETRY_DISABLED: "1"
-      # API_URL: internal Docker hostname for SSR fetches (server → api container)
-      API_URL: http://api:8080
-      # NEXT_PUBLIC_*: inlined at build time, used by the browser
-      NEXT_PUBLIC_API_URL: http://localhost:8080
-      NEXT_PUBLIC_MEILI_URL: http://localhost:7700
-      NEXT_PUBLIC_MEILI_SEARCH_KEY: cardex_meili_dev_only
-    restart: unless-stopped
-
-  # ---------------------------------------------------------------------------
   # Prometheus (metrics scraping)
   # ---------------------------------------------------------------------------
   prometheus:

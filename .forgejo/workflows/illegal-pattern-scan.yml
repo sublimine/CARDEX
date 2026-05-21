@@ -3,7 +3,7 @@ name: Illegal Pattern Scan
 # Enforces R1: scraping fleet uses approved evasion techniques only.
 # Strategy B (2026-05-16): curl_cffi TLS impersonation + Camoufox + residential proxies
 # are APPROVED. Outdated/dangerous patterns remain blocked.
-# See planning/00_AUDIT/ILLEGAL_CODE_PURGE_PLAN.md for historical policy.
+# Historical policy archived. planning/ directory removed.
 
 on:
   push:
@@ -34,8 +34,7 @@ FakeChromeUA|bypass[._]cloudflare|fake[._]useragent)" \
             --include="*.ts" --include="*.rs" \
             --exclude-dir=node_modules --exclude-dir=vendor \
             --exclude-dir=target --exclude-dir=.git \
-            --exclude-dir=planning \
-            . 2>/dev/null || true)
+                        . 2>/dev/null || true)
 
           if [ -n "$MATCHES" ]; then
             echo "❌ CS-0-1 FAILED: Blocked evasion patterns detected:"
@@ -58,7 +57,6 @@ FakeChromeUA|bypass[._]cloudflare|fake[._]useragent)" \
             -name "package.json" \
             -not -path "*/node_modules/*" \
             -not -path "*/vendor/*" \
-            -not -path "*/planning/*" \
             2>/dev/null)
 
           MATCHES=$(grep -lE \
@@ -84,8 +82,7 @@ puppeteer-extra-plugin-stealth|playwright-extra)" \
           # Go services must use CardexBot UA
           LITERAL_VIOLATIONS=$(grep -rnE '"User-Agent"\s*[=:{]\s*"(?!.*Cardex)[^"]+"' \
             --include="*.go" \
-            --exclude-dir=.git --exclude-dir=planning \
-            . 2>/dev/null || true)
+            --exclude-dir=.git             . 2>/dev/null || true)
 
           if [ -n "$LITERAL_VIOLATIONS" ]; then
             echo "❌ CS-0-3 FAILED: Non-CardexBot User-Agent in Go service:"
@@ -96,8 +93,7 @@ puppeteer-extra-plugin-stealth|playwright-extra)" \
           # Go UA constants must resolve to CardexBot
           UA_CONSTANTS=$(grep -rn "cardexUA\s*=\|CARDEX_UA\s*=\|_USER_AGENT\s*=" \
             --include="*.go" \
-            --exclude-dir=.git --exclude-dir=planning \
-            . 2>/dev/null || true)
+            --exclude-dir=.git             . 2>/dev/null || true)
 
           NON_CARDEX=$(echo "$UA_CONSTANTS" | grep -v "CardexBot" || true)
           if [ -n "$NON_CARDEX" ]; then
@@ -114,8 +110,7 @@ puppeteer-extra-plugin-stealth|playwright-extra)" \
         run: |
           CHECKER=$(grep -rn "RobotsChecker\|robots_checker\|can_fetch" \
             --include="*.go" --include="*.py" \
-            --exclude-dir=.git --exclude-dir=planning \
-            . 2>/dev/null | head -1)
+            --exclude-dir=.git             . 2>/dev/null | head -1)
 
           if [ -z "$CHECKER" ]; then
             echo "❌ CS-0-4 FAILED: RobotsChecker not found in active code"
