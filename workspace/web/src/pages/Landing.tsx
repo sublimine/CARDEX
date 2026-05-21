@@ -8,13 +8,13 @@ const HERO_IMG = 'https://i.pinimg.com/originals/8f/67/ad/8f67ad9d7fef82b5943608
 /* ─── Source portals — one per country + AS24 global ──────────────────── */
 interface Portal { name: string; favicon?: string; initial?: string; bg: string; border?: string; textColor?: string }
 const PORTALS: Portal[] = [
-  { name: 'AutoScout24', favicon: 'https://www.google.com/s2/favicons?domain=autoscout24.com&sz=64', bg: '#0d1117', border: '#FFCD00' },
-  { name: 'mobile.de',   favicon: 'https://www.google.com/s2/favicons?domain=mobile.de&sz=64',       bg: '#003a78' },
-  { name: 'coches.net',  favicon: 'https://www.google.com/s2/favicons?domain=coches.net&sz=64',      bg: '#cc0000' },
-  { name: 'La Centrale', favicon: 'https://www.google.com/s2/favicons?domain=lacentrale.fr&sz=64',   bg: '#c8102e' },
+  { name: 'AutoScout24', favicon: 'https://www.google.com/s2/favicons?domain=autoscout24.com&sz=128', bg: '#111', border: '#FFCD00' },
+  { name: 'mobile.de',   favicon: 'https://www.google.com/s2/favicons?domain=mobile.de&sz=128',       bg: '#ff6600' },
+  { name: 'coches.net',  favicon: 'https://www.google.com/s2/favicons?domain=coches.net&sz=128',      bg: '#e30613' },
+  { name: 'La Centrale', favicon: 'https://www.google.com/s2/favicons?domain=lacentrale.fr&sz=128',   bg: '#c8102e' },
   { name: 'marktplaats', initial: 'M', bg: '#002b5c', textColor: '#4db8a4' },
-  { name: '2dehands',    favicon: 'https://www.google.com/s2/favicons?domain=2dehands.be&sz=64',     bg: '#003a78' },
-  { name: 'tutti.ch',    favicon: 'https://www.google.com/s2/favicons?domain=tutti.ch&sz=64',        bg: '#1a1a1a' },
+  { name: '2dehands',    favicon: 'https://www.google.com/s2/favicons?domain=2dehands.be&sz=128',     bg: '#003a78' },
+  { name: 'tutti.ch',    favicon: 'https://www.google.com/s2/favicons?domain=tutti.ch&sz=128',        bg: '#1a1a1a' },
 ]
 
 /* Diamond layout: 1 + 2 + 3 + 1 */
@@ -658,10 +658,11 @@ export default function Landing() {
                       flexShrink: 0,
                       border: `1.5px solid ${p.border ?? 'rgba(255,255,255,0.10)'}`,
                       transform: 'rotate(8deg)',
+                      overflow: 'hidden',
                     }}
                   >
                     {p.favicon
-                      ? <img src={p.favicon} alt={p.name} style={{ width: 16, height: 16, objectFit: 'contain' }} />
+                      ? <img src={p.favicon} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                       : <span style={{ fontSize: 11, fontWeight: 800, color: p.textColor ?? '#fff', letterSpacing: '-0.03em', lineHeight: 1, fontFamily: 'Inter, sans-serif' }}>{p.initial}</span>
                     }
                   </div>
