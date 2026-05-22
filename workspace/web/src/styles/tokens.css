@@ -158,21 +158,62 @@
   --z-tooltip: 400;
 }
 
-/* ── Light mode (kept for legacy support, not the primary target) ────────── */
+/* ── Light mode ──────────────────────────────────────────────────────────── */
 .light {
-  --bg-base:       #f5f3ff;
-  --bg-primary:    #ede9fe;
+  --bg-base:       #f8f4ff;
+  --bg-primary:    #f0ebff;
   --bg-surface:    #ffffff;
-  --bg-elevated:   #faf5ff;
-  --bg-overlay:    #e9d5ff;
+  --bg-elevated:   #faf7ff;
+  --bg-overlay:    #ede9fe;
+  --bg-input:      rgba(0,0,0,0.04);
+  --bg-hover:      rgba(0,0,0,0.05);
+
   --t1:            #0f172a;
   --t2:            #1e293b;
   --t3:            #475569;
   --t4:            #64748b;
   --t5:            #94a3b8;
-  --border-default:rgba(0,0,0,0.10);
-  --border-subtle: rgba(0,0,0,0.06);
-  --border-active: rgba(0,0,0,0.18);
+
+  --text-primary:   var(--t1);
+  --text-secondary: var(--t3);
+  --text-muted:     var(--t4);
+  --text-disabled:  var(--t5);
+
+  /* Glass surfaces — white-translucent in light mode */
+  --glass-xs:     rgba(255,255,255,0.55);
+  --glass-sm:     rgba(255,255,255,0.68);
+  --glass-md:     rgba(255,255,255,0.76);
+  --glass-lg:     rgba(255,255,255,0.86);
+  --glass-xl:     rgba(255,255,255,0.94);
+
+  --glass-subtle: var(--glass-sm);
+  --glass-medium: var(--glass-md);
+  --glass-strong: var(--glass-lg);
+  --glass-heavy:  var(--glass-xl);
+
+  --glass-border:    rgba(0,0,0,0.09);
+  --glass-border-hi: rgba(0,0,0,0.14);
+  --glass-border-lo: rgba(0,0,0,0.05);
+
+  --glass-shadow:
+    0 4px 20px rgba(0,0,0,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.90);
+
+  --glass-shadow-lg:
+    0 12px 40px rgba(0,0,0,0.12),
+    inset 0 1px 0 rgba(255,255,255,0.95);
+
+  --border-default: rgba(0,0,0,0.10);
+  --border-subtle:  rgba(0,0,0,0.06);
+  --border-active:  rgba(0,0,0,0.18);
+  --border-focus:   rgba(124,58,237,0.45);
+
+  --shadow-card:
+    0 4px 20px rgba(0,0,0,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.90);
+  --shadow-card-hover:
+    0 12px 40px rgba(0,0,0,0.13),
+    inset 0 1px 0 rgba(255,255,255,0.95);
 }
 
 /* ── Global reset & base ─────────────────────────────────────────────────── */
@@ -452,4 +493,80 @@ body {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ── Light mode mesh ─────────────────────────────────────────────────────── */
+.light .cx-mesh {
+  background: linear-gradient(
+    135deg,
+    #f8f4ff 0%,
+    #ede9fe 22%,
+    #ddd6fe 50%,
+    #bfdbfe 78%,
+    #e0f2fe 100%
+  );
+}
+
+.light .cx-mesh::before {
+  background: radial-gradient(circle, rgba(167,139,250,0.32) 0%, rgba(167,139,250,0) 70%);
+}
+
+.light .cx-mesh::after {
+  background: radial-gradient(circle, rgba(147,197,253,0.28) 0%, rgba(147,197,253,0) 70%);
+}
+
+/* Reduce inline orb intensity in light mode */
+.light .cx-orb {
+  opacity: 0.42;
+}
+
+/* Light mode glass utility overrides */
+.light .glass {
+  background: rgba(255,255,255,0.70);
+  border: 1px solid rgba(0,0,0,0.09);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.90);
+}
+
+.light .glass-md {
+  background: rgba(255,255,255,0.78);
+  border: 1px solid rgba(0,0,0,0.09);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.90);
+}
+
+.light .glass-lg {
+  background: rgba(255,255,255,0.88);
+  border: 1px solid rgba(0,0,0,0.10);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.95);
+}
+
+.light .card {
+  background: rgba(255,255,255,0.74);
+  border: 1px solid rgba(0,0,0,0.09);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.90);
+}
+
+.light .card:hover {
+  box-shadow: 0 12px 40px rgba(0,0,0,0.13), inset 0 1px 0 rgba(255,255,255,0.95);
+  border-color: rgba(0,0,0,0.13);
+}
+
+/* Light mode scrollbar */
+.light ::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.10);
+}
+
+.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.18);
+}
+
+/* Light mode body background */
+.light body {
+  background: #f8f4ff;
+  color: var(--t1);
+}
+
+/* Light mode selection */
+.light ::selection {
+  background: rgba(124,58,237,0.20);
+  color: #3b0764;
 }
