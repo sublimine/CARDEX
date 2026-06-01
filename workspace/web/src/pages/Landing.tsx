@@ -82,51 +82,35 @@ function BrandLogo({ brand, size = 34 }: { brand: Brand; size?: number }) {
   const [failed, setFailed] = useState(false)
   const isSimpleIcon = Boolean(brand.logo?.includes('simpleicons.org'))
 
-  if (!brand.logo || failed) {
-    return (
-      <div style={{
-        width: size, height: size, borderRadius: 7,
-        background: `${brand.color}22`,
-        border: `1px solid ${brand.color}44`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: Math.round(size * 0.28), fontWeight: 800, color: '#fff',
-        letterSpacing: '-0.04em', fontFamily: 'Inter, sans-serif',
-      }}>
-        {brand.name.slice(0, 2).toUpperCase()}
-      </div>
-    )
-  }
+  const initials = (
+    <div style={{
+      width: size, height: size, borderRadius: 7,
+      background: 'rgba(255,255,255,0.07)',
+      border: '1px solid rgba(255,255,255,0.10)',
+      backdropFilter: 'blur(8px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: Math.round(size * 0.28), fontWeight: 700,
+      color: 'rgba(255,255,255,0.75)',
+      letterSpacing: '-0.03em', fontFamily: 'Inter, sans-serif',
+    }}>
+      {brand.name.slice(0, 2).toUpperCase()}
+    </div>
+  )
 
-  if (isSimpleIcon) {
-    return (
-      <div style={{
-        width: size, height: size, borderRadius: 7,
-        background: 'rgba(255,255,255,0.06)',
-        border: '1px solid rgba(255,255,255,0.07)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <img
-          src={brand.logo}
-          alt={brand.name}
-          onError={() => setFailed(true)}
-          style={{ width: size * 0.64, height: size * 0.64, objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
-        />
-      </div>
-    )
-  }
+  if (!brand.logo || !isSimpleIcon || failed) return initials
 
   return (
     <div style={{
       width: size, height: size, borderRadius: 7,
-      background: 'rgba(255,255,255,0.93)',
+      background: 'rgba(255,255,255,0.06)',
+      border: '1px solid rgba(255,255,255,0.08)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
     }}>
       <img
         src={brand.logo}
         alt={brand.name}
         onError={() => setFailed(true)}
-        style={{ width: size * 0.72, height: size * 0.72, objectFit: 'contain' }}
+        style={{ width: size * 0.64, height: size * 0.64, objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
       />
     </div>
   )
