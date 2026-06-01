@@ -99,13 +99,14 @@ function BrandLogo({ brand, size = 34 }: { brand: Brand; size?: number }) {
       width: size, height: size, borderRadius: 7,
       background: 'rgba(255,255,255,0.06)',
       border: '1px solid rgba(255,255,255,0.08)',
+      overflow: 'hidden',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       <img
         src={brand.logo}
         alt={brand.name}
         onError={() => setFailed(true)}
-        style={{ width: size * 0.64, height: size * 0.64, objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
+        style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
       />
     </div>
   )

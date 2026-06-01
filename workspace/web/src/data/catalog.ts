@@ -1070,7 +1070,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Lotus',
     color: '#005c2b',
-    logo: 'https://www.carlogos.org/car-logos/lotus-logo.png',
+    logo: '/logos/lotus.svg',
     models: [
       { name: 'Elise', submodels: ['Elise 1.6 136cv', 'Elise 1.8 134cv', 'Elise S 1.8 220cv', 'Elise SC 1.8 220cv', 'Elise 111 1.6 136cv', 'Elise 111S 1.8 190cv', 'Elise 111R 1.8 192cv', 'Elise R 1.8 192cv', 'Elise CR 1.6 136cv', 'Elise Cup 250 1.8 243cv', 'Elise Cup 260 1.8 260cv', 'Elise Sport 220 1.8 220cv', 'Elise Sport 240 Final Edition 1.8 240cv', 'Elise Race 250 1.8 245cv', 'Elise Sprint 220 1.8 220cv', 'Elise Sprint 240 1.8 240cv', 'Elise S1 1.8 122cv', 'Elise Type 49 1.8 220cv', 'Elise Type 72 1.8 220cv', 'Elise 20th Anniversary 1.8 220cv'] },
       { name: 'Emira', submodels: ['Emira V6 400cv', 'Emira V6 First Edition 400cv', 'Emira I4 Turbo 360cv', 'Emira AMR GT Edition 400cv', 'Emira V6 GT4 Edition 400cv', 'Emira I4 Turbo Plus 360cv', 'Emira V6 Plus 400cv'] },
@@ -1407,7 +1407,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'MG',
     color: '#b22222',
-    logo: 'https://www.carlogos.org/car-logos/mg-logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Mg_logo.svg/120px-Mg_logo.svg.png',
     models: [
       { name: '3', submodels: ['1.5 VTi 106cv', '1.5 VTi 90cv', '1.5T 179cv', 'Hybrid+ 1.5T 194cv'] },
       { name: '4', submodels: ['Standard Range 51kWh 170cv', 'Long Range 64kWh 204cv', '64kWh Trophy 204cv', 'Trophy Long Range 64kWh 204cv'] },
