@@ -653,7 +653,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Maserati',
     color: '#1e3a8a',
-    logo: 'https://www.carlogos.org/car-logos/maserati-logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Maserati_logo_2.svg/120px-Maserati_logo_2.svg.png',
     models: [
       { name: 'Ghibli', submodels: ['2.0 GranSport 330cv', '2.9 V6 BiT 350cv', '3.0 V6 275cv', '3.0 V6 330cv', 'GranSport 350cv', 'GranLusso 350cv', 'Trofeo 3.8 V8 580cv', 'Hybrid 330cv', '3.0 V6 Q4 275cv', '3.0 V6 Q4 350cv', 'S Q4 3.0 V6 430cv', 'Nerissimo 3.0 V6 350cv', 'ONE OF ONE 3.0 V6 350cv'] },
       { name: 'Ghibli Hybrid', submodels: ['Ghibli Hybrid 2.0 T 330cv', 'Ghibli Hybrid GranLusso 2.0 T 330cv', 'Ghibli Hybrid GranSport 2.0 T 330cv'] },
@@ -938,7 +938,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Genesis',
     color: '#1a1a1a',
-    logo: 'https://www.carlogos.org/car-logos/genesis-logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Genesis_logo.svg/120px-Genesis_logo.svg.png',
     models: [
       { name: 'G70', submodels: ['2.0 T-GDI 252cv', '2.0 T-GDI AWD 252cv', '3.3 T-GDI AWD 370cv', '2.2 CRDi 202cv', '2.2 CRDi AWD 202cv', '2.5 T-GDI 304cv', '2.5 T-GDI AWD 304cv'] },
       { name: 'G70 Shooting Brake', submodels: ['2.0 T-GDI 252cv', '2.0 T-GDI AWD 252cv', '2.2 CRDi 202cv', '2.5 T-GDI 304cv', '2.5 T-GDI AWD 304cv'] },
@@ -954,7 +954,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Land Rover',
     color: '#005a2b',
-    logo: 'https://www.carlogos.org/car-logos/land-rover-logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Land_Rover_2023.svg/120px-Land_Rover_2023.svg.png',
     models: [
       { name: 'Defender', submodels: ['2.0 TD4 110cv', '2.4 TD 122cv', '2.5 TD5 122cv', '2.5 V8 134cv', '3.5 V8 134cv', '2.2 TD4 122cv', '2.2 TDCi 122cv'] },
       { name: 'Defender 90', submodels: ['D200 2.0 200cv', 'D250 3.0 250cv', 'D300 3.0 300cv', 'P300 2.0 300cv', 'P400 3.0 400cv', 'P400e PHEV 404cv', 'V8 5.0 525cv', 'V8 Carpathian Edition 525cv', 'Works 90 Edition 400cv', 'X-Dynamic D250 250cv', 'X-Dynamic P300 300cv', 'S D200 200cv', 'SE D250 250cv', 'HSE D300 300cv', 'First Edition P400 400cv'] },
@@ -1298,7 +1298,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Dodge',
     color: '#1a1a6e',
-    logo: 'https://www.carlogos.org/car-logos/dodge-logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Dodge_logo.svg/120px-Dodge_logo.svg.png',
     models: [
       { name: 'Challenger', submodels: ['3.6 V6 305cv', '5.7 HEMI V8 375cv', '6.2 V8 SRT Hellcat 717cv', '6.2 V8 SRT Demon 840cv', '6.4 V8 392 HEMI 492cv', 'SRT Hellcat Redeye 797cv', 'SRT Hellcat Jailbreak 807cv'] },
       { name: 'Charger', submodels: ['2.7 V6 178cv', '3.5 V6 253cv', '3.6 V6 292cv', '5.7 HEMI V8 370cv', '6.1 V8 SRT8 431cv', '6.4 V8 SRT8 470cv', '6.2 V8 SRT Hellcat 707cv', '6.2 V8 SRT Hellcat Redeye 797cv'] },
@@ -1309,7 +1309,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Chrysler',
     color: '#003366',
-    logo: 'https://www.carlogos.org/car-logos/chrysler-logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Chrysler_1998_wordmark.svg/120px-Chrysler_1998_wordmark.svg.png',
     models: [
       { name: '300C', submodels: ['2.7 V6 193cv', '3.0 CRD 218cv', '3.5 V6 252cv', '5.7 HEMI V8 340cv', '6.4 SRT8 470cv', '3.6 V6 286cv', '3.0 V6 Multijet 190cv', '5.7 HEMI V8 363cv'] },
       { name: 'Grand Voyager', submodels: ['2.4 SE 143cv', '2.5 CRD 141cv', '2.8 CRD 150cv', '2.8 CRD 163cv', '3.3 V6 175cv', '3.8 V6 218cv', '3.6 V6 286cv'] },
@@ -1319,7 +1319,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Cadillac',
     color: '#1a1a2e',
-    logo: 'https://www.carlogos.org/car-logos/cadillac-logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Cadillac_Logo_2021.svg/120px-Cadillac_Logo_2021.svg.png',
     models: [
       { name: 'ATS', submodels: ['ATS 2.0T 272cv', 'ATS 3.6 V6 321cv', 'ATS-V 3.6TT 468cv'] },
       { name: 'CTS', submodels: ['CTS 2.0T 276cv', 'CTS 3.6 V6 335cv', 'CTS-V 6.2 V8 640cv'] },
@@ -1375,7 +1375,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'BYD',
     color: '#e60012',
-    logo: 'https://www.carlogos.org/car-logos/byd-logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/BYD_Auto_2022_logo.svg/120px-BYD_Auto_2022_logo.svg.png',
     models: [
       { name: 'Atto 3', submodels: ['Standard Range 204cv', 'Long Range 204cv', 'Extended Range 204cv'] },
       { name: 'Atto 2', submodels: ['Standard Range 95kW 129cv', 'Long Range 150kW 204cv'] },
@@ -1391,7 +1391,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'NIO',
     color: '#00c0ff',
-    logo: 'https://www.carlogos.org/car-logos/nio-logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/NIO_logo.svg/120px-NIO_logo.svg.png',
     models: [
       { name: 'EC6', submodels: ['75kWh Standard Range AWD 483cv', '100kWh Long Range AWD 483cv', '150kWh Ultra Long Range AWD 483cv', 'Performance AWD 544cv'] },
       { name: 'EL6', submodels: ['75kWh Standard Range AWD 483cv', '100kWh Long Range AWD 483cv', '150kWh Ultra Long Range AWD 483cv'] },
@@ -1440,7 +1440,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Lynk & Co',
     color: '#009944',
-    logo: 'https://www.carlogos.org/car-logos/lynkco-logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Lynk_%26_Co_2016_logo.svg/120px-Lynk_%26_Co_2016_logo.svg.png',
     models: [
       { name: '01', submodels: ['1.5 TGDI 180cv', '2.0 TGDI 218cv', 'PHEV 1.5T 261cv'] },
       { name: '01 PHEV', submodels: ['PHEV 1.5T 261cv', 'PHEV 1.5T AWD 261cv'] },
@@ -1609,7 +1609,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Infiniti',
     color: '#2a2a2a',
-    logo: 'https://www.carlogos.org/car-logos/infiniti-logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Infiniti_logo.svg/120px-Infiniti_logo.svg.png',
     models: [
       { name: 'Q30', submodels: ['1.6 Turbo 122cv', '2.0 Turbo 211cv', '2.2d 170cv', '2.2d AWD 170cv', 'Sport 2.0 Turbo 211cv', '1.6T 150cv', '2.0t 208cv', 'AWD 2.0t 208cv', 'Sport 2.2d 170cv'] },
       { name: 'Q50', submodels: ['2.0t 208cv', '3.0t 300cv', '3.0t 400cv Red Sport', 'S 3.0t 300cv', 'S Hybrid 364cv', '2.2d 170cv', '2.5 Hybrid 268cv', 'S Hybrid AWD 364cv', '3.7 V6 328cv', '2.0t 211cv', 'Red Sport 400 3.0t AWD 400cv'] },
@@ -1652,7 +1652,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'RAM',
     color: '#c8102e',
-    logo: 'https://www.carlogos.org/car-logos/ram-logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Ram_Trucks_2009_wordmark.svg/120px-Ram_Trucks_2009_wordmark.svg.png',
     models: [
       { name: '1500', submodels: ['3.6 V6 Pentastar 305cv', '5.7 V8 HEMI 395cv', '5.7 V8 HEMI eTorque 395cv', 'Rebel 5.7 V8 HEMI 395cv', 'TRX 6.2 V8 Supercharged 702cv', 'Laramie 5.7 V8 395cv', 'Limited 5.7 V8 395cv', 'Classic 3.6 V6 305cv'] },
       { name: '2500', submodels: ['6.4 V8 HEMI 410cv', '6.7 Cummins Turbo Diesel 370cv', '6.7 Cummins 4x4 370cv', 'Power Wagon 6.4 V8 4x4 410cv', 'Laramie 6.7 Cummins 370cv', 'Limited 6.7 Cummins 370cv'] },
@@ -1664,7 +1664,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Lincoln',
     color: '#1a1a1a',
-    logo: 'https://www.carlogos.org/car-logos/lincoln-logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Lincoln_logo.svg/120px-Lincoln_logo.svg.png',
     models: [
       { name: 'Corsair', submodels: ['2.0 EcoBoost FWD 250cv', '2.0 EcoBoost AWD 250cv', '2.3 EcoBoost AWD 295cv', 'Grand Touring PHEV AWD 266cv', 'Reserve 2.0 AWD 250cv', 'Black Label 2.3 AWD 295cv'] },
       { name: 'Nautilus', submodels: ['2.0 EcoBoost FWD 250cv', '2.7 EcoBoost AWD 335cv', 'Reserve 2.7 AWD 335cv', 'Black Label 2.7 AWD 335cv', 'Select 2.0T 250cv'] },
@@ -1679,7 +1679,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Buick',
     color: '#8b0000',
-    logo: 'https://www.carlogos.org/car-logos/buick-logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Buick-logo.svg/120px-Buick-logo.svg.png',
     models: [
       { name: 'Encore', submodels: ['1.4 Turbo FWD 138cv', '1.4 Turbo AWD 138cv', 'Sport Touring 1.4T 138cv', 'Essence 1.4T AWD 138cv', 'Premium 1.4T AWD 138cv'] },
       { name: 'Encore GX', submodels: ['1.2 Turbo FWD 137cv', '1.3 Turbo FWD 155cv', '1.3 Turbo AWD 155cv', 'Preferred 1.3T FWD 155cv', 'Essence 1.3T AWD 155cv', 'Avenir 1.3T AWD 155cv'] },
@@ -1693,7 +1693,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'GMC',
     color: '#cc0000',
-    logo: 'https://www.carlogos.org/car-logos/gmc-logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/GMC_logo_with_motto_%282016%29.svg/120px-GMC_logo_with_motto_%282016%29.svg.png',
     models: [
       { name: 'Sierra 1500', submodels: ['2.7T 310cv', '3.0 Duramax Diesel 277cv', '5.3 V8 EcoTec3 355cv', '6.2 V8 EcoTec3 420cv', 'Denali 6.2 V8 420cv', 'Denali Ultimate 3.0 Duramax 277cv', 'AT4 3.0 Duramax 277cv', 'AT4X 6.2 V8 420cv'] },
       { name: 'Sierra 2500HD', submodels: ['6.0 V8 360cv', '6.6 Duramax Diesel 445cv', 'Denali 6.6 Duramax 445cv', 'AT4 6.6 Duramax 445cv', 'Pro 6.0 V8 360cv'] },
@@ -1708,7 +1708,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Acura',
     color: '#2c2c2c',
-    logo: 'https://www.carlogos.org/car-logos/acura-logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/Acura_logo.svg/120px-Acura_logo.svg.png',
     models: [
       { name: 'ILX', submodels: ['2.4 i-VTEC MT 201cv', '2.4 i-VTEC DCT 201cv', 'A-Spec 2.4 201cv', 'Technology 2.4 201cv', 'Premium 2.4 201cv'] },
       { name: 'TLX', submodels: ['2.0 VTEC Turbo FWD 272cv', '2.0T SH-AWD 272cv', 'Type S 3.0T SH-AWD 355cv', 'A-Spec SH-AWD 272cv', 'PMC Edition 3.0T SH-AWD 355cv', 'Advance SH-AWD 272cv'] },
@@ -1723,7 +1723,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Rivian',
     color: '#3d9970',
-    logo: 'https://www.carlogos.org/car-logos/rivian-logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Rivian_logo.svg/120px-Rivian_logo.svg.png',
     models: [
       { name: 'R1T', submodels: ['Quad-Motor AWD 835cv', 'Dual-Motor AWD 665cv', 'Dual-Motor Standard AWD 530cv', 'Adventure Quad-Motor AWD 835cv', 'Adventure Dual-Motor AWD 665cv', 'Launch Edition QM 835cv'] },
       { name: 'R1S', submodels: ['Quad-Motor AWD 835cv', 'Dual-Motor AWD 665cv', 'Dual-Motor Standard AWD 530cv', 'Adventure Quad-Motor AWD 835cv', 'Adventure Dual-Motor AWD 665cv', 'Launch Edition QM 835cv'] },
@@ -1801,7 +1801,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Li Auto',
     color: '#0066cc',
-    logo: 'https://www.carlogos.org/car-logos/lixiang-logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Li_Auto_logo.svg/120px-Li_Auto_logo.svg.png',
     models: [
       { name: 'L6', submodels: ['EREV AWD Air 449cv', 'EREV AWD Pro 449cv', 'EREV AWD Max 449cv'] },
       { name: 'L7', submodels: ['EREV AWD Air 449cv', 'EREV AWD Pro 449cv', 'EREV AWD Max 449cv', 'EREV AWD Ultra 449cv'] },
@@ -1845,7 +1845,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Geely',
     color: '#002366',
-    logo: 'https://www.carlogos.org/car-logos/geely-logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Geely_Logo_2022.svg/120px-Geely_Logo_2022.svg.png',
     models: [
       { name: 'Emgrand', submodels: ['1.4T 140cv MT', '1.4T 140cv CVT', '1.5L 115cv MT', '1.5T 177cv DCT', 'L 1.4T 140cv'] },
       { name: 'Coolray', submodels: ['1.5T FWD 150cv', '1.5T AWD 177cv', 'Sport 1.5T 150cv', 'Sport AWD 1.5T 177cv'] },
@@ -1873,7 +1873,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Chery',
     color: '#003366',
-    logo: 'https://www.carlogos.org/car-logos/chery-logo.png',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Chery_symbol.svg/120px-Chery_symbol.svg.png',
     models: [
       { name: 'Tiggo 2', submodels: ['1.5 VVT 113cv MT', '1.4T 145cv DCT', 'Pro 1.5 VVT 113cv', 'Pro 1.4T 145cv'] },
       { name: 'Tiggo 4', submodels: ['1.5T 147cv MT', '1.5T 147cv AT', '1.5T AWD 147cv', 'Pro Max 1.5T 147cv'] },
