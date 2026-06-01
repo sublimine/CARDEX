@@ -1,0 +1,21 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>Page not found</title>
+
+	<link rel="stylesheet" href="https://55b558c7-resources.sitebuilder.name.tools/7c3dca84c5/compiled/responsive-site-less-site-offline.imports.css">
+
+</head>
+<body class="not-found">
+
+	<h1>Page not found</h1>
+
+	<p class="home-link"><a href="/">Return to home page</a></p>
+
+</body>
+</html>
