@@ -80,24 +80,22 @@ function CarIcon({ size = 16, color = 'rgba(255,255,255,0.5)' }: { size?: number
 /* ─── Brand logo ────────────────────────────────────────────────────────── */
 function BrandLogo({ brand, size = 34 }: { brand: Brand; size?: number }) {
   const [failed, setFailed] = useState(false)
-  const isSimpleIcon = Boolean(brand.logo?.includes('simpleicons.org'))
 
-  const initials = (
-    <div style={{
-      width: size, height: size, borderRadius: 7,
-      background: 'rgba(255,255,255,0.07)',
-      border: '1px solid rgba(255,255,255,0.10)',
-      backdropFilter: 'blur(8px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: Math.round(size * 0.28), fontWeight: 700,
-      color: 'rgba(255,255,255,0.75)',
-      letterSpacing: '-0.03em', fontFamily: 'Inter, sans-serif',
-    }}>
-      {brand.name.slice(0, 2).toUpperCase()}
-    </div>
-  )
-
-  if (!brand.logo || !isSimpleIcon || failed) return initials
+  if (!brand.logo || failed) {
+    return (
+      <div style={{
+        width: size, height: size, borderRadius: 7,
+        background: 'rgba(255,255,255,0.07)',
+        border: '1px solid rgba(255,255,255,0.10)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: Math.round(size * 0.28), fontWeight: 700,
+        color: 'rgba(255,255,255,0.70)',
+        letterSpacing: '-0.03em', fontFamily: 'Inter, sans-serif',
+      }}>
+        {brand.name.slice(0, 2).toUpperCase()}
+      </div>
+    )
+  }
 
   return (
     <div style={{
