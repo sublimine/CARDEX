@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthContext } from '../auth/AuthContext'
 import { BRANDS, type Brand, type Model } from '../data/catalog'
+import LOGO_AR from '../data/logo-ar.json'
 
 const EXPO = [0.16, 1, 0.3, 1] as const
 const HERO_IMG = 'https://i.pinimg.com/originals/8f/67/ad/8f67ad9d7fef82b5943608def344573b.jpg'
+
 /* ─── Source portals — one per country + AS24 global ──────────────────── */
 interface Portal { name: string; favicon?: string; initial?: string; bg: string; border?: string; textColor?: string }
 const PORTALS: Portal[] = [
@@ -16,14 +18,6 @@ const PORTALS: Portal[] = [
   { name: 'marktplaats', initial: 'M', bg: '#002b5c', textColor: '#4db8a4' },
   { name: '2dehands',    favicon: 'https://www.google.com/s2/favicons?domain=2dehands.be&sz=128',     bg: '#003a78' },
   { name: 'tutti.ch',    favicon: 'https://www.google.com/s2/favicons?domain=tutti.ch&sz=128',        bg: '#1a1a1a' },
-]
-
-/* Diamond layout: 1 + 2 + 3 + 1 */
-const DIAMOND_ROWS = [
-  PORTALS.slice(0, 1),
-  PORTALS.slice(1, 3),
-  PORTALS.slice(3, 6),
-  PORTALS.slice(6, 7),
 ]
 
 /* ─── Countries with flag images ──────────────────────────────────────── */
@@ -37,95 +31,158 @@ const PAISES = [
   { code: 'ch', label: 'Suiza',           flag: 'https://flagcdn.com/w40/ch.png' },
 ]
 
-/* ─── Year filter ──────────────────────────────────────────────────────── */
-const ANOS = [
-  { label: 'Cualquier año', value: '' },
-  { label: '2024 o más nuevo', value: '2024' },
-  { label: '2022 o más nuevo', value: '2022' },
-  { label: '2020 o más nuevo', value: '2020' },
-  { label: '2018 o más nuevo', value: '2018' },
-  { label: '2015 o más nuevo', value: '2015' },
-  { label: '2012 o más nuevo', value: '2012' },
-  { label: '2010 o más nuevo', value: '2010' },
-  { label: '2005 o más nuevo', value: '2005' },
-  { label: 'Anterior a 2005',  value: '0' },
-]
+/* ─── Year + mileage domains ──────────────────────────────────────────── */
+const CUR_YEAR = new Date().getFullYear()
+const YEARS: number[] = Array.from({ length: CUR_YEAR - 1989 }, (_, i) => CUR_YEAR - i) // desc
+const KM_MAX = 200_000          // top bucket is open-ended "200.000+"
+const KM_STEP = 5_000
+/* synthetic inventory density across 0..KM_MAX — drives the histogram cue (count is heuristic) */
+const KM_DENSITY = [4, 8, 14, 22, 33, 46, 60, 73, 84, 93, 99, 100, 97, 90, 81, 71, 61, 52, 44, 36, 29, 23, 18, 13, 9, 6, 4, 3]
 
-/* ─── Price filter ─────────────────────────────────────────────────────── */
-const PRECIOS = [
-  { label: 'Sin límite de precio', value: '' },
-  { label: 'Hasta 5.000 €',        value: '5000' },
-  { label: 'Hasta 10.000 €',       value: '10000' },
-  { label: 'Hasta 15.000 €',       value: '15000' },
-  { label: 'Hasta 20.000 €',       value: '20000' },
-  { label: 'Hasta 25.000 €',       value: '25000' },
-  { label: 'Hasta 30.000 €',       value: '30000' },
-  { label: 'Hasta 40.000 €',       value: '40000' },
-  { label: 'Hasta 50.000 €',       value: '50000' },
-  { label: 'Hasta 70.000 €',       value: '70000' },
-  { label: 'Hasta 100.000 €',      value: '100000' },
-]
+const fmt = (n: number) => n.toLocaleString('de-DE')
 
-/* ─── Small car icon (no emoji) ─────────────────────────────────────────── */
-function CarIcon({ size = 16, color = 'rgba(255,255,255,0.5)' }: { size?: number; color?: string }) {
+/* ─── Shared field styles (minimalist) ────────────────────────────────── */
+function triggerStyle(open: boolean): React.CSSProperties {
+  return {
+    width: '100%', height: 46, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '0 14px', borderRadius: 10, gap: 8, cursor: 'pointer', fontFamily: 'inherit',
+    background: open ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.05)',
+    border: `1px solid ${open ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.09)'}`,
+    transition: 'all 0.18s',
+  }
+}
+const LABEL: React.CSSProperties = { fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.32)', letterSpacing: '0.08em', textTransform: 'uppercase', lineHeight: 1.1 }
+function valueStyle(active: boolean): React.CSSProperties {
+  return { fontSize: 13, fontWeight: active ? 600 : 400, color: active ? '#f8fafc' : 'rgba(255,255,255,0.42)', lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }
+}
+function Chevron({ open }: { open: boolean }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 17H3a2 2 0 01-2-2v-4l2-5h14l2 5v4a2 2 0 01-2 2h-2"/>
-      <circle cx="7.5" cy="17.5" r="2.5"/>
-      <circle cx="16.5" cy="17.5" r="2.5"/>
+    <svg width={11} height={11} viewBox="0 0 11 11" style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: 'rgba(255,255,255,0.32)' }}>
+      <path d="M1.5 3.5l4 4 4-4" stroke="currentColor" strokeWidth={1.5} fill="none" strokeLinecap="round" />
     </svg>
   )
 }
 
-/* ─── Brand logo ────────────────────────────────────────────────────────── */
+/* ─── Small car icon (logo fallback) ──────────────────────────────────── */
+function CarIcon({ size = 16, color = 'rgba(255,255,255,0.5)' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 17H3a2 2 0 01-2-2v-4l2-5h14l2 5v4a2 2 0 01-2 2h-2" />
+      <circle cx="7.5" cy="17.5" r="2.5" />
+      <circle cx="16.5" cy="17.5" r="2.5" />
+    </svg>
+  )
+}
+
+/* ─── Brand logo — normalized to equal OPTICAL size across all marks ───── */
+const AR_MAP = LOGO_AR as Record<string, number>
+const LOGO_DENSE = new Set(['pagani.svg', 'wiesmann.svg', 'abarth.svg', 'lexus.svg', 'lancia.svg', 'alpine.svg', 'koenigsegg.svg'])
+const LOGO_THIN = new Set(['lucid.svg', 'rivian.svg', 'jaguar.svg', 'hummer.svg'])
+
+function logoImgStyle(logo: string, box: number): React.CSSProperties {
+  const base: React.CSSProperties = { width: 'auto', height: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)' }
+  if (logo.includes('simpleicons')) {
+    return { ...base, maxWidth: box * 0.64, maxHeight: box * 0.64 }
+  }
+  const file = logo.split('/').pop() || ''
+  const ar = AR_MAP[file] ?? 1
+  let maxW: number, maxH: number, scale = 1
+  if (ar > 2.5) { maxW = box * 0.94; maxH = box * (ar > 7 ? 0.34 : 0.42) }      // wide wordmark
+  else if (ar > 1.4) { maxW = box * 0.88; maxH = box * 0.56 }                   // landscape
+  else if (ar < 0.7) { maxW = box * 0.5; maxH = box * 0.78 }                    // tall
+  else { maxW = box * 0.68; maxH = box * 0.68 }                                 // square emblem
+  if (LOGO_DENSE.has(file)) scale = 0.9
+  if (LOGO_THIN.has(file)) scale = 1.1
+  return { ...base, maxWidth: maxW, maxHeight: maxH, transform: scale !== 1 ? `scale(${scale})` : undefined }
+}
+
 function BrandLogo({ brand, size = 34 }: { brand: Brand; size?: number }) {
   const [failed, setFailed] = useState(false)
-
   if (!brand.logo || failed) {
     return (
-      <div style={{
-        width: size, height: size, borderRadius: 7,
-        background: 'rgba(255,255,255,0.05)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <CarIcon size={Math.round(size * 0.48)} color="rgba(255,255,255,0.38)" />
+      <div style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <CarIcon size={Math.round(size * 0.46)} color="rgba(255,255,255,0.34)" />
       </div>
     )
   }
-
   return (
-    <div style={{
-      width: size, height: size, borderRadius: 7,
-      background: 'rgba(255,255,255,0.06)',
-      border: '1px solid rgba(255,255,255,0.08)',
-      overflow: 'hidden',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }}>
-      <img
-        src={brand.logo}
-        alt={brand.name}
-        onError={() => setFailed(true)}
-        style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
-      />
+    <div style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+      <img src={brand.logo} alt={brand.name} onError={() => setFailed(true)} style={logoImgStyle(brand.logo, size)} />
     </div>
   )
 }
 
-/* ─── Glassmorphism panel overlay ───────────────────────────────────────── */
+/* ─── Minimalist glass overlay ─────────────────────────────────────────── */
 const PANEL_GLASS: React.CSSProperties = {
   position: 'fixed',
   zIndex: 500,
-  background: 'rgba(12,9,30,0.62)',
-  backdropFilter: 'blur(56px) saturate(220%) brightness(1.1)',
-  WebkitBackdropFilter: 'blur(56px) saturate(220%) brightness(1.1)',
-  border: '1px solid rgba(255,255,255,0.13)',
-  borderRadius: 18,
-  boxShadow: '0 32px 96px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.10)',
+  background: 'rgba(9,8,20,0.74)',
+  backdropFilter: 'blur(40px) saturate(150%)',
+  WebkitBackdropFilter: 'blur(40px) saturate(150%)',
+  border: '1px solid rgba(255,255,255,0.07)',
+  borderRadius: 14,
+  boxShadow: '0 24px 70px rgba(0,0,0,0.5)',
   overflow: 'hidden',
 }
+const SEL_BG = 'rgba(255,255,255,0.09)'
+const SEL_BORDER = 'rgba(255,255,255,0.14)'
+const HOVER_BG = 'rgba(255,255,255,0.05)'
 
-/* ─── Marca y Modelo field + panel ─────────────────────────────────────── */
+/* ─── Centered modal shell ─────────────────────────────────────────────── */
+function CenterModal({ id, width, children }: { id: string; width: number; children: React.ReactNode }) {
+  return (
+    <div id={id} style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 500, width: `min(${width}px, 92vw)` }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97, y: 8 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.97, y: 6 }}
+        transition={{ duration: 0.2, ease: EXPO }}
+        style={{ ...PANEL_GLASS, position: 'relative', width: '100%' }}
+      >
+        {children}
+      </motion.div>
+    </div>
+  )
+}
+function ModalHeader({ title, onClose, onBack }: { title: React.ReactNode; onClose: () => void; onBack?: () => void }) {
+  return (
+    <div style={{ padding: '13px 14px 11px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 10 }}>
+      {onBack && (
+        <button onClick={onBack} style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.05)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+          <svg width={11} height={11} viewBox="0 0 12 12"><path d="M8 2L4 6l4 4" stroke="rgba(255,255,255,0.6)" strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
+      )}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.85)', letterSpacing: '-0.01em' }}>{title}</div>
+      <button onClick={onClose} style={{ width: 24, height: 24, borderRadius: 6, background: 'rgba(255,255,255,0.05)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+        <svg width={10} height={10} viewBox="0 0 10 10"><path d="M1 1l8 8M9 1L1 9" stroke="rgba(255,255,255,0.5)" strokeWidth={1.5} strokeLinecap="round" /></svg>
+      </button>
+    </div>
+  )
+}
+function SearchBox({ value, onChange, placeholder, inputRef }: { value: string; onChange: (v: string) => void; placeholder: string; inputRef?: React.RefObject<HTMLInputElement> }) {
+  return (
+    <div style={{ padding: '10px 14px 6px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 9, padding: '7px 12px' }}>
+        <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={2} strokeLinecap="round"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+        <input ref={inputRef} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+          style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 13, color: '#fff', fontFamily: 'inherit' }} />
+        {value && <button onClick={() => onChange('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)', fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>}
+      </div>
+    </div>
+  )
+}
+function useOutside(open: boolean, panelId: string, triggerRef: React.RefObject<HTMLElement>, close: () => void) {
+  useEffect(() => {
+    const fn = (e: MouseEvent) => {
+      const panel = document.getElementById(panelId)
+      if (!panel?.contains(e.target as Node) && !triggerRef.current?.contains(e.target as Node)) close()
+    }
+    if (open) document.addEventListener('mousedown', fn)
+    return () => document.removeEventListener('mousedown', fn)
+  }, [open, panelId, triggerRef, close])
+}
+
+/* ─── Marca y Modelo — 3-step picker (brand → model → submodel) ────────── */
 interface MMState { brand: Brand | null; model: Model | null; submodel: string }
 
 function MarcaModeloField({ value, onChange }: { value: MMState; onChange: (v: MMState) => void }) {
@@ -136,314 +193,363 @@ function MarcaModeloField({ value, onChange }: { value: MMState; onChange: (v: M
   const searchRef = useRef<HTMLInputElement>(null)
 
   const close = useCallback(() => { setOpen(false); setSearch(''); setStep('brand') }, [])
+  useOutside(open, 'mm-panel', triggerRef, close)
+  useEffect(() => { if (open) setTimeout(() => searchRef.current?.focus(), 80) }, [open, step])
 
-  useEffect(() => {
-    const fn = (e: MouseEvent) => {
-      const panel = document.getElementById('mm-panel')
-      if (!panel?.contains(e.target as Node) && !triggerRef.current?.contains(e.target as Node)) close()
-    }
-    if (open) document.addEventListener('mousedown', fn)
-    return () => document.removeEventListener('mousedown', fn)
-  }, [open, close])
+  const q = search.toLowerCase()
+  const filteredBrands = BRANDS.filter(b => b.name.toLowerCase().includes(q))
+  const filteredModels = value.brand ? value.brand.models.filter(m => m.name.toLowerCase().includes(q)) : []
+  const filteredSubs = value.model ? value.model.submodels.filter(s => s.toLowerCase().includes(q)) : []
 
-  useEffect(() => {
-    if (open) setTimeout(() => searchRef.current?.focus(), 80)
-  }, [open, step])
-
-  const filteredBrands = BRANDS.filter(b => b.name.toLowerCase().includes(search.toLowerCase()))
-  const filteredModels: Model[] = value.brand
-    ? value.brand.models.filter(m => m.name.toLowerCase().includes(search.toLowerCase()))
-    : []
-  const filteredSubmodels: string[] = value.model
-    ? value.model.submodels.filter(s => s.toLowerCase().includes(search.toLowerCase()))
-    : []
-
-  const label = !value.brand
-    ? 'Cualquier marca'
-    : !value.model
-    ? value.brand.name
-    : !value.submodel
-    ? `${value.brand.name} · ${value.model.name}`
+  const label = !value.brand ? 'Cualquier marca'
+    : !value.model ? value.brand.name
+    : !value.submodel ? `${value.brand.name} · ${value.model.name}`
     : `${value.brand.name} · ${value.model.name} · ${value.submodel}`
 
-  function selectBrand(b: Brand) {
-    onChange({ brand: b, model: null, submodel: '' })
-    setSearch('')
-    setStep('model')
-  }
-
+  function selectBrand(b: Brand) { onChange({ brand: b, model: null, submodel: '' }); setSearch(''); setStep('model') }
   function selectModel(m: Model) {
-    onChange({ brand: value.brand, model: m, submodel: '' })
-    setSearch('')
-    if (m.submodels.length > 0) setStep('submodel')
-    else close()
+    onChange({ brand: value.brand, model: m, submodel: '' }); setSearch('')
+    if (m.submodels.length > 0) setStep('submodel'); else close()
   }
 
-  const headerTitle = step === 'brand'
-    ? 'Selecciona una marca'
-    : step === 'model'
-    ? `${value.brand?.name} — modelo`
-    : `${value.brand?.name} · ${value.model?.name} — versión`
+  const title = step === 'brand' ? 'Selecciona una marca'
+    : step === 'model' ? `${value.brand?.name} — modelo`
+    : `${value.model?.name} — versión`
 
   return (
     <>
-      <button
-        ref={triggerRef}
-        onClick={() => {
-          setOpen(v => !v)
-          setStep(value.submodel ? 'submodel' : value.model ? 'model' : value.brand ? 'model' : 'brand')
-        }}
-        style={{
-          width: '100%', height: 46, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0 14px', borderRadius: 10, gap: 8, cursor: 'pointer', fontFamily: 'inherit',
-          background: open ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.07)',
-          border: `1px solid ${open ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.11)'}`,
-          transition: 'all 0.18s',
-        }}
-      >
+      <button ref={triggerRef}
+        onClick={() => { setOpen(v => !v); setStep(value.submodel ? 'submodel' : value.brand ? 'model' : 'brand') }}
+        style={triggerStyle(open)}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', flex: 1, minWidth: 0 }}>
-          <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em', textTransform: 'uppercase', lineHeight: 1.1 }}>Marca y modelo</span>
-          <span style={{ fontSize: 13, fontWeight: value.brand ? 600 : 400, color: value.brand ? '#f8fafc' : 'rgba(255,255,255,0.45)', lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
-            {label}
-          </span>
+          <span style={LABEL}>Marca y modelo</span>
+          <span style={valueStyle(!!value.brand)}>{label}</span>
         </div>
         {value.brand ? (
-          <div
-            role="button"
-            onClick={e => { e.stopPropagation(); onChange({ brand: null, model: null, submodel: '' }); close() }}
-            style={{ width: 18, height: 18, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}
-          >
-            <svg width={8} height={8} viewBox="0 0 8 8"><path d="M1 1l6 6M7 1L1 7" stroke="rgba(255,255,255,0.8)" strokeWidth={1.5} strokeLinecap="round"/></svg>
+          <div role="button" onClick={e => { e.stopPropagation(); onChange({ brand: null, model: null, submodel: '' }); close() }}
+            style={{ width: 18, height: 18, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
+            <svg width={8} height={8} viewBox="0 0 8 8"><path d="M1 1l6 6M7 1L1 7" stroke="rgba(255,255,255,0.75)" strokeWidth={1.5} strokeLinecap="round" /></svg>
           </div>
-        ) : (
-          <svg width={11} height={11} viewBox="0 0 11 11" style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: 'rgba(255,255,255,0.35)' }}>
-            <path d="M1.5 3.5l4 4 4-4" stroke="currentColor" strokeWidth={1.5} fill="none" strokeLinecap="round"/>
-          </svg>
-        )}
+        ) : <Chevron open={open} />}
       </button>
 
       <AnimatePresence>
         {open && (
-          <div
-            id="mm-panel"
-            style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 500, width: 'min(580px, 92vw)' }}
-          >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.97, y: 8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97, y: 6 }}
-            transition={{ duration: 0.2, ease: EXPO }}
-            style={{ ...PANEL_GLASS, position: 'relative', width: '100%' }}
-          >
-            {/* Header */}
-            <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 10 }}>
-              {step !== 'brand' && (
-                <button
-                  onClick={() => {
-                    if (step === 'submodel') { setStep('model'); setSearch('') }
-                    else { setStep('brand'); setSearch(''); onChange({ brand: null, model: null, submodel: '' }) }
-                  }}
-                  style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
-                >
-                  <svg width={12} height={12} viewBox="0 0 12 12"><path d="M8 2L4 6l4 4" stroke="rgba(255,255,255,0.7)" strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </button>
-              )}
-              {step !== 'brand' && value.brand && <BrandLogo brand={value.brand} size={26} />}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
-                {step === 'submodel' && value.model && (
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.07)', borderRadius: 5, padding: '2px 8px', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                    {value.model.name}
-                  </span>
-                )}
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.85)', letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {headerTitle}
-                </span>
-              </div>
-              <button onClick={close} style={{ width: 24, height: 24, borderRadius: 6, background: 'rgba(255,255,255,0.07)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                <svg width={10} height={10} viewBox="0 0 10 10"><path d="M1 1l8 8M9 1L1 9" stroke="rgba(255,255,255,0.5)" strokeWidth={1.5} strokeLinecap="round"/></svg>
-              </button>
-            </div>
+          <CenterModal id="mm-panel" width={560}>
+            <ModalHeader
+              title={<>
+                {step !== 'brand' && value.brand && <BrandLogo brand={value.brand} size={22} />}
+                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</span>
+              </>}
+              onClose={close}
+              onBack={step === 'brand' ? undefined : () => {
+                if (step === 'submodel') { setStep('model'); setSearch('') }
+                else { setStep('brand'); setSearch(''); onChange({ brand: null, model: null, submodel: '' }) }
+              }}
+            />
+            <SearchBox value={search} onChange={setSearch} inputRef={searchRef}
+              placeholder={step === 'brand' ? 'Buscar marca…' : step === 'model' ? 'Buscar modelo…' : 'Buscar versión…'} />
 
-            {/* Search */}
-            <div style={{ padding: '10px 14px 6px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 9, padding: '7px 12px' }}>
-                <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={2} strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-                <input
-                  ref={searchRef}
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder={step === 'brand' ? 'Buscar marca...' : step === 'model' ? 'Buscar modelo...' : 'Buscar versión...'}
-                  style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 13, color: '#fff', fontFamily: 'inherit' }}
-                />
-                {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)', fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>}
-              </div>
-            </div>
-
-            {/* ── Brand grid ── */}
             {step === 'brand' && (
               <div style={{ padding: '4px 14px 14px', maxHeight: '56vh', overflowY: 'auto' }}>
-                <button
-                  onClick={() => { onChange({ brand: null, model: null, submodel: '' }); close() }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '8px 10px', borderRadius: 9, marginBottom: 10, background: !value.brand ? 'rgba(99,102,241,0.15)' : 'transparent', border: `1px solid ${!value.brand ? 'rgba(99,102,241,0.28)' : 'transparent'}`, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.14s' }}
-                  onMouseEnter={e => { if (value.brand) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)' }}
-                  onMouseLeave={e => { if (value.brand) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-                >
-                  <div style={{ width: 34, height: 34, borderRadius: 7, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <CarIcon size={16} color="rgba(255,255,255,0.55)" />
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: !value.brand ? 600 : 500, color: !value.brand ? '#fff' : 'rgba(255,255,255,0.6)' }}>Cualquier marca</span>
+                <button onClick={() => { onChange({ brand: null, model: null, submodel: '' }); close() }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '8px 10px', borderRadius: 9, marginBottom: 8, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = HOVER_BG)} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                  <div style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CarIcon size={15} color="rgba(255,255,255,0.5)" /></div>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.6)' }}>Cualquier marca</span>
                 </button>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 7 }}>
-                  {filteredBrands.map(b => (
-                    <motion.button
-                      key={b.name}
-                      onClick={() => selectBrand(b)}
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
-                      transition={{ duration: 0.12 }}
-                      style={{
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, padding: '10px 6px 8px',
-                        background: value.brand?.name === b.name ? 'rgba(99,102,241,0.18)' : 'rgba(255,255,255,0.04)',
-                        border: `1px solid ${value.brand?.name === b.name ? 'rgba(99,102,241,0.32)' : 'rgba(255,255,255,0.07)'}`,
-                        borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.14s, border-color 0.14s',
-                      }}
-                      onMouseEnter={e => { if (value.brand?.name !== b.name) { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.12)' } }}
-                      onMouseLeave={e => { if (value.brand?.name !== b.name) { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)' } }}
-                    >
-                      <BrandLogo brand={b} size={32} />
-                      <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 1.2, letterSpacing: '0.01em' }}>{b.name}</span>
-                    </motion.button>
-                  ))}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
+                  {filteredBrands.map(b => {
+                    const sel = value.brand?.name === b.name
+                    return (
+                      <motion.button key={b.name} onClick={() => selectBrand(b)} whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }}
+                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, padding: '11px 6px 8px', background: sel ? SEL_BG : 'transparent', border: `1px solid ${sel ? SEL_BORDER : 'transparent'}`, borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.14s, border-color 0.14s' }}
+                        onMouseEnter={e => { if (!sel) e.currentTarget.style.background = HOVER_BG }}
+                        onMouseLeave={e => { if (!sel) e.currentTarget.style.background = 'transparent' }}>
+                        <BrandLogo brand={b} size={30} />
+                        <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.62)', textAlign: 'center', lineHeight: 1.2 }}>{b.name}</span>
+                      </motion.button>
+                    )
+                  })}
                 </div>
               </div>
             )}
 
-            {/* ── Model list ── */}
             {step === 'model' && (
               <div style={{ maxHeight: '56vh', overflowY: 'auto', padding: '4px 14px 14px' }}>
-                <button
-                  onClick={() => { onChange({ brand: value.brand, model: null, submodel: '' }); close() }}
-                  style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '9px 12px', marginBottom: 3, background: !value.model ? 'rgba(99,102,241,0.15)' : 'transparent', border: `1px solid ${!value.model ? 'rgba(99,102,241,0.28)' : 'transparent'}`, borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.12s' }}
-                  onMouseEnter={e => { if (value.model) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)' }}
-                  onMouseLeave={e => { if (value.model) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-                >
-                  <span style={{ fontSize: 13, fontWeight: !value.model ? 600 : 500, color: !value.model ? '#fff' : 'rgba(255,255,255,0.6)' }}>Todos los modelos de {value.brand?.name}</span>
+                <button onClick={() => { onChange({ brand: value.brand, model: null, submodel: '' }); close() }}
+                  style={{ display: 'flex', width: '100%', padding: '9px 12px', marginBottom: 3, background: 'transparent', border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = HOVER_BG)} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.6)' }}>Todos los modelos de {value.brand?.name}</span>
                 </button>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
-                  {filteredModels.map(m => (
-                    <button
-                      key={m.name}
-                      onClick={() => selectModel(m)}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: value.model?.name === m.name ? 'rgba(99,102,241,0.15)' : 'transparent', border: `1px solid ${value.model?.name === m.name ? 'rgba(99,102,241,0.28)' : 'transparent'}`, borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.1s', textAlign: 'left', gap: 6 }}
-                      onMouseEnter={e => { if (value.model?.name !== m.name) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)' }}
-                      onMouseLeave={e => { if (value.model?.name !== m.name) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-                    >
-                      <span style={{ fontSize: 13, fontWeight: value.model?.name === m.name ? 600 : 400, color: value.model?.name === m.name ? '#fff' : 'rgba(255,255,255,0.65)' }}>{m.name}</span>
-                      {m.submodels.length > 0 && (
-                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', flexShrink: 0 }}>{m.submodels.length}</span>
-                      )}
-                    </button>
-                  ))}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                  {filteredModels.map(m => {
+                    const sel = value.model?.name === m.name
+                    return (
+                      <button key={m.name} onClick={() => selectModel(m)}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: sel ? SEL_BG : 'transparent', border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', gap: 6 }}
+                        onMouseEnter={e => { if (!sel) e.currentTarget.style.background = HOVER_BG }} onMouseLeave={e => { if (!sel) e.currentTarget.style.background = 'transparent' }}>
+                        <span style={{ fontSize: 13, fontWeight: sel ? 600 : 400, color: sel ? '#fff' : 'rgba(255,255,255,0.66)' }}>{m.name}</span>
+                        {m.submodels.length > 0 && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', flexShrink: 0 }}>{m.submodels.length}</span>}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             )}
 
-            {/* ── Submodel list ── */}
             {step === 'submodel' && (
               <div style={{ maxHeight: '56vh', overflowY: 'auto', padding: '4px 14px 14px' }}>
-                <button
-                  onClick={() => { onChange({ brand: value.brand, model: value.model, submodel: '' }); close() }}
-                  style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '9px 12px', marginBottom: 3, background: !value.submodel ? 'rgba(99,102,241,0.15)' : 'transparent', border: `1px solid ${!value.submodel ? 'rgba(99,102,241,0.28)' : 'transparent'}`, borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.12s' }}
-                  onMouseEnter={e => { if (value.submodel) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)' }}
-                  onMouseLeave={e => { if (value.submodel) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-                >
-                  <span style={{ fontSize: 13, fontWeight: !value.submodel ? 600 : 500, color: !value.submodel ? '#fff' : 'rgba(255,255,255,0.6)' }}>Todas las versiones de {value.model?.name}</span>
+                <button onClick={() => { onChange({ brand: value.brand, model: value.model, submodel: '' }); close() }}
+                  style={{ display: 'flex', width: '100%', padding: '9px 12px', marginBottom: 3, background: 'transparent', border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = HOVER_BG)} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.6)' }}>Todas las versiones de {value.model?.name}</span>
                 </button>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
-                  {filteredSubmodels.map(s => (
-                    <button
-                      key={s}
-                      onClick={() => { onChange({ brand: value.brand, model: value.model, submodel: s }); close() }}
-                      style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', background: value.submodel === s ? 'rgba(99,102,241,0.15)' : 'transparent', border: `1px solid ${value.submodel === s ? 'rgba(99,102,241,0.28)' : 'transparent'}`, borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.1s', textAlign: 'left' }}
-                      onMouseEnter={e => { if (value.submodel !== s) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)' }}
-                      onMouseLeave={e => { if (value.submodel !== s) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-                    >
-                      <span style={{ fontSize: 13, fontWeight: value.submodel === s ? 600 : 400, color: value.submodel === s ? '#fff' : 'rgba(255,255,255,0.65)' }}>{s}</span>
-                    </button>
-                  ))}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                  {filteredSubs.map(s => {
+                    const sel = value.submodel === s
+                    return (
+                      <button key={s} onClick={() => { onChange({ brand: value.brand, model: value.model, submodel: s }); close() }}
+                        style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', background: sel ? SEL_BG : 'transparent', border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}
+                        onMouseEnter={e => { if (!sel) e.currentTarget.style.background = HOVER_BG }} onMouseLeave={e => { if (!sel) e.currentTarget.style.background = 'transparent' }}>
+                        <span style={{ fontSize: 13, fontWeight: sel ? 600 : 400, color: sel ? '#fff' : 'rgba(255,255,255,0.66)' }}>{s}</span>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             )}
-          </motion.div>
-          </div>
+          </CenterModal>
         )}
       </AnimatePresence>
     </>
   )
 }
 
-/* ─── Generic glass select ──────────────────────────────────────────────── */
-function GlassSelect<T extends string | number>({
-  label, options, value, onChange, renderOption,
-}: {
-  label: string
-  options: { label: string; value: T; prefix?: React.ReactNode }[]
-  value: T
-  onChange: (v: T) => void
-  renderOption?: (opt: { label: string; value: T; prefix?: React.ReactNode }) => React.ReactNode
-}) {
+/* ─── Year range — two type-or-pick comboboxes (Desde / Hasta) ─────────── */
+function YearColumn({ heading, value, onChange, options }: { heading: string; value: number | null; onChange: (y: number | null) => void; options: number[] }) {
+  const [text, setText] = useState('')
+  const typed = text.replace(/\D/g, '')
+  const list = options.filter(y => !typed || String(y).includes(typed))
+  return (
+    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+      <span style={{ ...LABEL, marginBottom: 6 }}>{heading}</span>
+      <input
+        value={text || (value ?? '')}
+        onChange={e => {
+          const v = e.target.value.replace(/\D/g, '').slice(0, 4)
+          setText(v)
+          onChange(v.length === 4 ? Number(v) : null)
+        }}
+        inputMode="numeric" placeholder="—"
+        style={{ height: 40, borderRadius: 9, padding: '0 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', color: '#fff', fontSize: 14, fontWeight: 600, fontFamily: 'inherit', outline: 'none', width: '100%' }} />
+      <div style={{ marginTop: 6, maxHeight: '34vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
+        {list.map(y => {
+          const sel = value === y
+          return (
+            <button key={y} onClick={() => { onChange(y); setText('') }}
+              style={{ textAlign: 'left', padding: '7px 12px', borderRadius: 7, background: sel ? SEL_BG : 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: sel ? 600 : 400, color: sel ? '#fff' : 'rgba(255,255,255,0.6)' }}
+              onMouseEnter={e => { if (!sel) e.currentTarget.style.background = HOVER_BG }} onMouseLeave={e => { if (!sel) e.currentTarget.style.background = 'transparent' }}>
+              {y}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+function YearRange({ minY, maxY, onChange }: { minY: number | null; maxY: number | null; onChange: (lo: number | null, hi: number | null) => void }) {
+  const [open, setOpen] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const close = useCallback(() => setOpen(false), [])
+  useOutside(open, 'year-panel', triggerRef, close)
+
+  const active = minY != null || maxY != null
+  const label = !active ? 'Cualquier año'
+    : minY != null && maxY != null ? `${minY} — ${maxY}`
+    : minY != null ? `desde ${minY}` : `hasta ${maxY}`
+
+  // keep order coherent
+  const setLo = (y: number | null) => onChange(y, maxY != null && y != null && y > maxY ? y : maxY)
+  const setHi = (y: number | null) => onChange(minY != null && y != null && y < minY ? y : minY, y)
+
+  return (
+    <>
+      <button ref={triggerRef} onClick={() => setOpen(v => !v)} style={triggerStyle(open)}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', flex: 1, minWidth: 0 }}>
+          <span style={LABEL}>Año</span>
+          <span style={valueStyle(active)}>{label}</span>
+        </div>
+        {active ? (
+          <div role="button" onClick={e => { e.stopPropagation(); onChange(null, null); close() }}
+            style={{ width: 18, height: 18, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
+            <svg width={8} height={8} viewBox="0 0 8 8"><path d="M1 1l6 6M7 1L1 7" stroke="rgba(255,255,255,0.75)" strokeWidth={1.5} strokeLinecap="round" /></svg>
+          </div>
+        ) : <Chevron open={open} />}
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <CenterModal id="year-panel" width={420}>
+            <ModalHeader title="Año de matriculación" onClose={close} />
+            <div style={{ display: 'flex', gap: 12, padding: '14px' }}>
+              <YearColumn heading="Desde" value={minY} onChange={setLo} options={maxY != null ? YEARS.filter(y => y <= maxY) : YEARS} />
+              <div style={{ width: 1, background: 'rgba(255,255,255,0.06)', alignSelf: 'stretch' }} />
+              <YearColumn heading="Hasta" value={maxY} onChange={setHi} options={minY != null ? YEARS.filter(y => y >= minY) : YEARS} />
+            </div>
+            <div style={{ padding: '0 14px 14px', display: 'flex', gap: 8 }}>
+              <button onClick={() => onChange(null, null)} style={{ flex: '0 0 auto', padding: '10px 16px', borderRadius: 9, background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Limpiar</button>
+              <button onClick={close} style={{ flex: 1, padding: '10px 0', borderRadius: 9, background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.3)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Listo</button>
+            </div>
+          </CenterModal>
+        )}
+      </AnimatePresence>
+    </>
+  )
+}
+
+/* ─── Kilometraje — histogram density + dual-handle slider + inputs ─────── */
+function KmRange({ kmMin, kmMax, onChange }: { kmMin: number; kmMax: number; onChange: (lo: number, hi: number) => void }) {
+  const [open, setOpen] = useState(false)
+  const [drag, setDrag] = useState<null | 'min' | 'max'>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const trackRef = useRef<HTMLDivElement>(null)
+  const close = useCallback(() => setOpen(false), [])
+  useOutside(open, 'km-panel', triggerRef, close)
+
+  const minF = kmMin / KM_MAX, maxF = kmMax / KM_MAX
+  const active = kmMin > 0 || kmMax < KM_MAX
+  const maxLabel = kmMax >= KM_MAX ? `${fmt(KM_MAX)}+` : fmt(kmMax)
+  const label = !active ? 'Cualquier km' : `${fmt(kmMin)} — ${maxLabel}`
+
+  useEffect(() => {
+    if (!drag) return
+    const move = (e: PointerEvent) => {
+      const r = trackRef.current?.getBoundingClientRect(); if (!r) return
+      const f = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width))
+      const km = Math.round((f * KM_MAX) / KM_STEP) * KM_STEP
+      if (drag === 'min') onChange(Math.min(km, kmMax - KM_STEP), kmMax)
+      else onChange(kmMin, Math.max(km, kmMin + KM_STEP))
+    }
+    const up = () => setDrag(null)
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up) }
+  }, [drag, kmMin, kmMax, onChange])
+
+  // approx live count cue from the density buckets within range
+  const inv = Math.round(KM_DENSITY.reduce((acc, d, i) => {
+    const c = (i + 0.5) / KM_DENSITY.length
+    return acc + (c >= minF && c <= maxF ? d : 0)
+  }, 0) / KM_DENSITY.reduce((a, b) => a + b, 0) * 1_550_000)
+
+  return (
+    <>
+      <button ref={triggerRef} onClick={() => setOpen(v => !v)} style={triggerStyle(open)}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', flex: 1, minWidth: 0 }}>
+          <span style={LABEL}>Kilómetros</span>
+          <span style={valueStyle(active)}>{label}</span>
+        </div>
+        {active ? (
+          <div role="button" onClick={e => { e.stopPropagation(); onChange(0, KM_MAX); close() }}
+            style={{ width: 18, height: 18, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
+            <svg width={8} height={8} viewBox="0 0 8 8"><path d="M1 1l6 6M7 1L1 7" stroke="rgba(255,255,255,0.75)" strokeWidth={1.5} strokeLinecap="round" /></svg>
+          </div>
+        ) : <Chevron open={open} />}
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <CenterModal id="km-panel" width={460}>
+            <ModalHeader title="Kilómetros" onClose={close} />
+            <div style={{ padding: '18px 20px 6px' }}>
+              {/* histogram + dual-handle slider */}
+              <div ref={trackRef} style={{ position: 'relative', height: 72, touchAction: 'none' }}>
+                <div style={{ position: 'absolute', inset: '0 0 8px 0', display: 'flex', alignItems: 'flex-end', gap: 2 }}>
+                  {KM_DENSITY.map((d, i) => {
+                    const c = (i + 0.5) / KM_DENSITY.length
+                    const on = c >= minF && c <= maxF
+                    return <div key={i} style={{ flex: 1, height: `${d}%`, borderRadius: '2px 2px 0 0', background: on ? 'rgba(129,140,248,0.6)' : 'rgba(255,255,255,0.07)', transition: 'background 0.12s' }} />
+                  })}
+                </div>
+                <div style={{ position: 'absolute', left: 0, right: 0, bottom: 5, height: 3, background: 'rgba(255,255,255,0.1)', borderRadius: 2 }} />
+                <div style={{ position: 'absolute', bottom: 5, height: 3, left: `${minF * 100}%`, width: `${(maxF - minF) * 100}%`, background: 'rgba(129,140,248,0.85)', borderRadius: 2 }} />
+                {(['min', 'max'] as const).map(h => {
+                  const f = h === 'min' ? minF : maxF
+                  return (
+                    <div key={h} onPointerDown={e => { (e.target as HTMLElement).setPointerCapture?.(e.pointerId); setDrag(h) }}
+                      style={{ position: 'absolute', bottom: -1, left: `${f * 100}%`, transform: 'translateX(-50%)', width: 16, height: 16, borderRadius: '50%', background: '#0b0a1e', border: `2px solid ${drag === h ? '#c7d2fe' : 'rgba(165,180,252,0.95)'}`, boxShadow: '0 2px 8px rgba(0,0,0,0.55)', cursor: drag === h ? 'grabbing' : 'grab', touchAction: 'none', zIndex: 2 }}>
+                      <svg width={8} height={8} viewBox="0 0 8 8" style={{ position: 'absolute', inset: 2, opacity: 0.7 }}><path d="M3 1L1 4l2 3M5 1l2 3-2 3" stroke="#a5b4fc" strokeWidth={1} fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    </div>
+                  )
+                })}
+              </div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginTop: 4 }}>≈ {fmt(inv)} coches en este rango</div>
+            </div>
+            {/* min / max inputs */}
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, padding: '8px 20px 0' }}>
+              <div style={{ flex: 1 }}>
+                <span style={{ ...LABEL, display: 'block', marginBottom: 6 }}>Desde</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 40, borderRadius: 9, padding: '0 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)' }}>
+                  <input value={fmt(kmMin)} onChange={e => { const v = Number(e.target.value.replace(/\D/g, '')) || 0; onChange(Math.min(v, kmMax - KM_STEP), kmMax) }}
+                    inputMode="numeric" style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', color: '#fff', fontSize: 14, fontWeight: 600, fontFamily: 'inherit' }} />
+                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>km</span>
+                </div>
+              </div>
+              <div style={{ flex: 1 }}>
+                <span style={{ ...LABEL, display: 'block', marginBottom: 6 }}>Hasta</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 40, borderRadius: 9, padding: '0 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)' }}>
+                  <input value={maxLabel} onChange={e => { const raw = e.target.value.replace(/\D/g, ''); const v = raw ? Number(raw) : KM_MAX; onChange(kmMin, Math.max(Math.min(v, KM_MAX), kmMin + KM_STEP)) }}
+                    inputMode="numeric" style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', color: '#fff', fontSize: 14, fontWeight: 600, fontFamily: 'inherit' }} />
+                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>km</span>
+                </div>
+              </div>
+            </div>
+            <div style={{ padding: '14px 20px 18px', display: 'flex', gap: 8 }}>
+              <button onClick={() => onChange(0, KM_MAX)} style={{ flex: '0 0 auto', padding: '10px 16px', borderRadius: 9, background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Limpiar</button>
+              <button onClick={close} style={{ flex: 1, padding: '10px 0', borderRadius: 9, background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.3)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Listo</button>
+            </div>
+          </CenterModal>
+        )}
+      </AnimatePresence>
+    </>
+  )
+}
+
+/* ─── País — minimalist inline select ──────────────────────────────────── */
+function PaisSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-  const sel = options.find(o => o.value === value)
-
+  const sel = PAISES.find(p => p.code === value) ?? PAISES[0]
   useEffect(() => {
     const fn = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
     if (open) document.addEventListener('mousedown', fn)
     return () => document.removeEventListener('mousedown', fn)
   }, [open])
-
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <button
-        onClick={() => setOpen(v => !v)}
-        style={{ width: '100%', height: 46, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', borderRadius: 10, gap: 8, cursor: 'pointer', fontFamily: 'inherit', background: open ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.07)', border: `1px solid ${open ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.11)'}`, transition: 'all 0.18s' }}
-      >
+      <button onClick={() => setOpen(v => !v)} style={triggerStyle(open)}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', flex: 1, minWidth: 0 }}>
-          <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em', textTransform: 'uppercase', lineHeight: 1.1 }}>{label}</span>
+          <span style={LABEL}>País</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-            {sel?.prefix}
-            <span style={{ fontSize: 13, fontWeight: (value !== '' && value !== 0) ? 600 : 400, color: (value !== '' && value !== 0) ? '#f8fafc' : 'rgba(255,255,255,0.45)', lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {sel?.label ?? label}
-            </span>
+            {sel.flag && <img src={sel.flag} alt="" style={{ width: 18, height: 13, borderRadius: 2, objectFit: 'cover', flexShrink: 0 }} />}
+            <span style={valueStyle(value !== '')}>{sel.label}</span>
           </div>
         </div>
-        <svg width={11} height={11} viewBox="0 0 11 11" style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: 'rgba(255,255,255,0.35)' }}>
-          <path d="M1.5 3.5l4 4 4-4" stroke="currentColor" strokeWidth={1.5} fill="none" strokeLinecap="round"/>
-        </svg>
+        <Chevron open={open} />
       </button>
-
       <AnimatePresence>
         {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.97 }}
-            transition={{ duration: 0.16, ease: EXPO }}
-            style={{ ...PANEL_GLASS, position: 'absolute', bottom: 'calc(100% + 8px)', left: 0, minWidth: '100%', zIndex: 300 }}
-          >
-            {options.map(opt => {
-              const active = opt.value === value
+          <motion.div initial={{ opacity: 0, y: 6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 4, scale: 0.97 }} transition={{ duration: 0.16, ease: EXPO }}
+            style={{ ...PANEL_GLASS, position: 'absolute', bottom: 'calc(100% + 8px)', left: 0, minWidth: '100%', zIndex: 300, padding: 4 }}>
+            {PAISES.map(p => {
+              const a = p.code === value
               return (
-                <button
-                  key={String(opt.value)}
-                  onClick={() => { onChange(opt.value); setOpen(false) }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', textAlign: 'left', padding: '9px 14px', background: active ? 'rgba(99,102,241,0.18)' : 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: active ? 600 : 400, color: active ? '#fff' : 'rgba(255,255,255,0.65)', transition: 'background 0.1s', whiteSpace: 'nowrap' }}
-                  onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)' }}
-                  onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'none' }}
-                >
-                  {renderOption ? renderOption(opt) : (
-                    <>{opt.prefix}<span>{opt.label}</span></>
-                  )}
+                <button key={p.code} onClick={() => { onChange(p.code); setOpen(false) }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', textAlign: 'left', padding: '8px 12px', borderRadius: 8, background: a ? SEL_BG : 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: a ? 600 : 400, color: a ? '#fff' : 'rgba(255,255,255,0.62)', whiteSpace: 'nowrap' }}
+                  onMouseEnter={e => { if (!a) e.currentTarget.style.background = HOVER_BG }} onMouseLeave={e => { if (!a) e.currentTarget.style.background = 'none' }}>
+                  {p.flag ? <img src={p.flag} alt="" style={{ width: 20, height: 14, borderRadius: 2, objectFit: 'cover' }} /> : <span style={{ width: 20 }} />}
+                  <span>{p.label}</span>
                 </button>
               )
             })}
@@ -454,16 +560,18 @@ function GlassSelect<T extends string | number>({
   )
 }
 
-/* ─── Main ──────────────────────────────────────────────────────────────── */
+/* ─── Main ─────────────────────────────────────────────────────────────── */
 export default function Landing() {
   const nav = useNavigate()
   const { isAuthenticated } = useAuthContext()
   const [navScrolled, setNavScrolled] = useState(false)
-  const [query,  setQuery]  = useState('')
-  const [marca,  setMarca]  = useState<MMState>({ brand: null, model: null, submodel: '' })
-  const [pais,   setPais]   = useState('')
-  const [precio, setPrecio] = useState('')
-  const [ano,    setAno]    = useState('')
+  const [query, setQuery] = useState('')
+  const [marca, setMarca] = useState<MMState>({ brand: null, model: null, submodel: '' })
+  const [pais, setPais] = useState('')
+  const [anoMin, setAnoMin] = useState<number | null>(null)
+  const [anoMax, setAnoMax] = useState<number | null>(null)
+  const [kmMin, setKmMin] = useState(0)
+  const [kmMax, setKmMax] = useState(KM_MAX)
 
   useEffect(() => {
     const fn = () => setNavScrolled(window.scrollY > 30)
@@ -476,31 +584,21 @@ export default function Landing() {
 
   const count = Math.round(
     1_550_000
-    * (marca.brand  ? 0.065 : 1)
-    * (marca.model  ? 0.18  : 1)
-    * (marca.submodel ? 0.08  : 1)
-    * (pais         ? 0.22  : 1)
-    * (precio       ? 0.65  : 1)
-    * (ano          ? 0.55  : 1)
+    * (marca.brand ? 0.065 : 1)
+    * (marca.model ? 0.18 : 1)
+    * (marca.submodel ? 0.42 : 1)
+    * (pais ? 0.22 : 1)
+    * (anoMin != null || anoMax != null ? 0.5 : 1)
+    * (kmMin > 0 || kmMax < KM_MAX ? 0.55 : 1)
   )
-
-  const paisOptions = PAISES.map(p => ({
-    label: p.label,
-    value: p.code,
-    prefix: p.flag ? (
-      <img src={p.flag} alt={p.label} style={{ width: 20, height: 14, borderRadius: 2, objectFit: 'cover', flexShrink: 0 }} />
-    ) : undefined,
-  }))
 
   return (
     <div style={{ fontFamily: 'Inter, system-ui, sans-serif', background: '#07070f' }}>
 
       {/* ── NAVBAR ─────────────────────────────────────────────────────── */}
       <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 400,
-        height: 60, display: 'flex', alignItems: 'center',
-        padding: '0 clamp(20px,4vw,48px)',
-        transition: 'background 0.3s, border-color 0.3s',
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 400, height: 60, display: 'flex', alignItems: 'center',
+        padding: '0 clamp(20px,4vw,48px)', transition: 'background 0.3s, border-color 0.3s',
         background: navScrolled ? 'rgba(7,7,15,0.8)' : 'transparent',
         backdropFilter: navScrolled ? 'blur(20px) saturate(180%)' : 'none',
         WebkitBackdropFilter: navScrolled ? 'blur(20px) saturate(180%)' : 'none',
@@ -515,19 +613,14 @@ export default function Landing() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 36 }}>
           {['Platform', 'Coverage', 'Pricing'].map(l => (
             <button key={l} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.5)', fontFamily: 'inherit', transition: 'color 0.18s' }}
-              onMouseEnter={e => ((e.target as HTMLElement).style.color = '#fff')}
-              onMouseLeave={e => ((e.target as HTMLElement).style.color = 'rgba(255,255,255,0.5)')}
-            >{l}</button>
+              onMouseEnter={e => ((e.target as HTMLElement).style.color = '#fff')} onMouseLeave={e => ((e.target as HTMLElement).style.color = 'rgba(255,255,255,0.5)')}>{l}</button>
           ))}
         </div>
         <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
           <button onClick={handleEnter} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.5)', fontFamily: 'inherit', transition: 'color 0.18s' }}
-            onMouseEnter={e => ((e.target as HTMLElement).style.color = '#fff')}
-            onMouseLeave={e => ((e.target as HTMLElement).style.color = 'rgba(255,255,255,0.5)')}
-          >Log In</button>
+            onMouseEnter={e => ((e.target as HTMLElement).style.color = '#fff')} onMouseLeave={e => ((e.target as HTMLElement).style.color = 'rgba(255,255,255,0.5)')}>Log In</button>
           <motion.button onClick={handleEnter} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.14, ease: EXPO }}
-            style={{ padding: '7px 20px', borderRadius: 999, background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.16)', backdropFilter: 'blur(12px)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-          >Sign In</motion.button>
+            style={{ padding: '7px 20px', borderRadius: 999, background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.16)', backdropFilter: 'blur(12px)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Sign In</motion.button>
         </div>
       </nav>
 
@@ -538,12 +631,11 @@ export default function Landing() {
 
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 clamp(16px,4vw,40px)', textAlign: 'center', paddingTop: 60 }}>
 
-
           {/* Search bar */}
           <motion.form onSubmit={handleSearch} initial={{ opacity: 0, y: 14, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.5, ease: EXPO, delay: 0.2 }}
             style={{ display: 'flex', alignItems: 'center', width: '100%', maxWidth: 560, borderRadius: 999, background: 'rgba(255,255,255,0.10)', backdropFilter: 'blur(24px) saturate(180%)', WebkitBackdropFilter: 'blur(24px) saturate(180%)', border: '1px solid rgba(255,255,255,0.17)', boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.13)', padding: '5px 5px 5px 20px', gap: 8 }}>
-            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth={2} strokeLinecap="round" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-            <input type="text" value={query} onChange={e => setQuery(e.target.value)} placeholder="BMW Serie 3, Audi A4, Mercedes Clase C..."
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth={2} strokeLinecap="round" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+            <input type="text" value={query} onChange={e => setQuery(e.target.value)} placeholder="BMW Serie 3, Audi A4, Mercedes Clase C…"
               style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 15, color: '#fff', fontFamily: 'inherit' }} />
             <motion.button type="submit" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ duration: 0.12, ease: EXPO }}
               style={{ padding: '10px 22px', borderRadius: 999, flexShrink: 0, background: 'rgba(18,15,52,0.92)', border: '1px solid rgba(255,255,255,0.11)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -553,79 +645,36 @@ export default function Landing() {
 
           {/* Filter box */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: EXPO, delay: 0.32 }}
-            style={{ width: '100%', maxWidth: 560, marginTop: 8, borderRadius: 16, background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(32px) saturate(200%)', WebkitBackdropFilter: 'blur(32px) saturate(200%)', border: '1px solid rgba(255,255,255,0.11)', boxShadow: '0 16px 48px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.09)', padding: '12px 12px 10px' }}>
+            style={{ width: '100%', maxWidth: 560, marginTop: 8, borderRadius: 16, background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(32px) saturate(180%)', WebkitBackdropFilter: 'blur(32px) saturate(180%)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 16px 48px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08)', padding: '12px 12px 10px' }}>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, marginBottom: 8 }}>
               <MarcaModeloField value={marca} onChange={setMarca} />
-              <GlassSelect
-                label="País"
-                value={pais}
-                options={paisOptions}
-                onChange={v => setPais(String(v))}
-              />
-              <GlassSelect
-                label="Precio hasta"
-                value={precio}
-                options={PRECIOS.map(p => ({ label: p.label, value: p.value }))}
-                onChange={v => setPrecio(String(v))}
-              />
-              <GlassSelect
-                label="Año desde"
-                value={ano}
-                options={ANOS.map(a => ({ label: a.label, value: a.value }))}
-                onChange={v => setAno(String(v))}
-              />
+              <PaisSelect value={pais} onChange={setPais} />
+              <YearRange minY={anoMin} maxY={anoMax} onChange={(lo, hi) => { setAnoMin(lo); setAnoMax(hi) }} />
+              <KmRange kmMin={kmMin} kmMax={kmMax} onChange={(lo, hi) => { setKmMin(lo); setKmMax(hi) }} />
             </div>
 
-            <motion.button
-              onClick={handleSearch}
-              whileHover={{ scale: 1.012 }}
-              whileTap={{ scale: 0.985 }}
-              transition={{ duration: 0.14, ease: EXPO }}
-              style={{ width: '100%', padding: '11px 0', borderRadius: 10, background: 'rgba(99,102,241,0.20)', border: '1px solid rgba(99,102,241,0.30)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '-0.01em', transition: 'background 0.2s' }}
+            <motion.button onClick={handleSearch} whileHover={{ scale: 1.012 }} whileTap={{ scale: 0.985 }} transition={{ duration: 0.14, ease: EXPO }}
+              style={{ width: '100%', padding: '11px 0', borderRadius: 10, background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.3)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '-0.01em', transition: 'background 0.2s' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.28)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.20)' }}
-            >
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.2)' }}>
               Mostrar {count.toLocaleString('de-DE')} resultados
             </motion.button>
 
-            {/* Portal logos — true diamond 1+2+3+1 */}
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, ease: EXPO, delay: 0.44 }}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 10 }}
-            >
+            {/* Portal logos — true diamond */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, ease: EXPO, delay: 0.44 }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 10 }}>
               <div style={{ display: 'flex' }}>
                 {PORTALS.map((p, i) => (
-                  <div
-                    key={p.name}
-                    title={p.name}
-                    style={{
-                      width: 26, height: 26,
-                      borderRadius: 7,
-                      background: p.bg,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      marginLeft: i > 0 ? -5 : 0,
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.55)',
-                      position: 'relative',
-                      zIndex: PORTALS.length - i,
-                      flexShrink: 0,
-                      border: `1.5px solid ${p.border ?? 'rgba(255,255,255,0.10)'}`,
-                      transform: 'rotate(8deg)',
-                      overflow: 'hidden',
-                    }}
-                  >
+                  <div key={p.name} title={p.name}
+                    style={{ width: 26, height: 26, borderRadius: 7, background: p.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: i > 0 ? -5 : 0, boxShadow: '0 4px 12px rgba(0,0,0,0.55)', position: 'relative', zIndex: PORTALS.length - i, flexShrink: 0, border: `1.5px solid ${p.border ?? 'rgba(255,255,255,0.1)'}`, transform: 'rotate(8deg)', overflow: 'hidden' }}>
                     {p.favicon
                       ? <img src={p.favicon} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                      : <span style={{ fontSize: 11, fontWeight: 800, color: p.textColor ?? '#fff', letterSpacing: '-0.03em', lineHeight: 1, fontFamily: 'Inter, sans-serif' }}>{p.initial}</span>
-                    }
+                      : <span style={{ fontSize: 11, fontWeight: 800, color: p.textColor ?? '#fff', letterSpacing: '-0.03em', lineHeight: 1, fontFamily: 'Inter, sans-serif' }}>{p.initial}</span>}
                   </div>
                 ))}
               </div>
-
-              <span style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.42)', whiteSpace: 'nowrap', letterSpacing: '0.01em' }}>
-                28.000+ dealers indexados
-              </span>
+              <span style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.42)', whiteSpace: 'nowrap', letterSpacing: '0.01em' }}>28.000+ dealers indexados</span>
             </motion.div>
           </motion.div>
         </div>
