@@ -374,7 +374,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Brabus',
     color: '#1a1a1a',
-    logo: 'https://logo.clearbit.com/brabus.com',
+    logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Brabus_logo.svg?width=120',
     models: [
       { name: '500', submodels: ['500 4-matic+ 500cv', '500 Roadster 500cv'] },
       { name: '600', submodels: ['600 Adventure 600cv', '600 Widestar 600cv'] },
@@ -566,7 +566,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Alfa Romeo',
     color: '#a50024',
-    logo: 'https://cdn.simpleicons.org/alfaromeo/ffffff',
+    logo: 'https://logo.clearbit.com/alfaromeo.com',
     models: [
       { name: '147', submodels: ['1.4 TS 90cv', '1.6 TS 105cv', '1.6 TS 120cv', '2.0 TS 150cv', '1.9 JTD 100cv', '1.9 JTD 115cv', '1.9 JTD 140cv', '1.9 JTDm 120cv', '2.0 JTD 150cv', 'GTA 3.2 V6 250cv', 'Progression 1.6 105cv', 'Distinctive 1.9 JTD 115cv', 'Lusso 1.9 JTD 115cv', 'Ti 1.6 TS 120cv', 'Q2 1.9 JTD 140cv'] },
       { name: '156', submodels: ['1.6 TS 120cv', '1.8 TS 144cv', '2.0 TS 155cv', '2.5 V6 192cv', '3.2 V6 GTA 250cv', '1.9 JTD 105cv', '1.9 JTD 115cv', '1.9 JTD 140cv', '2.4 JTD 140cv', '2.4 JTD 175cv', 'Distinctive 1.9 JTD 115cv', 'Ti 2.0 TS 155cv', 'Sport 2.5 V6 192cv', 'Selespeed 2.0 TS 155cv'] },
@@ -591,7 +591,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Abarth',
     color: '#cc0000',
-    logo: 'https://cdn.simpleicons.org/abarth/ffffff',
+    logo: 'https://logo.clearbit.com/abarth.com',
     models: [
       { name: '500', submodels: ['500 1.4 T-Jet 135cv', '500 1.4 T-Jet 145cv', '500 1.4 T-Jet 160cv', '500 esseesse 1.4 T-Jet 160cv', '500 Assetto Corse 1.4 T-Jet 190cv', '500 Yamaha 1.4 T-Jet 180cv', '500 Pista 1.4 T-Jet 180cv', '500 Trofeo 1.4 T-Jet 180cv', '500 Opening Edition 1.4 T-Jet 135cv', '500 Turismo 1.4 T-Jet 165cv', '500 Competizione 1.4 T-Jet 180cv', '500 Biposto 1.4 T-Jet 190cv', '500 595 1.4 T-Jet 145cv', '500 695 1.4 T-Jet 180cv', '500 695 Tributo Ferrari 1.4 T-Jet 180cv', '500 695 Tributo Maserati 1.4 T-Jet 180cv', '500 695 Rivale 1.4 T-Jet 195cv'] },
       { name: '500C', submodels: ['500C 1.4 T-Jet 135cv', '500C 1.4 T-Jet 145cv', '500C 1.4 T-Jet 160cv', '500C esseesse 1.4 T-Jet 160cv', '500C 595 Turismo 1.4 T-Jet 165cv', '500C 595 Competizione 1.4 T-Jet 180cv', '500C 695 1.4 T-Jet 180cv', '500C 695 Rivale 1.4 T-Jet 195cv'] },
@@ -954,7 +954,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Land Rover',
     color: '#005a2b',
-    logo: 'https://cdn.simpleicons.org/landrover/ffffff',
+    logo: 'https://logo.clearbit.com/landrover.com',
     models: [
       { name: 'Defender', submodels: ['2.0 TD4 110cv', '2.4 TD 122cv', '2.5 TD5 122cv', '2.5 V8 134cv', '3.5 V8 134cv', '2.2 TD4 122cv', '2.2 TDCi 122cv'] },
       { name: 'Defender 90', submodels: ['D200 2.0 200cv', 'D250 3.0 250cv', 'D300 3.0 300cv', 'P300 2.0 300cv', 'P400 3.0 400cv', 'P400e PHEV 404cv', 'V8 5.0 525cv', 'V8 Carpathian Edition 525cv', 'Works 90 Edition 400cv', 'X-Dynamic D250 250cv', 'X-Dynamic P300 300cv', 'S D200 200cv', 'SE D250 250cv', 'HSE D300 300cv', 'First Edition P400 400cv'] },
@@ -977,7 +977,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Jaguar',
     color: '#1a1a1a',
-    logo: 'https://cdn.simpleicons.org/jaguar/ffffff',
+    logo: 'https://logo.clearbit.com/jaguar.com',
     models: [
       { name: 'E-Pace', submodels: ['2.0 D150 150cv', '2.0 D165 165cv', '2.0 D180 180cv', '2.0 D240 240cv', '2.0 P200 200cv', '2.0 P250 250cv', '2.0 P300 300cv', 'P300e PHEV 309cv', 'SE 2.0 D150 150cv', 'SE 2.0 D180 180cv', 'HSE 2.0 D180 180cv', 'HSE Dynamic 2.0 D180 180cv', 'R-Dynamic S 2.0 D165 165cv', 'R-Dynamic SE 2.0 D200 200cv', 'R-Dynamic HSE 2.0 P300 300cv', 'Chequered Flag 2.0 P250 250cv', 'First Edition 2.0 P300 300cv'] },
       { name: 'F-Pace', submodels: ['2.0 D180 180cv', '2.0 D240 240cv', '2.0 Ingenium 180cv', '3.0 D300 300cv', '3.0 V6 S 340cv', '2.0 P250 250cv', '2.0 P300 300cv', '3.0 P400 400cv', 'P400e PHEV 404cv', 'SE 2.0 D180 180cv', 'SE 3.0 D300 300cv', 'HSE 2.0 D240 240cv', 'HSE 3.0 D300 300cv', 'Portfolio 3.0 D300 300cv', 'R-Sport 3.0 D300 300cv', 'R-Dynamic SE 2.0 P250 250cv', 'R-Dynamic HSE 3.0 D300 300cv', 'R-Dynamic Black 3.0 P400 400cv', 'First Edition P400 400cv', 'Chequered Flag 2.0 P300 300cv'] },
@@ -1070,7 +1070,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Lotus',
     color: '#005c2b',
-    logo: 'https://cdn.simpleicons.org/lotus/ffffff',
+    logo: 'https://logo.clearbit.com/lotuscars.com',
     models: [
       { name: 'Elise', submodels: ['Elise 1.6 136cv', 'Elise 1.8 134cv', 'Elise S 1.8 220cv', 'Elise SC 1.8 220cv', 'Elise 111 1.6 136cv', 'Elise 111S 1.8 190cv', 'Elise 111R 1.8 192cv', 'Elise R 1.8 192cv', 'Elise CR 1.6 136cv', 'Elise Cup 250 1.8 243cv', 'Elise Cup 260 1.8 260cv', 'Elise Sport 220 1.8 220cv', 'Elise Sport 240 Final Edition 1.8 240cv', 'Elise Race 250 1.8 245cv', 'Elise Sprint 220 1.8 220cv', 'Elise Sprint 240 1.8 240cv', 'Elise S1 1.8 122cv', 'Elise Type 49 1.8 220cv', 'Elise Type 72 1.8 220cv', 'Elise 20th Anniversary 1.8 220cv'] },
       { name: 'Emira', submodels: ['Emira V6 400cv', 'Emira V6 First Edition 400cv', 'Emira I4 Turbo 360cv', 'Emira AMR GT Edition 400cv', 'Emira V6 GT4 Edition 400cv', 'Emira I4 Turbo Plus 360cv', 'Emira V6 Plus 400cv'] },
@@ -1093,7 +1093,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Caterham',
     color: '#cc0000',
-    logo: 'https://logo.clearbit.com/caterham.com',
+    logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Caterham_logo.svg?width=120',
     models: [
       { name: 'Seven 160', submodels: ['Seven 160 80cv', 'Seven 160 S 80cv'] },
       { name: 'Seven 170', submodels: ['Seven 170 84cv', 'Seven 170 R 84cv'] },
@@ -1164,7 +1164,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Saab',
     color: '#1a3a6c',
-    logo: 'https://cdn.simpleicons.org/saab/ffffff',
+    logo: 'https://logo.clearbit.com/saab.com',
     models: [
       { name: '9-3', submodels: ['1.8 T 150cv', '1.8 T 152cv', '2.0 T 175cv', '2.0 T BioPower 210cv', '2.0 Turbo 185cv', '2.8 Turbo V6 255cv', '2.8 Turbo V6 Aero 280cv', '1.9 TiD 120cv', '1.9 TiD 150cv', '1.9 TTiD 180cv', 'Aero 2.8 V6 260cv', '1.8i 122cv', '2.0i 150cv', '2.0 HOT 210cv', '2.3 T 185cv', '2.3 T 200cv', '2.0 TiD 110cv', '2.2 TiD 125cv', 'Vector 2.0T 150cv'] },
       { name: '9-3 Cabrio', submodels: ['1.8 T 150cv', '2.0 T 175cv', '2.0 Turbo 185cv', '2.8 Turbo V6 255cv', '2.8 Turbo V6 Aero 280cv', '1.9 TiD 150cv', 'Aero 2.8 V6 260cv', '2.0 T BioPower 175cv', 'Vector 2.0T 150cv'] },
@@ -1210,7 +1210,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Cupra',
     color: '#c8aa61',
-    logo: 'https://cdn.simpleicons.org/cupra/ffffff',
+    logo: 'https://logo.clearbit.com/cupraofficial.com',
     models: [
       { name: 'Terramar', submodels: ['1.5 TSI 150cv', '1.5 eTSI 204cv', '2.0 TDI 150cv', '2.0 TSI 272cv', '2.0 TSI 4Drive 272cv', 'e-Hybrid 272cv'] },
       { name: 'Formentor', submodels: ['1.5 TSI 150cv', '2.0 TDI 150cv', '2.0 TDI 4Drive 150cv', '2.0 TSI 190cv', '2.0 TSI 245cv', '2.0 TSI 4Drive 245cv', '2.0 TSI VZ 310cv', 'VZ2 2.0 TSI 4Drive 310cv', 'VZ5 2.5 TFSI 5 cilindros 390cv', 'e-Hybrid 204cv', 'e-Hybrid 245cv', 'e-Hybrid 4Drive 245cv', 'e-Hybrid VZ 272cv', '1.4 TSI e-Hybrid 245cv'] },
@@ -1298,7 +1298,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Dodge',
     color: '#1a1a6e',
-    logo: 'https://cdn.simpleicons.org/dodge/ffffff',
+    logo: 'https://logo.clearbit.com/dodge.com',
     models: [
       { name: 'Challenger', submodels: ['3.6 V6 305cv', '5.7 HEMI V8 375cv', '6.2 V8 SRT Hellcat 717cv', '6.2 V8 SRT Demon 840cv', '6.4 V8 392 HEMI 492cv', 'SRT Hellcat Redeye 797cv', 'SRT Hellcat Jailbreak 807cv'] },
       { name: 'Charger', submodels: ['2.7 V6 178cv', '3.5 V6 253cv', '3.6 V6 292cv', '5.7 HEMI V8 370cv', '6.1 V8 SRT8 431cv', '6.4 V8 SRT8 470cv', '6.2 V8 SRT Hellcat 707cv', '6.2 V8 SRT Hellcat Redeye 797cv'] },
@@ -1375,7 +1375,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'BYD',
     color: '#e60012',
-    logo: 'https://cdn.simpleicons.org/byd/ffffff',
+    logo: 'https://logo.clearbit.com/byd.com',
     models: [
       { name: 'Atto 3', submodels: ['Standard Range 204cv', 'Long Range 204cv', 'Extended Range 204cv'] },
       { name: 'Atto 2', submodels: ['Standard Range 95kW 129cv', 'Long Range 150kW 204cv'] },
@@ -1391,7 +1391,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'NIO',
     color: '#00c0ff',
-    logo: 'https://cdn.simpleicons.org/nio/ffffff',
+    logo: 'https://logo.clearbit.com/nio.com',
     models: [
       { name: 'EC6', submodels: ['75kWh Standard Range AWD 483cv', '100kWh Long Range AWD 483cv', '150kWh Ultra Long Range AWD 483cv', 'Performance AWD 544cv'] },
       { name: 'EL6', submodels: ['75kWh Standard Range AWD 483cv', '100kWh Long Range AWD 483cv', '150kWh Ultra Long Range AWD 483cv'] },
@@ -1426,7 +1426,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Xpeng',
     color: '#1dc0e6',
-    logo: 'https://cdn.simpleicons.org/xpeng/ffffff',
+    logo: 'https://logo.clearbit.com/xpeng.com',
     models: [
       { name: 'G3', submodels: ['Standard Range 145cv', 'Long Range 145cv', 'G3i Standard Range 145cv', 'G3i Long Range 145cv'] },
       { name: 'G6', submodels: ['RWD Standard Range 218cv', 'RWD Long Range 218cv', 'AWD Performance 449cv', 'RWD Max 218cv', 'AWD Max 449cv'] },
@@ -1591,7 +1591,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Rimac',
     color: '#cc0000',
-    logo: 'https://cdn.simpleicons.org/rimac/ffffff',
+    logo: 'https://logo.clearbit.com/rimac-automobili.com',
     models: [
       { name: 'Nevera', submodels: ['Nevera 1914cv', 'Nevera Time Attack 2107cv', 'Nevera R 2107cv'] },
       { name: 'Concept One', submodels: ['Concept One 1088cv'] },
@@ -1723,7 +1723,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Rivian',
     color: '#3d9970',
-    logo: 'https://cdn.simpleicons.org/rivian/ffffff',
+    logo: 'https://logo.clearbit.com/rivian.com',
     models: [
       { name: 'R1T', submodels: ['Quad-Motor AWD 835cv', 'Dual-Motor AWD 665cv', 'Dual-Motor Standard AWD 530cv', 'Adventure Quad-Motor AWD 835cv', 'Adventure Dual-Motor AWD 665cv', 'Launch Edition QM 835cv'] },
       { name: 'R1S', submodels: ['Quad-Motor AWD 835cv', 'Dual-Motor AWD 665cv', 'Dual-Motor Standard AWD 530cv', 'Adventure Quad-Motor AWD 835cv', 'Adventure Dual-Motor AWD 665cv', 'Launch Edition QM 835cv'] },
@@ -2097,7 +2097,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'TVR',
     color: '#c8102e',
-    logo: 'https://logo.clearbit.com/tvr.co.uk',
+    logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/TVR_logo.svg?width=120',
     models: [
       { name: 'Griffith', submodels: ['5.0 V8 500cv', '5.0 V8 400cv', 'Launch Edition 500cv'] },
       { name: 'Tuscan', submodels: ['3.6 Straight-6 350cv', '4.0 Straight-6 400cv', 'S 3.6 350cv', 'Speed Six 4.0 400cv'] },
@@ -2110,7 +2110,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Noble',
     color: '#1a1a1a',
-    logo: 'https://logo.clearbit.com/noblecars.com',
+    logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Noble_logo.svg?width=120',
     models: [
       { name: 'M12', submodels: ['GTO-3R 3.0T V6 352cv', 'GTO-3R Stage 2 400cv', 'GTR 3.0T V6 460cv'] },
       { name: 'M400', submodels: ['3.0T V6 400cv', 'Road 3.0T V6 400cv'] },
@@ -2132,7 +2132,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'BAC',
     color: '#0f1c2e',
-    logo: 'https://logo.clearbit.com/bac-mono.com',
+    logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/BAC_Mono_logo.svg?width=120',
     models: [
       { name: 'Mono', submodels: ['2.3 Ford EcoBoost 305cv', '2.3 Mountune 345cv', '2.3 Cosworth 305cv'] },
       { name: 'Mono R', submodels: ['2.3 Ford EcoBoost 333cv', '2.3 Mountune 373cv'] },
@@ -2163,7 +2163,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Gordon Murray',
     color: '#2c3e50',
-    logo: 'https://logo.clearbit.com/gordonmurrayautomotive.com',
+    logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Gordon_Murray_Automotive_logo.svg?width=120',
     models: [
       { name: 'T.50', submodels: ['3.9 V12 Cosworth 660cv', 'Niki Lauda Edition 660cv'] },
       { name: 'T.50s', submodels: ['3.9 V12 Cosworth 725cv Track Edition'] },
@@ -2173,7 +2173,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'De Tomaso',
     color: '#0038a8',
-    logo: 'https://logo.clearbit.com/detomaso.com',
+    logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/De_Tomaso_logo.svg?width=120',
     models: [
       { name: 'P72', submodels: ['Mid-engine V12 700cv', 'P72 Limited Edition'] },
       { name: 'Pantera', submodels: ['5.8 V8 Ford 330cv', '351 V8 330cv', 'GTS 5.8 V8 330cv', 'GT5-S 5.0 V8 350cv'] },
@@ -2184,7 +2184,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Daewoo',
     color: '#003087',
-    logo: 'https://logo.clearbit.com/daewoo.com',
+    logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Daewoo_logo.svg?width=120',
     models: [
       { name: 'Matiz', submodels: ['0.8 51cv', '1.0 64cv', '0.8 SE 51cv', '1.0 SE 64cv', '0.8 City 51cv'] },
       { name: 'Lanos', submodels: ['1.4 75cv', '1.5 86cv', '1.6 106cv', 'S 1.4 75cv', 'SX 1.5 86cv', 'SE 1.6 106cv'] },
@@ -2200,7 +2200,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Pontiac',
     color: '#c8102e',
-    logo: 'https://logo.clearbit.com/gm.com',
+    logo: 'https://logo.clearbit.com/pontiac.com',
     models: [
       { name: 'GTO', submodels: ['5.7 V8 350cv', '6.0 V8 400cv', '6.0 LS2 400cv'] },
       { name: 'Firebird', submodels: ['3.8 V6 200cv', '5.7 V8 345cv', 'Trans Am 5.7 V8 350cv', 'Formula 5.7 V8 325cv', 'WS6 5.7 V8 350cv'] },
@@ -2216,7 +2216,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Hummer',
     color: '#4a5540',
-    logo: 'https://logo.clearbit.com/hummer.com',
+    logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Hummer-Logo.svg?width=120',
     models: [
       { name: 'H1', submodels: ['6.5 Diesel V8 195cv', '6.5TD Alpha 300cv', '6.6 Duramax V8 300cv', 'Wagon 6.5TD 195cv', 'Open Top 6.5TD 195cv'] },
       { name: 'H2', submodels: ['6.0 V8 325cv', '6.0 V8 SUT 325cv', '6.2 V8 393cv', '6.0 Adventure 325cv'] },
@@ -2226,7 +2226,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Oldsmobile',
     color: '#c0392b',
-    logo: 'https://logo.clearbit.com/gm.com',
+    logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Oldsmobile_logo.svg?width=120',
     models: [
       { name: 'Intrigue', submodels: ['3.5 V6 215cv', '3.5 V6 GL 215cv', '3.5 V6 GLS 215cv'] },
       { name: 'Alero', submodels: ['2.2 143cv', '2.4 152cv', '3.4 V6 170cv', 'GL 2.4 152cv', 'GLS 3.4 V6 170cv'] },
@@ -2238,7 +2238,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Saturn',
     color: '#2c3e50',
-    logo: 'https://logo.clearbit.com/gm.com',
+    logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Saturn_Corporation_logo.svg?width=120',
     models: [
       { name: 'Ion', submodels: ['2.2 140cv', '2.4 Quad Coupe 170cv'] },
       { name: 'Aura', submodels: ['2.4 Hybrid 182cv', '3.5 V6 222cv', '3.6 V6 252cv XR'] },
@@ -2250,7 +2250,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Mercury',
     color: '#333333',
-    logo: 'https://logo.clearbit.com/ford.com',
+    logo: 'https://logo.clearbit.com/mercurycars.com',
     models: [
       { name: 'Grand Marquis', submodels: ['4.6 V8 220cv', '4.6 V8 GS 220cv', '4.6 V8 LS 224cv'] },
       { name: 'Mariner', submodels: ['2.3 143cv', '2.3 Hybrid 155cv', '3.0 V6 211cv AWD'] },
@@ -2263,7 +2263,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Scion',
     color: '#1a1a1a',
-    logo: 'https://logo.clearbit.com/toyota.com',
+    logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Scion_logo.svg?width=120',
     models: [
       { name: 'tC', submodels: ['2.4 161cv', '2.5 180cv', '2.5 Release Series 180cv'] },
       { name: 'xB', submodels: ['1.5 103cv', '2.4 158cv', 'Release Series 2.4 158cv'] },
@@ -2277,7 +2277,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Holden',
     color: '#c8102e',
-    logo: 'https://logo.clearbit.com/holden.com.au',
+    logo: 'https://commons.wikimedia.org/wiki/Special:FilePath/Holden_logo.svg?width=120',
     models: [
       { name: 'Commodore', submodels: ['3.0 V6 195cv', '3.6 V6 260cv', '6.0 V8 317cv', '6.2 V8 LS3 432cv', 'SS V 6.2 V8 432cv', 'HSV GTS 6.2 V8 432cv'] },
       { name: 'Astra', submodels: ['1.4T 140cv', '1.6T 200cv', '2.0T VXR 280cv', '1.6 CDTi 136cv'] },
@@ -2291,7 +2291,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Geo',
     color: '#cc0000',
-    logo: 'https://logo.clearbit.com/gm.com',
+    logo: 'https://logo.clearbit.com/geocars.com',
     models: [
       { name: 'Metro', submodels: ['1.0 55cv', '1.3 70cv', '1.0 LSi 55cv', '1.3 LSi 70cv'] },
       { name: 'Prizm', submodels: ['1.6 105cv', '1.8 120cv LSi', '1.8 125cv LSi'] },
