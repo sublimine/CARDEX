@@ -1,242 +1,165 @@
-// Script: merge .gen/*.json → catalog.ts
-import { readFileSync, writeFileSync, readdirSync } from 'fs'
-import { join } from 'path'
+// Generator: catalog.source.json -> catalog.ts
+// Single source of truth for the landing brand+model picker.
+// - Models are canonical nameplates only (body-style variants collapsed, NO submodels).
+// - Logos resolve to a WHITE-SILHOUETTE asset: SimpleIcons CDN (/ffffff) for covered
+//   brands, otherwise a self-hosted file in public/logos/ (downloaded here, with a
+//   Wikimedia thumb-PNG fallback), or a generated wordmark SVG when no logo is verifiable.
+// The UI applies filter: brightness(0) invert(1), so any transparent-background asset
+// renders as a clean white silhouette.
+//
+// Run:  node src/data/build-catalog.mjs
+import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs'
+import { fileURLToPath } from 'url'
+import { dirname, join } from 'path'
 
-const GEN = new URL('.gen/', import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1')
-const OUT = new URL('catalog.ts', import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1')
+const HERE = dirname(fileURLToPath(import.meta.url))
+const SRC = join(HERE, 'catalog.source.json')
+const OUT = join(HERE, 'catalog.ts')
+const LOGO_DIR = join(HERE, '..', '..', 'public', 'logos')
 
-const G = 'https://www.google.com/s2/favicons?domain='
-const SI = 'https://cdn.simpleicons.org/'
-const WK = 'https://upload.wikimedia.org/wikipedia/commons/thumb/'
-const gz = '&sz=128'
+const SI = (slug) => `https://cdn.simpleicons.org/${slug}/ffffff`
+const UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
+const SLEEP = (ms) => new Promise((r) => setTimeout(r, ms))
 
-const LOGO_MAP = {
-  // ── German ──────────────────────────────────────────────────────────────
-  'Volkswagen':    { color: '#1b4ca3', logo: SI+'volkswagen/ffffff' },
-  'BMW':           { color: '#1c69d4', logo: SI+'bmw/ffffff' },
-  'Mercedes':      { color: '#8a8a8a', logo: WK+'9/90/Mercedes-Logo.svg/100px-Mercedes-Logo.svg.png' },
-  'Mercedes-Benz': { color: '#8a8a8a', logo: WK+'9/90/Mercedes-Logo.svg/100px-Mercedes-Logo.svg.png' },
-  'Audi':          { color: '#bb0a21', logo: SI+'audi/ffffff' },
-  'Porsche':       { color: '#c9002b', logo: SI+'porsche/ffffff' },
-  'Opel':          { color: '#f0be00', logo: SI+'opel/ffffff' },
-  'Smart':         { color: '#1cb5e0', logo: G+'smart.com'+gz },
-  'Alpina':        { color: '#00408a', logo: G+'alpina-automobiles.com'+gz },
-  'Brabus':        { color: '#1a1a1a', logo: G+'brabus.com'+gz },
-  'Wiesmann':      { color: '#c9002b', logo: G+'wiesmann.com'+gz },
-  // ── French ──────────────────────────────────────────────────────────────
-  'Peugeot':       { color: '#0099d6', logo: SI+'peugeot/ffffff' },
-  'Renault':       { color: '#efdf00', logo: SI+'renault/ffffff' },
-  'Citroën':       { color: '#ed1d24', logo: SI+'citroen/ffffff' },
-  'Citroen':       { color: '#ed1d24', logo: SI+'citroen/ffffff' },
-  'DS Automobiles':{ color: '#2a2a5a', logo: G+'dsautomobiles.com'+gz },
-  'DS':            { color: '#2a2a5a', logo: G+'dsautomobiles.com'+gz },
-  'Alpine':        { color: '#0055a4', logo: G+'alpinecar.com'+gz },
-  'Dacia':         { color: '#1d5fa8', logo: SI+'dacia/ffffff' },
-  'Bugatti':       { color: '#9b0000', logo: G+'bugatti.com'+gz },
-  // ── Italian ─────────────────────────────────────────────────────────────
-  'Fiat':          { color: '#8b1e3f', logo: SI+'fiat/ffffff' },
-  'Alfa Romeo':    { color: '#a50024', logo: SI+'alfaromeo/ffffff' },
-  'Abarth':        { color: '#cc0000', logo: G+'abarth.com'+gz },
-  'Ferrari':       { color: '#cc0000', logo: SI+'ferrari/ffffff' },
-  'Lamborghini':   { color: '#d4a017', logo: SI+'lamborghini/ffffff' },
-  'Maserati':      { color: '#1e3a8a', logo: SI+'maserati/ffffff' },
-  'Lancia':        { color: '#002f6c', logo: G+'lancia.com'+gz },
-  'Pagani':        { color: '#1a1a1a', logo: G+'pagani.com'+gz },
-  // ── Japanese ────────────────────────────────────────────────────────────
-  'Toyota':        { color: '#eb0a1e', logo: SI+'toyota/ffffff' },
-  'Honda':         { color: '#cc0000', logo: SI+'honda/ffffff' },
-  'Nissan':        { color: '#c71444', logo: SI+'nissan/ffffff' },
-  'Mazda':         { color: '#910a2a', logo: SI+'mazda/ffffff' },
-  'Subaru':        { color: '#1a4aa6', logo: SI+'subaru/ffffff' },
-  'Mitsubishi':    { color: '#cc0000', logo: SI+'mitsubishi/ffffff' },
-  'Suzuki':        { color: '#1a1a6e', logo: SI+'suzuki/ffffff' },
-  'Lexus':         { color: '#1a1a1a', logo: SI+'lexus/ffffff' },
-  // ── Korean ──────────────────────────────────────────────────────────────
-  'Hyundai':       { color: '#002c5f', logo: SI+'hyundai/ffffff' },
-  'Kia':           { color: '#05141f', logo: SI+'kia/ffffff' },
-  'Genesis':       { color: '#1a1a1a', logo: G+'genesis.com'+gz },
-  // ── British ─────────────────────────────────────────────────────────────
-  'Land Rover':    { color: '#005a2b', logo: G+'landrover.com'+gz },
-  'Jaguar':        { color: '#1a1a1a', logo: G+'jaguar.com'+gz },
-  'Aston Martin':  { color: '#004f2d', logo: G+'astonmartin.com'+gz },
-  'Bentley':       { color: '#4b5320', logo: SI+'bentley/ffffff' },
-  'McLaren':       { color: '#ff8000', logo: G+'mclaren.com'+gz },
-  'Rolls-Royce':   { color: '#1a1a2e', logo: G+'rolls-roycemotorcars.com'+gz },
-  'Lotus':         { color: '#005c2b', logo: G+'lotuscars.com'+gz },
-  'INEOS':         { color: '#1a1a1a', logo: G+'ineosgrenadier.com'+gz },
-  'Caterham':      { color: '#cc0000', logo: G+'caterham.com'+gz },
-  'Morgan':        { color: '#1a4040', logo: G+'morgan-motor.co.uk'+gz },
-  'TVR':           { color: '#1a1a8c', logo: G+'tvr.com'+gz },
-  // ── Nordic ──────────────────────────────────────────────────────────────
-  'Volvo':         { color: '#003057', logo: SI+'volvo/ffffff' },
-  'Polestar':      { color: '#0a0a0a', logo: SI+'polestar/ffffff' },
-  'Saab':          { color: '#1a3a6c', logo: G+'saab.com'+gz },
-  'Koenigsegg':    { color: '#1a1a1a', logo: G+'koenigsegg.com'+gz },
-  // ── Spanish ─────────────────────────────────────────────────────────────
-  'SEAT':          { color: '#cc1729', logo: SI+'seat/ffffff' },
-  'Seat':          { color: '#cc1729', logo: SI+'seat/ffffff' },
-  'Cupra':         { color: '#c8aa61', logo: G+'cupraofficial.com'+gz },
-  // ── Czech ───────────────────────────────────────────────────────────────
-  'Skoda':         { color: '#4ba82e', logo: SI+'skoda/ffffff' },
-  'Škoda':         { color: '#4ba82e', logo: SI+'skoda/ffffff' },
-  // ── American ────────────────────────────────────────────────────────────
-  'Ford':          { color: '#003476', logo: SI+'ford/ffffff' },
-  'Jeep':          { color: '#1a3a1a', logo: SI+'jeep/ffffff' },
-  'Dodge':         { color: '#1a1a6e', logo: G+'dodge.com'+gz },
-  'Chrysler':      { color: '#003366', logo: G+'chrysler.com'+gz },
-  'Cadillac':      { color: '#1a1a2e', logo: G+'cadillac.com'+gz },
-  'Chevrolet':     { color: '#cc9900', logo: SI+'chevrolet/ffffff' },
-  // ── EV / Chinese ────────────────────────────────────────────────────────
-  'Tesla':         { color: '#cc0000', logo: SI+'tesla/ffffff' },
-  'BYD':           { color: '#e60012', logo: G+'byd.com'+gz },
-  'NIO':           { color: '#00c0ff', logo: G+'nio.com'+gz },
-  'MG':            { color: '#b22222', logo: G+'mgmotor.co.uk'+gz },
-  'Xpeng':         { color: '#1dc0e6', logo: G+'xpeng.com'+gz },
-  'Lynk & Co':     { color: '#009944', logo: G+'lynkco.com'+gz },
-  'Lynk&Co':       { color: '#009944', logo: G+'lynkco.com'+gz },
-  'GWM / Ora':     { color: '#1a1a6e', logo: G+'gwm.com'+gz },
-  'GWM':           { color: '#1a1a6e', logo: G+'gwm.com'+gz },
-  'Ora':           { color: '#1a1a6e', logo: G+'gwm.com'+gz },
-  'KG Mobility':   { color: '#1a5276', logo: G+'kg-mobility.com'+gz },
-  'SsangYong':     { color: '#1a5276', logo: G+'kg-mobility.com'+gz },
-  'Maxus':         { color: '#c0392b', logo: G+'maxus.global'+gz },
-  'Omoda':         { color: '#e74c3c', logo: G+'omoda.com'+gz },
-  'Leapmotor':     { color: '#2ecc71', logo: G+'leapmotor.com'+gz },
-  'Zeekr':         { color: '#1a1aff', logo: G+'zeekrlife.com'+gz },
-  'Aiways':        { color: '#0099cc', logo: G+'aiways.com'+gz },
-  'JAECOO':        { color: '#1a3a6e', logo: G+'jaecoo.com'+gz },
-  'Voyah':         { color: '#1a1a4a', logo: G+'voyah.com'+gz },
-  'Hongqi':        { color: '#cc0000', logo: G+'hongqi.com'+gz },
-  'Deepal':        { color: '#0055cc', logo: G+'deepal.com'+gz },
-  'Neta':          { color: '#00aacc', logo: G+'neta.auto'+gz },
-  // ── Other ───────────────────────────────────────────────────────────────
-  'MINI':          { color: '#1f1f1f', logo: SI+'mini/ffffff' },
-  'Mini':          { color: '#1f1f1f', logo: SI+'mini/ffffff' },
-  'Infiniti':      { color: '#2a2a2a', logo: G+'infiniti.com'+gz },
-  'Isuzu':         { color: '#1a1a8c', logo: G+'isuzu.com'+gz },
-  'Rimac':         { color: '#cc0000', logo: G+'rimac-automobili.com'+gz },
-  'Microlino':     { color: '#ff6600', logo: G+'microlino-car.com'+gz },
-  'Brabus':        { color: '#1a1a1a', logo: G+'brabus.com'+gz },
-  'Wiesmann':      { color: '#c9002b', logo: G+'wiesmann.com'+gz },
-  'Caterham':      { color: '#cc0000', logo: G+'caterham.com'+gz },
-  'Morgan':        { color: '#1a4040', logo: G+'morgan-motor.co.uk'+gz },
-  'Pagani':        { color: '#1a1a1a', logo: G+'pagani.com'+gz },
-  'Bugatti':       { color: '#9b0000', logo: G+'bugatti.com'+gz },
-  'Koenigsegg':    { color: '#1a1a1a', logo: G+'koenigsegg.com'+gz },
+function detectExt(buf) {
+  if (!buf || buf.length < 200) return null
+  const head = buf.slice(0, 200).toString('utf8').toLowerCase()
+  if (head.includes('<svg') || head.includes('<?xml')) return 'svg'
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return 'png'
+  if (head.includes('riff') && head.includes('webp')) return 'webp'
+  return null
 }
 
-const ORDER = [
-  // German
-  'Volkswagen','BMW','Mercedes','Audi','Porsche','Opel','Smart','MINI','Alpina','Brabus','Wiesmann',
-  // French
-  'Peugeot','Renault','Citroën','DS Automobiles','Alpine','Dacia','Bugatti',
-  // Italian
-  'Fiat','Alfa Romeo','Abarth','Ferrari','Lamborghini','Maserati','Lancia','Pagani',
-  // Japanese
-  'Toyota','Honda','Nissan','Mazda','Subaru','Mitsubishi','Suzuki','Lexus',
-  // Korean
-  'Hyundai','Kia','Genesis',
-  // British
-  'Land Rover','Jaguar','Aston Martin','Bentley','McLaren','Rolls-Royce','Lotus','INEOS','Caterham','Morgan','TVR',
-  // Nordic
-  'Volvo','Polestar','Saab','Koenigsegg',
-  // Spanish
-  'SEAT','Cupra',
-  // Czech
-  'Skoda',
-  // American
-  'Ford','Jeep','Dodge','Chrysler','Cadillac','Chevrolet',
-  // EV/Chinese
-  'Tesla','BYD','NIO','MG','Xpeng','Lynk & Co','GWM / Ora','KG Mobility','Zeekr','Aiways','JAECOO','Voyah','Hongqi','Deepal','Neta','Maxus','Omoda','Leapmotor',
-  // Croatian/Other EV
-  'Rimac','Microlino',
-  // Others
-  'Infiniti','Isuzu',
-]
-
-// Read + parse all JSON files
-const files = readdirSync(GEN).filter(f => f.endsWith('.json'))
-const allBrands = []
-const seen = new Set()
-
-for (const file of files) {
-  const raw = readFileSync(join(GEN, file), 'utf8')
-  let data
+async function fetchBuf(url) {
   try {
-    data = JSON.parse(raw)
-  } catch(e) {
-    console.error(`Parse error in ${file}:`, e.message)
-    continue
+    const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'image/svg+xml,image/png,image/webp,*/*' } })
+    if (!res.ok) return null
+    return Buffer.from(await res.arrayBuffer())
+  } catch {
+    return null
   }
-  const brands = data.brands || []
-  for (const b of brands) {
-    // Normalize Mercedes-Benz → Mercedes
-    if (b.name === 'Mercedes-Benz') b.name = 'Mercedes'
-    if (b.name === 'Citroën' || b.name === 'Citroen') b.name = 'Citroën'
-    if (b.name === 'Škoda') b.name = 'Skoda'
-    if (b.name === 'Lynk&Co' || b.name === 'Lynk & Co') b.name = 'Lynk & Co'
+}
 
-    if (seen.has(b.name)) {
-      // Merge models instead of duplicate
-      const existing = allBrands.find(x => x.name === b.name)
-      if (existing) {
-        const existingNames = new Set(existing.models.map(m => m.name))
-        for (const m of (b.models || [])) {
-          if (!existingNames.has(m.name)) {
-            existing.models.push(m)
-            existingNames.add(m.name)
-          }
-        }
-      }
-      continue
+// upload.wikimedia.org/wikipedia/<proj>/H/HH/File.svg -> .../thumb/H/HH/File.svg/<w>px-File.svg.png
+function wikimediaThumb(url, width = 512) {
+  const m = url.match(/^(https:\/\/upload\.wikimedia\.org\/wikipedia\/[a-z]+)\/([0-9a-f])\/([0-9a-f]{2})\/(.+\.svg)$/i)
+  if (!m) return null
+  const file = m[4]
+  return `${m[1]}/thumb/${m[2]}/${m[3]}/${file}/${width}px-${file}.png`
+}
+
+function existingLocal(slug) {
+  for (const ext of ['svg', 'png', 'webp']) {
+    const p = join(LOGO_DIR, `${slug}.${ext}`)
+    if (existsSync(p)) {
+      try {
+        const buf = readFileSync(p)
+        if (detectExt(buf)) return `${slug}.${ext}`
+      } catch {}
     }
-    seen.add(b.name)
-    allBrands.push(b)
   }
+  return null
 }
 
-// Sort by ORDER array
-allBrands.sort((a, b) => {
-  const ia = ORDER.indexOf(a.name)
-  const ib = ORDER.indexOf(b.name)
-  if (ia === -1 && ib === -1) return a.name.localeCompare(b.name)
-  if (ia === -1) return 1
-  if (ib === -1) return -1
-  return ia - ib
-})
-
-// Generate TypeScript
-function esc(s) { return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'") }
-
-let ts = `// Auto-generated — exhaustive EU car catalog — do not edit manually
-export interface Model { name: string; submodels: string[] }
-export interface Brand { name: string; logo: string; color: string; models: Model[] }
-
-export const BRANDS: Brand[] = [\n`
-
-for (const b of allBrands) {
-  const meta = LOGO_MAP[b.name] || { color: '#1a1a1a', logo: '' }
-  ts += `  {\n`
-  ts += `    name: '${esc(b.name)}',\n`
-  ts += `    color: '${meta.color}',\n`
-  ts += `    logo: '${esc(meta.logo)}',\n`
-  ts += `    models: [\n`
-  for (const m of (b.models || [])) {
-    const subs = (m.submodels || []).map(s => `'${esc(s)}'`).join(', ')
-    ts += `      { name: '${esc(m.name)}', submodels: [${subs}] },\n`
-  }
-  ts += `    ],\n`
-  ts += `  },\n`
+function wordmark(name) {
+  const text = String(name).toUpperCase().replace(/[<>&]/g, '')
+  const w = Math.max(140, text.length * 26 + 24)
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} 72">` +
+    `<text x="${w / 2}" y="50" text-anchor="middle" ` +
+    `font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="800" ` +
+    `letter-spacing="1.5" fill="#0a0a0a">${text}</text></svg>`
 }
 
-ts += `]\n`
+async function ensureLogo(b) {
+  if (b.si) return SI(b.slug)
 
-writeFileSync(OUT, ts, 'utf8')
+  // 1) already on disk
+  const have = existingLocal(b.slug)
+  if (have) return `/logos/${have}`
 
-const totalModels = allBrands.reduce((acc, b) => acc + (b.models||[]).length, 0)
-const totalSubs = allBrands.reduce((acc, b) => acc + (b.models||[]).reduce((a, m) => a + (m.submodels||[]).length, 0), 0)
-console.log(`✓ catalog.ts written`)
-console.log(`  Brands: ${allBrands.length}`)
-console.log(`  Models: ${totalModels}`)
-console.log(`  Submodels: ${totalSubs}`)
-console.log(`  Lines: ~${ts.split('\n').length}`)
+  // 2) download
+  if (b.download) {
+    let buf = await fetchBuf(b.download)
+    let ext = detectExt(buf)
+    // Wikimedia raw SVG often 429s on datacenter IPs -> fall back to thumb PNG
+    if (!ext && /upload\.wikimedia\.org/.test(b.download) && b.download.endsWith('.svg')) {
+      const thumb = wikimediaThumb(b.download, 512)
+      if (thumb) {
+        await SLEEP(250)
+        buf = await fetchBuf(thumb)
+        ext = detectExt(buf)
+      }
+    }
+    if (ext) {
+      const fname = `${b.slug}.${ext}`
+      writeFileSync(join(LOGO_DIR, fname), buf)
+      return `/logos/${fname}`
+    }
+  }
+
+  // 3) wordmark fallback (self-hosted, always white-silhouette safe)
+  const fname = `${b.slug}.svg`
+  writeFileSync(join(LOGO_DIR, fname), wordmark(b.name), 'utf8')
+  return `/logos/${fname}`
+}
+
+function esc(s) {
+  return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+}
+
+async function main() {
+  const data = JSON.parse(readFileSync(SRC, 'utf8'))
+  const seenBrand = new Set()
+  const report = { si: 0, local: 0, downloaded: 0, wordmark: 0, brands: data.length, models: 0 }
+
+  let ts = `// Auto-generated by build-catalog.mjs from catalog.source.json — do not edit manually\n`
+  ts += `export interface Model { name: string; submodels: string[] }\n`
+  ts += `export interface Brand { name: string; logo: string; color: string; models: Model[] }\n\n`
+  ts += `export const BRANDS: Brand[] = [\n`
+
+  for (const b of data) {
+    if (seenBrand.has(b.name)) continue
+    seenBrand.add(b.name)
+
+    const before = readdirSync(LOGO_DIR).length
+    const logo = await ensureLogo(b)
+    const after = readdirSync(LOGO_DIR).length
+    if (b.si) report.si++
+    else if (logo.endsWith('.svg') && after > before) report.downloaded++
+    else if (logo.startsWith('/logos/')) report.local++
+
+    // dedupe models, preserve order
+    const seenM = new Set()
+    const models = []
+    for (const m of b.models) {
+      const name = String(m).trim()
+      if (!name || seenM.has(name)) continue
+      seenM.add(name)
+      models.push(name)
+    }
+    report.models += models.length
+
+    ts += `  {\n`
+    ts += `    name: '${esc(b.name)}',\n`
+    ts += `    color: '${esc(b.color)}',\n`
+    ts += `    logo: '${esc(logo)}',\n`
+    ts += `    models: [\n`
+    for (const name of models) {
+      ts += `      { name: '${esc(name)}', submodels: [] },\n`
+    }
+    ts += `    ],\n`
+    ts += `  },\n`
+    await SLEEP(60)
+  }
+
+  ts += `]\n`
+  writeFileSync(OUT, ts, 'utf8')
+
+  console.log('catalog.ts written')
+  console.log(`  brands:     ${report.brands}`)
+  console.log(`  models:     ${report.models}`)
+  console.log(`  simpleicons:${report.si}`)
+  console.log(`  local+dl:   ${report.local + report.downloaded}`)
+}
+
+main().catch((e) => { console.error(e); process.exit(1) })
