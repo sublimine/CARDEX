@@ -52,6 +52,7 @@ function triggerStyle(open: boolean): React.CSSProperties {
   }
 }
 const LABEL: React.CSSProperties = { fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.32)', letterSpacing: '0.08em', textTransform: 'uppercase', lineHeight: 1.1 }
+const SECTION: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.07em', textTransform: 'uppercase' }
 function valueStyle(active: boolean): React.CSSProperties {
   return { fontSize: 13, fontWeight: active ? 600 : 400, color: active ? '#f8fafc' : 'rgba(255,255,255,0.42)', lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }
 }
@@ -60,6 +61,14 @@ function Chevron({ open }: { open: boolean }) {
     <svg width={11} height={11} viewBox="0 0 11 11" style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: 'rgba(255,255,255,0.32)' }}>
       <path d="M1.5 3.5l4 4 4-4" stroke="currentColor" strokeWidth={1.5} fill="none" strokeLinecap="round" />
     </svg>
+  )
+}
+function ClearDot({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
+  return (
+    <div role="button" onClick={onClick}
+      style={{ width: 18, height: 18, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
+      <svg width={8} height={8} viewBox="0 0 8 8"><path d="M1 1l6 6M7 1L1 7" stroke="rgba(255,255,255,0.75)" strokeWidth={1.5} strokeLinecap="round" /></svg>
+    </div>
   )
 }
 
@@ -127,6 +136,7 @@ const PANEL_GLASS: React.CSSProperties = {
 const SEL_BG = 'rgba(255,255,255,0.09)'
 const SEL_BORDER = 'rgba(255,255,255,0.14)'
 const HOVER_BG = 'rgba(255,255,255,0.05)'
+const DIVIDER = 'rgba(255,255,255,0.07)'
 
 /* ─── Centered modal shell ─────────────────────────────────────────────── */
 function CenterModal({ id, width, children }: { id: string; width: number; children: React.ReactNode }) {
@@ -146,7 +156,7 @@ function CenterModal({ id, width, children }: { id: string; width: number; child
 }
 function ModalHeader({ title, onClose, onBack }: { title: React.ReactNode; onClose: () => void; onBack?: () => void }) {
   return (
-    <div style={{ padding: '13px 14px 11px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 10 }}>
+    <div style={{ padding: '13px 14px 11px', borderBottom: `1px solid ${DIVIDER}`, display: 'flex', alignItems: 'center', gap: 10 }}>
       {onBack && (
         <button onClick={onBack} style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.05)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
           <svg width={11} height={11} viewBox="0 0 12 12"><path d="M8 2L4 6l4 4" stroke="rgba(255,255,255,0.6)" strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -168,6 +178,14 @@ function SearchBox({ value, onChange, placeholder, inputRef }: { value: string; 
           style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 13, color: '#fff', fontFamily: 'inherit' }} />
         {value && <button onClick={() => onChange('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)', fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>}
       </div>
+    </div>
+  )
+}
+function FooterActions({ onClear, onDone }: { onClear: () => void; onDone: () => void }) {
+  return (
+    <div style={{ padding: '12px 16px 16px', display: 'flex', gap: 8, borderTop: `1px solid ${DIVIDER}` }}>
+      <button onClick={onClear} style={{ flex: '0 0 auto', padding: '10px 16px', borderRadius: 9, background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Limpiar</button>
+      <button onClick={onDone} style={{ flex: 1, padding: '10px 0', borderRadius: 9, background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.3)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Listo</button>
     </div>
   )
 }
@@ -225,12 +243,9 @@ function MarcaModeloField({ value, onChange }: { value: MMState; onChange: (v: M
           <span style={LABEL}>Marca y modelo</span>
           <span style={valueStyle(!!value.brand)}>{label}</span>
         </div>
-        {value.brand ? (
-          <div role="button" onClick={e => { e.stopPropagation(); onChange({ brand: null, model: null, submodel: '' }); close() }}
-            style={{ width: 18, height: 18, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
-            <svg width={8} height={8} viewBox="0 0 8 8"><path d="M1 1l6 6M7 1L1 7" stroke="rgba(255,255,255,0.75)" strokeWidth={1.5} strokeLinecap="round" /></svg>
-          </div>
-        ) : <Chevron open={open} />}
+        {value.brand
+          ? <ClearDot onClick={e => { e.stopPropagation(); onChange({ brand: null, model: null, submodel: '' }); close() }} />
+          : <Chevron open={open} />}
       </button>
 
       <AnimatePresence>
@@ -326,7 +341,7 @@ function MarcaModeloField({ value, onChange }: { value: MMState; onChange: (v: M
   )
 }
 
-/* ─── Year range — two type-or-pick comboboxes (Desde / Hasta) ─────────── */
+/* ─── Year column — type-or-pick ──────────────────────────────────────── */
 function YearColumn({ heading, value, onChange, options }: { heading: string; value: number | null; onChange: (y: number | null) => void; options: number[] }) {
   const [text, setText] = useState('')
   const typed = text.replace(/\D/g, '')
@@ -336,14 +351,10 @@ function YearColumn({ heading, value, onChange, options }: { heading: string; va
       <span style={{ ...LABEL, marginBottom: 6 }}>{heading}</span>
       <input
         value={text || (value ?? '')}
-        onChange={e => {
-          const v = e.target.value.replace(/\D/g, '').slice(0, 4)
-          setText(v)
-          onChange(v.length === 4 ? Number(v) : null)
-        }}
+        onChange={e => { const v = e.target.value.replace(/\D/g, '').slice(0, 4); setText(v); onChange(v.length === 4 ? Number(v) : null) }}
         inputMode="numeric" placeholder="—"
         style={{ height: 40, borderRadius: 9, padding: '0 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', color: '#fff', fontSize: 14, fontWeight: 600, fontFamily: 'inherit', outline: 'none', width: '100%' }} />
-      <div style={{ marginTop: 6, maxHeight: '34vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <div style={{ marginTop: 6, maxHeight: 152, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
         {list.map(y => {
           const sel = value === y
           return (
@@ -358,69 +369,31 @@ function YearColumn({ heading, value, onChange, options }: { heading: string; va
     </div>
   )
 }
-function YearRange({ minY, maxY, onChange }: { minY: number | null; maxY: number | null; onChange: (lo: number | null, hi: number | null) => void }) {
-  const [open, setOpen] = useState(false)
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const close = useCallback(() => setOpen(false), [])
-  useOutside(open, 'year-panel', triggerRef, close)
 
-  const active = minY != null || maxY != null
-  const label = !active ? 'Cualquier año'
-    : minY != null && maxY != null ? `${minY} — ${maxY}`
-    : minY != null ? `desde ${minY}` : `hasta ${maxY}`
-
-  // keep order coherent
-  const setLo = (y: number | null) => onChange(y, maxY != null && y != null && y > maxY ? y : maxY)
-  const setHi = (y: number | null) => onChange(minY != null && y != null && y < minY ? y : minY, y)
-
-  return (
-    <>
-      <button ref={triggerRef} onClick={() => setOpen(v => !v)} style={triggerStyle(open)}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', flex: 1, minWidth: 0 }}>
-          <span style={LABEL}>Año</span>
-          <span style={valueStyle(active)}>{label}</span>
-        </div>
-        {active ? (
-          <div role="button" onClick={e => { e.stopPropagation(); onChange(null, null); close() }}
-            style={{ width: 18, height: 18, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
-            <svg width={8} height={8} viewBox="0 0 8 8"><path d="M1 1l6 6M7 1L1 7" stroke="rgba(255,255,255,0.75)" strokeWidth={1.5} strokeLinecap="round" /></svg>
-          </div>
-        ) : <Chevron open={open} />}
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <CenterModal id="year-panel" width={420}>
-            <ModalHeader title="Año de matriculación" onClose={close} />
-            <div style={{ display: 'flex', gap: 12, padding: '14px' }}>
-              <YearColumn heading="Desde" value={minY} onChange={setLo} options={maxY != null ? YEARS.filter(y => y <= maxY) : YEARS} />
-              <div style={{ width: 1, background: 'rgba(255,255,255,0.06)', alignSelf: 'stretch' }} />
-              <YearColumn heading="Hasta" value={maxY} onChange={setHi} options={minY != null ? YEARS.filter(y => y >= minY) : YEARS} />
-            </div>
-            <div style={{ padding: '0 14px 14px', display: 'flex', gap: 8 }}>
-              <button onClick={() => onChange(null, null)} style={{ flex: '0 0 auto', padding: '10px 16px', borderRadius: 9, background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Limpiar</button>
-              <button onClick={close} style={{ flex: 1, padding: '10px 0', borderRadius: 9, background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.3)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Listo</button>
-            </div>
-          </CenterModal>
-        )}
-      </AnimatePresence>
-    </>
-  )
-}
-
-/* ─── Kilometraje — histogram density + dual-handle slider + inputs ─────── */
-function KmRange({ kmMin, kmMax, onChange }: { kmMin: number; kmMax: number; onChange: (lo: number, hi: number) => void }) {
+/* ─── Año y kilómetros — one field, one widget with both ranges ────────── */
+function AnoKmField({ minY, maxY, kmMin, kmMax, onYear, onKm }: {
+  minY: number | null; maxY: number | null; kmMin: number; kmMax: number;
+  onYear: (lo: number | null, hi: number | null) => void; onKm: (lo: number, hi: number) => void
+}) {
   const [open, setOpen] = useState(false)
   const [drag, setDrag] = useState<null | 'min' | 'max'>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const close = useCallback(() => setOpen(false), [])
-  useOutside(open, 'km-panel', triggerRef, close)
+  useOutside(open, 'anokm-panel', triggerRef, close)
 
   const minF = kmMin / KM_MAX, maxF = kmMax / KM_MAX
-  const active = kmMin > 0 || kmMax < KM_MAX
+  const anoActive = minY != null || maxY != null
+  const kmActive = kmMin > 0 || kmMax < KM_MAX
+  const active = anoActive || kmActive
   const maxLabel = kmMax >= KM_MAX ? `${fmt(KM_MAX)}+` : fmt(kmMax)
-  const label = !active ? 'Cualquier km' : `${fmt(kmMin)} — ${maxLabel}`
+
+  const anoTxt = !anoActive ? null : (minY != null && maxY != null ? `${minY}–${maxY}` : minY != null ? `desde ${minY}` : `hasta ${maxY}`)
+  const kmTxt = !kmActive ? null : `${fmt(kmMin)}–${maxLabel} km`
+  const label = [anoTxt, kmTxt].filter(Boolean).join('  ·  ') || 'Cualquiera'
+
+  const setLo = (y: number | null) => onYear(y, maxY != null && y != null && y > maxY ? y : maxY)
+  const setHi = (y: number | null) => onYear(minY != null && y != null && y < minY ? y : minY, y)
 
   useEffect(() => {
     if (!drag) return
@@ -428,87 +401,96 @@ function KmRange({ kmMin, kmMax, onChange }: { kmMin: number; kmMax: number; onC
       const r = trackRef.current?.getBoundingClientRect(); if (!r) return
       const f = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width))
       const km = Math.round((f * KM_MAX) / KM_STEP) * KM_STEP
-      if (drag === 'min') onChange(Math.min(km, kmMax - KM_STEP), kmMax)
-      else onChange(kmMin, Math.max(km, kmMin + KM_STEP))
+      if (drag === 'min') onKm(Math.min(km, kmMax - KM_STEP), kmMax)
+      else onKm(kmMin, Math.max(km, kmMin + KM_STEP))
     }
     const up = () => setDrag(null)
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
     return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up) }
-  }, [drag, kmMin, kmMax, onChange])
+  }, [drag, kmMin, kmMax, onKm])
 
-  // approx live count cue from the density buckets within range
   const inv = Math.round(KM_DENSITY.reduce((acc, d, i) => {
     const c = (i + 0.5) / KM_DENSITY.length
     return acc + (c >= minF && c <= maxF ? d : 0)
   }, 0) / KM_DENSITY.reduce((a, b) => a + b, 0) * 1_550_000)
 
+  const clearAll = () => { onYear(null, null); onKm(0, KM_MAX) }
+
   return (
     <>
       <button ref={triggerRef} onClick={() => setOpen(v => !v)} style={triggerStyle(open)}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', flex: 1, minWidth: 0 }}>
-          <span style={LABEL}>Kilómetros</span>
+          <span style={LABEL}>Año y kilómetros</span>
           <span style={valueStyle(active)}>{label}</span>
         </div>
-        {active ? (
-          <div role="button" onClick={e => { e.stopPropagation(); onChange(0, KM_MAX); close() }}
-            style={{ width: 18, height: 18, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
-            <svg width={8} height={8} viewBox="0 0 8 8"><path d="M1 1l6 6M7 1L1 7" stroke="rgba(255,255,255,0.75)" strokeWidth={1.5} strokeLinecap="round" /></svg>
-          </div>
-        ) : <Chevron open={open} />}
+        {active
+          ? <ClearDot onClick={e => { e.stopPropagation(); clearAll(); close() }} />
+          : <Chevron open={open} />}
       </button>
 
       <AnimatePresence>
         {open && (
-          <CenterModal id="km-panel" width={460}>
-            <ModalHeader title="Kilómetros" onClose={close} />
-            <div style={{ padding: '18px 20px 6px' }}>
-              {/* histogram + dual-handle slider */}
-              <div ref={trackRef} style={{ position: 'relative', height: 72, touchAction: 'none' }}>
-                <div style={{ position: 'absolute', inset: '0 0 8px 0', display: 'flex', alignItems: 'flex-end', gap: 2 }}>
-                  {KM_DENSITY.map((d, i) => {
-                    const c = (i + 0.5) / KM_DENSITY.length
-                    const on = c >= minF && c <= maxF
-                    return <div key={i} style={{ flex: 1, height: `${d}%`, borderRadius: '2px 2px 0 0', background: on ? 'rgba(129,140,248,0.6)' : 'rgba(255,255,255,0.07)', transition: 'background 0.12s' }} />
+          <CenterModal id="anokm-panel" width={500}>
+            <ModalHeader title="Año y kilómetros" onClose={close} />
+            <div style={{ maxHeight: '74vh', overflowY: 'auto' }}>
+              {/* ── Año ── */}
+              <div style={{ padding: '14px 18px 4px' }}>
+                <div style={{ ...SECTION, marginBottom: 12 }}>Año de matriculación</div>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <YearColumn heading="Desde" value={minY} onChange={setLo} options={maxY != null ? YEARS.filter(y => y <= maxY) : YEARS} />
+                  <div style={{ width: 1, background: DIVIDER }} />
+                  <YearColumn heading="Hasta" value={maxY} onChange={setHi} options={minY != null ? YEARS.filter(y => y >= minY) : YEARS} />
+                </div>
+              </div>
+
+              <div style={{ height: 1, background: DIVIDER, margin: '14px 0 0' }} />
+
+              {/* ── Kilómetros ── */}
+              <div style={{ padding: '16px 20px 6px' }}>
+                <div style={{ ...SECTION, marginBottom: 14 }}>Kilómetros</div>
+                <div ref={trackRef} style={{ position: 'relative', height: 72, touchAction: 'none' }}>
+                  <div style={{ position: 'absolute', inset: '0 0 8px 0', display: 'flex', alignItems: 'flex-end', gap: 2 }}>
+                    {KM_DENSITY.map((d, i) => {
+                      const c = (i + 0.5) / KM_DENSITY.length
+                      const on = c >= minF && c <= maxF
+                      return <div key={i} style={{ flex: 1, height: `${d}%`, borderRadius: '2px 2px 0 0', background: on ? 'rgba(129,140,248,0.6)' : 'rgba(255,255,255,0.07)', transition: 'background 0.12s' }} />
+                    })}
+                  </div>
+                  <div style={{ position: 'absolute', left: 0, right: 0, bottom: 5, height: 3, background: 'rgba(255,255,255,0.1)', borderRadius: 2 }} />
+                  <div style={{ position: 'absolute', bottom: 5, height: 3, left: `${minF * 100}%`, width: `${(maxF - minF) * 100}%`, background: 'rgba(129,140,248,0.85)', borderRadius: 2 }} />
+                  {(['min', 'max'] as const).map(h => {
+                    const f = h === 'min' ? minF : maxF
+                    return (
+                      <div key={h} onPointerDown={e => { (e.target as HTMLElement).setPointerCapture?.(e.pointerId); setDrag(h) }}
+                        style={{ position: 'absolute', bottom: -1, left: `${f * 100}%`, transform: 'translateX(-50%)', width: 16, height: 16, borderRadius: '50%', background: '#0b0a1e', border: `2px solid ${drag === h ? '#c7d2fe' : 'rgba(165,180,252,0.95)'}`, boxShadow: '0 2px 8px rgba(0,0,0,0.55)', cursor: drag === h ? 'grabbing' : 'grab', touchAction: 'none', zIndex: 2 }}>
+                        <svg width={8} height={8} viewBox="0 0 8 8" style={{ position: 'absolute', inset: 2, opacity: 0.7 }}><path d="M3 1L1 4l2 3M5 1l2 3-2 3" stroke="#a5b4fc" strokeWidth={1} fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      </div>
+                    )
                   })}
                 </div>
-                <div style={{ position: 'absolute', left: 0, right: 0, bottom: 5, height: 3, background: 'rgba(255,255,255,0.1)', borderRadius: 2 }} />
-                <div style={{ position: 'absolute', bottom: 5, height: 3, left: `${minF * 100}%`, width: `${(maxF - minF) * 100}%`, background: 'rgba(129,140,248,0.85)', borderRadius: 2 }} />
-                {(['min', 'max'] as const).map(h => {
-                  const f = h === 'min' ? minF : maxF
-                  return (
-                    <div key={h} onPointerDown={e => { (e.target as HTMLElement).setPointerCapture?.(e.pointerId); setDrag(h) }}
-                      style={{ position: 'absolute', bottom: -1, left: `${f * 100}%`, transform: 'translateX(-50%)', width: 16, height: 16, borderRadius: '50%', background: '#0b0a1e', border: `2px solid ${drag === h ? '#c7d2fe' : 'rgba(165,180,252,0.95)'}`, boxShadow: '0 2px 8px rgba(0,0,0,0.55)', cursor: drag === h ? 'grabbing' : 'grab', touchAction: 'none', zIndex: 2 }}>
-                      <svg width={8} height={8} viewBox="0 0 8 8" style={{ position: 'absolute', inset: 2, opacity: 0.7 }}><path d="M3 1L1 4l2 3M5 1l2 3-2 3" stroke="#a5b4fc" strokeWidth={1} fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginTop: 4 }}>≈ {fmt(inv)} coches en este rango</div>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, paddingTop: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ ...LABEL, display: 'block', marginBottom: 6 }}>Desde</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 40, borderRadius: 9, padding: '0 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)' }}>
+                      <input value={fmt(kmMin)} onChange={e => { const v = Number(e.target.value.replace(/\D/g, '')) || 0; onKm(Math.min(v, kmMax - KM_STEP), kmMax) }}
+                        inputMode="numeric" style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', color: '#fff', fontSize: 14, fontWeight: 600, fontFamily: 'inherit' }} />
+                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>km</span>
                     </div>
-                  )
-                })}
-              </div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginTop: 4 }}>≈ {fmt(inv)} coches en este rango</div>
-            </div>
-            {/* min / max inputs */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, padding: '8px 20px 0' }}>
-              <div style={{ flex: 1 }}>
-                <span style={{ ...LABEL, display: 'block', marginBottom: 6 }}>Desde</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 40, borderRadius: 9, padding: '0 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)' }}>
-                  <input value={fmt(kmMin)} onChange={e => { const v = Number(e.target.value.replace(/\D/g, '')) || 0; onChange(Math.min(v, kmMax - KM_STEP), kmMax) }}
-                    inputMode="numeric" style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', color: '#fff', fontSize: 14, fontWeight: 600, fontFamily: 'inherit' }} />
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>km</span>
-                </div>
-              </div>
-              <div style={{ flex: 1 }}>
-                <span style={{ ...LABEL, display: 'block', marginBottom: 6 }}>Hasta</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 40, borderRadius: 9, padding: '0 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)' }}>
-                  <input value={maxLabel} onChange={e => { const raw = e.target.value.replace(/\D/g, ''); const v = raw ? Number(raw) : KM_MAX; onChange(kmMin, Math.max(Math.min(v, KM_MAX), kmMin + KM_STEP)) }}
-                    inputMode="numeric" style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', color: '#fff', fontSize: 14, fontWeight: 600, fontFamily: 'inherit' }} />
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>km</span>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ ...LABEL, display: 'block', marginBottom: 6 }}>Hasta</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 40, borderRadius: 9, padding: '0 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)' }}>
+                      <input value={maxLabel} onChange={e => { const raw = e.target.value.replace(/\D/g, ''); const v = raw ? Number(raw) : KM_MAX; onKm(kmMin, Math.max(Math.min(v, KM_MAX), kmMin + KM_STEP)) }}
+                        inputMode="numeric" style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', color: '#fff', fontSize: 14, fontWeight: 600, fontFamily: 'inherit' }} />
+                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>km</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-            <div style={{ padding: '14px 20px 18px', display: 'flex', gap: 8 }}>
-              <button onClick={() => onChange(0, KM_MAX)} style={{ flex: '0 0 auto', padding: '10px 16px', borderRadius: 9, background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Limpiar</button>
-              <button onClick={close} style={{ flex: 1, padding: '10px 0', borderRadius: 9, background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.3)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Listo</button>
-            </div>
+            <FooterActions onClear={clearAll} onDone={close} />
           </CenterModal>
         )}
       </AnimatePresence>
@@ -650,8 +632,13 @@ export default function Landing() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, marginBottom: 8 }}>
               <MarcaModeloField value={marca} onChange={setMarca} />
               <PaisSelect value={pais} onChange={setPais} />
-              <YearRange minY={anoMin} maxY={anoMax} onChange={(lo, hi) => { setAnoMin(lo); setAnoMax(hi) }} />
-              <KmRange kmMin={kmMin} kmMax={kmMax} onChange={(lo, hi) => { setKmMin(lo); setKmMax(hi) }} />
+              <div style={{ gridColumn: '1 / -1' }}>
+                <AnoKmField
+                  minY={anoMin} maxY={anoMax} kmMin={kmMin} kmMax={kmMax}
+                  onYear={(lo, hi) => { setAnoMin(lo); setAnoMax(hi) }}
+                  onKm={(lo, hi) => { setKmMin(lo); setKmMax(hi) }}
+                />
+              </div>
             </div>
 
             <motion.button onClick={handleSearch} whileHover={{ scale: 1.012 }} whileTap={{ scale: 0.985 }} transition={{ duration: 0.14, ease: EXPO }}
