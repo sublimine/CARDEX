@@ -1600,7 +1600,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Microlino',
     color: '#ff6600',
-    logo: 'https://www.carlogos.org/car-logos/microlino-logo.png',
+    logo: '/logos/microlino.svg',
     models: [
       { name: 'Microlino 2.0', submodels: ['Microlino Lite 45km/h 8cv', 'Microlino Urban 90km/h 12.5cv', 'Microlino Dolce 90km/h 12.5cv', 'Microlino Competizione 90km/h 12.5cv'] },
       { name: 'Microlino Spider', submodels: ['Microlino Spider 90km/h 12.5cv'] },
