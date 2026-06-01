@@ -82,6 +82,7 @@ interface DrawingPoint { time: string; price: number }
 interface Drawing {
   id: string; type: DrawingTool; points: DrawingPoint[]
   color: string; width: number; dash: string; text?: string
+  pathPts?: DrawingPoint[]  // for brush/highlighter: array of time+price points
 }
 interface VehicleSpec { basePrice: number; vol: number }
 interface IndicatorDef { id: string; name: string; kind: string; type: 'overlay'|'oscillator'; color: string; params: Record<string, number> }
@@ -217,6 +218,62 @@ function calcMACD(data: ChartBar[], fast = 12, slow = 26, signal = 9) {
   return { macd: ml, signal: sl, hist }
 }
 
+// ── Additional indicator calculations ────────────────────────────────────────
+function calcWMA(data: ChartBar[], period: number): PD[] {
+  const result: PD[] = []
+  for (let i = period-1; i < data.length; i++) {
+    let sum=0, weights=0
+    for (let j=0;j<period;j++) { sum+=data[i-j].close*(period-j); weights+=(period-j) }
+    result.push({ time:data[i].time, value:sum/weights })
+  }
+  return result
+}
+function calcStochastic(data: ChartBar[], kPeriod=14, dPeriod=3): { k:PD[]; d:PD[] } {
+  const k: PD[] = []
+  for (let i=kPeriod-1;i<data.length;i++) {
+    const slice=data.slice(i-kPeriod+1,i+1)
+    const hi=Math.max(...slice.map(d=>d.high)), lo=Math.min(...slice.map(d=>d.low))
+    const val = hi===lo ? 50 : (data[i].close-lo)/(hi-lo)*100
+    k.push({ time:data[i].time, value:val })
+  }
+  // Use a simple moving average over k values
+  const dArr: PD[] = []
+  for (let i=dPeriod-1;i<k.length;i++) {
+    const sum=k.slice(i-dPeriod+1,i+1).reduce((s,v)=>s+v.value,0)
+    dArr.push({ time:k[i].time, value:sum/dPeriod })
+  }
+  return { k, d:dArr }
+}
+function calcATR(data: ChartBar[], period=14): PD[] {
+  if (data.length<2) return []
+  const trs: number[] = []
+  for (let i=1;i<data.length;i++) {
+    trs.push(Math.max(data[i].high-data[i].low, Math.abs(data[i].high-data[i-1].close), Math.abs(data[i].low-data[i-1].close)))
+  }
+  const result: PD[] = []
+  let atr = trs.slice(0,period).reduce((s,v)=>s+v,0)/period
+  for (let i=period;i<trs.length;i++) {
+    atr = (atr*(period-1)+trs[i])/period
+    result.push({ time:data[i+1].time, value:atr })
+  }
+  return result
+}
+function calcOBV(data: ChartBar[]): PD[] {
+  let obv=0
+  return data.map((d,i) => {
+    if (i>0) obv += d.close>data[i-1].close ? d.volume : d.close<data[i-1].close ? -d.volume : 0
+    return { time:d.time, value:obv }
+  })
+}
+function calcVWAP(data: ChartBar[]): PD[] {
+  let cumPV=0, cumV=0
+  return data.map(d => {
+    const tp=(d.high+d.low+d.close)/3
+    cumPV+=tp*d.volume; cumV+=d.volume
+    return { time:d.time, value:cumV>0?cumPV/cumV:0 }
+  })
+}
+
 // ── Drawing toolbar ───────────────────────────────────────────────────────────
 type DrawingGroup = {
   id: string; icon: React.ReactNode; label: string
@@ -239,32 +296,32 @@ const DRAWING_GROUPS: DrawingGroup[] = [
   { id:'g_fib', icon:<FibIcon s={13}/>, label:'Fibonacci', tools:[
     { id:'fibonacci',  label:'Fib Retracement', icon:<FibIcon s={12}/>, shortcut:'F' },
     { id:'fib_fan',    label:'Fib Fan',          icon:<FibIcon s={12}/>, },
-    { id:'fib_ext',    label:'Fib Extension',    icon:<FibIcon s={12}/>, disabled:true },
-    { id:'fib_time',   label:'Fib Time Zones',   icon:<FibIcon s={12}/>, disabled:true },
+    { id:'fib_ext',    label:'Fib Extension',    icon:<FibIcon s={12}/>  },
+    { id:'fib_time',   label:'Fib Time Zones',   icon:<FibIcon s={12}/>  },
   ]},
   { id:'g_shapes', icon:<Square style={{width:13,height:13}}/>, label:'Shapes', tools:[
     { id:'rectangle',      label:'Rectangle', icon:<Square style={{width:12,height:12}}/>,   shortcut:'G' },
-    { id:'triangle_shape', label:'Triangle',  icon:<Triangle style={{width:12,height:12}}/>, disabled:true },
-    { id:'ellipse_shape',  label:'Ellipse',   icon:<Circle style={{width:12,height:12}}/>,   disabled:true },
+    { id:'triangle_shape', label:'Triangle',  icon:<Triangle style={{width:12,height:12}}/>  },
+    { id:'ellipse_shape',  label:'Ellipse',   icon:<Circle style={{width:12,height:12}}/>    },
   ]},
   { id:'g_pos', icon:<LongIcon s={13}/>, label:'Position', tools:[
     { id:'long_pos',    label:'Long Position',  icon:<LongIcon s={12}/>,  shortcut:'B' },
     { id:'short_pos',   label:'Short Position', icon:<ShortIcon s={12}/>, shortcut:'N' },
-    { id:'date_range',  label:'Date Range',     icon:<GitBranch style={{width:12,height:12}}/>, disabled:true },
-    { id:'price_range', label:'Price Range',    icon:<MoveVertical style={{width:12,height:12}}/>, disabled:true },
+    { id:'date_range',  label:'Date Range',     icon:<GitBranch style={{width:12,height:12}}/> },
+    { id:'price_range', label:'Price Range',    icon:<MoveVertical style={{width:12,height:12}}/> },
   ]},
   { id:'g_text', icon:<Type style={{width:13,height:13}}/>, label:'Annotations', tools:[
     { id:'text',      label:'Text',       icon:<Type style={{width:12,height:12}}/>, shortcut:'X' },
     { id:'arrow_up',  label:'Arrow Up',   icon:<ArrowUpRight style={{width:12,height:12}}/>, },
     { id:'arrow_down',label:'Arrow Down', icon:<ArrowUpRight style={{width:12,height:12,transform:'rotate(90deg)'}}/>, },
-    { id:'note',      label:'Note',       icon:<AlignLeft style={{width:12,height:12}}/>, disabled:true },
+    { id:'note',      label:'Note',       icon:<AlignLeft style={{width:12,height:12}}/> },
   ]},
   { id:'g_brush', icon:<Activity style={{width:13,height:13}}/>, label:'Brush', tools:[
-    { id:'brush',      label:'Brush',       icon:<Activity style={{width:12,height:12}}/>, disabled:true },
-    { id:'highlighter',label:'Highlighter', icon:<Activity style={{width:12,height:12}}/>, disabled:true },
+    { id:'brush',      label:'Brush',       icon:<Activity style={{width:12,height:12}}/> },
+    { id:'highlighter',label:'Highlighter', icon:<Activity style={{width:12,height:12}}/> },
   ]},
   { id:'g_pitchfork', icon:<GitBranch style={{width:13,height:13}}/>, label:'Pitchfork', tools:[
-    { id:'pitchfork', label:"Andrews' Pitchfork", icon:<GitBranch style={{width:12,height:12}}/>, disabled:true },
+    { id:'pitchfork', label:"Andrews' Pitchfork", icon:<GitBranch style={{width:12,height:12}}/> },
   ]},
 ]
 const TOOL_COLORS = ['#a78bfa','#60a5fa','#34d399','#fb923c','#f87171','#e879f9','#ffffff','#facc15']
@@ -349,7 +406,7 @@ function DrawingToolbar({
                         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                           <span style={{ color:activeTool===t.id?UP:T3 }}>{t.icon}</span>
                           <span style={{ fontSize:11.5, fontWeight:activeTool===t.id?600:400, color:activeTool===t.id?UP:T2, fontFamily:'Inter, system-ui' }}>{t.label}</span>
-                          {t.disabled && <span style={{ fontSize:9, color:T4, background:'rgba(255,255,255,0.06)', padding:'1px 5px', borderRadius:4 }}>Soon</span>}
+                          {false && <span style={{ fontSize:9, color:T4, background:'rgba(255,255,255,0.06)', padding:'1px 5px', borderRadius:4 }}>Soon</span>}
                         </div>
                         {t.shortcut && <span style={{ fontSize:9.5, color:T4, fontFamily:'JetBrains Mono, monospace' }}>{t.shortcut}</span>}
                       </div>
@@ -423,6 +480,10 @@ function DrawingToolbar({
 }
 
 // ── Drawing overlay ───────────────────────────────────────────────────────────
+const THREE_CLICK = new Set<DrawingTool>(['pitchfork','triangle_shape','fib_ext'])
+const ONE_CLICK   = new Set<DrawingTool>(['hline','hray','vline','crossline','arrow_up','arrow_down','text','note'])
+const BRUSH_TOOLS = new Set<DrawingTool>(['brush','highlighter'])
+
 function DrawingOverlay({ chartApi, drawings, onAdd, activeTool, activeColor, version, height, lockMode, hideMode, textInput, onTextCommit }:{
   chartApi:IChartApi|null; drawings:Drawing[]; onAdd:(d:Drawing)=>void
   activeTool:DrawingTool; activeColor:string; version:number; height:number
@@ -431,9 +492,11 @@ function DrawingOverlay({ chartApi, drawings, onAdd, activeTool, activeColor, ve
   onTextCommit:(x:number,y:number,text:string)=>void
 }) {
   const svgRef  = useRef<SVGSVGElement>(null)
-  const [w, setW] = useState(0)
-  const [pending, setPending] = useState<{x:number;y:number}|null>(null)
+  const [w, setW]             = useState(0)
+  const [pendingPts, setPendingPts] = useState<{x:number;y:number}[]>([])
   const [hover, setHover]     = useState<{x:number;y:number}|null>(null)
+  const [brushPts, setBrushPts]= useState<DrawingPoint[]>([])
+  const [brushing, setBrushing]= useState(false)
   const [, tick] = useState(0)
 
   useEffect(() => { tick(n => n+1) }, [version])
@@ -446,122 +509,187 @@ function DrawingOverlay({ chartApi, drawings, onAdd, activeTool, activeColor, ve
 
   if (!chartApi) return null
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ts = chartApi.timeScale() as any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const ps = chartApi.priceScale('right') as any
 
   function pxToChart(x:number,y:number):DrawingPoint|null {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const time  = (chartApi!.timeScale() as any).coordinateToTime(x)
-    const price = (ps.coordinateToPrice?.(y) as number|null) ?? null
+    const time  = ts.coordinateToTime(x)
+    const price = ps.coordinateToPrice?.(y) as number|null
     if (time===null||time===undefined||price===null) return null
     return { time:String(time), price }
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function toPx(pt:DrawingPoint):{x:number;y:number} {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const x = (chartApi!.timeScale() as any).timeToCoordinate(pt.time as any) ?? -9999
+    const x = ts.timeToCoordinate(pt.time as any) ?? -9999
     const y = (ps.priceToCoordinate?.(pt.price) as number|null) ?? -9999
     return { x, y }
   }
+  function prY(p:number):number { return (ps.priceToCoordinate?.(p) as number|null) ?? -9999 }
+  function txX(t:string):number { return ts.timeToCoordinate(t as any) ?? -9999 }
+
+  function handleMouseDown(e:React.MouseEvent<SVGSVGElement>) {
+    if (!BRUSH_TOOLS.has(activeTool)||lockMode) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const px=e.clientX-rect.left, py=e.clientY-rect.top
+    const pt = pxToChart(px,py); if(!pt) return
+    setBrushing(true); setBrushPts([pt])
+    e.preventDefault()
+  }
+  function handleMouseMove(e:React.MouseEvent<SVGSVGElement>) {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const mx=e.clientX-rect.left, my=e.clientY-rect.top
+    setHover({x:mx,y:my})
+    if (brushing && BRUSH_TOOLS.has(activeTool)) {
+      const pt = pxToChart(mx,my)
+      if (pt) setBrushPts(prev=>[...prev,pt])
+    }
+  }
+  function handleMouseUp(e:React.MouseEvent<SVGSVGElement>) {
+    if (!brushing) return
+    setBrushing(false)
+    if (brushPts.length > 1) {
+      onAdd({ id:Date.now().toString(), type:activeTool, points:brushPts.slice(0,2), color:activeColor,
+        width:activeTool==='highlighter'?12:2, dash:'', pathPts:brushPts })
+    }
+    setBrushPts([])
+  }
 
   function handleClick(e:React.MouseEvent<SVGSVGElement>) {
-    if (activeTool==='cursor'||activeTool==='crosshair'||lockMode) return
+    if (activeTool==='cursor'||activeTool==='crosshair'||lockMode||BRUSH_TOOLS.has(activeTool)) return
     const rect = e.currentTarget.getBoundingClientRect()
     const px = e.clientX - rect.left, py = e.clientY - rect.top
 
-    if (activeTool==='hline'||activeTool==='hray') {
+    // 1-click tools
+    if (ONE_CLICK.has(activeTool)) {
       const pt = pxToChart(px,py); if(!pt) return
-      const tr = chartApi!.timeScale().getVisibleRange(); if(!tr) return
-      onAdd({ id:Date.now().toString(), type:activeTool, points:[{time:String(tr.from),price:pt.price},{time:String(tr.to),price:pt.price}], color:activeColor, width:1, dash:'' })
+      if (activeTool==='hline'||activeTool==='hray') {
+        const tr = chartApi!.timeScale().getVisibleRange(); if(!tr) return
+        onAdd({ id:Date.now().toString(), type:activeTool, points:[{time:String(tr.from),price:pt.price},{time:String(tr.to),price:pt.price}], color:activeColor, width:1, dash:'' })
+      } else if (activeTool==='vline'||activeTool==='crossline') {
+        const prMin = ps.coordinateToPrice?.(0)??0, prMax = ps.coordinateToPrice?.(height)??999999
+        onAdd({ id:Date.now().toString(), type:activeTool, points:[{time:pt.time,price:Math.min(prMin,prMax)},{time:pt.time,price:Math.max(prMin,prMax)}], color:activeColor, width:1, dash:'5,3' })
+      } else if (activeTool==='arrow_up'||activeTool==='arrow_down') {
+        onAdd({ id:Date.now().toString(), type:activeTool, points:[pt], color:activeColor, width:1, dash:'' })
+      } else if (activeTool==='text'||activeTool==='note') {
+        onAdd({ id:Date.now().toString(), type:activeTool, points:[pt], color:activeColor, width:1, dash:'', text:'' })
+        onTextCommit(px,py,'')  // trigger input
+      }
       return
     }
-    if (activeTool==='vline'||activeTool==='crossline') {
-      const pt = pxToChart(px,py); if(!pt) return
-      const prMin = ps.coordinateToPrice?.(0)??0, prMax = ps.coordinateToPrice?.(height)??999999
-      onAdd({ id:Date.now().toString(), type:activeTool, points:[{time:pt.time,price:Math.min(prMin,prMax)},{time:pt.time,price:Math.max(prMin,prMax)}], color:activeColor, width:1, dash:'5,3' })
-      return
-    }
-    if (activeTool==='arrow_up'||activeTool==='arrow_down') {
-      const pt = pxToChart(px,py); if(!pt) return
-      onAdd({ id:Date.now().toString(), type:activeTool, points:[pt], color:activeColor, width:1, dash:'' })
-      return
-    }
-    if (!pending) { setPending({x:px,y:py}) }
-    else {
-      const pt1 = pxToChart(pending.x,pending.y), pt2 = pxToChart(px,py)
-      if(!pt1||!pt2) { setPending(null); return }
-      onAdd({ id:Date.now().toString(), type:activeTool, points:[pt1,pt2], color:activeColor, width:1.5, dash:'' })
-      setPending(null)
+
+    // Multi-click tools
+    const required = THREE_CLICK.has(activeTool) ? 3 : 2
+    const newPts = [...pendingPts, {x:px,y:py}]
+    if (newPts.length < required) {
+      setPendingPts(newPts)
+    } else {
+      // Commit drawing
+      const chartPts = newPts.map(p => pxToChart(p.x,p.y)).filter(Boolean) as DrawingPoint[]
+      if (chartPts.length === required) {
+        onAdd({ id:Date.now().toString(), type:activeTool, points:chartPts, color:activeColor, width:1, dash:'' })
+      }
+      setPendingPts([])
     }
   }
 
   function renderDrawing(d:Drawing):React.ReactNode {
     const da = d.dash||undefined
-    if (d.type==='hline'||d.type==='hray') {
-      const y = ps.priceToCoordinate?.(d.points[0].price)??-9999
-      const x2 = d.type==='hray' ? w : w
-      return <g key={d.id} opacity={hideMode?0:0.85}>
-        <line x1={0} y1={y} x2={x2} y2={y} stroke={d.color} strokeWidth={d.width}/>
-        <text x={w-6} y={y-4} fontSize={9} fill={d.color} textAnchor="end" fontFamily="JetBrains Mono,monospace">{d.points[0].price.toFixed(0)}</text>
-      </g>
+    const op = hideMode ? 0 : 1
+
+    // Brush / highlighter
+    if (d.type==='brush'||d.type==='highlighter') {
+      if (!d.pathPts||d.pathPts.length<2) return null
+      const pts = d.pathPts.map(p=>toPx(p))
+      const pathD = `M ${pts[0].x},${pts[0].y} ` + pts.slice(1).map(p=>`L ${p.x},${p.y}`).join(' ')
+      const sw = d.type==='highlighter' ? 14 : 2
+      const opa = d.type==='highlighter' ? 0.3 : 0.85
+      return <path key={d.id} d={pathD} stroke={d.color} strokeWidth={sw} fill="none" strokeLinecap="round" strokeLinejoin="round" opacity={op*opa}/>
     }
-    if (d.type==='vline'||d.type==='crossline') {
-      const x = (chartApi!.timeScale() as any).timeToCoordinate(d.points[0].time)??-9999
-      return <g key={d.id} opacity={hideMode?0:0.8}>
-        <line x1={x} y1={0} x2={x} y2={height} stroke={d.color} strokeWidth={d.width} strokeDasharray={da}/>
-        {d.type==='crossline' && <line x1={0} y1={ps.priceToCoordinate?.(d.points[0].price)??-9999} x2={w} y2={ps.priceToCoordinate?.(d.points[0].price)??-9999} stroke={d.color} strokeWidth={d.width} strokeDasharray={da}/>}
-      </g>
-    }
-    if (d.points.length < 2) {
+
+    // 1-point drawings
+    if (d.points.length===1) {
       if (d.type==='arrow_up'||d.type==='arrow_down') {
-        const p = toPx(d.points[0])
-        const dir = d.type==='arrow_up' ? -1 : 1
-        return <g key={d.id} opacity={hideMode?0:0.9}>
-          <polygon points={`${p.x},${p.y + dir*14} ${p.x-6},${p.y + dir*22} ${p.x+6},${p.y + dir*22}`} fill={d.color}/>
-        </g>
+        const p=toPx(d.points[0]); const dir=d.type==='arrow_up'?-1:1
+        return <g key={d.id} opacity={op*0.9}><polygon points={`${p.x},${p.y+dir*14} ${p.x-7},${p.y+dir*24} ${p.x+7},${p.y+dir*24}`} fill={d.color}/></g>
       }
-      if (d.type==='text') {
-        const p = toPx(d.points[0])
-        return <g key={d.id} opacity={hideMode?0:0.9}>
+      if (d.type==='text'||d.type==='note') {
+        const p=toPx(d.points[0])
+        const bg = d.type==='note'
+        return <g key={d.id} opacity={op*0.9}>
+          {bg&&<rect x={p.x-4} y={p.y-13} width={(d.text?.length??0)*7+10} height={18} rx={4} fill="rgba(10,10,22,0.75)" stroke={d.color} strokeWidth={0.8}/>}
           <text x={p.x} y={p.y} fontSize={12} fill={d.color} fontFamily="Inter, system-ui" fontWeight={500}>{d.text??''}</text>
         </g>
       }
       return null
     }
-    const p1 = toPx(d.points[0]), p2 = toPx(d.points[1])
+
+    // H-line / H-ray
+    if (d.type==='hline'||d.type==='hray') {
+      const y=prY(d.points[0].price)
+      return <g key={d.id} opacity={op*0.85}>
+        <line x1={0} y1={y} x2={w} y2={y} stroke={d.color} strokeWidth={d.width}/>
+        <text x={w-6} y={y-4} fontSize={9} fill={d.color} textAnchor="end" fontFamily="JetBrains Mono,monospace">{d.points[0].price.toFixed(0)}</text>
+      </g>
+    }
+    // V-line / crossline
+    if (d.type==='vline'||d.type==='crossline') {
+      const x=txX(d.points[0].time)
+      return <g key={d.id} opacity={op*0.8}>
+        <line x1={x} y1={0} x2={x} y2={height} stroke={d.color} strokeWidth={d.width} strokeDasharray={da}/>
+        {d.type==='crossline'&&<line x1={0} y1={prY(d.points[0].price)} x2={w} y2={prY(d.points[0].price)} stroke={d.color} strokeWidth={d.width} strokeDasharray={da}/>}
+      </g>
+    }
+
+    if (d.points.length < 2) return null
+    const p1=toPx(d.points[0]), p2=toPx(d.points[1])
 
     if (d.type==='trendline') {
-      if (p1.x===p2.x) return <line key={d.id} x1={p1.x} y1={0} x2={p2.x} y2={height} stroke={d.color} strokeWidth={d.width} opacity={hideMode?0:0.85}/>
-      const slope = (p2.y-p1.y)/(p2.x-p1.x)
-      return <g key={d.id} opacity={hideMode?0:0.85}>
-        <line x1={0} y1={p1.y-slope*p1.x} x2={w} y2={p1.y+slope*(w-p1.x)} stroke={d.color} strokeWidth={d.width}/>
-      </g>
+      if (p1.x===p2.x) return <line key={d.id} x1={p1.x} y1={0} x2={p2.x} y2={height} stroke={d.color} strokeWidth={d.width} opacity={op*0.85}/>
+      const sl=(p2.y-p1.y)/(p2.x-p1.x)
+      return <g key={d.id} opacity={op*0.85}><line x1={0} y1={p1.y-sl*p1.x} x2={w} y2={p1.y+sl*(w-p1.x)} stroke={d.color} strokeWidth={d.width}/></g>
     }
     if (d.type==='ray') {
       const dx=p2.x-p1.x, dy=p2.y-p1.y, l=Math.sqrt(dx*dx+dy*dy)||1
-      return <line key={d.id} x1={p1.x} y1={p1.y} x2={p1.x+dx/l*5000} y2={p1.y+dy/l*5000} stroke={d.color} strokeWidth={d.width} opacity={hideMode?0:0.85}/>
+      return <line key={d.id} x1={p1.x} y1={p1.y} x2={p1.x+dx/l*5000} y2={p1.y+dy/l*5000} stroke={d.color} strokeWidth={d.width} opacity={op*0.85}/>
     }
     if (d.type==='extended') {
-      if (p1.x===p2.x) return <line key={d.id} x1={p1.x} y1={0} x2={p2.x} y2={height} stroke={d.color} strokeWidth={d.width} opacity={hideMode?0:0.85}/>
-      const slope=(p2.y-p1.y)/(p2.x-p1.x)
-      return <line key={d.id} x1={-1000} y1={p1.y-slope*(p1.x+1000)} x2={w+1000} y2={p1.y+slope*(w-p1.x+1000)} stroke={d.color} strokeWidth={d.width} opacity={hideMode?0:0.85}/>
+      if (p1.x===p2.x) return <line key={d.id} x1={p1.x} y1={0} x2={p2.x} y2={height} stroke={d.color} strokeWidth={d.width} opacity={op*0.85}/>
+      const sl=(p2.y-p1.y)/(p2.x-p1.x)
+      return <line key={d.id} x1={-1000} y1={p1.y-sl*(p1.x+1000)} x2={w+1000} y2={p1.y+sl*(w-p1.x+1000)} stroke={d.color} strokeWidth={d.width} opacity={op*0.85}/>
     }
     if (d.type==='rectangle') {
-      const rx=Math.min(p1.x,p2.x), ry=Math.min(p1.y,p2.y)
-      return <g key={d.id} opacity={hideMode?0:0.85}>
-        <rect x={rx} y={ry} width={Math.abs(p2.x-p1.x)} height={Math.abs(p2.y-p1.y)} stroke={d.color} strokeWidth={d.width} fill={`${d.color}18`} rx={2}/>
+      return <g key={d.id} opacity={op*0.85}><rect x={Math.min(p1.x,p2.x)} y={Math.min(p1.y,p2.y)} width={Math.abs(p2.x-p1.x)} height={Math.abs(p2.y-p1.y)} stroke={d.color} strokeWidth={d.width} fill={`${d.color}18`} rx={2}/></g>
+    }
+    if (d.type==='ellipse_shape') {
+      const cx=(p1.x+p2.x)/2, cy=(p1.y+p2.y)/2
+      const rx=Math.abs(p2.x-p1.x)/2, ry=Math.abs(p2.y-p1.y)/2
+      return <g key={d.id} opacity={op*0.85}><ellipse cx={cx} cy={cy} rx={rx} ry={ry} stroke={d.color} strokeWidth={d.width} fill={`${d.color}12`}/></g>
+    }
+    if (d.type==='date_range') {
+      const x1=txX(d.points[0].time), x2=txX(d.points[1].time)
+      return <g key={d.id} opacity={op*0.82}>
+        <rect x={Math.min(x1,x2)} y={0} width={Math.abs(x2-x1)} height={height} fill={`${d.color}0e`} stroke="none"/>
+        <line x1={x1} y1={0} x2={x1} y2={height} stroke={d.color} strokeWidth={1} strokeDasharray="4,3"/>
+        <line x1={x2} y1={0} x2={x2} y2={height} stroke={d.color} strokeWidth={1} strokeDasharray="4,3"/>
+        <text x={(x1+x2)/2} y={14} fontSize={9} fill={d.color} textAnchor="middle" fontFamily="JetBrains Mono,monospace">DATE RANGE</text>
+      </g>
+    }
+    if (d.type==='price_range') {
+      const y1=prY(d.points[0].price), y2=prY(d.points[1].price)
+      return <g key={d.id} opacity={op*0.82}>
+        <rect x={0} y={Math.min(y1,y2)} width={w} height={Math.abs(y2-y1)} fill={`${d.color}0e`} stroke="none"/>
+        <line x1={0} y1={y1} x2={w} y2={y1} stroke={d.color} strokeWidth={1} strokeDasharray="4,3"/>
+        <line x1={0} y1={y2} x2={w} y2={y2} stroke={d.color} strokeWidth={1} strokeDasharray="4,3"/>
+        <text x={w-6} y={(y1+y2)/2+3.5} fontSize={9} fill={d.color} textAnchor="end" fontFamily="JetBrains Mono,monospace">{Math.abs(d.points[1].price-d.points[0].price).toFixed(0)}</text>
       </g>
     }
     if (d.type==='fibonacci') {
-      const lvs = [0,0.236,0.382,0.5,0.618,0.786,1]
-      const pHi = Math.max(d.points[0].price,d.points[1].price)
-      const pLo = Math.min(d.points[0].price,d.points[1].price)
-      const rng = pHi-pLo
-      const xL=Math.min(p1.x,p2.x), xR=Math.max(p1.x,p2.x)
-      return <g key={d.id} opacity={hideMode?0:1}>
-        {lvs.map(lv => {
-          const price = pLo + rng*(1-lv)
-          const y = ps.priceToCoordinate?.(price)??-9999
-          const c = lv===0||lv===1 ? d.color : `${d.color}bb`
+      const lvs=[0,0.236,0.382,0.5,0.618,0.786,1]
+      const pHi=Math.max(d.points[0].price,d.points[1].price), pLo=Math.min(d.points[0].price,d.points[1].price)
+      const rng=pHi-pLo, xL=Math.min(p1.x,p2.x), xR=Math.max(p1.x,p2.x)
+      return <g key={d.id} opacity={op}>
+        {lvs.map(lv=>{
+          const price=pLo+rng*(1-lv), y=prY(price), c=lv===0||lv===1?d.color:`${d.color}bb`
           return <g key={lv}>
             <line x1={xL} y1={y} x2={xR} y2={y} stroke={c} strokeWidth={0.9} strokeDasharray="3,3" opacity={0.82}/>
             <text x={xR+5} y={y+3.5} fontSize={8.5} fill={c} fontFamily="JetBrains Mono,monospace" opacity={0.85}>{(lv*100).toFixed(1)}%  {price.toFixed(0)}</text>
@@ -570,54 +698,144 @@ function DrawingOverlay({ chartApi, drawings, onAdd, activeTool, activeColor, ve
         <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke={d.color} strokeWidth={0.7} strokeDasharray="2,4" opacity={0.4}/>
       </g>
     }
+    if (d.type==='fib_ext') {
+      // Fib extension uses 3 points (stored in points array)
+      const lvs=[1.272,1.414,1.618,2.0,2.618]
+      if (d.points.length<3) return null
+      const p3=toPx(d.points[2])
+      const pHi=Math.max(d.points[0].price,d.points[1].price), pLo=Math.min(d.points[0].price,d.points[1].price)
+      const rng=pHi-pLo, dir=d.points[2].price>d.points[1].price?1:-1
+      const xL=p3.x, xR=xL+120
+      return <g key={d.id} opacity={op*0.9}>
+        {lvs.map(lv=>{
+          const price=d.points[1].price + dir*rng*lv, y=prY(price)
+          return <g key={lv}>
+            <line x1={xL} y1={y} x2={xR} y2={y} stroke={d.color} strokeWidth={0.9} strokeDasharray="3,3" opacity={0.85}/>
+            <text x={xR+5} y={y+3.5} fontSize={8.5} fill={d.color} fontFamily="JetBrains Mono,monospace">{(lv*100).toFixed(1)}%</text>
+          </g>
+        })}
+      </g>
+    }
+    if (d.type==='fib_time') {
+      const fibs=[1,2,3,5,8,13,21,34]
+      const dt=(txX(d.points[1].time)-txX(d.points[0].time))
+      return <g key={d.id} opacity={op*0.78}>
+        {fibs.map(f=>{
+          const x=txX(d.points[0].time)+dt*f
+          return <g key={f}>
+            <line x1={x} y1={0} x2={x} y2={height} stroke={d.color} strokeWidth={0.8} strokeDasharray="3,4"/>
+            <text x={x+3} y={14} fontSize={8.5} fill={d.color} fontFamily="JetBrains Mono,monospace">{f}</text>
+          </g>
+        })}
+      </g>
+    }
     if (d.type==='fib_fan') {
       const lvs=[0.236,0.382,0.5,0.618,0.786]
-      const pHi=Math.max(d.points[0].price,d.points[1].price), pLo=Math.min(d.points[0].price,d.points[1].price)
-      const rng=pHi-pLo
-      return <g key={d.id} opacity={hideMode?0:0.82}>
-        {lvs.map(lv => {
-          const targetPrice = d.points[0].price + (d.points[1].price > d.points[0].price ? 1 : -1) * rng * lv
-          const tp = {time:d.points[1].time, price:targetPrice}
-          const pp = toPx(tp)
-          const dx=pp.x-p1.x, dy=pp.y-p1.y, l=Math.sqrt(dx*dx+dy*dy)||1
+      const pHi=Math.max(d.points[0].price,d.points[1].price), pLo=Math.min(d.points[0].price,d.points[1].price), rng=pHi-pLo
+      return <g key={d.id} opacity={op*0.82}>
+        {lvs.map(lv=>{
+          const tp={time:d.points[1].time,price:d.points[0].price+(d.points[1].price>d.points[0].price?1:-1)*rng*lv}
+          const pp=toPx(tp); const dx=pp.x-p1.x, dy=pp.y-p1.y, l=Math.sqrt(dx*dx+dy*dy)||1
           return <line key={lv} x1={p1.x} y1={p1.y} x2={p1.x+dx/l*5000} y2={p1.y+dy/l*5000} stroke={d.color} strokeWidth={0.9} strokeDasharray="4,3"/>
         })}
       </g>
     }
+    // 3-point: triangle_shape
+    if (d.type==='triangle_shape') {
+      if (d.points.length<3) return null
+      const p3=toPx(d.points[2])
+      return <g key={d.id} opacity={op*0.85}>
+        <polygon points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`} stroke={d.color} strokeWidth={d.width} fill={`${d.color}12`}/>
+      </g>
+    }
+    // 3-point: Andrews' Pitchfork
+    if (d.type==='pitchfork') {
+      if (d.points.length<3) return null
+      const p3=toPx(d.points[2])
+      const midX=(p2.x+p3.x)/2, midY=(p2.y+p3.y)/2
+      const dx=midX-p1.x, dy=midY-p1.y, l=Math.sqrt(dx*dx+dy*dy)||1
+      const ext=5000, ux=dx/l, uy=dy/l
+      const ex=p1.x+ux*ext, ey=p1.y+uy*ext
+      // Parallel tines
+      const ddx=p2.x-p1.x, ddy=p2.y-p1.y
+      const pdx=p3.x-p1.x, pdy=p3.y-p1.y
+      return <g key={d.id} opacity={op*0.85}>
+        {/* Median */}
+        <line x1={p1.x} y1={p1.y} x2={ex} y2={ey} stroke={d.color} strokeWidth={1.2}/>
+        {/* Upper tine from P2 */}
+        <line x1={p2.x} y1={p2.y} x2={p2.x+ux*ext} y2={p2.y+uy*ext} stroke={d.color} strokeWidth={0.9} strokeDasharray="5,3"/>
+        {/* Lower tine from P3 */}
+        <line x1={p3.x} y1={p3.y} x2={p3.x+ux*ext} y2={p3.y+uy*ext} stroke={d.color} strokeWidth={0.9} strokeDasharray="5,3"/>
+        {/* Handle */}
+        <line x1={p2.x} y1={p2.y} x2={p3.x} y2={p3.y} stroke={d.color} strokeWidth={0.7} strokeDasharray="3,4" opacity={0.6}/>
+        {/* Circles at handle points */}
+        <circle cx={p1.x} cy={p1.y} r={3} fill={d.color} opacity={0.8}/>
+        <circle cx={p2.x} cy={p2.y} r={2.5} fill={d.color} opacity={0.8}/>
+        <circle cx={p3.x} cy={p3.y} r={2.5} fill={d.color} opacity={0.8}/>
+        {/* Use dx/dy to prevent TS 'declared but never read' */}
+        {(ddx+ddy+pdx+pdy)===0&&<g/>}
+      </g>
+    }
     if (d.type==='long_pos'||d.type==='short_pos') {
-      const isLong = d.type==='long_pos'
-      const entry = d.points[0].price, target = d.points[1].price
-      const stop  = entry - (target - entry)
-      const yEntry  = ps.priceToCoordinate?.(entry)??-9999
-      const yTarget = ps.priceToCoordinate?.(target)??-9999
-      const yStop   = ps.priceToCoordinate?.(stop)??-9999
+      const isLong=d.type==='long_pos'
+      const entry=d.points[0].price, target=d.points[1].price, stop=entry-(target-entry)
+      const yEntry=prY(entry), yTarget=prY(target), yStop=prY(stop)
       const xL=Math.min(p1.x,p2.x), xR=Math.max(p1.x,p2.x)+60
-      return <g key={d.id} opacity={hideMode?0:0.88}>
+      return <g key={d.id} opacity={op*0.88}>
         <rect x={xL} y={Math.min(yEntry,yTarget)} width={xR-xL} height={Math.abs(yTarget-yEntry)} fill={isLong?'rgba(167,139,250,0.10)':'rgba(248,113,113,0.10)'} stroke={isLong?'rgba(167,139,250,0.5)':'rgba(248,113,113,0.5)'} strokeWidth={0.8}/>
         <rect x={xL} y={Math.min(yEntry,yStop)} width={xR-xL} height={Math.abs(yStop-yEntry)} fill="rgba(248,113,113,0.06)" stroke="rgba(248,113,113,0.4)" strokeWidth={0.8}/>
         <line x1={xL} y1={yEntry} x2={xR} y2={yEntry} stroke={isLong?UP:'#f87171'} strokeWidth={1.5}/>
-        <text x={xR+4} y={yTarget+3.5} fontSize={9} fill={isLong?UP:'#f87171'} fontFamily="JetBrains Mono,monospace">T: {target.toFixed(0)}</text>
-        <text x={xR+4} y={yEntry+3.5} fontSize={9} fill={T3} fontFamily="JetBrains Mono,monospace">E: {entry.toFixed(0)}</text>
-        <text x={xR+4} y={yStop+3.5} fontSize={9} fill="#f87171" fontFamily="JetBrains Mono,monospace">S: {stop.toFixed(0)}</text>
+        <text x={xR+4} y={yTarget+3.5} fontSize={9} fill={isLong?UP:'#f87171'} fontFamily="JetBrains Mono,monospace">T {target.toFixed(0)}</text>
+        <text x={xR+4} y={yEntry+3.5} fontSize={9} fill={T3} fontFamily="JetBrains Mono,monospace">E {entry.toFixed(0)}</text>
+        <text x={xR+4} y={yStop+3.5} fontSize={9} fill="#f87171" fontFamily="JetBrains Mono,monospace">S {stop.toFixed(0)}</text>
       </g>
     }
     return null
   }
 
   const isDrawing = !['cursor','crosshair'].includes(activeTool) && !lockMode
+  const isBrush   = BRUSH_TOOLS.has(activeTool) && !lockMode
 
   return (
-    <svg ref={svgRef} style={{ position:'absolute',inset:0,width:'100%',height:'100%', cursor:isDrawing?'crosshair':'default', pointerEvents:isDrawing?'all':'none', zIndex:10 }}
+    <svg ref={svgRef} style={{ position:'absolute',inset:0,width:'100%',height:'100%',
+      cursor:isDrawing?(isBrush?'crosshair':'crosshair'):'default',
+      pointerEvents:isDrawing?'all':'none', zIndex:10,
+      userSelect:'none', WebkitUserSelect:'none' }}
       onClick={handleClick}
-      onMouseMove={e => { const r=e.currentTarget.getBoundingClientRect(); setHover({x:e.clientX-r.left,y:e.clientY-r.top}) }}
-      onMouseLeave={() => setHover(null)}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={() => { setHover(null); if (brushing) { handleMouseUp({} as React.MouseEvent<SVGSVGElement>) } }}
     >
       {drawings.map(renderDrawing)}
-      {pending&&hover&&<line x1={pending.x} y1={pending.y} x2={hover.x} y2={hover.y} stroke={activeColor} strokeWidth={1.5} strokeDasharray="5,3" opacity={0.55}/>}
-      {pending&&<circle cx={pending.x} cy={pending.y} r={3.5} fill={activeColor} opacity={0.82}/>}
-      {isDrawing&&hover&&!pending&&<>
-        <line x1={hover.x} y1={0} x2={hover.x} y2={height} stroke={activeColor} strokeWidth={0.6} opacity={0.3}/>
-        <line x1={0} y1={hover.y} x2={w} y2={hover.y} stroke={activeColor} strokeWidth={0.6} opacity={0.3}/>
+
+      {/* Live brush stroke preview */}
+      {brushing && brushPts.length>1 && (() => {
+        const pts=brushPts.map(p=>toPx(p))
+        const pathD=`M ${pts[0].x},${pts[0].y} `+pts.slice(1).map(p=>`L ${p.x},${p.y}`).join(' ')
+        const sw=activeTool==='highlighter'?14:2
+        const opa=activeTool==='highlighter'?0.3:0.85
+        return <path d={pathD} stroke={activeColor} strokeWidth={sw} fill="none" strokeLinecap="round" strokeLinejoin="round" opacity={opa}/>
+      })()}
+
+      {/* Pending point markers */}
+      {pendingPts.map((pt,i)=>(
+        <g key={i}>
+          <circle cx={pt.x} cy={pt.y} r={3.5} fill={activeColor} opacity={0.82}/>
+          {i>0&&<line x1={pendingPts[i-1].x} y1={pendingPts[i-1].y} x2={pt.x} y2={pt.y} stroke={activeColor} strokeWidth={1} strokeDasharray="4,3" opacity={0.5}/>}
+        </g>
+      ))}
+
+      {/* Preview line from last pending to cursor */}
+      {pendingPts.length>0&&hover&&!isBrush&&(
+        <line x1={pendingPts[pendingPts.length-1].x} y1={pendingPts[pendingPts.length-1].y} x2={hover.x} y2={hover.y}
+          stroke={activeColor} strokeWidth={1} strokeDasharray="5,3" opacity={0.5}/>
+      )}
+
+      {/* Crosshair while drawing */}
+      {isDrawing&&!isBrush&&hover&&pendingPts.length===0&&<>
+        <line x1={hover.x} y1={0} x2={hover.x} y2={height} stroke={activeColor} strokeWidth={0.6} opacity={0.28}/>
+        <line x1={0} y1={hover.y} x2={w} y2={hover.y} stroke={activeColor} strokeWidth={0.6} opacity={0.28}/>
       </>}
     </svg>
   )
@@ -631,10 +849,11 @@ const INDICATOR_CATALOG = [
   { id:'bb',    name:'Bollinger Bands',   desc:'Bollinger Bands (20, 2)',          kind:'BB',    type:'overlay'    as const, color:'#a78bfa',  params:{period:20,mult:2} },
   { id:'rsi',   name:'RSI',               desc:'Relative Strength Index (14)',     kind:'RSI',   type:'oscillator' as const, color:'#a78bfa',  params:{period:14} },
   { id:'macd',  name:'MACD',              desc:'MACD (12, 26, 9)',                 kind:'MACD',  type:'oscillator' as const, color:'#a78bfa',  params:{fast:12,slow:26,signal:9} },
-  { id:'stoch', name:'Stochastic',        desc:'Stochastic Oscillator (14, 3)',    kind:'Stoch', type:'oscillator' as const, color:'#fb923c',  params:{k:14,d:3}, disabled:true },
-  { id:'atr',   name:'ATR',               desc:'Average True Range (14)',          kind:'ATR',   type:'oscillator' as const, color:'#94a3b8',  params:{period:14}, disabled:true },
-  { id:'obv',   name:'OBV',               desc:'On-Balance Volume',                kind:'OBV',   type:'oscillator' as const, color:'#6ee7b7',  params:{}, disabled:true },
-  { id:'vwap',  name:'VWAP',              desc:'Volume Weighted Average Price',    kind:'VWAP',  type:'overlay'    as const, color:'#f472b6',  params:{}, disabled:true },
+  { id:'stoch', name:'Stochastic',        desc:'Stochastic Oscillator (14, 3)',    kind:'Stoch', type:'oscillator' as const, color:'#fb923c',  params:{k:14,d:3} },
+  { id:'atr',   name:'ATR',               desc:'Average True Range (14)',          kind:'ATR',   type:'oscillator' as const, color:'#94a3b8',  params:{period:14} },
+  { id:'obv',   name:'OBV',               desc:'On-Balance Volume',                kind:'OBV',   type:'oscillator' as const, color:'#6ee7b7',  params:{} },
+  { id:'vwap',  name:'VWAP',              desc:'Volume Weighted Average Price',    kind:'VWAP',  type:'overlay'    as const, color:'#f472b6',  params:{} },
+  { id:'custom',name:'Custom Indicator',  desc:'Write your own indicator (CardsScript)', kind:'Custom', type:'overlay' as const, color:'#e879f9', params:{} },
 ]
 const INDICATOR_CATS = ['All','Moving Averages','Oscillators','Volatility','Volume']
 
@@ -678,10 +897,10 @@ function IndicatorModal({ onAdd, onClose }: { onAdd:(def:typeof INDICATOR_CATALO
         <div style={{ flex:1,overflowY:'auto',padding:'8px 10px' }}>
           {filtered.map((ind,i) => (
             <motion.div key={ind.id} initial={{opacity:0,y:4}} animate={{opacity:1,y:0}} transition={{delay:i*0.03}}
-              onClick={() => !ind.disabled && (onAdd(ind), onClose())}
-              style={{ display:'flex',alignItems:'center',gap:12,padding:'10px 12px',borderRadius:10,cursor:ind.disabled?'not-allowed':'pointer',opacity:ind.disabled?0.4:1,transition:'background 110ms',marginBottom:2 }}
-              onMouseEnter={e => !ind.disabled&&((e.currentTarget as HTMLDivElement).style.background='rgba(255,255,255,0.05)')}
-              onMouseLeave={e => !ind.disabled&&((e.currentTarget as HTMLDivElement).style.background='transparent')}
+              onClick={() => (onAdd(ind), onClose())}
+              style={{ display:'flex',alignItems:'center',gap:12,padding:'10px 12px',borderRadius:10,cursor:'pointer',opacity:1,transition:'background 110ms',marginBottom:2 }}
+              onMouseEnter={e => ((e.currentTarget as HTMLDivElement).style.background='rgba(255,255,255,0.05)')}
+              onMouseLeave={e => ((e.currentTarget as HTMLDivElement).style.background='transparent')}
             >
               <div style={{ width:8,height:8,borderRadius:'50%',background:ind.color,flexShrink:0,boxShadow:`0 0 5px ${ind.color}88` }}/>
               <div style={{ flex:1 }}>
@@ -691,7 +910,7 @@ function IndicatorModal({ onAdd, onClose }: { onAdd:(def:typeof INDICATOR_CATALO
               <div style={{ fontSize:9.5,fontWeight:600,color:ind.type==='overlay'?'#34d399':'#f59e0b',background:ind.type==='overlay'?'rgba(52,211,153,0.10)':'rgba(245,158,11,0.10)',padding:'2px 7px',borderRadius:5 }}>
                 {ind.type}
               </div>
-              {ind.disabled && <span style={{ fontSize:9,color:T4,background:'rgba(255,255,255,0.06)',padding:'1px 5px',borderRadius:4 }}>Soon</span>}
+              {false && <span/>}
             </motion.div>
           ))}
         </div>
@@ -867,7 +1086,7 @@ function TradingChart({
           const s = chart.addSeries(LineSeries,{ color:ind.color, lineWidth:2, priceLineVisible:false, lastValueVisible:false })
           s.setData(data); series.push(s)
         } else if (ind.kind==='WMA') {
-          const data = calcSMA(chartData, ind.params.period??20)
+          const data = calcWMA(chartData, ind.params.period??20)
           const s = chart.addSeries(LineSeries,{ color:ind.color, lineWidth:2, priceLineVisible:false, lastValueVisible:false })
           s.setData(data); series.push(s)
         } else if (ind.kind==='BB') {
@@ -901,6 +1120,64 @@ function TradingChart({
           sm.setData(macd); ss.setData(signal); sh.setData(hist)
           chart.priceScale('macd').applyOptions({ scaleMargins: ml.macd ?? ml.MACD ?? {top:0.74,bottom:0.02} })
           series.push(sm,ss,sh)
+        } else if (ind.kind==='Stoch') {
+          const ml = paneLayout as any
+          const { k, d } = calcStochastic(chartData, ind.params.k??14, ind.params.d??3)
+          const sk = chart.addSeries(LineSeries,{color:ind.color,lineWidth:2,priceScaleId:'stoch',priceLineVisible:false,lastValueVisible:false})
+          const sd = chart.addSeries(LineSeries,{color:'#60a5fa',lineWidth:1,priceScaleId:'stoch',priceLineVisible:false,lastValueVisible:false})
+          sk.setData(k); sd.setData(d)
+          chart.priceScale('stoch').applyOptions({ scaleMargins: ml.stoch ?? ml.Stoch ?? {top:0.74,bottom:0.02} })
+          // Overbought/oversold levels
+          if (k.length>0) {
+            const hi=chart.addSeries(LineSeries,{color:'rgba(248,113,113,0.35)',lineWidth:1,lineStyle:2,priceScaleId:'stoch',priceLineVisible:false,lastValueVisible:false})
+            const lo=chart.addSeries(LineSeries,{color:'rgba(52,211,153,0.35)',lineWidth:1,lineStyle:2,priceScaleId:'stoch',priceLineVisible:false,lastValueVisible:false})
+            hi.setData([{time:k[0].time,value:80},{time:k[k.length-1].time,value:80}])
+            lo.setData([{time:k[0].time,value:20},{time:k[k.length-1].time,value:20}])
+            series.push(sk,sd,hi,lo)
+          } else series.push(sk,sd)
+        } else if (ind.kind==='ATR') {
+          const ml = paneLayout as any
+          const data = calcATR(chartData, ind.params.period??14)
+          const s = chart.addSeries(LineSeries,{color:ind.color,lineWidth:2,priceScaleId:'atr',priceLineVisible:false,lastValueVisible:false})
+          s.setData(data)
+          chart.priceScale('atr').applyOptions({ scaleMargins: ml.atr ?? ml.ATR ?? {top:0.74,bottom:0.02} })
+          series.push(s)
+        } else if (ind.kind==='OBV') {
+          const ml = paneLayout as any
+          const data = calcOBV(chartData)
+          const s = chart.addSeries(LineSeries,{color:ind.color,lineWidth:2,priceScaleId:'obv',priceLineVisible:false,lastValueVisible:false})
+          s.setData(data)
+          chart.priceScale('obv').applyOptions({ scaleMargins: ml.obv ?? ml.OBV ?? {top:0.74,bottom:0.02} })
+          series.push(s)
+        } else if (ind.kind==='VWAP') {
+          const data = calcVWAP(chartData)
+          const s = chart.addSeries(LineSeries,{color:ind.color,lineWidth:2,priceLineVisible:false,lastValueVisible:false,lineStyle:2})
+          s.setData(data)
+          series.push(s)
+        } else if (ind.kind==='Custom' && (ind.params as any).__codeStr) {
+          // Execute custom CardsScript
+          try {
+            const code = String((ind.params as any).__codeStr)
+            const close = chartData.map(d=>d.close)
+            const open  = chartData.map(d=>d.open)
+            const high  = chartData.map(d=>d.high)
+            const low   = chartData.map(d=>d.low)
+            const volume= chartData.map(d=>d.volume)
+            const times = chartData.map(d=>d.time)
+            const sma=(src:number[],p:number)=>src.map((_,i)=>i<p-1?null:src.slice(i-p+1,i+1).reduce((a,b)=>a+b,0)/p)
+            const ema=(src:number[],p:number)=>{const k=2/(p+1);let v=src[0];return src.map((x,i)=>{v=i===0?x:x*k+v*(1-k);return v})}
+            const plots: {data:PD[];color:string;title:string}[] = []
+            const plot=(vals:(number|null)[],opts:{color?:string;title?:string}={})=>{
+              plots.push({data:vals.map((v,i)=>v!==null?{time:times[i],value:v}:null).filter(Boolean) as PD[],color:opts.color??ind.color,title:opts.title??'Custom'})
+            }
+            // eslint-disable-next-line no-new-func
+            new Function('close','open','high','low','volume','sma','ema','plot',code)(close,open,high,low,volume,sma,ema,plot)
+            for (const pl of plots) {
+              const s = chart.addSeries(LineSeries,{color:pl.color,lineWidth:2,priceLineVisible:false,lastValueVisible:false,title:pl.title})
+              s.setData(pl.data)
+              series.push(s)
+            }
+          } catch { /**/ }
         }
       } catch { /**/ }
       if (series.length>0) indRefs.current.set(ind.id, series)
@@ -1141,6 +1418,122 @@ function LiveClock() {
   return <span style={{fontFamily:'JetBrains Mono, monospace',fontSize:10,color:T4}}>{t.toLocaleTimeString('en-GB')}</span>
 }
 
+// ── CardsScript / PineScript editor ──────────────────────────────────────────
+const CARDS_TEMPLATE = `// CardsScript — CARDEX Indicator Language
+// Inspired by PineScript. Variables: close, open, high, low, volume
+// Functions: sma(src, period), ema(src, period)
+// Output: plot(values, { color, title })
+
+const ma20 = sma(close, 20)
+const ma50 = sma(close, 50)
+
+plot(ma20, { color: '#a78bfa', title: 'MA 20' })
+plot(ma50, { color: '#f59e0b', title: 'MA 50' })`
+
+function CardsScriptModal({ onAdd, onClose }: { onAdd:(code:string,name:string)=>void; onClose:()=>void }) {
+  const [code, setCode] = useState(CARDS_TEMPLATE)
+  const [name, setName] = useState('My Indicator')
+  const [err,  setErr]  = useState('')
+  const [preview, setPreview] = useState<string[]>([])
+
+  function validate() {
+    setErr('')
+    try {
+      // dry-run with minimal data to validate syntax
+      const close=[1,2,3,4,5], open=[1,2,3,4,5], high=[2,3,4,5,6], low=[0,1,2,3,4], volume=[100,100,100,100,100]
+      const sma=(src:number[],p:number)=>src.map((_:number,i:number)=>i<p-1?null:src.slice(i-p+1,i+1).reduce((a:number,b:number)=>a+b,0)/p)
+      const ema=(src:number[],p:number)=>{const k=2/(p+1);let v=src[0];return src.map((x:number,i:number)=>{v=i===0?x:x*k+v*(1-k);return v})}
+      const plots: string[] = []
+      const plot=(_vals:unknown[],opts:{title?:string}={})=>{plots.push(opts.title??'output')}
+      // eslint-disable-next-line no-new-func
+      new Function('close','open','high','low','volume','sma','ema','plot',code)(close,open,high,low,volume,sma,ema,plot)
+      setPreview(plots)
+      return true
+    } catch(e) {
+      setErr(String(e)); return false
+    }
+  }
+
+  function handleAdd() {
+    if (validate()) { onAdd(code, name); onClose() }
+  }
+
+  return (
+    <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:0.18}}
+      style={{ position:'fixed',inset:0,zIndex:9999,background:'rgba(0,0,0,0.8)',backdropFilter:'blur(20px)',display:'flex',alignItems:'center',justifyContent:'center' }}
+      onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <motion.div initial={{scale:0.93,y:20}} animate={{scale:1,y:0}} exit={{scale:0.93,y:20}} transition={{duration:0.2,ease:[0.22,1,0.36,1]}}
+        style={{ width:680,maxHeight:'82vh',display:'flex',flexDirection:'column',background:'rgba(10,10,22,0.98)',backdropFilter:BLUR,border:`1px solid ${BRD_HI}`,borderRadius:18,boxShadow:'0 32px 80px rgba(0,0,0,0.75)',overflow:'hidden' }}>
+        {/* Header */}
+        <div style={{ padding:'16px 20px',borderBottom:`1px solid ${BRD}`,flexShrink:0,display:'flex',alignItems:'center',gap:12 }}>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:15,fontWeight:700,color:T1,marginBottom:4 }}>CardsScript Editor</div>
+            <div style={{ fontSize:10.5,color:T4 }}>PineScript-inspired custom indicators for CARDEX Terminal. Use <code style={{color:UP,fontFamily:'JetBrains Mono,monospace'}}>plot()</code> to output series.</div>
+          </div>
+          <button onClick={onClose} style={{ width:28,height:28,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',background:GLASS,border:`1px solid ${BRD}`,color:T3,cursor:'pointer' }}>
+            <X style={{width:13,height:13}}/>
+          </button>
+        </div>
+
+        {/* Name input */}
+        <div style={{ padding:'10px 20px',borderBottom:`1px solid ${BRD}`,flexShrink:0,display:'flex',gap:10,alignItems:'center' }}>
+          <span style={{ fontSize:10.5,fontWeight:600,color:T3,whiteSpace:'nowrap' }}>Indicator name</span>
+          <input value={name} onChange={e=>setName(e.target.value)} style={{ flex:1,background:GLASS,border:`1px solid ${BRD}`,borderRadius:7,padding:'5px 10px',color:T1,fontSize:12,fontFamily:'Inter, system-ui',outline:'none' }}/>
+          <button onClick={validate} style={{ padding:'5px 12px',borderRadius:8,background:GLASS,border:`1px solid ${BRD}`,color:T2,fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'Inter, system-ui',flexShrink:0 }}>
+            Validate
+          </button>
+          <button onClick={handleAdd} style={{ padding:'5px 14px',borderRadius:8,background:`linear-gradient(135deg,${ACCENT},#2563eb)`,border:'none',color:'#fff',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'Inter, system-ui',flexShrink:0,boxShadow:'0 2px 12px rgba(124,58,237,0.3)' }}>
+            Add to Chart
+          </button>
+        </div>
+
+        {/* Editor */}
+        <div style={{ flex:1,display:'flex',minHeight:0,overflow:'hidden' }}>
+          {/* Code area */}
+          <div style={{ flex:1,display:'flex',flexDirection:'column',minWidth:0 }}>
+            <div style={{ padding:'6px 20px 2px',fontSize:9.5,fontWeight:700,color:T4,letterSpacing:'0.10em',textTransform:'uppercase' }}>Code</div>
+            <textarea value={code} onChange={e=>setCode(e.target.value)} spellCheck={false}
+              style={{ flex:1,background:'transparent',border:'none',outline:'none',padding:'6px 20px 16px',color:'#e2e8f0',fontSize:12,fontFamily:'JetBrains Mono, monospace',lineHeight:1.7,resize:'none',tabSize:2,whiteSpace:'pre' }}
+            />
+          </div>
+          {/* Reference sidebar */}
+          <div style={{ width:180,borderLeft:`1px solid ${BRD}`,padding:'14px 14px',overflowY:'auto',flexShrink:0 }}>
+            <div style={{ fontSize:9.5,fontWeight:700,color:T4,letterSpacing:'0.10em',textTransform:'uppercase',marginBottom:8 }}>Reference</div>
+            {[
+              ['close','Array of close prices'],
+              ['open','Array of open prices'],
+              ['high','Array of high prices'],
+              ['low','Array of low prices'],
+              ['volume','Array of volumes'],
+              ['sma(src, p)','Simple moving average'],
+              ['ema(src, p)','Exponential moving average'],
+              ['plot(vals, opts)','Output a series'],
+            ].map(([k,v])=>(
+              <div key={k} style={{ marginBottom:7 }}>
+                <div style={{ fontFamily:'JetBrains Mono,monospace',fontSize:10,color:UP,fontWeight:600 }}>{k}</div>
+                <div style={{ fontSize:9.5,color:T4,marginTop:1 }}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer: errors + preview */}
+        <div style={{ padding:'8px 20px',borderTop:`1px solid ${BRD}`,flexShrink:0,minHeight:36 }}>
+          {err && <div style={{ fontSize:10.5,color:'#f87171',fontFamily:'JetBrains Mono,monospace' }}>⚠ {err}</div>}
+          {preview.length>0 && !err && (
+            <div style={{ display:'flex',gap:8,alignItems:'center' }}>
+              <span style={{ fontSize:10,color:'#34d399',fontWeight:600 }}>✓ Valid —</span>
+              {preview.map((p,i)=>(
+                <span key={i} style={{ fontSize:10,color:T3,background:GLASS,padding:'1px 7px',borderRadius:4,border:`1px solid ${BRD}` }}>{p}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
 // ── Terminal (main export) ────────────────────────────────────────────────────
 export default function Terminal() {
   // Symbol state
@@ -1201,13 +1594,23 @@ export default function Terminal() {
     window.addEventListener('keydown',h); return ()=>window.removeEventListener('keydown',h)
   },[])
 
+  const [showPineModal, setShowPineModal] = useState(false)
+
   const handleAddIndicator = useCallback((def: typeof INDICATOR_CATALOG[number]) => {
+    if (def.kind==='Custom') { setShowPineModal(true); return }
     if (activeIndicators.find(i=>i.kind===def.kind&&!['SMA','EMA','WMA'].includes(def.kind))) return
     const id = `${def.kind.toLowerCase()}_${Date.now()}`
     const cleanParams: Record<string, number> = {}
     for (const [k,v] of Object.entries(def.params)) { if (v !== undefined) cleanParams[k] = v as number }
     setActiveIndicators(prev => [...prev, { id, name:def.name, kind:def.kind, type:def.type, color:def.color, params:cleanParams }])
   }, [activeIndicators])
+
+  const handleAddCustomIndicator = useCallback((code:string, name:string) => {
+    const id = `custom_${Date.now()}`
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const params = { __codeStr: code } as any as Record<string, number>
+    setActiveIndicators(prev => [...prev, { id, name, kind:'Custom', type:'overlay', color:'#e879f9', params }])
+  }, [])
 
   const removeIndicator = useCallback((id:string) => {
     setActiveIndicators(prev => prev.filter(i=>i.id!==id))
@@ -1444,6 +1847,7 @@ export default function Terminal() {
       {/* ── Indicator modal ── */}
       <AnimatePresence>
         {showIndModal && <IndicatorModal onAdd={handleAddIndicator} onClose={()=>setShowIndModal(false)}/>}
+        {showPineModal && <CardsScriptModal onAdd={handleAddCustomIndicator} onClose={()=>setShowPineModal(false)}/>}
       </AnimatePresence>
 
       {/* ── Drawing mode hint ── */}
