@@ -620,9 +620,11 @@ export default function Landing() {
 
       {/* ── HERO ───────────────────────────────────────────────────────── */}
       <div ref={heroRef} style={{ position: 'relative', width: '100%', height: '100dvh', overflow: 'hidden' }}>
-        {/* cinematic image — flipped horizontally, parallax wrapper */}
-        <motion.div style={{ position: 'absolute', inset: '-7% 0 0 0', y: reduced ? 0 : heroY, scale: reduced ? 1 : heroScale, willChange: 'transform' }}>
-          <img src={HERO_IMG} alt="" fetchPriority="high" style={{ width: '100%', height: '107%', objectFit: 'cover', objectPosition: 'center 60%', transform: 'scaleX(-1)' }} />
+        {/* cinematic image — flipped horizontally, parallax + Ken Burns */}
+        <motion.div style={{ position: 'absolute', inset: '-8% 0 0 0', y: reduced ? 0 : heroY, scale: reduced ? 1 : heroScale, willChange: 'transform' }}>
+          <motion.div style={{ width: '100%', height: '108%' }} animate={reduced ? undefined : { scale: [1, 1.07, 1] }} transition={{ duration: 26, ease: 'easeInOut', repeat: Infinity }}>
+            <img src={HERO_IMG} alt="" fetchPriority="high" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 64%' }} />
+          </motion.div>
         </motion.div>
         {/* grades: bottom fade + left/right scrim for legibility */}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(7,7,15,0.34) 0%, rgba(7,7,15,0.05) 28%, rgba(7,7,15,0.5) 72%, #07070f 100%)' }} />
@@ -635,10 +637,15 @@ export default function Landing() {
               style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(196,181,253,0.9)' }}>
               Inteligencia · Mercado · 6 países UE
             </motion.div>
-            <motion.h1 initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.85, ease: EXPO, delay: 0.2 }}
-              style={{ margin: '18px 0 0', fontSize: 'clamp(2.7rem,1.3rem+4.9vw,5.4rem)', lineHeight: 0.97, fontWeight: 700, letterSpacing: '-0.045em', color: '#fff' }}>
-              La biblia del<br />coche usado<br /><span style={{ background: 'linear-gradient(120deg,#c4b5fd,#818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>en Europa.</span>
-            </motion.h1>
+            <h1 style={{ margin: '18px 0 0', fontSize: 'clamp(2.7rem,1.3rem+4.9vw,5.4rem)', lineHeight: 0.97, fontWeight: 700, letterSpacing: '-0.045em', color: '#fff' }}>
+              {['La biblia del', 'coche usado', 'en Europa.'].map((ln, i) => (
+                <span key={i} style={{ display: 'block', overflow: 'hidden', paddingBottom: '0.03em' }}>
+                  <motion.span style={{ display: 'block' }} initial={reduced ? { y: 0 } : { y: '115%' }} animate={{ y: '0%' }} transition={{ duration: 0.9, ease: EXPO, delay: 0.25 + i * 0.1 }}>
+                    {i === 2 ? <span style={{ background: 'linear-gradient(120deg,#c4b5fd,#818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{ln}</span> : ln}
+                  </motion.span>
+                </span>
+              ))}
+            </h1>
             <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: EXPO, delay: 0.36 }}
               style={{ margin: '24px 0 0', maxWidth: '46ch', fontSize: 'clamp(1rem,0.94rem+0.32vw,1.2rem)', lineHeight: 1.6, color: 'rgba(255,255,255,0.72)' }}>
               Indexamos, verificamos y deduplicamos el inventario de seis mercados. Una sola plataforma para el profesional que mueve coches entre fronteras.
