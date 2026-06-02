@@ -113,6 +113,7 @@ export default function Terminal() {
   const [cmpMenu, setCmpMenu] = useState(false)
   const [instMenu, setInstMenu] = useState(false)
   const [showColors, setShowColors] = useState(false)
+  const [deskOpen, setDeskOpen] = useState(true)   // Decision Desk dock (below chart) expanded/collapsed
   // Rail flyout/color render in a portal (document.body) with fixed coords captured from the
   // clicked control — escapes the rail's overflow clip and the glass backdrop-filter containing-block.
   const [flyoutPos, setFlyoutPos] = useState<{ x: number; y: number } | null>(null)
@@ -372,10 +373,42 @@ export default function Terminal() {
       </GlassPanel>
 
       {/* ════ BODY ════ */}
-      <div style={{ flex: 1, display: 'flex', gap: 10, minHeight: 0 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0 }}>
 
-        {/* Center: view-switched */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 10 }}>
+        {/* Markets — cross-border strip, TOP, full width */}
+        <GlassPanel p={p} radius={12} style={{ flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'stretch', gap: 4, padding: '6px 8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingRight: 10, marginRight: 4, borderRight: `1px solid ${p.hairline}`, flexShrink: 0 }}>
+              <Eyebrow p={p}>Markets</Eyebrow>
+              <span style={{ fontSize: 8.5, color: p.t4, fontFamily: MONO }}>cross-border</span>
+            </div>
+            {marketRows.map(({ m, q }) => {
+              const on = m.code === market; const u = q.changePct >= 0; const isBest = m.code === bestBuyCode
+              return (
+                <button key={m.code} onClick={() => setMarket(m.code)} title={`${m.name} · ${m.dealers.toLocaleString('de-DE')} dealers · VAT ${m.vat}%`}
+                  style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1, padding: '5px 10px', borderRadius: 9, cursor: 'pointer', textAlign: 'left',
+                    background: on ? p.accentDim : 'transparent', border: `1px solid ${on ? p.accent + '55' : 'transparent'}`, transition: `background 120ms ${EASE}` }}
+                  onMouseEnter={e => { if (!on) e.currentTarget.style.background = p.glass }}
+                  onMouseLeave={e => { if (!on) e.currentTarget.style.background = 'transparent' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 12 }}>{m.flag}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: on ? p.accentText : p.t2, fontFamily: SANS }}>{m.code}</span>
+                    {isBest && <span style={{ fontSize: 7, fontWeight: 800, color: p.up, letterSpacing: '0.05em', padding: '1px 4px', borderRadius: 99, background: p.upDim }}>BEST</span>}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                    <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, color: p.t1, fontVariantNumeric: 'tabular-nums' }}>{fmtPrice(q.last)}</span>
+                    <span style={{ fontFamily: MONO, fontSize: 9, fontWeight: 700, color: u ? p.up : p.down, fontVariantNumeric: 'tabular-nums' }}>{u ? '+' : ''}{q.changePct.toFixed(2)}%</span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </GlassPanel>
+
+        {/* Middle row: view content + watchlist */}
+        <div style={{ flex: 1, display: 'flex', gap: 10, minHeight: 0 }}>
+          {/* Center: view-switched */}
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 10 }}>
           {view === 'chart' && (
             <>
               {/* Drawing rail — full TradingView tool taxonomy.
@@ -486,54 +519,37 @@ export default function Terminal() {
           )}
         </div>
 
-        {/* Right column: Markets switcher · Watchlist · Intelligence */}
-        <div style={{ width: 340, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0 }}>
-          {/* Markets — live cross-border price ladder for the selected instrument */}
-          <GlassPanel p={p} radius={14} style={{ flexShrink: 0 }}>
-            <PanelTitle p={p} label="Markets" sub="cross-border · live"
-              right={<Eyebrow p={p}>{inst.make} {inst.model}</Eyebrow>} />
-            <div style={{ padding: '2px 7px 7px' }}>
-              {marketRows.map(({ m, q }) => {
-                const on = m.code === market
-                const up = q.changePct >= 0
-                const best = m.code === bestBuyCode
-                return (
-                  <button key={m.code} onClick={() => setMarket(m.code)} title={`${m.name} · ${m.dealers.toLocaleString('de-DE')} dealers · VAT ${m.vat}%`}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, height: 29, padding: '0 7px', cursor: 'pointer', textAlign: 'left',
-                      background: on ? p.accentDim : 'transparent', border: 'none', borderLeft: `2px solid ${on ? p.accent : 'transparent'}`, borderRadius: 7, transition: `background 120ms ${EASE}` }}
-                    onMouseEnter={e => { if (!on) e.currentTarget.style.background = p.glass }}
-                    onMouseLeave={e => { if (!on) e.currentTarget.style.background = 'transparent' }}>
-                    <span style={{ fontSize: 13.5 }}>{m.flag}</span>
-                    <span style={{ width: 22, fontSize: 10.5, fontWeight: 700, color: on ? p.accentText : p.t2, fontFamily: SANS }}>{m.code}</span>
-                    {best && <span style={{ fontSize: 7.5, fontWeight: 800, color: p.up, letterSpacing: '0.06em', padding: '1.5px 5px', borderRadius: 99, background: p.upDim }}>BEST</span>}
-                    <span style={{ flex: 1 }} />
-                    <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 600, color: p.t1, fontVariantNumeric: 'tabular-nums' }}>{fmtPrice(q.last)}</span>
-                    <span style={{ width: 50, textAlign: 'right', fontFamily: MONO, fontSize: 9.5, fontWeight: 700, color: up ? p.up : p.down, fontVariantNumeric: 'tabular-nums' }}>{up ? '+' : ''}{q.changePct.toFixed(2)}%</span>
-                  </button>
-                )
-              })}
-            </div>
-          </GlassPanel>
-
-          {/* Watchlist — tracked + search-new */}
-          <GlassPanel p={p} radius={14} style={{ flex: '1 1 52%', minHeight: 260 }}>
+          {/* Watchlist — right column (tall: 10+ rows) */}
+          <GlassPanel p={p} radius={14} style={{ width: 300, flexShrink: 0 }}>
             <PanelTitle p={p} label="Watchlist" sub={`${INSTRUMENTS.length} indices · search to add`} />
             <Watchlist p={p} market={market} selectedId={inst.id} onSelect={setInst} />
           </GlassPanel>
+        </div>
 
-          {/* Intelligence — reflects selected instrument. minHeight floor keeps the verdict
-              dial + call visible even on short screens (never crush the decision read). */}
-          <GlassPanel p={p} radius={14} style={{ flex: '1 1 48%', minHeight: 240 }}>
-            <PanelTitle p={p} label="Decision Desk" sub={`${inst.make} ${inst.model}`} right={<motion.span style={{ width: 5, height: 5, borderRadius: '50%', background: p.accent }} animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.6, repeat: Infinity }} />} />
-            <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        {/* Decision Desk dock — BELOW the chart, full width, collapsible (Revolut / Plus500 style) */}
+        <GlassPanel p={p} radius={14} style={{ flexShrink: 0, height: deskOpen ? 250 : 40, overflow: 'hidden', transition: 'height 260ms cubic-bezier(0.22,1,0.36,1)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', height: 38, borderBottom: deskOpen ? `1px solid ${p.hairline}` : 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+              <span style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '-0.01em', color: p.t1, fontFamily: SANS }}>Decision Desk</span>
+              <span style={{ fontSize: 10, color: p.t4, fontFamily: MONO }}>{inst.make} {inst.model} · {inst.variant}</span>
+              <motion.span style={{ width: 5, height: 5, borderRadius: '50%', background: p.accent }} animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.6, repeat: Infinity }} />
+            </div>
+            <button onClick={() => setDeskOpen(o => !o)} title={deskOpen ? 'Collapse — bigger chart' : 'Expand decision desk'}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 9px', borderRadius: 8, cursor: 'pointer', background: p.glass, border: `1px solid ${p.border}`, color: p.t3, fontSize: 10, fontWeight: 700, fontFamily: SANS }}>
+              {deskOpen ? 'Collapse' : 'Expand'}
+              <motion.span animate={{ rotate: deskOpen ? 0 : 180 }} transition={{ duration: 0.2 }} style={{ display: 'flex' }}><ChevronDown style={{ width: 12, height: 12 }} /></motion.span>
+            </button>
+          </div>
+          {deskOpen && (
+            <div style={{ height: 212 }}>
               <AnimatePresence mode="wait">
-                <motion.div key={inst.id + market} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25, ease: EASE_ARR }} style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                  <IntelRail p={p} inst={inst} market={market} />
+                <motion.div key={inst.id + market} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25, ease: EASE_ARR }} style={{ height: '100%' }}>
+                  <IntelRail p={p} inst={inst} market={market} orientation="dock" />
                 </motion.div>
               </AnimatePresence>
             </div>
-          </GlassPanel>
-        </div>
+          )}
+        </GlassPanel>
       </div>
 
       {/* ════ FOOTER ════ */}
