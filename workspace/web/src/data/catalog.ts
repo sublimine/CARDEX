@@ -1903,7 +1903,7 @@ export const BRANDS: Brand[] = [
   {
     name: 'Noble',
     color: '#1a1a1a',
-    logo: '/logos/noble.png',
+    logo: '/logos/noble.svg',
     models: [
       { name: 'M12', submodels: ['GTO-3R 3.0 T V6', 'GTO-3R Stage 2', 'GTR 3.0 T V6'] },
       { name: 'M400', submodels: ['3.0 T', 'Road 3.0 T V6'] },

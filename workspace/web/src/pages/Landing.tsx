@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createPortal } from 'react-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useScroll, useTransform, useReducedMotion } from 'framer-motion'
 import { useAuthContext } from '../auth/AuthContext'
 import { BRANDS, type Brand, type Model } from '../data/catalog'
 import LOGO_AR from '../data/logo-ar.json'
+import LandingSections from './landing-sections'
 
 const EXPO = [0.16, 1, 0.3, 1] as const
-const HERO_IMG = 'https://i.pinimg.com/originals/8f/67/ad/8f67ad9d7fef82b5943608def344573b.jpg'
+const HERO_IMG = '/hero-cardex.jpg'
 
 /* ─── Source portals — one per country + AS24 global ──────────────────── */
 interface Portal { name: string; favicon?: string; initial?: string; bg: string; border?: string; textColor?: string }
@@ -565,6 +566,13 @@ export default function Landing() {
     return () => window.removeEventListener('scroll', fn)
   }, [])
 
+  const heroRef = useRef<HTMLDivElement>(null)
+  const reduced = useReducedMotion()
+  const { scrollYProgress: heroP } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
+  const heroY = useTransform(heroP, [0, 1], ['0%', '15%'])
+  const heroScale = useTransform(heroP, [0, 1], [1, 1.1])
+  const heroFade = useTransform(heroP, [0, 0.8], [1, 0])
+
   function handleEnter() { nav(isAuthenticated ? '/dashboard' : '/login') }
   function handleSearch(e: React.FormEvent) { e.preventDefault(); nav('/dashboard') }
 
@@ -611,74 +619,87 @@ export default function Landing() {
       </nav>
 
       {/* ── HERO ───────────────────────────────────────────────────────── */}
-      <div style={{ position: 'relative', width: '100%', height: '100dvh', overflow: 'hidden' }}>
-        <img src={HERO_IMG} alt="" fetchPriority="high" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 40%' }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(7,7,15,0.2) 0%, rgba(7,7,15,0.04) 25%, rgba(7,7,15,0.62) 68%, rgba(7,7,15,0.97) 100%)' }} />
+      <div ref={heroRef} style={{ position: 'relative', width: '100%', height: '100dvh', overflow: 'hidden' }}>
+        {/* cinematic image — flipped horizontally, parallax wrapper */}
+        <motion.div style={{ position: 'absolute', inset: '-7% 0 0 0', y: reduced ? 0 : heroY, scale: reduced ? 1 : heroScale, willChange: 'transform' }}>
+          <img src={HERO_IMG} alt="" fetchPriority="high" style={{ width: '100%', height: '107%', objectFit: 'cover', objectPosition: 'center 60%', transform: 'scaleX(-1)' }} />
+        </motion.div>
+        {/* grades: bottom fade + left/right scrim for legibility */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(7,7,15,0.34) 0%, rgba(7,7,15,0.05) 28%, rgba(7,7,15,0.5) 72%, #07070f 100%)' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(7,7,15,0.72) 0%, rgba(7,7,15,0.2) 32%, transparent 50%, rgba(7,7,15,0.4) 100%)' }} />
 
-        {/* Full-height vertical glass filter panel — right side, top to bottom */}
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'stretch', justifyContent: 'flex-end', padding: 'clamp(80px,11vh,112px) clamp(16px,4.5vw,64px)', pointerEvents: 'none' }}>
-          <motion.aside
-            initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, ease: EXPO, delay: 0.15 }}
+        <motion.div style={{ position: 'absolute', inset: 0, opacity: reduced ? 1 : heroFade, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'clamp(24px,5vw,80px)', padding: '88px clamp(20px,5vw,72px) 64px', pointerEvents: 'none' }}>
+          {/* LEFT — editorial title over the image */}
+          <div style={{ pointerEvents: 'auto', maxWidth: 'min(640px, 56vw)', flexShrink: 1, minWidth: 0 }}>
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: EXPO, delay: 0.1 }}
+              style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(196,181,253,0.9)' }}>
+              Inteligencia · Mercado · 6 países UE
+            </motion.div>
+            <motion.h1 initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.85, ease: EXPO, delay: 0.2 }}
+              style={{ margin: '18px 0 0', fontSize: 'clamp(2.7rem,1.3rem+4.9vw,5.4rem)', lineHeight: 0.97, fontWeight: 700, letterSpacing: '-0.045em', color: '#fff' }}>
+              La biblia del<br />coche usado<br /><span style={{ background: 'linear-gradient(120deg,#c4b5fd,#818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>en Europa.</span>
+            </motion.h1>
+            <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: EXPO, delay: 0.36 }}
+              style={{ margin: '24px 0 0', maxWidth: '46ch', fontSize: 'clamp(1rem,0.94rem+0.32vw,1.2rem)', lineHeight: 1.6, color: 'rgba(255,255,255,0.72)' }}>
+              Indexamos, verificamos y deduplicamos el inventario de seis mercados. Una sola plataforma para el profesional que mueve coches entre fronteras.
+            </motion.p>
+          </div>
+
+          {/* RIGHT — narrow glass search panel (more image than panel) */}
+          <motion.aside initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, ease: EXPO, delay: 0.25 }}
             style={{
-              pointerEvents: 'auto', position: 'relative', boxSizing: 'border-box', textAlign: 'left',
-              width: 'clamp(340px, 33vw, 420px)', maxWidth: '100%', height: '100%',
-              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-              padding: '30px 26px 26px', borderRadius: 28,
-              background: 'linear-gradient(160deg, rgba(255,255,255,0.07), rgba(255,255,255,0.015) 64%)',
-              backdropFilter: 'blur(42px) saturate(180%) brightness(1.04)',
-              WebkitBackdropFilter: 'blur(42px) saturate(180%) brightness(1.04)',
-              border: '1px solid rgba(255,255,255,0.13)',
-              boxShadow: '-24px 0 90px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.28), inset 1px 0 0 rgba(255,255,255,0.1)',
+              pointerEvents: 'auto', position: 'relative', boxSizing: 'border-box', textAlign: 'left', flexShrink: 0,
+              width: 'clamp(318px, 25vw, 356px)', maxWidth: '100%', display: 'flex', flexDirection: 'column', gap: 9,
+              padding: '18px 18px 15px', borderRadius: 22,
+              background: 'linear-gradient(160deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02) 64%)',
+              backdropFilter: 'blur(40px) saturate(180%)', WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+              border: '1px solid rgba(255,255,255,0.14)',
+              boxShadow: '0 30px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.28)',
             }}>
-            <div aria-hidden style={{ position: 'absolute', inset: 0, borderRadius: 28, pointerEvents: 'none', background: 'radial-gradient(120% 45% at 30% -5%, rgba(255,255,255,0.12), transparent 55%)' }} />
-
-            {/* top — eyebrow + headline */}
-            <div style={{ position: 'relative' }}>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', color: 'rgba(196,181,253,0.9)', textTransform: 'uppercase', marginBottom: 12 }}>Buscador · 6 países UE</div>
-              <h1 style={{ margin: 0, fontSize: 28, lineHeight: 1.08, fontWeight: 700, letterSpacing: '-0.025em', color: '#fff' }}>
-                El coche exacto,<br /><span style={{ color: 'rgba(255,255,255,0.5)' }}>en toda Europa.</span>
-              </h1>
-            </div>
-
-            {/* middle — search + fields + CTA */}
-            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 9 }}>
-              <form onSubmit={handleSearch} style={{ display: 'flex', alignItems: 'center', gap: 9, height: 46, padding: '0 14px', borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={2} strokeLinecap="round" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
-                <input type="text" value={query} onChange={e => setQuery(e.target.value)} placeholder="BMW Serie 3, Audi A4…"
-                  style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', fontSize: 14, color: '#fff', fontFamily: 'inherit' }} />
-              </form>
-              <MarcaModeloField value={marca} onChange={setMarca} />
-              <PaisSelect value={pais} onChange={setPais} />
-              <AnoKmField
-                minY={anoMin} maxY={anoMax} kmMin={kmMin} kmMax={kmMax}
-                onYear={(lo, hi) => { setAnoMin(lo); setAnoMax(hi) }}
-                onKm={(lo, hi) => { setKmMin(lo); setKmMax(hi) }}
-              />
-              <motion.button onClick={handleSearch} whileHover={{ scale: 1.012 }} whileTap={{ scale: 0.985 }} transition={{ duration: 0.14, ease: EXPO }}
-                style={{ width: '100%', padding: '13px 0', borderRadius: 12, background: 'rgba(99,102,241,0.28)', border: '1px solid rgba(99,102,241,0.38)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '-0.01em', transition: 'background 0.2s', marginTop: 3 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.36)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.28)' }}>
-                Mostrar {count.toLocaleString('de-DE')} resultados
-              </motion.button>
-            </div>
-
-            {/* bottom — source portals */}
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, paddingTop: 8, borderTop: `1px solid ${DIVIDER}` }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.16em', color: 'rgba(196,181,253,0.9)', textTransform: 'uppercase', marginBottom: 1 }}>Busca en 6 países</div>
+            <form onSubmit={handleSearch} style={{ display: 'flex', alignItems: 'center', gap: 9, height: 44, padding: '0 13px', borderRadius: 11, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={2} strokeLinecap="round" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+              <input type="text" value={query} onChange={e => setQuery(e.target.value)} placeholder="BMW Serie 3, Audi A4…"
+                style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', fontSize: 14, color: '#fff', fontFamily: 'inherit' }} />
+            </form>
+            <MarcaModeloField value={marca} onChange={setMarca} />
+            <PaisSelect value={pais} onChange={setPais} />
+            <AnoKmField
+              minY={anoMin} maxY={anoMax} kmMin={kmMin} kmMax={kmMax}
+              onYear={(lo, hi) => { setAnoMin(lo); setAnoMax(hi) }}
+              onKm={(lo, hi) => { setKmMin(lo); setKmMax(hi) }}
+            />
+            <motion.button onClick={handleSearch} whileHover={{ scale: 1.012 }} whileTap={{ scale: 0.985 }} transition={{ duration: 0.14, ease: EXPO }}
+              style={{ width: '100%', padding: '12px 0', borderRadius: 11, background: 'linear-gradient(120deg,#6366f1,#7c3aed)', border: 'none', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '-0.01em', marginTop: 2, boxShadow: '0 8px 28px rgba(99,102,241,0.32)' }}>
+              Mostrar {count.toLocaleString('de-DE')} resultados
+            </motion.button>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, paddingTop: 8, marginTop: 2, borderTop: `1px solid ${DIVIDER}` }}>
               <div style={{ display: 'flex' }}>
-                {PORTALS.map((p, i) => (
+                {PORTALS.slice(0, 6).map((p, i) => (
                   <div key={p.name} title={p.name}
-                    style={{ width: 24, height: 24, borderRadius: 6, background: p.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: i > 0 ? -5 : 0, boxShadow: '0 4px 12px rgba(0,0,0,0.55)', position: 'relative', zIndex: PORTALS.length - i, flexShrink: 0, border: `1.5px solid ${p.border ?? 'rgba(255,255,255,0.1)'}`, transform: 'rotate(8deg)', overflow: 'hidden' }}>
+                    style={{ width: 22, height: 22, borderRadius: 6, background: p.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: i > 0 ? -5 : 0, boxShadow: '0 4px 12px rgba(0,0,0,0.55)', position: 'relative', zIndex: PORTALS.length - i, flexShrink: 0, border: `1.5px solid ${p.border ?? 'rgba(255,255,255,0.1)'}`, transform: 'rotate(8deg)', overflow: 'hidden' }}>
                     {p.favicon
                       ? <img src={p.favicon} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                      : <span style={{ fontSize: 10, fontWeight: 800, color: p.textColor ?? '#fff', letterSpacing: '-0.03em', lineHeight: 1, fontFamily: 'Inter, sans-serif' }}>{p.initial}</span>}
+                      : <span style={{ fontSize: 9, fontWeight: 800, color: p.textColor ?? '#fff', lineHeight: 1, fontFamily: 'Inter, sans-serif' }}>{p.initial}</span>}
                   </div>
                 ))}
               </div>
-              <span style={{ fontSize: 11.5, fontWeight: 500, color: 'rgba(255,255,255,0.45)', whiteSpace: 'nowrap', letterSpacing: '0.01em' }}>28.000+ dealers indexados</span>
+              <span style={{ fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.45)', whiteSpace: 'nowrap' }}>28.000+ dealers</span>
             </div>
           </motion.aside>
-        </div>
+        </motion.div>
+
+        {/* scroll cue */}
+        <motion.div aria-hidden style={{ position: 'absolute', bottom: 22, left: '50%', x: '-50%', opacity: reduced ? 1 : heroFade }}>
+          <motion.div animate={{ y: [0, 7, 0] }} transition={{ duration: 1.8, ease: 'easeInOut', repeat: Infinity }}
+            style={{ width: 22, height: 36, borderRadius: 12, border: '1.5px solid rgba(255,255,255,0.3)', display: 'flex', justifyContent: 'center', paddingTop: 7 }}>
+            <div style={{ width: 3, height: 7, borderRadius: 2, background: 'rgba(255,255,255,0.6)' }} />
+          </motion.div>
+        </motion.div>
       </div>
+
+      {/* ── SCROLL NARRATIVE ───────────────────────────────────────────── */}
+      <LandingSections onEnter={handleEnter} />
 
       <style>{`
         input::placeholder { color: rgba(255,255,255,0.33) !important; }
