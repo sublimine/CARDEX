@@ -615,40 +615,38 @@ export default function Landing() {
         <img src={HERO_IMG} alt="" fetchPriority="high" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 40%' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(7,7,15,0.2) 0%, rgba(7,7,15,0.04) 25%, rgba(7,7,15,0.62) 68%, rgba(7,7,15,0.97) 100%)' }} />
 
-        {/* Right-anchored vertical glass filter panel */}
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '92px clamp(16px,5vw,72px) 48px', pointerEvents: 'none' }}>
+        {/* Full-height vertical glass filter panel — right side, top to bottom */}
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'stretch', justifyContent: 'flex-end', padding: 'clamp(80px,11vh,112px) clamp(16px,4.5vw,64px)', pointerEvents: 'none' }}>
           <motion.aside
             initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, ease: EXPO, delay: 0.15 }}
             style={{
               pointerEvents: 'auto', position: 'relative', boxSizing: 'border-box', textAlign: 'left',
-              width: 'clamp(330px, 32vw, 408px)', maxWidth: '100%',
-              display: 'flex', flexDirection: 'column', gap: 11,
-              padding: '24px 22px 18px', borderRadius: 26,
-              background: 'linear-gradient(155deg, rgba(255,255,255,0.13), rgba(255,255,255,0.045) 62%)',
-              backdropFilter: 'blur(46px) saturate(190%) brightness(1.06)',
-              WebkitBackdropFilter: 'blur(46px) saturate(190%) brightness(1.06)',
-              border: '1px solid rgba(255,255,255,0.16)',
-              boxShadow: '0 36px 90px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.34), inset 0 -1px 0 rgba(255,255,255,0.05)',
+              width: 'clamp(340px, 33vw, 420px)', maxWidth: '100%', height: '100%',
+              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+              padding: '30px 26px 26px', borderRadius: 28,
+              background: 'linear-gradient(160deg, rgba(255,255,255,0.07), rgba(255,255,255,0.015) 64%)',
+              backdropFilter: 'blur(42px) saturate(180%) brightness(1.04)',
+              WebkitBackdropFilter: 'blur(42px) saturate(180%) brightness(1.04)',
+              border: '1px solid rgba(255,255,255,0.13)',
+              boxShadow: '-24px 0 90px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.28), inset 1px 0 0 rgba(255,255,255,0.1)',
             }}>
-            <div aria-hidden style={{ position: 'absolute', inset: 0, borderRadius: 26, pointerEvents: 'none', background: 'radial-gradient(130% 70% at 25% -10%, rgba(255,255,255,0.12), transparent 55%)' }} />
+            <div aria-hidden style={{ position: 'absolute', inset: 0, borderRadius: 28, pointerEvents: 'none', background: 'radial-gradient(120% 45% at 30% -5%, rgba(255,255,255,0.12), transparent 55%)' }} />
 
-            {/* eyebrow + headline */}
+            {/* top — eyebrow + headline */}
             <div style={{ position: 'relative' }}>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.16em', color: 'rgba(196,181,253,0.9)', textTransform: 'uppercase', marginBottom: 9 }}>Buscador · 6 países UE</div>
-              <h1 style={{ margin: 0, fontSize: 25, lineHeight: 1.1, fontWeight: 700, letterSpacing: '-0.02em', color: '#fff' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', color: 'rgba(196,181,253,0.9)', textTransform: 'uppercase', marginBottom: 12 }}>Buscador · 6 países UE</div>
+              <h1 style={{ margin: 0, fontSize: 28, lineHeight: 1.08, fontWeight: 700, letterSpacing: '-0.025em', color: '#fff' }}>
                 El coche exacto,<br /><span style={{ color: 'rgba(255,255,255,0.5)' }}>en toda Europa.</span>
               </h1>
             </div>
 
-            {/* free-text search */}
-            <form onSubmit={handleSearch} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 9, height: 46, padding: '0 14px', borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', marginTop: 2 }}>
-              <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={2} strokeLinecap="round" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
-              <input type="text" value={query} onChange={e => setQuery(e.target.value)} placeholder="BMW Serie 3, Audi A4…"
-                style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', fontSize: 14, color: '#fff', fontFamily: 'inherit' }} />
-            </form>
-
-            {/* filter fields, stacked */}
-            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 7 }}>
+            {/* middle — search + fields + CTA */}
+            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <form onSubmit={handleSearch} style={{ display: 'flex', alignItems: 'center', gap: 9, height: 46, padding: '0 14px', borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={2} strokeLinecap="round" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+                <input type="text" value={query} onChange={e => setQuery(e.target.value)} placeholder="BMW Serie 3, Audi A4…"
+                  style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', fontSize: 14, color: '#fff', fontFamily: 'inherit' }} />
+              </form>
               <MarcaModeloField value={marca} onChange={setMarca} />
               <PaisSelect value={pais} onChange={setPais} />
               <AnoKmField
@@ -656,17 +654,16 @@ export default function Landing() {
                 onYear={(lo, hi) => { setAnoMin(lo); setAnoMax(hi) }}
                 onKm={(lo, hi) => { setKmMin(lo); setKmMax(hi) }}
               />
+              <motion.button onClick={handleSearch} whileHover={{ scale: 1.012 }} whileTap={{ scale: 0.985 }} transition={{ duration: 0.14, ease: EXPO }}
+                style={{ width: '100%', padding: '13px 0', borderRadius: 12, background: 'rgba(99,102,241,0.28)', border: '1px solid rgba(99,102,241,0.38)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '-0.01em', transition: 'background 0.2s', marginTop: 3 }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.36)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.28)' }}>
+                Mostrar {count.toLocaleString('de-DE')} resultados
+              </motion.button>
             </div>
 
-            <motion.button onClick={handleSearch} whileHover={{ scale: 1.012 }} whileTap={{ scale: 0.985 }} transition={{ duration: 0.14, ease: EXPO }}
-              style={{ position: 'relative', width: '100%', padding: '12px 0', borderRadius: 12, background: 'rgba(99,102,241,0.26)', border: '1px solid rgba(99,102,241,0.36)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '-0.01em', transition: 'background 0.2s', marginTop: 2 }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.34)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.26)' }}>
-              Mostrar {count.toLocaleString('de-DE')} resultados
-            </motion.button>
-
-            {/* source portals */}
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 2 }}>
+            {/* bottom — source portals */}
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, paddingTop: 8, borderTop: `1px solid ${DIVIDER}` }}>
               <div style={{ display: 'flex' }}>
                 {PORTALS.map((p, i) => (
                   <div key={p.name} title={p.name}
