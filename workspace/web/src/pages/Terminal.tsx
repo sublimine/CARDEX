@@ -198,7 +198,8 @@ export default function Terminal() {
 
   return (
     <div style={{
-      height: 'calc(100vh - 60px)', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+      minHeight: 'calc(100vh - 60px)', height: fullscreen ? '100vh' : undefined,
+      overflow: fullscreen ? 'hidden' : 'visible', display: 'flex', flexDirection: 'column',
       background: p.bg, fontFamily: SANS, padding: 10, gap: 10,
       position: fullscreen ? 'fixed' : 'relative', inset: fullscreen ? 0 : 'auto', zIndex: fullscreen ? 9999 : 'auto',
     }}>
@@ -373,7 +374,9 @@ export default function Terminal() {
       </GlassPanel>
 
       {/* ════ BODY ════ */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0 }}>
+      {/* flex 1 0 auto: fills the viewport when content is short, but grows (never shrinks below
+          content) so the page scrolls to reveal the full decision-desk dock when it doesn't fit. */}
+      <div style={{ flex: '1 0 auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
 
         {/* Markets — cross-border strip, TOP, full width */}
         <GlassPanel p={p} radius={12} style={{ flexShrink: 0 }}>
@@ -405,8 +408,8 @@ export default function Terminal() {
           </div>
         </GlassPanel>
 
-        {/* Middle row: view content + watchlist */}
-        <div style={{ flex: 1, display: 'flex', gap: 10, minHeight: 0 }}>
+        {/* Middle row: view content + watchlist — grows on tall screens, ≥380 on short (chart stays large) */}
+        <div style={{ flex: '1 1 auto', minHeight: 380, display: 'flex', gap: 10 }}>
           {/* Center: view-switched */}
           <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 10 }}>
           {view === 'chart' && (
@@ -527,7 +530,7 @@ export default function Terminal() {
         </div>
 
         {/* Decision Desk dock — BELOW the chart, full width, collapsible (Revolut / Plus500 style) */}
-        <GlassPanel p={p} radius={14} style={{ flexShrink: 0, height: deskOpen ? 250 : 40, overflow: 'hidden', transition: 'height 260ms cubic-bezier(0.22,1,0.36,1)' }}>
+        <GlassPanel p={p} radius={14} style={{ flexShrink: 0, height: deskOpen ? 352 : 40, overflow: 'hidden', transition: 'height 260ms cubic-bezier(0.22,1,0.36,1)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', height: 38, borderBottom: deskOpen ? `1px solid ${p.hairline}` : 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
               <span style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '-0.01em', color: p.t1, fontFamily: SANS }}>Decision Desk</span>
@@ -541,7 +544,7 @@ export default function Terminal() {
             </button>
           </div>
           {deskOpen && (
-            <div style={{ height: 212 }}>
+            <div style={{ height: 314 }}>
               <AnimatePresence mode="wait">
                 <motion.div key={inst.id + market} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25, ease: EASE_ARR }} style={{ height: '100%' }}>
                   <IntelRail p={p} inst={inst} market={market} orientation="dock" />
