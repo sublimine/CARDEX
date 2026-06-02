@@ -1,0 +1,177 @@
+{
+  "brands": [
+    {
+      "name": "Bugatti",
+      "models": [
+        { "name": "Chiron", "submodels": ["Chiron 1500cv", "Chiron Sport 1500cv", "Chiron Pur Sport 1500cv", "Chiron Super Sport 1578cv", "Chiron Super Sport 300+ 1578cv", "Chiron Profilee 1500cv"] },
+        { "name": "Veyron", "submodels": ["Veyron 16.4 1001cv", "Veyron Grand Sport 1001cv", "Veyron Super Sport 1200cv", "Veyron Vitesse 1200cv"] },
+        { "name": "Divo", "submodels": ["Divo 1500cv"] },
+        { "name": "Bolide", "submodels": ["Bolide 1850cv"] },
+        { "name": "Tourbillon", "submodels": ["Tourbillon 1800cv Hybrid"] },
+        { "name": "Mistral", "submodels": ["Mistral Roadster 1600cv"] }
+      ]
+    },
+    {
+      "name": "Koenigsegg",
+      "models": [
+        { "name": "Agera", "submodels": ["Agera 910cv", "Agera R 1115cv", "Agera RS 1360cv", "Agera RST 1360cv"] },
+        { "name": "Regera", "submodels": ["Regera 1500cv Hybrid"] },
+        { "name": "Jesko", "submodels": ["Jesko 1600cv", "Jesko Absolut 1600cv"] },
+        { "name": "CC850", "submodels": ["CC850 1385cv"] },
+        { "name": "Gemera", "submodels": ["Gemera 2300cv Hybrid"] },
+        { "name": "CCX", "submodels": ["CCX 1018cv", "CCXR 1004cv", "CCXR Trevita 1004cv"] }
+      ]
+    },
+    {
+      "name": "Pagani",
+      "models": [
+        { "name": "Huayra", "submodels": ["Huayra 720cv", "Huayra Roadster 754cv", "Huayra BC 800cv", "Huayra Roadster BC 840cv", "Huayra Codalunga 840cv", "Huayra R 850cv"] },
+        { "name": "Zonda", "submodels": ["Zonda C12 6.0 394cv", "Zonda F 602cv", "Zonda R 750cv", "Zonda Cinque 678cv", "Zonda Revolucion 800cv"] },
+        { "name": "Utopia", "submodels": ["Utopia 864cv", "Utopia Roadster 864cv"] }
+      ]
+    },
+    {
+      "name": "Rimac",
+      "models": [
+        { "name": "Nevera", "submodels": ["Nevera 1914cv", "Nevera Time Attack 2107cv", "Nevera R 2107cv"] },
+        { "name": "Concept One", "submodels": ["Concept One 1088cv"] }
+      ]
+    },
+    {
+      "name": "Zeekr",
+      "models": [
+        { "name": "001", "submodels": ["001 RWD 272cv", "001 AWD 544cv", "001 AWD Performance 586cv", "001 FR 640cv"] },
+        { "name": "007", "submodels": ["007 RWD 310cv", "007 AWD 544cv"] },
+        { "name": "009", "submodels": ["009 AWD 544cv", "009 Grand 544cv"] },
+        { "name": "X", "submodels": ["X RWD 200cv", "X AWD 315cv"] },
+        { "name": "Mix", "submodels": ["Mix AWD 544cv"] }
+      ]
+    },
+    {
+      "name": "Aiways",
+      "models": [
+        { "name": "U5", "submodels": ["U5 Standard Range 163cv", "U5 Long Range 163cv", "U5 Plus 163cv"] },
+        { "name": "U6", "submodels": ["U6 204cv", "U6 GT 204cv"] }
+      ]
+    },
+    {
+      "name": "JAECOO",
+      "models": [
+        { "name": "J7", "submodels": ["J7 1.6T 147cv", "J7 PHEV 243cv", "J7 AWD 1.6T 147cv"] },
+        { "name": "J8", "submodels": ["J8 2.0T 197cv", "J8 AWD 2.0T 197cv", "J8 PHEV 270cv"] }
+      ]
+    },
+    {
+      "name": "Voyah",
+      "models": [
+        { "name": "Free", "submodels": ["Free EREV 476cv", "Free Pure EV 510cv", "Free Performance 510cv"] },
+        { "name": "Dream", "submodels": ["Dream EREV 476cv", "Dream Pure EV 476cv"] },
+        { "name": "Courage", "submodels": ["Courage EREV 380cv"] }
+      ]
+    },
+    {
+      "name": "Caterham",
+      "models": [
+        { "name": "Seven 160", "submodels": ["Seven 160 80cv", "Seven 160 S 80cv"] },
+        { "name": "Seven 170", "submodels": ["Seven 170 84cv", "Seven 170 R 84cv"] },
+        { "name": "Seven 270", "submodels": ["Seven 270 135cv", "Seven 270 R 135cv", "Seven 270 S 135cv"] },
+        { "name": "Seven 310", "submodels": ["Seven 310 160cv", "Seven 310 R 160cv", "Seven 310 S 160cv"] },
+        { "name": "Seven 360", "submodels": ["Seven 360 182cv", "Seven 360 R 182cv"] },
+        { "name": "Seven 420", "submodels": ["Seven 420 210cv", "Seven 420 R 210cv", "Seven 420 CUP 210cv"] },
+        { "name": "Seven 485", "submodels": ["Seven 485 240cv", "Seven 485 R 240cv"] },
+        { "name": "Seven SuperSport", "submodels": ["SuperSport 260cv", "SuperSport R 260cv"] }
+      ]
+    },
+    {
+      "name": "Morgan",
+      "models": [
+        { "name": "Plus Four", "submodels": ["Plus Four 2.0T 255cv", "Plus Four CX-T 2.0T 255cv"] },
+        { "name": "Plus Six", "submodels": ["Plus Six 3.0T 335cv"] },
+        { "name": "Super 3", "submodels": ["Super 3 1.5 118cv", "Super 3 Sport 1.5 118cv"] },
+        { "name": "3 Wheeler", "submodels": ["3 Wheeler S&S V-Twin 115cv", "3 Wheeler EV"] },
+        { "name": "Aero 8", "submodels": ["Aero 8 4.8 V8 367cv"] }
+      ]
+    },
+    {
+      "name": "Wiesmann",
+      "models": [
+        { "name": "MF3", "submodels": ["MF3 3.2 325cv", "MF3 3.5 343cv"] },
+        { "name": "MF4", "submodels": ["MF4 4.0 V8 420cv", "MF4 S 4.0 V8 450cv", "MF4-S 420cv"] },
+        { "name": "MF5", "submodels": ["MF5 5.0 V10 555cv"] },
+        { "name": "GT MF4", "submodels": ["GT MF4 420cv", "GT MF4 S 450cv"] },
+        { "name": "Project Thunderball", "submodels": ["Thunderball EV 680cv"] }
+      ]
+    },
+    {
+      "name": "Brabus",
+      "models": [
+        { "name": "500", "submodels": ["500 4-matic+ 500cv", "500 Roadster 500cv"] },
+        { "name": "600", "submodels": ["600 Adventure 600cv", "600 Widestar 600cv"] },
+        { "name": "700", "submodels": ["700 Biturbo 700cv", "700 Widestar 700cv", "700 Adventure XLP"] },
+        { "name": "800", "submodels": ["800 Adventure XLP 800cv", "800 E Performance 800cv"] },
+        { "name": "900", "submodels": ["900 Rocket Edition 900cv", "900 XLP 900cv"] },
+        { "name": "BRABUS 1", "submodels": ["BRABUS 1 EV 200cv", "BRABUS 1 XLP 200cv"] },
+        { "name": "BRABUS 3", "submodels": ["BRABUS 3 EV 428cv"] }
+      ]
+    },
+    {
+      "name": "Microlino",
+      "models": [
+        { "name": "Microlino 2.0", "submodels": ["Microlino Lite 45km/h 8cv", "Microlino Urban 90km/h 12.5cv", "Microlino Dolce 90km/h 12.5cv", "Microlino Competizione 90km/h 12.5cv"] },
+        { "name": "Microlino Spider", "submodels": ["Microlino Spider 90km/h 12.5cv"] }
+      ]
+    },
+    {
+      "name": "Cadillac",
+      "models": [
+        { "name": "ATS", "submodels": ["ATS 2.0T 272cv", "ATS 3.6 V6 321cv", "ATS-V 3.6TT 468cv"] },
+        { "name": "CTS", "submodels": ["CTS 2.0T 276cv", "CTS 3.6 V6 335cv", "CTS-V 6.2 V8 640cv"] },
+        { "name": "CT4", "submodels": ["CT4 2.0T 237cv", "CT4-V 2.7TT 325cv", "CT4-V Blackwing 3.6TT 472cv"] },
+        { "name": "CT5", "submodels": ["CT5 2.0T 237cv", "CT5 3.0TT 360cv", "CT5-V 3.0TT 360cv", "CT5-V Blackwing 6.2 V8 668cv"] },
+        { "name": "Escalade", "submodels": ["Escalade 6.2 V8 420cv", "Escalade ESV 6.2 V8 420cv", "Escalade IQ EV 700cv"] },
+        { "name": "XT4", "submodels": ["XT4 2.0T 237cv AWD"] },
+        { "name": "XT5", "submodels": ["XT5 2.0T 237cv", "XT5 3.6 V6 314cv AWD"] },
+        { "name": "XT6", "submodels": ["XT6 3.6 V6 314cv AWD"] },
+        { "name": "Lyriq", "submodels": ["Lyriq RWD 340cv", "Lyriq AWD 500cv"] }
+      ]
+    },
+    {
+      "name": "Chevrolet",
+      "models": [
+        { "name": "Camaro", "submodels": ["Camaro 2.0T 275cv", "Camaro 3.6 V6 335cv", "Camaro SS 6.2 V8 453cv", "Camaro ZL1 6.2SC V8 650cv", "Camaro Z28 7.0 V8 507cv"] },
+        { "name": "Corvette", "submodels": ["Corvette C6 6.2 430cv", "Corvette C7 Stingray 466cv", "Corvette C8 Stingray 502cv", "Corvette C8 Z06 680cv", "Corvette C8 ZR1 1064cv", "Corvette E-Ray 655cv Hybrid"] },
+        { "name": "Aveo", "submodels": ["Aveo 1.2 86cv", "Aveo 1.4 100cv", "Aveo 1.3 CDTi 95cv"] },
+        { "name": "Cruze", "submodels": ["Cruze 1.4T 140cv", "Cruze 1.6T 170cv", "Cruze 2.0 CDTi 163cv"] },
+        { "name": "Trax", "submodels": ["Trax 1.4T 140cv AWD"] },
+        { "name": "Captiva", "submodels": ["Captiva 2.0D 150cv", "Captiva 2.2D 184cv", "Captiva 2.4 136cv"] },
+        { "name": "Orlando", "submodels": ["Orlando 1.8 140cv", "Orlando 2.0D 130cv", "Orlando 2.0D 163cv"] }
+      ]
+    },
+    {
+      "name": "Hongqi",
+      "models": [
+        { "name": "H5", "submodels": ["H5 2.0T 197cv"] },
+        { "name": "H9", "submodels": ["H9 3.0T 279cv", "H9 Plus 3.0T 279cv"] },
+        { "name": "E-HS9", "submodels": ["E-HS9 AWD 551cv", "E-HS9 Long Range 551cv"] },
+        { "name": "EH7", "submodels": ["EH7 AWD 576cv"] },
+        { "name": "E-QM5", "submodels": ["E-QM5 RWD 218cv", "E-QM5 AWD 353cv"] }
+      ]
+    },
+    {
+      "name": "Deepal",
+      "models": [
+        { "name": "S7", "submodels": ["S7 PHEV 243cv", "S7 EV 218cv"] },
+        { "name": "L07", "submodels": ["L07 PHEV 243cv AWD", "L07 EV 326cv"] }
+      ]
+    },
+    {
+      "name": "Neta",
+      "models": [
+        { "name": "V", "submodels": ["V Standard Range 95cv", "V Long Range 95cv", "V Sport 122cv"] },
+        { "name": "U", "submodels": ["U 2 Standard 163cv", "U 2 Long Range 163cv"] },
+        { "name": "GT", "submodels": ["GT RWD 272cv", "GT AWD 400cv"] },
+        { "name": "AYA", "submodels": ["AYA 70cv", "AYA Range Extender"] }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1910 @@
+{
+  "brands": [
+    {
+      "name": "Toyota",
+      "models": [
+        {
+          "name": "Auris",
+          "submodels": [
+            "1.3 VVT-i 99cv",
+            "1.3 Dual VVT-i 100cv",
+            "1.4 D-4D 90cv",
+            "1.6 VVT-i 124cv",
+            "1.8 VVT-i 147cv",
+            "1.8 HEV 136cv",
+            "1.8 Hybrid 136cv",
+            "2.0 D-4D 124cv",
+            "2.0 D-4D 143cv",
+            "2.2 D-4D 150cv",
+            "1.2T 116cv",
+            "1.6 Valvematic 132cv",
+            "HSD Hybrid 136cv",
+            "Touring Sports 1.8 Hybrid 136cv",
+            "Touring Sports 1.4 D-4D 90cv",
+            "Touring Sports 2.0 D-4D 124cv"
+          ]
+        },
+        {
+          "name": "Avensis",
+          "submodels": [
+            "1.6 VVT-i 110cv",
+            "1.8 VVT-i 129cv",
+            "2.0 VVT-i 147cv",
+            "2.4 VVT-i 163cv",
+            "2.0 D-4D 110cv",
+            "2.0 D-4D 126cv",
+            "2.0 D-4D 151cv",
+            "2.2 D-4D 150cv",
+            "2.2 D-CAT 177cv",
+            "1.6 D-4D 112cv",
+            "2.0 Valvematic 152cv",
+            "Wagon 1.8 VVT-i 129cv",
+            "Wagon 2.0 D-4D 126cv",
+            "Wagon 2.2 D-4D 150cv",
+            "Wagon 2.0 Valvematic 152cv",
+            "Wagon 1.6 D-4D 112cv"
+          ]
+        },
+        {
+          "name": "Aygo",
+          "submodels": [
+            "1.0 VVT-i 68cv",
+            "1.0 68cv",
+            "1.0 VVT-i 69cv",
+            "1.4 HDi 54cv",
+            "1.0 VVT-i 72cv",
+            "1.0 Multidrive 68cv",
+            "x-play 1.0 68cv",
+            "x-clusiv 1.0 68cv",
+            "x-wave 1.0 68cv",
+            "x-cite 1.0 68cv",
+            "x-shift 1.0 68cv",
+            "x-play2 1.0 72cv",
+            "x-clusiv2 1.0 72cv"
+          ]
+        },
+        {
+          "name": "Aygo X",
+          "submodels": [
+            "1.0 VVT-i 72cv",
+            "1.0 VVT-i MT 72cv",
+            "1.0 VVT-i CVT 72cv",
+            "GR Sport 1.0 72cv",
+            "Pulse 1.0 72cv",
+            "Explore 1.0 72cv",
+            "Air 1.0 72cv",
+            "Undercover 1.0 72cv"
+          ]
+        },
+        {
+          "name": "bZ4X",
+          "submodels": [
+            "BEV FWD 204cv",
+            "BEV AWD 218cv",
+            "Pure 71.4kWh 204cv",
+            "Pure AWD 71.4kWh 218cv",
+            "Pro 71.4kWh 204cv",
+            "Pro AWD 71.4kWh 218cv",
+            "GR Sport AWD 218cv",
+            "Comfort 204cv",
+            "Premium 204cv",
+            "Premium AWD 218cv"
+          ]
+        },
+        {
+          "name": "C-HR",
+          "submodels": [
+            "1.2T 116cv",
+            "1.2T AWD 116cv",
+            "1.8 Hybrid 122cv",
+            "2.0 HEV 184cv",
+            "2.0 HEV AWD 184cv",
+            "GR Sport 2.0 HEV 184cv",
+            "Plug-in Hybrid 223cv",
+            "PHEV AWD 223cv",
+            "2.0 Hybrid 184cv",
+            "GR Sport 1.8 Hybrid 122cv",
+            "Lounge 1.8 Hybrid 122cv"
+          ]
+        },
+        {
+          "name": "Camry",
+          "submodels": [
+            "2.0 VVT-i 150cv",
+            "2.4 VVT-i 163cv",
+            "3.5 V6 277cv",
+            "2.5 Hybrid 218cv",
+            "2.5 HEV 218cv",
+            "2.5 HEV Premium 218cv",
+            "2.5 Hybrid Premium 218cv"
+          ]
+        },
+        {
+          "name": "Corolla",
+          "submodels": [
+            "1.2T 116cv",
+            "1.8 HEV 122cv",
+            "1.8 Hybrid 122cv",
+            "2.0 HEV 184cv",
+            "2.0 Hybrid 196cv",
+            "GR Sport 2.0 HEV 184cv",
+            "Trek 2.0 HEV 184cv",
+            "Touring Sports 1.8 HEV 122cv",
+            "Touring Sports 2.0 HEV 196cv",
+            "1.4 D-4D 90cv",
+            "1.6 VVT-i 110cv",
+            "1.8 VVT-i 129cv",
+            "2.0 D-4D 90cv",
+            "2.0 D-4D 116cv",
+            "1.33 Dual VVT-i 101cv",
+            "1.6 Valvematic 132cv",
+            "2.2 D-4D 150cv",
+            "1.4 VVT-i 97cv",
+            "2.0 VVTI 147cv",
+            "1.8 HSD Hybrid 136cv"
+          ]
+        },
+        {
+          "name": "Corolla Cross",
+          "submodels": [
+            "2.0 HEV 197cv",
+            "2.0 Hybrid FWD 197cv",
+            "2.0 Hybrid AWD 197cv",
+            "GR Sport 2.0 HEV 197cv",
+            "Plug-in Hybrid 223cv"
+          ]
+        },
+        {
+          "name": "Corolla Touring Sports",
+          "submodels": [
+            "1.8 HEV 122cv",
+            "1.8 Hybrid 122cv",
+            "2.0 HEV 184cv",
+            "2.0 Hybrid 196cv",
+            "GR Sport 2.0 HEV 184cv",
+            "Trek 2.0 HEV 184cv",
+            "1.2T 116cv"
+          ]
+        },
+        {
+          "name": "GR86",
+          "submodels": [
+            "2.4 234cv",
+            "2.4 MT 234cv",
+            "2.4 AT 234cv",
+            "GR86 2.4 234cv",
+            "Premium 2.4 234cv"
+          ]
+        },
+        {
+          "name": "GR Supra",
+          "submodels": [
+            "2.0 258cv",
+            "3.0 340cv",
+            "3.0 A91 387cv",
+            "3.0 GR 387cv",
+            "GR Sport 258cv",
+            "3.0 382cv",
+            "3.0 Premium 382cv",
+            "2.0 Pure 258cv",
+            "A91-MT 387cv",
+            "A91 Edition 387cv"
+          ]
+        },
+        {
+          "name": "GR Yaris",
+          "submodels": [
+            "1.6 GR 261cv",
+            "1.6 4WD 261cv",
+            "1.6 Circuit Pack 261cv",
+            "1.6 MT 261cv",
+            "Rally 1.6 261cv",
+            "Morizo Edition 300cv",
+            "1.6 GR-FOUR 261cv",
+            "1.6 GR-FOUR High Performance 261cv"
+          ]
+        },
+        {
+          "name": "Hilux",
+          "submodels": [
+            "2.4 D-4D 144cv",
+            "2.4 D-4D 4WD 150cv",
+            "2.8 D-4D 177cv",
+            "2.8 D-4D 4WD 204cv",
+            "2.8 D-4D AT 204cv",
+            "2.5 D-4D 144cv",
+            "3.0 D-4D 171cv",
+            "2.0 VVT-i 102cv",
+            "2.7 VVT-i 160cv",
+            "4.0 V6 4WD 238cv",
+            "Invincible 2.8 D-4D 204cv",
+            "Active 2.4 D-4D 150cv",
+            "GR Sport 2.8 D-4D 204cv",
+            "Double Cab 2.8 D-4D 177cv",
+            "Extra Cab 2.4 D-4D 150cv"
+          ]
+        },
+        {
+          "name": "Land Cruiser",
+          "submodels": [
+            "3.0 D-4D 190cv",
+            "4.0 V6 278cv",
+            "4.5 D-4D V8 286cv",
+            "3.0 D-4D 173cv",
+            "4.7 V8 235cv",
+            "3.0 D-4D 163cv",
+            "2.8 D-4D 177cv",
+            "4.5 D-4D 200cv",
+            "5.7 V8 381cv",
+            "Prado 2.7 VVT-i 163cv",
+            "Prado 3.0 D-4D 163cv",
+            "Prado 2.8 D-4D 177cv",
+            "GX 2.8 D-4D 204cv",
+            "VX 4.5 D-4D 286cv"
+          ]
+        },
+        {
+          "name": "Land Cruiser 300",
+          "submodels": [
+            "3.3 D 309cv",
+            "3.3 V6 D 309cv",
+            "3.3 D AWD 309cv",
+            "3.5 Twin Turbo 415cv",
+            "3.3 D GX 309cv",
+            "3.3 D VX 309cv",
+            "3.3 D Invincible 309cv",
+            "3.3 D First Edition 309cv",
+            "3.5 V6 Twin Turbo 415cv"
+          ]
+        },
+        {
+          "name": "Prius",
+          "submodels": [
+            "1.5 HSD 76cv",
+            "1.8 HSD 136cv",
+            "1.8 Hybrid 136cv",
+            "2.0 Hybrid 223cv",
+            "Plug-in Hybrid 122cv",
+            "PHEV 1.8 136cv",
+            "Plug-in Hybrid 2.0 223cv",
+            "PHEV 2.0 223cv",
+            "1.5 T-Spirit 76cv",
+            "1.8 Business 136cv",
+            "Active 1.8 136cv",
+            "Family 1.8 136cv"
+          ]
+        },
+        {
+          "name": "Prius+",
+          "submodels": [
+            "1.8 Hybrid 136cv",
+            "1.8 HSD 136cv",
+            "1.8 VVT-i 136cv",
+            "1.8 7-Seater 136cv",
+            "Dynamic 1.8 HSD 136cv",
+            "Executive 1.8 HSD 136cv"
+          ]
+        },
+        {
+          "name": "Proace",
+          "submodels": [
+            "2.0 D-4D 120cv",
+            "2.0 D-4D 150cv",
+            "2.0 D-4D 177cv",
+            "1.6 D 95cv",
+            "1.6 D 115cv",
+            "2.0 D 120cv",
+            "2.0 D 145cv",
+            "2.0 D 180cv",
+            "Verso 2.0 D 150cv",
+            "Verso 2.0 D 120cv",
+            "Proace City 1.5 D 100cv",
+            "Electric 50kWh 136cv",
+            "Electric 75kWh 136cv"
+          ]
+        },
+        {
+          "name": "Proace City",
+          "submodels": [
+            "1.5 D 75cv",
+            "1.5 D 100cv",
+            "1.5 D 130cv",
+            "1.2 VVT-i 110cv",
+            "Electric 50kWh 136cv",
+            "Verso 1.5 D 100cv",
+            "Verso Electric 50kWh 136cv"
+          ]
+        },
+        {
+          "name": "RAV4",
+          "submodels": [
+            "2.0 AWD-i 175cv",
+            "2.0 VVTI 151cv",
+            "2.0 D-4D 151cv",
+            "2.5 AWD Hybrid 222cv",
+            "2.5 AWD Hybrid 218cv",
+            "Plug-in Hybrid AWD 306cv",
+            "2.5 VVTI-i 4WD",
+            "2.4 Hybrid AWD 223cv",
+            "GR Sport 2.5 Hybrid 222cv",
+            "2.0 VVT-i 152cv",
+            "2.2 D-CAT 177cv",
+            "2.2 D-4D 150cv",
+            "2.0 4WD 158cv",
+            "2.5 Hybrid 197cv",
+            "2.0 D-4D 4WD 124cv",
+            "2.0 VVT-i AWD 152cv",
+            "3.5 V6 270cv",
+            "PHEV 4WD 306cv",
+            "2.5 VVTI 4WD 177cv"
+          ]
+        },
+        {
+          "name": "Yaris",
+          "submodels": [
+            "1.0 VVT-i 69cv",
+            "1.0 VVT-i 72cv",
+            "1.3 VVT-i 87cv",
+            "1.3 VVT-i 100cv",
+            "1.4 D-4D 75cv",
+            "1.4 D-4D 90cv",
+            "1.5 VVT-i 111cv",
+            "1.33 Dual VVT-i 100cv",
+            "1.5 HEV 116cv",
+            "1.5 Hybrid 116cv",
+            "1.8 TS 214cv",
+            "1.5 GR Sport 130cv",
+            "1.5 Hybrid 130cv",
+            "1.6 GR 261cv",
+            "1.0 Multidrive 69cv",
+            "1.5 TNGA HEV 116cv",
+            "CVT 1.5 Hybrid 116cv",
+            "Trend 1.5 HEV 116cv",
+            "Active 1.5 HEV 116cv",
+            "GR 1.6 261cv"
+          ]
+        },
+        {
+          "name": "Yaris Cross",
+          "submodels": [
+            "1.5 HEV 116cv",
+            "1.5 Hybrid 116cv",
+            "1.5 AWD-i 116cv",
+            "1.5 Hybrid AWD-i 116cv",
+            "GR Sport 1.5 HEV 116cv",
+            "GR Sport AWD-i 116cv",
+            "Adventure 1.5 HEV 116cv",
+            "Elegant 1.5 HEV 116cv",
+            "Dynamic 1.5 HEV 116cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Honda",
+      "models": [
+        {
+          "name": "Accord",
+          "submodels": [
+            "2.0 i-VTEC 155cv",
+            "2.4 i-VTEC 190cv",
+            "2.2 i-CTDi 140cv",
+            "2.0 i-VTEC Executive 155cv",
+            "2.2 i-DTEC 180cv",
+            "3.5 V6 282cv",
+            "2.0 Hybrid 143cv",
+            "2.0 i-MMD 143cv",
+            "2.4 VTEC 201cv",
+            "Tourer 2.2 i-CTDi 140cv",
+            "Tourer 2.4 i-VTEC 190cv",
+            "Plug-in Hybrid 212cv"
+          ]
+        },
+        {
+          "name": "Civic",
+          "submodels": [
+            "1.0 i-VTEC Turbo 129cv",
+            "1.5 i-VTEC Turbo 182cv",
+            "1.6 i-DTEC 120cv",
+            "2.0 i-MMD 184cv",
+            "Sport 1.5 i-VTEC Turbo 182cv",
+            "Type R FK2 310cv",
+            "Type R FK8 320cv",
+            "Type R FL5 326cv",
+            "e:HEV 2.0 184cv",
+            "1.4 i-DSI 83cv",
+            "1.4 i-VTEC 100cv",
+            "1.8 i-VTEC 140cv",
+            "2.2 i-CTDi 140cv",
+            "2.0 VTEC 201cv",
+            "1.6 i-VTEC 125cv",
+            "1.3 IMA Hybrid 95cv",
+            "2.2 i-DTEC 150cv",
+            "1.4 i-VTEC 83cv",
+            "2.0 VTEC Turbo 320cv"
+          ]
+        },
+        {
+          "name": "Civic Coupé",
+          "submodels": [
+            "1.5 VTEC Turbo 182cv",
+            "2.0 VTEC Turbo 306cv",
+            "1.5 VTEC 173cv",
+            "2.0 VTEC 158cv",
+            "Si 2.0 205cv",
+            "2.4 200cv",
+            "Type R 2.0 306cv"
+          ]
+        },
+        {
+          "name": "Civic Type R",
+          "submodels": [
+            "FK2 2.0 VTEC Turbo 310cv",
+            "FK8 2.0 VTEC Turbo 320cv",
+            "FL5 2.0 VTEC Turbo 326cv",
+            "EP3 2.0 i-VTEC 200cv",
+            "FN2 2.0 i-VTEC 201cv",
+            "GT 2.0 VTEC Turbo 320cv",
+            "Limited Edition 2.0 VTEC Turbo 320cv",
+            "Sport Line 2.0 VTEC Turbo 320cv"
+          ]
+        },
+        {
+          "name": "CR-V",
+          "submodels": [
+            "1.5 VTEC Turbo 173cv",
+            "1.5 VTEC Turbo AWD 173cv",
+            "2.0 i-MMD Hybrid 144cv",
+            "2.0 i-MMD Hybrid AWD 184cv",
+            "2.2 i-DTEC 150cv",
+            "2.2 i-DTEC 4WD 150cv",
+            "e:PHEV 204cv",
+            "2.0 i-VTEC 150cv",
+            "2.0 i-VTEC 4WD 150cv",
+            "2.4 i-VTEC 166cv",
+            "2.2 i-CDTi 140cv",
+            "2.0 i-VTEC 4WD 166cv",
+            "1.6 i-DTEC 120cv",
+            "1.6 i-DTEC 4WD 160cv",
+            "2.4 4WD 185cv",
+            "2.0 Hybrid AWD 184cv"
+          ]
+        },
+        {
+          "name": "CR-Z",
+          "submodels": [
+            "1.5 IMA 114cv",
+            "1.5 Hybrid 114cv",
+            "1.5 IMA GT 114cv",
+            "1.5 Hybrid GT 114cv",
+            "Sport 1.5 IMA 114cv"
+          ]
+        },
+        {
+          "name": "e",
+          "submodels": [
+            "BEV 136cv",
+            "Advance 154cv",
+            "BEV 28.5kWh 136cv",
+            "Advance BEV 28.5kWh 154cv"
+          ]
+        },
+        {
+          "name": "e:Ny1",
+          "submodels": [
+            "68.8kWh 204cv",
+            "Elegance 68.8kWh 204cv",
+            "Advance 68.8kWh 204cv",
+            "BEV 204cv"
+          ]
+        },
+        {
+          "name": "HR-V",
+          "submodels": [
+            "1.5 i-VTEC 130cv",
+            "1.5 i-VTEC 4WD 130cv",
+            "1.6 i-DTEC 120cv",
+            "1.6 i-DTEC 4WD 120cv",
+            "1.8 VTEC 141cv",
+            "1.5 e:HEV 131cv",
+            "e:HEV 2WD 131cv",
+            "Hybrid 1.5 e:HEV 131cv",
+            "Sport 1.5 i-VTEC 130cv",
+            "Executive 1.5 e:HEV 131cv"
+          ]
+        },
+        {
+          "name": "Insight",
+          "submodels": [
+            "1.3 IMA 88cv",
+            "1.3 Hybrid 88cv",
+            "1.5 i-MMD 151cv",
+            "1.5 Hybrid 151cv",
+            "EX 1.5 i-MMD 151cv"
+          ]
+        },
+        {
+          "name": "Jazz",
+          "submodels": [
+            "1.2 i-DSI 78cv",
+            "1.2 i-VTEC 90cv",
+            "1.4 i-DSI 83cv",
+            "1.4 i-VTEC 100cv",
+            "1.3 i-VTEC 102cv",
+            "1.5 i-VTEC 120cv",
+            "1.2 i-VTEC 90cv",
+            "1.5 IMA Hybrid 102cv",
+            "1.5 Hybrid 109cv",
+            "1.5 i-MMD 109cv",
+            "1.3 IMA 88cv",
+            "1.2 i-VTEC 78cv",
+            "1.5 e:HEV 109cv"
+          ]
+        },
+        {
+          "name": "Jazz Crosstar",
+          "submodels": [
+            "1.5 i-MMD Hybrid 109cv",
+            "e:HEV 1.5 109cv",
+            "e:HEV AWD 109cv"
+          ]
+        },
+        {
+          "name": "Jazz e:HEV",
+          "submodels": [
+            "1.5 e:HEV 109cv",
+            "Elegance 1.5 e:HEV 109cv",
+            "Executive 1.5 e:HEV 109cv",
+            "Crosstar e:HEV 109cv"
+          ]
+        },
+        {
+          "name": "Legend",
+          "submodels": [
+            "3.5 V6 295cv",
+            "3.7 V6 SH-AWD 375cv",
+            "3.5 SH-AWD Hybrid 373cv",
+            "3.5 i-MMD SH-AWD 373cv",
+            "3.2 V6 215cv"
+          ]
+        },
+        {
+          "name": "NSX",
+          "submodels": [
+            "3.5 V6 Hybrid 573cv",
+            "3.5 V6 PHEV 573cv",
+            "3.5 V6 SH-AWD 573cv",
+            "Type S 3.5 600cv",
+            "3.0 V6 270cv"
+          ]
+        },
+        {
+          "name": "ZR-V",
+          "submodels": [
+            "2.0 e:HEV 184cv",
+            "Hybrid e:HEV 184cv",
+            "Elegance e:HEV 184cv",
+            "Advance e:HEV 184cv",
+            "2.0 e:HEV AWD 184cv"
+          ]
+        },
+        {
+          "name": "FR-V",
+          "submodels": [
+            "1.7 i-VTEC 125cv",
+            "1.8 i-VTEC 140cv",
+            "2.2 i-CTDi 140cv",
+            "2.0 i-VTEC 150cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Nissan",
+      "models": [
+        {
+          "name": "350Z",
+          "submodels": [
+            "3.5 V6 280cv",
+            "3.5 V6 300cv",
+            "3.5 V6 313cv",
+            "Roadster 3.5 V6 300cv",
+            "Nismo 3.5 V6 310cv",
+            "Track Edition 3.5 V6 313cv",
+            "HR 3.5 V6 313cv"
+          ]
+        },
+        {
+          "name": "370Z",
+          "submodels": [
+            "3.7 V6 328cv",
+            "3.7 V6 AT 328cv",
+            "Roadster 3.7 V6 328cv",
+            "Nismo 3.7 V6 344cv",
+            "GT Edition 3.7 V6 328cv",
+            "Sport 3.7 V6 328cv",
+            "Heritage Edition 3.7 V6 328cv",
+            "50th Anniversary 3.7 V6 328cv",
+            "Black Edition 3.7 V6 328cv"
+          ]
+        },
+        {
+          "name": "Ariya",
+          "submodels": [
+            "63kWh FWD 218cv",
+            "87kWh FWD 242cv",
+            "87kWh e-4ORCE 306cv",
+            "63kWh Engage 218cv",
+            "87kWh Evolve 242cv",
+            "63kWh e-4ORCE 306cv",
+            "Performance 87kWh 306cv",
+            "Evolve+ 87kWh 242cv"
+          ]
+        },
+        {
+          "name": "Cube",
+          "submodels": [
+            "1.4 88cv",
+            "1.6 110cv",
+            "1.6 Acenta 110cv",
+            "1.8 131cv"
+          ]
+        },
+        {
+          "name": "GT-R",
+          "submodels": [
+            "GT-R 3.8 V6 570cv",
+            "GT-R Nismo 3.8 600cv",
+            "GT-R 50 Anniversary 570cv",
+            "GT-R Track Edition 600cv",
+            "GT-R Black Edition 570cv",
+            "GT-R Premium Edition 570cv",
+            "GT-R 3.8 V6 530cv",
+            "GT-R 3.8 V6 550cv",
+            "GT-R Nismo Special Edition 600cv",
+            "GT-R 3.8 SpecV 530cv"
+          ]
+        },
+        {
+          "name": "Juke",
+          "submodels": [
+            "1.2 DIG-T 115cv",
+            "1.5 dCi 110cv",
+            "1.6 117cv",
+            "1.6 DIG-T 190cv",
+            "1.6 DIG-T 4WD 190cv",
+            "Nismo 1.6 DIG-T 214cv",
+            "Nismo RS 1.6 DIG-T 218cv",
+            "1.0 DIG-T 117cv",
+            "1.0 DIG-T 114cv",
+            "Hybrid 143cv",
+            "1.6 SR 117cv",
+            "1.5 dCi 4WD 110cv",
+            "N-Design 1.0 DIG-T 117cv",
+            "Enigma 1.0 DIG-T 117cv",
+            "N-Sport 1.0 DIG-T 117cv"
+          ]
+        },
+        {
+          "name": "Juke Nismo",
+          "submodels": [
+            "1.6 DIG-T 200cv",
+            "1.6 DIG-T 4WD 214cv",
+            "RS 1.6 DIG-T 218cv",
+            "RS 4WD 1.6 DIG-T 218cv"
+          ]
+        },
+        {
+          "name": "Leaf",
+          "submodels": [
+            "24kWh 109cv",
+            "30kWh 109cv",
+            "40kWh 150cv",
+            "62kWh 217cv",
+            "40kWh Acenta 150cv",
+            "40kWh N-Connecta 150cv",
+            "62kWh e+ 217cv",
+            "Tekna 40kWh 150cv",
+            "Tekna 62kWh 217cv",
+            "Zero Edition 40kWh 150cv",
+            "N-Sport 40kWh 150cv"
+          ]
+        },
+        {
+          "name": "Maxima",
+          "submodels": [
+            "3.5 V6 231cv",
+            "3.5 V6 CVT 231cv",
+            "Platinum 3.5 V6 231cv",
+            "SR 3.5 V6 231cv"
+          ]
+        },
+        {
+          "name": "Micra",
+          "submodels": [
+            "1.0 65cv",
+            "1.0 80cv",
+            "1.2 80cv",
+            "1.2 DIG-S 98cv",
+            "1.4 88cv",
+            "1.5 dCi 65cv",
+            "1.5 dCi 82cv",
+            "1.2 80cv",
+            "1.0 IG-T 100cv",
+            "0.9 IG-T 90cv",
+            "1.0 65cv",
+            "1.5 dCi 90cv",
+            "Acenta 1.0 IG-T 100cv",
+            "N-Sport 1.0 IG-T 100cv",
+            "Tekna 1.0 IG-T 100cv"
+          ]
+        },
+        {
+          "name": "Murano",
+          "submodels": [
+            "3.5 V6 234cv",
+            "3.5 V6 AWD 234cv",
+            "2.5 dCi 190cv",
+            "3.5 V6 CVT AWD 258cv",
+            "Platinum 3.5 V6 260cv"
+          ]
+        },
+        {
+          "name": "Navara",
+          "submodels": [
+            "2.5 dCi 174cv",
+            "2.5 dCi 4WD 174cv",
+            "2.3 dCi 160cv",
+            "2.3 dCi 4WD 163cv",
+            "2.5 dCi King Cab 174cv",
+            "2.3 dCi 190cv",
+            "2.3 dCi 4WD 190cv",
+            "N-Guard 2.3 dCi 190cv",
+            "N-Sport 2.3 dCi 190cv",
+            "Pro-4X 2.3 dCi 190cv",
+            "AT32 2.3 dCi 190cv",
+            "King Cab 2.3 dCi 160cv",
+            "Double Cab 2.3 dCi 190cv"
+          ]
+        },
+        {
+          "name": "Note",
+          "submodels": [
+            "1.2 80cv",
+            "1.4 88cv",
+            "1.5 dCi 86cv",
+            "1.6 110cv",
+            "e-Power 109cv",
+            "Acenta 1.2 80cv",
+            "Tekna 1.2 80cv",
+            "N-Sport 1.2 80cv"
+          ]
+        },
+        {
+          "name": "Qashqai",
+          "submodels": [
+            "1.2 DIG-T 115cv",
+            "1.3 DIG-T 140cv",
+            "1.3 DIG-T 158cv",
+            "1.5 dCi 110cv",
+            "1.6 dCi 130cv",
+            "2.0 dCi 150cv",
+            "2.0 dCi 4WD 150cv",
+            "e-Power 190cv",
+            "e-Power 4x4 213cv",
+            "1.5 dCi 115cv",
+            "1.6 DIG-T 163cv",
+            "2.0 140cv",
+            "2.0 4WD 140cv",
+            "1.3 MHEV 140cv",
+            "1.3 MHEV 158cv",
+            "Acenta 1.3 DIG-T 140cv",
+            "Tekna 1.3 DIG-T 158cv",
+            "N-Connecta 1.3 DIG-T 140cv",
+            "N-Sport 1.3 DIG-T 158cv",
+            "Premiere Edition 1.3 MHEV 158cv"
+          ]
+        },
+        {
+          "name": "Qashqai+2",
+          "submodels": [
+            "1.6 dCi 130cv",
+            "2.0 dCi 150cv",
+            "2.0 4WD 140cv",
+            "1.6 115cv",
+            "1.5 dCi 110cv",
+            "2.0 dCi 4WD 150cv"
+          ]
+        },
+        {
+          "name": "Townstar",
+          "submodels": [
+            "1.3 TCe 130cv",
+            "1.3 TCe 100cv",
+            "Combi 1.3 TCe 130cv",
+            "Tekna 1.3 TCe 130cv"
+          ]
+        },
+        {
+          "name": "Townstar EV",
+          "submodels": [
+            "45kWh 122cv",
+            "BEV 122cv",
+            "Combi 45kWh 122cv",
+            "Tekna 45kWh 122cv"
+          ]
+        },
+        {
+          "name": "X-Trail",
+          "submodels": [
+            "2.0 140cv",
+            "2.0 4WD 140cv",
+            "2.5 4WD 165cv",
+            "2.0 dCi 150cv",
+            "2.0 dCi 4WD 150cv",
+            "1.6 dCi 130cv",
+            "1.6 dCi 4WD 130cv",
+            "2.5 4WD CVT 171cv",
+            "1.7 dCi 150cv",
+            "1.3 DIG-T 160cv",
+            "e-Power 213cv",
+            "e-Power 4x4 252cv",
+            "e-4ORCE 213cv",
+            "Tekna e-Power 213cv",
+            "N-Connecta 1.7 dCi 150cv",
+            "N-Sport e-Power 213cv"
+          ]
+        },
+        {
+          "name": "Pathfinder",
+          "submodels": [
+            "2.5 dCi 174cv",
+            "2.5 dCi 4WD 174cv",
+            "3.3 V6 230cv",
+            "4.0 V6 260cv",
+            "3.5 V6 284cv",
+            "2.5 dCi LE 174cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Mazda",
+      "models": [
+        {
+          "name": "2",
+          "submodels": [
+            "1.3 84cv",
+            "1.3 MZR 75cv",
+            "1.3 MZR 84cv",
+            "1.4 MZ-CD 68cv",
+            "1.5 MZR 103cv",
+            "1.3 SKYACTIV-G 75cv",
+            "1.3 SKYACTIV-G 84cv",
+            "1.5 SKYACTIV-G 90cv",
+            "1.5 SKYACTIV-D 105cv",
+            "Hybrid 116cv",
+            "e-Skyactiv 116cv",
+            "1.5 Hybrid 116cv",
+            "Centre-Line 1.5 SKYACTIV-G 90cv",
+            "Homura 1.5 Hybrid 116cv",
+            "Agile 1.5 Hybrid 116cv"
+          ]
+        },
+        {
+          "name": "3",
+          "submodels": [
+            "1.5 Skyactiv-G 100cv",
+            "2.0 Skyactiv-G 122cv",
+            "2.0 Skyactiv-G 165cv",
+            "2.0 Skyactiv-X 186cv",
+            "2.0 e-Skyactiv-G 186cv",
+            "2.0 e-Skyactiv-X 186cv",
+            "1.8 Skyactiv-D 116cv",
+            "2.2 Skyactiv-D 150cv",
+            "2.2 Skyactiv-D 184cv",
+            "1.6 MZR 105cv",
+            "2.0 MZR 150cv",
+            "1.6 MZ-CD 109cv",
+            "2.2 MZR-D 150cv",
+            "2.0 DISI 148cv",
+            "MPS 2.3 MZR DISI 260cv",
+            "2.0 e-Skyactiv-G 150cv",
+            "2.0 Skyactiv-G M Hybrid 122cv",
+            "1.5 Skyactiv-D 105cv"
+          ]
+        },
+        {
+          "name": "3 Fastback",
+          "submodels": [
+            "2.0 Skyactiv-G 122cv",
+            "2.0 Skyactiv-G 165cv",
+            "2.0 Skyactiv-X 186cv",
+            "2.0 e-Skyactiv-G 186cv",
+            "2.0 e-Skyactiv-X 186cv",
+            "1.8 Skyactiv-D 116cv",
+            "2.2 Skyactiv-D 150cv",
+            "1.5 Skyactiv-G 100cv"
+          ]
+        },
+        {
+          "name": "6",
+          "submodels": [
+            "1.8 MZR 120cv",
+            "2.0 MZR 147cv",
+            "2.0 MZR 155cv",
+            "2.5 MZR 170cv",
+            "1.8 MZ-CD 120cv",
+            "2.0 MZ-CD 143cv",
+            "2.2 MZR-D 163cv",
+            "2.2 MZR-D 180cv",
+            "2.0 Skyactiv-G 145cv",
+            "2.0 Skyactiv-G 165cv",
+            "2.0 Skyactiv-D 150cv",
+            "2.2 Skyactiv-D 150cv",
+            "2.2 Skyactiv-D 175cv",
+            "2.5 Skyactiv-G 192cv",
+            "Wagon 2.0 Skyactiv-G 165cv",
+            "Wagon 2.2 Skyactiv-D 150cv",
+            "Wagon 2.2 Skyactiv-D 175cv",
+            "MPS 2.3 DISI 260cv"
+          ]
+        },
+        {
+          "name": "6 Wagon",
+          "submodels": [
+            "2.0 Skyactiv-G 145cv",
+            "2.0 Skyactiv-G 165cv",
+            "2.2 Skyactiv-D 150cv",
+            "2.2 Skyactiv-D 175cv",
+            "2.5 Skyactiv-G 192cv",
+            "2.0 MZR 147cv",
+            "2.2 MZR-D 163cv",
+            "2.2 MZR-D 180cv",
+            "2.2 Skyactiv-D 184cv",
+            "2.0 Skyactiv-G 165cv Sport"
+          ]
+        },
+        {
+          "name": "CX-3",
+          "submodels": [
+            "2.0 Skyactiv-G 120cv",
+            "2.0 Skyactiv-G 150cv",
+            "2.0 Skyactiv-G AWD 150cv",
+            "1.5 Skyactiv-D 105cv",
+            "1.8 Skyactiv-D 115cv",
+            "1.5 Skyactiv-G 102cv",
+            "2.0 e-Skyactiv-G 122cv",
+            "Skyactiv-G 2.0 MT 150cv",
+            "Skyactiv-G 2.0 AT 150cv",
+            "Centre-Line 2.0 Skyactiv-G 121cv",
+            "Sports-Line 2.0 Skyactiv-G 150cv"
+          ]
+        },
+        {
+          "name": "CX-30",
+          "submodels": [
+            "2.0 Skyactiv-G 122cv",
+            "2.0 Skyactiv-G 150cv",
+            "2.0 Skyactiv-G AWD 150cv",
+            "2.0 Skyactiv-X 186cv",
+            "2.0 e-Skyactiv-G 122cv",
+            "2.0 e-Skyactiv-G 150cv",
+            "2.0 e-Skyactiv-X 186cv",
+            "1.8 Skyactiv-D 116cv",
+            "2.0 e-Skyactiv-G AWD 150cv",
+            "Homura 2.0 Skyactiv-G 122cv",
+            "Takumi 2.0 e-Skyactiv-X 186cv",
+            "Centre-Line 2.0 Skyactiv-G 122cv"
+          ]
+        },
+        {
+          "name": "CX-5",
+          "submodels": [
+            "2.0 Skyactiv-G 160cv",
+            "2.5 Skyactiv-G 194cv",
+            "2.5 Skyactiv-G AWD 194cv",
+            "2.2 Skyactiv-D 150cv",
+            "2.2 Skyactiv-D 175cv",
+            "2.2 Skyactiv-D AWD 175cv",
+            "2.0 Skyactiv-G AWD 165cv",
+            "2.0 e-Skyactiv-G 165cv",
+            "2.5 Skyactiv-G Turbo AWD 231cv",
+            "Newground 2.2 Skyactiv-D AWD 184cv",
+            "Homura 2.5 Skyactiv-G 194cv",
+            "Takumi 2.5 Skyactiv-G AWD 194cv",
+            "Sports-Line 2.2 Skyactiv-D 175cv",
+            "2.2 Skyactiv-D 184cv AWD",
+            "Exclusive-Line 2.5 G AWD 194cv"
+          ]
+        },
+        {
+          "name": "CX-60",
+          "submodels": [
+            "3.3 e-Skyactiv-D 200cv",
+            "3.3 e-Skyactiv-D 254cv",
+            "3.3 e-Skyactiv-D AWD 254cv",
+            "2.5 e-Skyactiv-G PHEV AWD 327cv",
+            "PHEV AWD 327cv",
+            "2.5 PHEV 327cv",
+            "Homura 3.3 Skyactiv-D 254cv",
+            "Takumi 3.3 Skyactiv-D AWD 254cv",
+            "Exclusive-Line PHEV 327cv",
+            "Sports-Line 3.3 Skyactiv-D 200cv",
+            "Prime-Line 3.3 Skyactiv-D 200cv"
+          ]
+        },
+        {
+          "name": "CX-7",
+          "submodels": [
+            "2.3 MZR DISI Turbo 238cv",
+            "2.3 MZR DISI Turbo AWD 238cv",
+            "2.2 MZR-D 173cv",
+            "2.2 MZR-D AWD 173cv",
+            "2.5 MZR 161cv",
+            "2.5 AWD 161cv"
+          ]
+        },
+        {
+          "name": "MX-5",
+          "submodels": [
+            "1.5 Skyactiv-G 131cv",
+            "2.0 Skyactiv-G 160cv",
+            "2.0 Skyactiv-G 184cv",
+            "RF 2.0 184cv",
+            "RF GT 184cv",
+            "ND 2.0 R-Sport 160cv",
+            "Sakura 184cv",
+            "Homura 184cv",
+            "1.8 116cv",
+            "1.8 Roadster 126cv",
+            "2.0 160cv",
+            "1.8 DISI 126cv",
+            "2.0 DISI 160cv",
+            "2.0 MT 184cv",
+            "GT Sport 2.0 184cv",
+            "Club 2.0 160cv",
+            "Icon 1.5 131cv",
+            "ICON 2.0 184cv",
+            "BBR 2.0 220cv",
+            "Prodrive 2.0 184cv"
+          ]
+        },
+        {
+          "name": "MX-5 RF",
+          "submodels": [
+            "2.0 Skyactiv-G 160cv",
+            "2.0 Skyactiv-G 184cv",
+            "GT Sport 2.0 184cv",
+            "GT Sport Tech 2.0 184cv",
+            "Homura 2.0 184cv",
+            "Sakura 2.0 184cv",
+            "Icon 2.0 184cv",
+            "Sport Nav 2.0 160cv"
+          ]
+        },
+        {
+          "name": "MX-30",
+          "submodels": [
+            "BEV 145cv",
+            "e-Skyactiv 145cv",
+            "R-EV PHEV 170cv",
+            "e-Skyactiv G 170cv",
+            "Advantage 145cv",
+            "Makoto 145cv",
+            "Homura 145cv",
+            "Takumi 145cv",
+            "R-EV Advantage 170cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Subaru",
+      "models": [
+        {
+          "name": "BRZ",
+          "submodels": [
+            "2.0 200cv",
+            "2.0 MT 200cv",
+            "2.0 AT 200cv",
+            "2.4 234cv",
+            "2.4 MT 234cv",
+            "2.4 AT 234cv",
+            "Sport 2.0 200cv",
+            "S Edition 2.0 200cv",
+            "RA 2.0 200cv",
+            "tS 2.0 200cv"
+          ]
+        },
+        {
+          "name": "Crosstrek",
+          "submodels": [
+            "2.0 e-Boxer AWD 150cv",
+            "2.0i Hybrid 150cv",
+            "2.0 AWD 150cv",
+            "2.0 AWD CVT 150cv",
+            "2.5 AWD 182cv",
+            "PHEV 2.0 149cv",
+            "Active 2.0 e-Boxer 150cv",
+            "Outdoor 2.0 e-Boxer 150cv",
+            "e-Boxer Sport 2.0 150cv",
+            "Lineartronic 2.0 150cv"
+          ]
+        },
+        {
+          "name": "Forester",
+          "submodels": [
+            "2.0 i 150cv",
+            "2.0 i CVT 150cv",
+            "2.0 D 147cv",
+            "2.0 X AWD 150cv",
+            "2.0 XT 240cv",
+            "2.0e-L AWD 150cv",
+            "2.5i AWD 169cv",
+            "e-Boxer 2.0 150cv",
+            "STI 2.5 280cv",
+            "2.5 XT 230cv",
+            "2.0 Turbo 220cv",
+            "2.0 X 4WD 158cv",
+            "2.5i Premium AWD 169cv",
+            "2.0 D AWD 147cv",
+            "2.5 XS AWD 169cv",
+            "Active 2.0 e-Boxer 150cv",
+            "Sport 2.0e-Boxer 150cv"
+          ]
+        },
+        {
+          "name": "Impreza",
+          "submodels": [
+            "1.5 R AWD 107cv",
+            "1.6 i AWD 114cv",
+            "2.0 R AWD 150cv",
+            "2.0 i AWD 150cv",
+            "2.0 D AWD 150cv",
+            "2.5 WRX AWD 224cv",
+            "2.5 WRX STI AWD 265cv",
+            "2.0 e-Boxer AWD 150cv",
+            "Sport 2.0 e-Boxer 150cv",
+            "1.5 R 103cv",
+            "2.0 GT AWD 211cv",
+            "2.0 S AWD 150cv",
+            "WRX 2.5 Turbo 224cv",
+            "STI 2.5 265cv",
+            "STI 2.5 300cv"
+          ]
+        },
+        {
+          "name": "Legacy",
+          "submodels": [
+            "2.0 i AWD 150cv",
+            "2.0 D AWD 150cv",
+            "2.5 i AWD 173cv",
+            "3.6 R AWD 260cv",
+            "Outback 2.5 i AWD 167cv",
+            "Outback 3.0 R AWD 245cv",
+            "2.0 R AWD 160cv",
+            "Wagon 2.0 R AWD 160cv",
+            "B4 2.5 GT AWD 265cv",
+            "2.0 Turbo AWD 165cv",
+            "2.0 GT AWD 230cv"
+          ]
+        },
+        {
+          "name": "Levorg",
+          "submodels": [
+            "1.6 GT AWD 170cv",
+            "2.0 GT AWD 296cv",
+            "1.6 DIT AWD 170cv",
+            "2.0 STI Sport AWD 296cv",
+            "1.8 DIT AWD 177cv",
+            "Sport 1.8 AWD 177cv",
+            "GT 1.8 AWD 177cv",
+            "STI Sport R AWD 296cv",
+            "1.6 DIT AWD 125cv"
+          ]
+        },
+        {
+          "name": "Outback",
+          "submodels": [
+            "2.5 i AWD 175cv",
+            "2.5 i Premium AWD 175cv",
+            "3.6 R AWD 260cv",
+            "2.0 D AWD 150cv",
+            "2.5 i Eyesight AWD 175cv",
+            "2.5 e-Boxer AWD 175cv",
+            "e-Boxer 2.5 AWD 175cv",
+            "2.0 Turbo AWD 167cv",
+            "2.5 AWD CVT 175cv",
+            "Field 2.5 e-Boxer AWD 175cv",
+            "Outdoor 2.5 AWD 175cv",
+            "Platinum 2.5 e-Boxer AWD 175cv"
+          ]
+        },
+        {
+          "name": "Solterra",
+          "submodels": [
+            "BEV AWD 218cv",
+            "Comfort AWD 218cv",
+            "Touring AWD 218cv",
+            "e-Subaru AWD 218cv",
+            "71.4kWh AWD 218cv",
+            "BEV FWD 204cv"
+          ]
+        },
+        {
+          "name": "XV",
+          "submodels": [
+            "2.0 i AWD 150cv",
+            "2.0 i AWD CVT 150cv",
+            "2.0 D AWD 150cv",
+            "1.6 i AWD 114cv",
+            "2.0 e-Boxer AWD 150cv",
+            "e-Boxer AWD 150cv",
+            "2.5i AWD 156cv",
+            "Premium 2.0 e-Boxer AWD 150cv",
+            "Sport 2.0 i AWD 150cv",
+            "Lineartronic 2.0 e-Boxer 150cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Mitsubishi",
+      "models": [
+        {
+          "name": "ASX",
+          "submodels": [
+            "1.6 117cv",
+            "1.8 DI-D 116cv",
+            "1.8 DI-D 4WD 116cv",
+            "2.0 150cv",
+            "2.0 4WD 150cv",
+            "2.2 DI-D 150cv",
+            "2.2 DI-D 4WD 150cv",
+            "1.3 DI-T 140cv",
+            "1.3 DI-T 163cv",
+            "PHEV 1.6 141cv",
+            "Hybrid 1.6 141cv",
+            "Intense+ 1.3 DI-T 140cv",
+            "Invite 1.3 DI-T 163cv",
+            "Spirit 2.0 4WD 150cv"
+          ]
+        },
+        {
+          "name": "Colt",
+          "submodels": [
+            "1.1 75cv",
+            "1.3 95cv",
+            "1.5 117cv",
+            "1.5 DI-D 95cv",
+            "1.3 Ralliart 150cv",
+            "1.5 Turbo CZT 150cv",
+            "1.0 MIVEC 67cv",
+            "1.2 DI-T 100cv",
+            "Hybrid 140cv",
+            "1.2 Turbo 100cv"
+          ]
+        },
+        {
+          "name": "Eclipse Cross",
+          "submodels": [
+            "1.5 DI-T 163cv",
+            "1.5 DI-T 4WD 163cv",
+            "2.2 DI-D 150cv",
+            "2.2 DI-D 4WD 150cv",
+            "1.5 Turbo 163cv",
+            "2.4 PHEV 188cv",
+            "2.4 PHEV AWD 188cv",
+            "PHEV 4WD 188cv",
+            "Instyle 1.5 DI-T 163cv",
+            "Plus 1.5 DI-T 4WD 163cv",
+            "Black Edition 1.5 DI-T 163cv",
+            "Invite 1.5 DI-T 163cv"
+          ]
+        },
+        {
+          "name": "Eclipse Cross PHEV",
+          "submodels": [
+            "2.4 PHEV AWD 188cv",
+            "PHEV 4WD 188cv",
+            "PHEV Plus AWD 188cv",
+            "PHEV Instyle AWD 188cv",
+            "PHEV Invite 188cv"
+          ]
+        },
+        {
+          "name": "Galant",
+          "submodels": [
+            "2.0 150cv",
+            "2.4 160cv",
+            "2.5 V6 163cv",
+            "1.8 GDI 120cv",
+            "2.4 GDI 150cv",
+            "2.4 AT 160cv"
+          ]
+        },
+        {
+          "name": "Grandis",
+          "submodels": [
+            "2.0 DI-D 136cv",
+            "2.4 165cv",
+            "2.0 MIVEC 140cv",
+            "2.4 MIVEC 160cv"
+          ]
+        },
+        {
+          "name": "L200",
+          "submodels": [
+            "2.5 DI-D 136cv",
+            "2.5 DI-D 4WD 136cv",
+            "2.5 DI-D 178cv",
+            "2.2 DI-D 150cv",
+            "2.2 DI-D 4WD 150cv",
+            "2.4 MIVEC 181cv",
+            "2.4 MIVEC 4WD 181cv",
+            "Club Cab 2.5 DI-D 136cv",
+            "Double Cab 2.4 MIVEC 181cv",
+            "Invite 2.2 DI-D 150cv",
+            "Intense+ 2.2 DI-D 181cv",
+            "AT 2.4 MIVEC 4WD 181cv"
+          ]
+        },
+        {
+          "name": "Outlander",
+          "submodels": [
+            "2.0 150cv",
+            "2.0 4WD 150cv",
+            "2.2 DI-D 150cv",
+            "2.2 DI-D 4WD 150cv",
+            "2.4 PHEV 4WD 136cv",
+            "PHEV 2.4 4WD 224cv",
+            "PHEV 2.4 Diamond 224cv",
+            "2.5 4WD 165cv",
+            "3.0 V6 220cv",
+            "2.0 DI-D 4WD 140cv",
+            "2.4 MIVEC 4WD 170cv",
+            "Sport 2.2 DI-D 150cv",
+            "Invite 2.4 PHEV 224cv",
+            "Plus 2.4 PHEV 4WD 224cv"
+          ]
+        },
+        {
+          "name": "Outlander PHEV",
+          "submodels": [
+            "2.4 PHEV 4WD 224cv",
+            "PHEV 4WD 224cv",
+            "2.4 PHEV Diamond AWD 224cv",
+            "PHEV S-AWC 224cv",
+            "2.4 PHEV Instyle 224cv",
+            "PHEV Plus AWD 224cv",
+            "3.0 PHEV AWD 248cv",
+            "2.4 PHEV Sport 224cv",
+            "2.4 PHEV Kaiteki 224cv",
+            "PHEV Executive AWD 224cv"
+          ]
+        },
+        {
+          "name": "Pajero",
+          "submodels": [
+            "3.2 DI-D 200cv",
+            "3.2 DI-D 4WD 200cv",
+            "3.5 V6 220cv",
+            "2.5 TD 115cv",
+            "2.8 TD 125cv",
+            "3.0 V6 177cv",
+            "3.2 DI-D 165cv",
+            "3.8 V6 250cv",
+            "3.2 DI-D Elegance 200cv",
+            "3.2 DI-D Intense 200cv",
+            "3.2 DI-D Executive 200cv",
+            "Short 3.2 DI-D 200cv",
+            "Pinin 1.8 GDI 113cv"
+          ]
+        },
+        {
+          "name": "Pajero Sport",
+          "submodels": [
+            "2.5 DI-D 178cv",
+            "2.5 DI-D 4WD 178cv",
+            "2.4 MIVEC 181cv",
+            "2.4 MIVEC 4WD 181cv",
+            "Instyle 2.4 DI-D 181cv",
+            "Plus 2.4 DI-D 4WD 181cv",
+            "3.0 V6 4WD 220cv"
+          ]
+        },
+        {
+          "name": "Space Star",
+          "submodels": [
+            "1.0 MIVEC 71cv",
+            "1.0 MIVEC AS&G 71cv",
+            "1.2 MIVEC 80cv",
+            "1.2 MIVEC CVT 80cv",
+            "Invite 1.0 MIVEC 71cv",
+            "Plus 1.0 MIVEC 71cv",
+            "1.2 Hybrid 80cv",
+            "1.3 AS&G 90cv",
+            "1.0 71cv",
+            "CVT 1.2 80cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Suzuki",
+      "models": [
+        {
+          "name": "Across",
+          "submodels": [
+            "2.5 PHEV AWD 306cv",
+            "PHEV AWD 306cv",
+            "2.5 Plug-in Hybrid 306cv",
+            "Comfort 2.5 PHEV 306cv",
+            "Flash 2.5 PHEV 306cv"
+          ]
+        },
+        {
+          "name": "Alto",
+          "submodels": [
+            "1.0 68cv",
+            "1.0 VVT 68cv",
+            "1.1 63cv",
+            "0.8 54cv",
+            "1.0 GL 68cv",
+            "1.0 GLX 68cv"
+          ]
+        },
+        {
+          "name": "Baleno",
+          "submodels": [
+            "1.0 BoosterJet 112cv",
+            "1.2 Dualjet 90cv",
+            "1.2 Hybrid 90cv",
+            "1.4 BoosterJet 140cv",
+            "1.4 S 140cv",
+            "1.2 Dualjet SHVS 90cv",
+            "RS 1.0 BoosterJet 112cv",
+            "Comfort 1.2 Dualjet 90cv",
+            "Flash 1.2 Hybrid 90cv"
+          ]
+        },
+        {
+          "name": "Celerio",
+          "submodels": [
+            "1.0 68cv",
+            "1.0 Dualjet 68cv",
+            "1.0 MT 68cv",
+            "1.0 AT 68cv",
+            "1.0 Hybrid 67cv",
+            "GL 1.0 68cv",
+            "AGS 1.0 68cv"
+          ]
+        },
+        {
+          "name": "Grand Vitara",
+          "submodels": [
+            "1.6 106cv",
+            "1.9 DDiS 130cv",
+            "2.0 140cv",
+            "2.4 169cv",
+            "2.0 TD 109cv",
+            "2.7 V6 185cv",
+            "1.6 4WD 106cv",
+            "2.0 4WD 140cv",
+            "3.2 V6 4WD 240cv",
+            "2.4 Hybrid 245cv",
+            "Hybrid 2.4 AWD 245cv",
+            "1.5 DDiS 70cv",
+            "2.0 VVT 140cv",
+            "Long 2.0 HDi 110cv"
+          ]
+        },
+        {
+          "name": "Ignis",
+          "submodels": [
+            "1.2 Dualjet 90cv",
+            "1.2 Hybrid 83cv",
+            "1.2 AllGrip Hybrid 90cv",
+            "1.2 SHVS 90cv",
+            "1.2 Dualjet SHVS AllGrip 90cv",
+            "1.2 MT 90cv",
+            "Comfort 1.2 Hybrid 83cv",
+            "Flash 1.2 Hybrid 83cv",
+            "Shine 1.2 Dualjet 90cv",
+            "1.3 VVT 92cv"
+          ]
+        },
+        {
+          "name": "Jimny",
+          "submodels": [
+            "1.3 VVT 85cv",
+            "1.3 4WD 85cv",
+            "1.5 102cv",
+            "1.5 4WD 102cv",
+            "1.5 AllGrip Pro 102cv",
+            "1.3 JLX 85cv",
+            "1.3 JX 85cv",
+            "1.3 AT 85cv",
+            "1.5 MT 102cv",
+            "1.5 AT 102cv",
+            "Classic 1.5 102cv",
+            "Street 1.5 102cv",
+            "Lite 1.5 102cv",
+            "Wagon 1.3 VVT 85cv"
+          ]
+        },
+        {
+          "name": "Liana",
+          "submodels": [
+            "1.3 85cv",
+            "1.3 MT 85cv",
+            "1.6 107cv",
+            "1.4 DDiS 90cv",
+            "1.6 AT 107cv"
+          ]
+        },
+        {
+          "name": "S-Cross",
+          "submodels": [
+            "1.0 BoosterJet 111cv",
+            "1.4 BoosterJet 140cv",
+            "1.4 BoosterJet 4WD 140cv",
+            "1.6 DDiS 120cv",
+            "1.6 i-DTEC 120cv",
+            "Hybrid 1.4 BoosterJet 129cv",
+            "1.5 Hybrid 140cv",
+            "1.5 Hybrid AllGrip 140cv",
+            "Mild Hybrid 1.4 129cv",
+            "Comfort 1.4 BoosterJet 129cv",
+            "Flash 1.4 BoosterJet AllGrip 140cv",
+            "Shine 1.4 BoosterJet 129cv"
+          ]
+        },
+        {
+          "name": "Swift",
+          "submodels": [
+            "1.0 BoosterJet 112cv",
+            "1.2 Dualjet 90cv",
+            "1.2 Hybrid 83cv",
+            "1.2 Hybrid AllGrip 90cv",
+            "1.3 VVT 92cv",
+            "Sport 1.4 BoosterJet 140cv",
+            "Sport 1.0 BoosterJet 111cv",
+            "Hybrid 1.2 Dualjet 83cv",
+            "AllGrip 1.2 Hybrid 90cv",
+            "1.2 VVT 94cv",
+            "1.3 DDIS 70cv",
+            "1.5 102cv",
+            "1.6 Sport 125cv",
+            "1.6 Sport 136cv",
+            "1.0 BoosterJet S 111cv",
+            "1.2 SZ5 SHVS 90cv",
+            "1.4 BoosterJet 48V 140cv",
+            "Comfort 1.2 Hybrid 83cv",
+            "Flash 1.2 Hybrid 83cv",
+            "Shine 1.2 Hybrid AllGrip 90cv"
+          ]
+        },
+        {
+          "name": "SX4",
+          "submodels": [
+            "1.5 VVT 99cv",
+            "1.6 VVT 107cv",
+            "1.6 AWD 107cv",
+            "1.9 DDiS 120cv",
+            "2.0 DDiS 135cv",
+            "1.6 Sport 107cv",
+            "2.0 EL 135cv",
+            "1.6 4WD 107cv",
+            "1.5 4WD 99cv"
+          ]
+        },
+        {
+          "name": "SX4 S-Cross",
+          "submodels": [
+            "1.0 BoosterJet 112cv",
+            "1.4 BoosterJet 140cv",
+            "1.4 BoosterJet AllGrip 140cv",
+            "1.6 DDiS 120cv",
+            "1.6 DDiS AllGrip 120cv",
+            "1.0 BoosterJet AllGrip 112cv",
+            "Hybrid 1.4 BoosterJet 129cv",
+            "Hybrid AllGrip 1.4 129cv",
+            "GL 1.4 BoosterJet 140cv",
+            "Comfort 1.4 BoosterJet 140cv",
+            "Elegance 1.4 BoosterJet AllGrip 140cv"
+          ]
+        },
+        {
+          "name": "Vitara",
+          "submodels": [
+            "1.6 120cv",
+            "1.4 BoosterJet 140cv",
+            "1.4 BoosterJet AllGrip 140cv",
+            "1.6 DDiS 120cv",
+            "1.6 DDiS AllGrip 120cv",
+            "1.0 BoosterJet 111cv",
+            "1.5 Hybrid 140cv",
+            "1.5 Hybrid AllGrip 140cv",
+            "Hybrid 1.4 129cv",
+            "S Turbo 1.4 140cv",
+            "S 1.4 BoosterJet 140cv",
+            "Comfort 1.4 BoosterJet 129cv",
+            "Flash 1.5 Hybrid 140cv",
+            "GL+ 1.6 120cv",
+            "SZ5 1.4 BoosterJet AllGrip 140cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Lexus",
+      "models": [
+        {
+          "name": "CT",
+          "submodels": [
+            "200h 1.8 136cv",
+            "200h F Sport 136cv",
+            "200h Executive 136cv",
+            "200h Premier 136cv",
+            "200h Advance 136cv",
+            "200h Luxury 136cv",
+            "200h Comfort 136cv"
+          ]
+        },
+        {
+          "name": "CT 200h",
+          "submodels": [
+            "1.8 Hybrid 136cv",
+            "F Sport 136cv",
+            "Advance 136cv",
+            "Executive 136cv",
+            "Premier 136cv",
+            "Luxury 136cv",
+            "Sport 136cv"
+          ]
+        },
+        {
+          "name": "ES",
+          "submodels": [
+            "300h 2.5 Hybrid 218cv",
+            "300h F Sport 218cv",
+            "300h Luxury 218cv",
+            "300h Executive 218cv",
+            "300h Premium 218cv",
+            "250 2.5 203cv",
+            "350 3.5 V6 269cv"
+          ]
+        },
+        {
+          "name": "GS",
+          "submodels": [
+            "300h 2.5 Hybrid 222cv",
+            "450h 3.5 V6 Hybrid 345cv",
+            "200t 2.0 Turbo 245cv",
+            "350 3.5 V6 315cv",
+            "430 4.3 V8 282cv",
+            "460 4.6 V8 347cv",
+            "250 2.5 207cv",
+            "F Sport 3.5 V6 315cv",
+            "300 3.0 VVT-i 220cv"
+          ]
+        },
+        {
+          "name": "GS 300h",
+          "submodels": [
+            "2.5 Hybrid 222cv",
+            "F Sport 222cv",
+            "Executive 222cv",
+            "Advance 222cv",
+            "Premier 222cv"
+          ]
+        },
+        {
+          "name": "GX",
+          "submodels": [
+            "460 4.6 V8 305cv",
+            "460 4WD 305cv",
+            "460 Premium 4WD 305cv",
+            "550 3.4 V6 Hybrid 349cv",
+            "550 Premium 349cv",
+            "4.0 V6 270cv"
+          ]
+        },
+        {
+          "name": "IS",
+          "submodels": [
+            "200t 2.0 Turbo 245cv",
+            "250 2.5 V6 208cv",
+            "300h 2.5 Hybrid 224cv",
+            "350 3.5 V6 306cv",
+            "F Sport 2.0 245cv",
+            "F Sport 3.5 306cv",
+            "500 5.0 V8 472cv",
+            "220d 2.2 D 177cv",
+            "250 2.5 AT 208cv",
+            "200 1ZZ 153cv"
+          ]
+        },
+        {
+          "name": "IS 300h",
+          "submodels": [
+            "2.5 Hybrid 224cv",
+            "F Sport 224cv",
+            "Executive 224cv",
+            "Advance 224cv",
+            "Premier 224cv",
+            "Luxury 224cv"
+          ]
+        },
+        {
+          "name": "LC",
+          "submodels": [
+            "500 5.0 V8 477cv",
+            "500h 3.5 V6 Hybrid 359cv",
+            "500 Convertible 477cv",
+            "500 Sport 477cv",
+            "500h Inspiration 359cv",
+            "500 Inspiration 477cv"
+          ]
+        },
+        {
+          "name": "LM",
+          "submodels": [
+            "350h 2.5 Hybrid 247cv",
+            "500h 3.5 V6 Hybrid 371cv",
+            "350h Executive 247cv",
+            "500h President 371cv"
+          ]
+        },
+        {
+          "name": "LS",
+          "submodels": [
+            "430 4.3 V8 283cv",
+            "460 4.6 V8 380cv",
+            "500h 3.5 V6 Hybrid 359cv",
+            "600h 5.0 V8 Hybrid 439cv",
+            "500h F Sport 359cv",
+            "460 L 4.6 V8 380cv",
+            "600h L 439cv",
+            "460 AWD 380cv"
+          ]
+        },
+        {
+          "name": "LX",
+          "submodels": [
+            "470 4.7 V8 235cv",
+            "570 5.7 V8 367cv",
+            "600 3.4 Twin-Turbo V6 416cv",
+            "570 3-seater 367cv",
+            "570 5-seater 367cv",
+            "600 Sport 416cv",
+            "600 Executive 416cv",
+            "500d 3.3 V6 D 306cv"
+          ]
+        },
+        {
+          "name": "NX",
+          "submodels": [
+            "200t 2.0 Turbo 238cv",
+            "300h 2.5 Hybrid 197cv",
+            "300 2.0 Turbo 238cv",
+            "350h 2.5 Hybrid 244cv",
+            "450h+ PHEV 306cv",
+            "F Sport 200t 238cv",
+            "F Sport 300h 197cv",
+            "Advance 300h 197cv",
+            "Executive 300h 197cv",
+            "Overtrail 350h 244cv"
+          ]
+        },
+        {
+          "name": "NX 300h",
+          "submodels": [
+            "2.5 Hybrid 197cv",
+            "F Sport 197cv",
+            "Advance 197cv",
+            "Executive 197cv",
+            "Luxury 197cv",
+            "Premium 197cv",
+            "4WD Hybrid 197cv"
+          ]
+        },
+        {
+          "name": "NX 450h+",
+          "submodels": [
+            "PHEV AWD 306cv",
+            "F Sport PHEV 306cv",
+            "Overtrail PHEV 306cv",
+            "Luxury PHEV 306cv",
+            "Executive PHEV 306cv"
+          ]
+        },
+        {
+          "name": "RC",
+          "submodels": [
+            "200t 2.0 Turbo 245cv",
+            "300h 2.5 Hybrid 223cv",
+            "350 3.5 V6 314cv",
+            "F 5.0 V8 477cv",
+            "300 2.0 Turbo 245cv",
+            "F Sport 350 3.5 314cv",
+            "F Sport 300h 223cv"
+          ]
+        },
+        {
+          "name": "RX",
+          "submodels": [
+            "450h 313cv",
+            "450h F Sport 313cv",
+            "450h+ 306cv",
+            "500h F Sport 371cv",
+            "500h 371cv",
+            "300h 246cv",
+            "350h 250cv",
+            "200t 238cv",
+            "450hL 313cv",
+            "300 2.0 Turbo 238cv",
+            "450h AWD 313cv",
+            "350 3.5 V6 277cv",
+            "270 2.7 V6 188cv",
+            "400h Hybrid 297cv",
+            "F Sport 350 277cv",
+            "Luxury 450h 313cv",
+            "Executive 450h+ 306cv"
+          ]
+        },
+        {
+          "name": "RX 450h",
+          "submodels": [
+            "3.5 Hybrid 313cv",
+            "F Sport 313cv",
+            "Luxury 313cv",
+            "Executive 313cv",
+            "Advance 313cv",
+            "Premier 313cv",
+            "Takumi 313cv",
+            "L 3.5 Hybrid 313cv"
+          ]
+        },
+        {
+          "name": "RZ",
+          "submodels": [
+            "450e AWD 313cv",
+            "BEV AWD 313cv",
+            "Comfort 450e 313cv",
+            "Premium 450e 313cv",
+            "Luxury 450e 313cv",
+            "Executive 450e 313cv",
+            "F Sport 450e 313cv"
+          ]
+        },
+        {
+          "name": "UX",
+          "submodels": [
+            "200h 2.0 Hybrid 184cv",
+            "200h F Sport 184cv",
+            "200h Advance 184cv",
+            "200h Executive 184cv",
+            "200h Premium 184cv",
+            "250h AWD 184cv",
+            "300e BEV 204cv",
+            "300e Premium 204cv"
+          ]
+        },
+        {
+          "name": "UX 300e",
+          "submodels": [
+            "BEV 204cv",
+            "Premium BEV 204cv",
+            "Luxury BEV 204cv",
+            "Executive BEV 204cv",
+            "54.3kWh 204cv",
+            "72.8kWh 204cv"
+          ]
+        }
+      ]
+    }
+  ]
+}

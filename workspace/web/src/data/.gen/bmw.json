@@ -1,0 +1,981 @@
+{
+  "brands": [
+    {
+      "name": "BMW",
+      "models": [
+        {
+          "name": "Serie 1",
+          "submodels": [
+            "114i 102cv",
+            "114d 95cv",
+            "116i 105cv",
+            "116i 122cv",
+            "116d 95cv",
+            "116d 116cv",
+            "118i 136cv",
+            "118i 140cv",
+            "118d 143cv",
+            "118d 150cv",
+            "118d xDrive 143cv",
+            "120i 150cv",
+            "120i 156cv",
+            "120i 184cv",
+            "120d 163cv",
+            "120d 177cv",
+            "120d xDrive 163cv",
+            "123d 204cv",
+            "125i 218cv",
+            "125d 218cv",
+            "128ti 265cv",
+            "130i 258cv",
+            "135i xDrive 306cv",
+            "M135i 320cv",
+            "M135i xDrive 300cv",
+            "M135i xDrive 306cv"
+          ]
+        },
+        {
+          "name": "Serie 2",
+          "submodels": [
+            "218i 136cv",
+            "218d 143cv",
+            "218d 150cv",
+            "220i 184cv",
+            "220d 163cv",
+            "220d 190cv",
+            "220d xDrive 190cv",
+            "225i 231cv",
+            "228i 245cv",
+            "M235i 326cv",
+            "M235i xDrive 326cv",
+            "M240i 340cv",
+            "M240i xDrive 374cv"
+          ]
+        },
+        {
+          "name": "Serie 2 Active Tourer",
+          "submodels": [
+            "214d 95cv",
+            "216d 116cv",
+            "216i 109cv",
+            "218i 136cv",
+            "218d 150cv",
+            "218d xDrive 150cv",
+            "220i 170cv",
+            "220i 192cv",
+            "220d 150cv",
+            "220d 190cv",
+            "220d xDrive 190cv",
+            "223i 218cv",
+            "225i xDrive 231cv",
+            "225e 218cv",
+            "225xe 224cv",
+            "230e xDrive 245cv",
+            "M235i xDrive 306cv"
+          ]
+        },
+        {
+          "name": "Serie 2 Gran Coupé",
+          "submodels": [
+            "216i 109cv",
+            "218i 136cv",
+            "218d 150cv",
+            "220i 178cv",
+            "220d 190cv",
+            "M235i xDrive 306cv"
+          ]
+        },
+        {
+          "name": "Serie 2 Gran Tourer",
+          "submodels": [
+            "214d 95cv",
+            "216d 116cv",
+            "216i 109cv",
+            "218i 136cv",
+            "218d 150cv",
+            "218d xDrive 150cv",
+            "220d 190cv",
+            "220d xDrive 190cv",
+            "220i 192cv",
+            "225i xDrive 231cv",
+            "225xe 224cv"
+          ]
+        },
+        {
+          "name": "Serie 3",
+          "submodels": [
+            "316i 122cv",
+            "316d 116cv",
+            "318i 136cv",
+            "318d 143cv",
+            "318d 150cv",
+            "320i 150cv",
+            "320i 184cv",
+            "320d 163cv",
+            "320d 184cv",
+            "320d xDrive 163cv",
+            "323i 177cv",
+            "325i 218cv",
+            "325d 204cv",
+            "325d xDrive 218cv",
+            "328i 245cv",
+            "330i 258cv",
+            "330d 265cv",
+            "330d xDrive 265cv",
+            "330e 292cv",
+            "330e xDrive 292cv",
+            "335i 306cv",
+            "335d xDrive 313cv",
+            "340i 326cv",
+            "340d xDrive 340cv",
+            "M3 431cv",
+            "M3 Competition 450cv",
+            "M3 Competition xDrive 510cv",
+            "M3 CS 530cv",
+            "ActiveHybrid 3 340cv"
+          ]
+        },
+        {
+          "name": "Serie 3 Touring",
+          "submodels": [
+            "316i 122cv",
+            "316d 116cv",
+            "318i 136cv",
+            "318d 143cv",
+            "318d 150cv",
+            "320i 150cv",
+            "320i 184cv",
+            "320d 163cv",
+            "320d 184cv",
+            "320d xDrive 163cv",
+            "325i 218cv",
+            "325d 204cv",
+            "325d xDrive 218cv",
+            "328i 245cv",
+            "330i 258cv",
+            "330d 265cv",
+            "330d xDrive 265cv",
+            "330e 292cv",
+            "330e xDrive 292cv",
+            "335d xDrive 313cv",
+            "340i 326cv",
+            "340d xDrive 340cv",
+            "M3 Touring Competition xDrive 510cv"
+          ]
+        },
+        {
+          "name": "Serie 4",
+          "submodels": [
+            "418i 136cv",
+            "418d 143cv",
+            "420i 184cv",
+            "420d 163cv",
+            "420d 190cv",
+            "420d xDrive 190cv",
+            "428i 245cv",
+            "428i xDrive 245cv",
+            "430i 252cv",
+            "430i xDrive 252cv",
+            "430d 286cv",
+            "430d xDrive 286cv",
+            "435i 306cv",
+            "435d xDrive 313cv",
+            "440i 326cv",
+            "440i xDrive 326cv",
+            "440d xDrive 340cv",
+            "M4 431cv",
+            "M4 Competition 510cv",
+            "M4 Competition xDrive 510cv",
+            "M4 CS 550cv",
+            "M4 CSL 551cv"
+          ]
+        },
+        {
+          "name": "Serie 4 Cabrio",
+          "submodels": [
+            "420i 184cv",
+            "420d 190cv",
+            "428i 245cv",
+            "430i 252cv",
+            "430d xDrive 286cv",
+            "435i 306cv",
+            "440i 326cv",
+            "440i xDrive 326cv",
+            "M4 Competition 510cv",
+            "M4 Competition xDrive 510cv"
+          ]
+        },
+        {
+          "name": "Serie 4 Gran Coupé",
+          "submodels": [
+            "418i 136cv",
+            "418d 143cv",
+            "420i 184cv",
+            "420d 163cv",
+            "420d 190cv",
+            "420d xDrive 190cv",
+            "428i 245cv",
+            "430i 252cv",
+            "430i xDrive 252cv",
+            "430d 286cv",
+            "435i 306cv",
+            "435d xDrive 313cv",
+            "440i 326cv",
+            "440i xDrive 326cv",
+            "440d xDrive 340cv",
+            "M4 Gran Coupé Competition 510cv",
+            "M4 Gran Coupé Competition xDrive 510cv"
+          ]
+        },
+        {
+          "name": "Serie 5",
+          "submodels": [
+            "518i 150cv",
+            "518d 150cv",
+            "520i 184cv",
+            "520i 190cv",
+            "520d 163cv",
+            "520d 190cv",
+            "523i 177cv",
+            "525d 218cv",
+            "525d xDrive 218cv",
+            "528i 245cv",
+            "530i 252cv",
+            "530d 265cv",
+            "530d xDrive 265cv",
+            "530e 252cv",
+            "530e xDrive 252cv",
+            "535d xDrive 313cv",
+            "540i xDrive 340cv",
+            "545e xDrive 394cv",
+            "550i xDrive 450cv",
+            "ActiveHybrid 5 340cv",
+            "M5 600cv",
+            "M5 Competition 625cv",
+            "M5 CS 635cv"
+          ]
+        },
+        {
+          "name": "Serie 5 Touring",
+          "submodels": [
+            "518d 150cv",
+            "520i 184cv",
+            "520d 163cv",
+            "520d 190cv",
+            "525d 218cv",
+            "525d xDrive 218cv",
+            "530i 252cv",
+            "530d 265cv",
+            "530d xDrive 265cv",
+            "530e xDrive 252cv",
+            "535d xDrive 313cv",
+            "540i xDrive 340cv",
+            "545e xDrive 394cv",
+            "M5 Touring Competition xDrive 625cv"
+          ]
+        },
+        {
+          "name": "Serie 6",
+          "submodels": [
+            "620d 184cv",
+            "630i 258cv",
+            "635d 286cv",
+            "640i 320cv",
+            "640d 313cv",
+            "640d xDrive 313cv",
+            "645Ci 333cv",
+            "650i 367cv",
+            "650i xDrive 450cv",
+            "M6 560cv",
+            "M6 Gran Coupé 560cv",
+            "M6 Competition 600cv"
+          ]
+        },
+        {
+          "name": "Serie 6 Gran Turismo",
+          "submodels": [
+            "620d 190cv",
+            "630i 258cv",
+            "630d 265cv",
+            "630d xDrive 265cv",
+            "640d xDrive 340cv",
+            "640i xDrive 340cv",
+            "630e 286cv",
+            "630e xDrive 286cv"
+          ]
+        },
+        {
+          "name": "Serie 7",
+          "submodels": [
+            "725d 218cv",
+            "730i 258cv",
+            "730d 265cv",
+            "730d xDrive 265cv",
+            "730Li 258cv",
+            "735i 306cv",
+            "740i 326cv",
+            "740d xDrive 340cv",
+            "740e xDrive 326cv",
+            "740Le xDrive 326cv",
+            "745e xDrive 394cv",
+            "745Le xDrive 394cv",
+            "750i xDrive 450cv",
+            "760i xDrive 544cv",
+            "760Li xDrive 544cv",
+            "ActiveHybrid 7 465cv",
+            "M760i xDrive 585cv",
+            "M760Li xDrive 585cv",
+            "M760e xDrive 571cv"
+          ]
+        },
+        {
+          "name": "Serie 8",
+          "submodels": [
+            "840i 340cv",
+            "840i xDrive 340cv",
+            "840d xDrive 320cv",
+            "840d xDrive 340cv",
+            "850i xDrive 530cv",
+            "M8 600cv",
+            "M8 Competition 625cv",
+            "M8 Competition xDrive 625cv"
+          ]
+        },
+        {
+          "name": "Serie 8 Gran Coupé",
+          "submodels": [
+            "840i Gran Coupé 340cv",
+            "840i xDrive Gran Coupé 340cv",
+            "840d xDrive Gran Coupé 320cv",
+            "840d xDrive Gran Coupé 340cv",
+            "850i xDrive Gran Coupé 530cv",
+            "M8 Gran Coupé 600cv",
+            "M8 Gran Coupé Competition 625cv",
+            "M8 Gran Coupé Competition xDrive 625cv"
+          ]
+        },
+        {
+          "name": "X1",
+          "submodels": [
+            "sDrive16d 116cv",
+            "sDrive18i 136cv",
+            "sDrive18i 140cv",
+            "sDrive18d 143cv",
+            "sDrive18d 150cv",
+            "sDrive20i 192cv",
+            "xDrive18d 143cv",
+            "xDrive18d 150cv",
+            "xDrive20d 163cv",
+            "xDrive20d 190cv",
+            "xDrive20i 192cv",
+            "xDrive25d 231cv",
+            "xDrive25i 218cv",
+            "xDrive28i 245cv",
+            "xDrive30e 252cv",
+            "xDrive23d 211cv",
+            "xDrive23i 218cv",
+            "xDrive25e 245cv",
+            "M35i xDrive 300cv"
+          ]
+        },
+        {
+          "name": "X2",
+          "submodels": [
+            "sDrive18i 136cv",
+            "sDrive18d 150cv",
+            "xDrive18d 150cv",
+            "xDrive20d 190cv",
+            "xDrive20i 192cv",
+            "xDrive25e 220cv",
+            "xDrive25e 245cv",
+            "M35i xDrive 306cv",
+            "M35i xDrive 300cv"
+          ]
+        },
+        {
+          "name": "X3",
+          "submodels": [
+            "sDrive18d 150cv",
+            "sDrive20i 184cv",
+            "xDrive20d 163cv",
+            "xDrive20d 190cv",
+            "xDrive20i 184cv",
+            "xDrive20i 249cv",
+            "xDrive25d 231cv",
+            "xDrive25e 252cv",
+            "xDrive28i 245cv",
+            "xDrive30d 265cv",
+            "xDrive30d 286cv",
+            "xDrive30e 252cv",
+            "xDrive30i 252cv",
+            "xDrive35d 313cv",
+            "xDrive35i 306cv",
+            "xDrive40d 340cv",
+            "xDrive40i 360cv",
+            "M40i 360cv",
+            "M40d 326cv"
+          ]
+        },
+        {
+          "name": "X3 M",
+          "submodels": [
+            "X3 M 480cv",
+            "X3 M Competition 510cv",
+            "X3 M Competition 530cv"
+          ]
+        },
+        {
+          "name": "X4",
+          "submodels": [
+            "xDrive20d 163cv",
+            "xDrive20d 190cv",
+            "xDrive20i 184cv",
+            "xDrive25d 231cv",
+            "xDrive28i 245cv",
+            "xDrive30d 265cv",
+            "xDrive30d 286cv",
+            "xDrive30e 252cv",
+            "xDrive30i 252cv",
+            "xDrive35d 313cv",
+            "xDrive35i 306cv",
+            "xDrive40d 340cv",
+            "xDrive40i 360cv",
+            "M40i 360cv",
+            "M40d 326cv"
+          ]
+        },
+        {
+          "name": "X4 M",
+          "submodels": [
+            "X4 M 480cv",
+            "X4 M Competition 510cv",
+            "X4 M Competition 530cv"
+          ]
+        },
+        {
+          "name": "X5",
+          "submodels": [
+            "sDrive25d 231cv",
+            "xDrive25d 231cv",
+            "xDrive30d 258cv",
+            "xDrive30d 265cv",
+            "xDrive30d 286cv",
+            "xDrive35d 313cv",
+            "xDrive35i 306cv",
+            "xDrive40d 340cv",
+            "xDrive40i 340cv",
+            "xDrive40e 313cv",
+            "xDrive45e 394cv",
+            "xDrive50i 450cv",
+            "M50i 530cv",
+            "M50d 400cv",
+            "M Competition 625cv",
+            "xDrive48i 340cv",
+            "xDrive50e 489cv"
+          ]
+        },
+        {
+          "name": "X5 M",
+          "submodels": [
+            "X5 M 555cv",
+            "X5 M Competition 625cv",
+            "X5 M Competition 630cv",
+            "X5 M 575cv"
+          ]
+        },
+        {
+          "name": "X6",
+          "submodels": [
+            "sDrive30d 258cv",
+            "xDrive30d 258cv",
+            "xDrive30d 265cv",
+            "xDrive30d 286cv",
+            "xDrive35d 313cv",
+            "xDrive35i 306cv",
+            "xDrive40d 340cv",
+            "xDrive40i 340cv",
+            "xDrive50i 450cv",
+            "M50i 530cv",
+            "M50d 400cv",
+            "xDrive48i 340cv"
+          ]
+        },
+        {
+          "name": "X6 M",
+          "submodels": [
+            "X6 M 555cv",
+            "X6 M Competition 625cv",
+            "X6 M Competition 630cv",
+            "X6 M 575cv"
+          ]
+        },
+        {
+          "name": "X7",
+          "submodels": [
+            "xDrive30d 265cv",
+            "xDrive30d 286cv",
+            "xDrive40d 340cv",
+            "xDrive40i 340cv",
+            "xDrive48i 340cv",
+            "xDrive50i 530cv",
+            "M50i 530cv",
+            "M50d 400cv",
+            "xDrive40e 354cv",
+            "M60i xDrive 530cv"
+          ]
+        },
+        {
+          "name": "Z3",
+          "submodels": [
+            "1.8 116cv",
+            "1.9 118cv",
+            "2.0 150cv",
+            "2.2i 170cv",
+            "2.8 193cv",
+            "3.0i 231cv",
+            "M Roadster 315cv",
+            "M Roadster 321cv",
+            "M Coupe 315cv",
+            "M Coupe 321cv"
+          ]
+        },
+        {
+          "name": "Z4",
+          "submodels": [
+            "sDrive18i 156cv",
+            "sDrive20i 197cv",
+            "sDrive20i 245cv",
+            "sDrive25i 218cv",
+            "sDrive28i 245cv",
+            "sDrive30i 258cv",
+            "sDrive35i 306cv",
+            "sDrive35is 340cv",
+            "M40i 340cv",
+            "M40i 387cv",
+            "2.0i 150cv",
+            "2.5i 192cv",
+            "2.5si 218cv",
+            "3.0i 231cv",
+            "3.0si 265cv",
+            "M Roadster 338cv"
+          ]
+        },
+        {
+          "name": "M2",
+          "submodels": [
+            "M2 370cv",
+            "M2 Competition 410cv",
+            "M2 CS 450cv",
+            "M2 460cv",
+            "M2 Competition xDrive 460cv"
+          ]
+        },
+        {
+          "name": "M2 CS",
+          "submodels": [
+            "M2 CS 450cv"
+          ]
+        },
+        {
+          "name": "M3",
+          "submodels": [
+            "M3 343cv",
+            "M3 360cv",
+            "M3 420cv",
+            "M3 431cv",
+            "M3 Competition 450cv",
+            "M3 Competition xDrive 510cv",
+            "M3 CS 530cv",
+            "M3 Competition 480cv"
+          ]
+        },
+        {
+          "name": "M3 Touring",
+          "submodels": [
+            "M3 Touring Competition xDrive 510cv",
+            "M3 Touring CS 543cv"
+          ]
+        },
+        {
+          "name": "M4",
+          "submodels": [
+            "M4 431cv",
+            "M4 Competition 450cv",
+            "M4 Competition xDrive 510cv",
+            "M4 CS 550cv",
+            "M4 CSL 551cv",
+            "M4 Competition 480cv"
+          ]
+        },
+        {
+          "name": "M4 Cabrio",
+          "submodels": [
+            "M4 Cabrio Competition 450cv",
+            "M4 Cabrio Competition xDrive 510cv"
+          ]
+        },
+        {
+          "name": "M5",
+          "submodels": [
+            "M5 400cv",
+            "M5 507cv",
+            "M5 560cv",
+            "M5 600cv",
+            "M5 Competition 625cv",
+            "M5 CS 635cv",
+            "M5 Competition xDrive 727cv"
+          ]
+        },
+        {
+          "name": "M6",
+          "submodels": [
+            "M6 Coupe 560cv",
+            "M6 Cabrio 560cv",
+            "M6 Gran Coupé 560cv",
+            "M6 Competition 600cv"
+          ]
+        },
+        {
+          "name": "M8",
+          "submodels": [
+            "M8 Coupe 600cv",
+            "M8 Cabrio 600cv",
+            "M8 Competition 625cv",
+            "M8 Competition xDrive 625cv"
+          ]
+        },
+        {
+          "name": "iX",
+          "submodels": [
+            "xDrive40 326cv",
+            "xDrive50 523cv",
+            "M60 619cv",
+            "xDrive40 Sport 326cv"
+          ]
+        },
+        {
+          "name": "iX1",
+          "submodels": [
+            "eDrive20 204cv",
+            "xDrive30 313cv"
+          ]
+        },
+        {
+          "name": "iX3",
+          "submodels": [
+            "iX3 286cv",
+            "iX3 Impressive 286cv"
+          ]
+        },
+        {
+          "name": "i3",
+          "submodels": [
+            "i3 60Ah 170cv",
+            "i3 94Ah 170cv",
+            "i3 120Ah 170cv",
+            "i3 REx 170cv"
+          ]
+        },
+        {
+          "name": "i3s",
+          "submodels": [
+            "i3s 94Ah 184cv",
+            "i3s 120Ah 184cv"
+          ]
+        },
+        {
+          "name": "i4",
+          "submodels": [
+            "eDrive35 286cv",
+            "eDrive40 340cv",
+            "xDrive40 396cv",
+            "M50 544cv",
+            "M50 xDrive 544cv"
+          ]
+        },
+        {
+          "name": "i5",
+          "submodels": [
+            "eDrive40 340cv",
+            "xDrive40 340cv",
+            "M60 xDrive 601cv",
+            "Touring eDrive40 340cv",
+            "Touring xDrive40 340cv",
+            "Touring M60 xDrive 601cv"
+          ]
+        },
+        {
+          "name": "i7",
+          "submodels": [
+            "eDrive50 544cv",
+            "xDrive60 544cv",
+            "M70 xDrive 660cv",
+            "xDrive60L 544cv"
+          ]
+        },
+        {
+          "name": "i8",
+          "submodels": [
+            "i8 Coupe 362cv",
+            "i8 Roadster 374cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MINI",
+      "models": [
+        {
+          "name": "3 puertas",
+          "submodels": [
+            "One 75cv",
+            "One D 95cv",
+            "Cooper 102cv",
+            "Cooper 136cv",
+            "Cooper D 95cv",
+            "Cooper D 115cv",
+            "Cooper S 178cv",
+            "Cooper S JCW 231cv",
+            "JCW 231cv",
+            "JCW GP 306cv",
+            "Electric 135cv",
+            "Electric 184cv",
+            "One 90cv",
+            "Cooper S 192cv",
+            "Cooper SE 184cv"
+          ]
+        },
+        {
+          "name": "5 puertas",
+          "submodels": [
+            "One 75cv",
+            "One D 95cv",
+            "Cooper 102cv",
+            "Cooper 136cv",
+            "Cooper D 95cv",
+            "Cooper D 115cv",
+            "Cooper S 178cv",
+            "Cooper S 192cv",
+            "JCW 231cv",
+            "Cooper SE 184cv"
+          ]
+        },
+        {
+          "name": "Cabrio",
+          "submodels": [
+            "One 75cv",
+            "Cooper 102cv",
+            "Cooper 136cv",
+            "Cooper D 95cv",
+            "Cooper D 115cv",
+            "Cooper S 178cv",
+            "Cooper S 192cv",
+            "JCW 231cv",
+            "Cooper S JCW 231cv"
+          ]
+        },
+        {
+          "name": "Countryman",
+          "submodels": [
+            "One 75cv",
+            "Cooper D 90cv",
+            "Cooper D 115cv",
+            "Cooper 136cv",
+            "Cooper S 178cv",
+            "Cooper S ALL4 189cv",
+            "Cooper S E ALL4 224cv",
+            "JCW ALL4 231cv",
+            "JCW ALL4 306cv",
+            "One D 95cv",
+            "Cooper D ALL4 150cv",
+            "Cooper SE ALL4 313cv",
+            "Cooper S 204cv"
+          ]
+        },
+        {
+          "name": "Clubman",
+          "submodels": [
+            "One D 95cv",
+            "Cooper 136cv",
+            "Cooper D 115cv",
+            "Cooper D 150cv",
+            "Cooper S 192cv",
+            "Cooper S ALL4 192cv",
+            "Cooper S ALL4 231cv",
+            "JCW ALL4 231cv",
+            "JCW ALL4 306cv"
+          ]
+        },
+        {
+          "name": "Paceman",
+          "submodels": [
+            "Cooper 122cv",
+            "Cooper D 112cv",
+            "Cooper S 184cv",
+            "Cooper S ALL4 184cv",
+            "Cooper D ALL4 143cv",
+            "JCW ALL4 218cv"
+          ]
+        },
+        {
+          "name": "Coupe",
+          "submodels": [
+            "Cooper 122cv",
+            "Cooper D 112cv",
+            "Cooper S 184cv",
+            "JCW 211cv",
+            "John Cooper Works 211cv"
+          ]
+        },
+        {
+          "name": "Roadster",
+          "submodels": [
+            "Cooper 122cv",
+            "Cooper D 112cv",
+            "Cooper S 184cv",
+            "JCW 211cv",
+            "John Cooper Works 211cv"
+          ]
+        },
+        {
+          "name": "Electric",
+          "submodels": [
+            "SE 184cv",
+            "SE 3 puertas 184cv",
+            "Cooper SE 184cv",
+            "Cooper SE 218cv",
+            "Aceman SE 184cv",
+            "Aceman E 136cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Alpina",
+      "models": [
+        {
+          "name": "B3",
+          "submodels": [
+            "B3 3.0 Biturbo 460cv",
+            "B3 S Biturbo 410cv",
+            "B3 Allrad 462cv",
+            "B3 GT3 450cv",
+            "B3 3.3 280cv"
+          ]
+        },
+        {
+          "name": "B3 Touring",
+          "submodels": [
+            "B3 Touring Biturbo 410cv",
+            "B3 Touring Allrad 462cv",
+            "B3 S Touring Biturbo 410cv"
+          ]
+        },
+        {
+          "name": "B4",
+          "submodels": [
+            "B4 Biturbo 410cv",
+            "B4 S Biturbo 440cv",
+            "B4 xDrive Biturbo 440cv"
+          ]
+        },
+        {
+          "name": "B4 Cabrio",
+          "submodels": [
+            "B4 Cabrio Biturbo 410cv",
+            "B4 Cabrio S Biturbo 440cv",
+            "B4 Cabrio xDrive Biturbo 440cv"
+          ]
+        },
+        {
+          "name": "B5",
+          "submodels": [
+            "B5 4.4 Biturbo 601cv",
+            "B5 Allrad 630cv",
+            "D5 S 388cv",
+            "B5 xDrive Biturbo 630cv",
+            "B5 S xDrive Biturbo 630cv"
+          ]
+        },
+        {
+          "name": "B5 Touring",
+          "submodels": [
+            "B5 Touring Biturbo 601cv",
+            "B5 Touring Allrad 630cv",
+            "B5 Touring S xDrive Biturbo 630cv",
+            "D5 S Touring 388cv"
+          ]
+        },
+        {
+          "name": "B7",
+          "submodels": [
+            "B7 4.4 Biturbo 507cv",
+            "B7 Biturbo 540cv",
+            "B7 xDrive Biturbo 600cv",
+            "B7 S xDrive Biturbo 621cv"
+          ]
+        },
+        {
+          "name": "B8",
+          "submodels": [
+            "B8 Biturbo 621cv",
+            "B8 xDrive Biturbo 621cv"
+          ]
+        },
+        {
+          "name": "B8 Gran Coupé",
+          "submodels": [
+            "B8 Gran Coupé Biturbo 621cv",
+            "B8 Gran Coupé xDrive Biturbo 621cv"
+          ]
+        },
+        {
+          "name": "D3",
+          "submodels": [
+            "D3 Biturbo 265cv",
+            "D3 Allrad 265cv"
+          ]
+        },
+        {
+          "name": "D3 S",
+          "submodels": [
+            "D3 S Biturbo 355cv",
+            "D3 S Allrad 355cv",
+            "D3 S Touring 355cv",
+            "D3 S Touring Allrad 355cv"
+          ]
+        },
+        {
+          "name": "D5",
+          "submodels": [
+            "D5 Biturbo 350cv",
+            "D5 Allrad 388cv",
+            "D5 S Biturbo 388cv",
+            "D5 S Allrad 388cv"
+          ]
+        },
+        {
+          "name": "XB7",
+          "submodels": [
+            "XB7 Allrad 621cv",
+            "XB7 Biturbo 621cv"
+          ]
+        },
+        {
+          "name": "XD3",
+          "submodels": [
+            "XD3 Biturbo 355cv",
+            "XD3 Allrad 355cv"
+          ]
+        },
+        {
+          "name": "XD4",
+          "submodels": [
+            "XD4 Biturbo 355cv",
+            "XD4 Allrad 355cv"
+          ]
+        }
+      ]
+    }
+  ]
+}

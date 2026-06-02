@@ -1,0 +1,1645 @@
+{
+  "brands": [
+    {
+      "name": "Audi",
+      "models": [
+        {
+          "name": "A1",
+          "submodels": [
+            "1.0 TFSI 95cv",
+            "1.0 TFSI 82cv",
+            "1.2 TFSI 86cv",
+            "1.4 TFSI 122cv",
+            "1.4 TFSI 125cv",
+            "1.4 TFSI 140cv",
+            "1.6 TDI 90cv",
+            "1.6 TDI 105cv",
+            "1.8 TFSI 192cv",
+            "2.0 TFSI S1 231cv",
+            "S1 2.0 TFSI quattro 231cv",
+            "30 TFSI 116cv",
+            "25 TFSI 95cv",
+            "35 TFSI 150cv"
+          ]
+        },
+        {
+          "name": "A1 Sportback",
+          "submodels": [
+            "1.0 TFSI 95cv",
+            "1.0 TFSI 82cv",
+            "1.2 TFSI 86cv",
+            "1.4 TFSI 122cv",
+            "1.4 TFSI 125cv",
+            "1.4 TFSI 140cv",
+            "1.6 TDI 90cv",
+            "1.6 TDI 105cv",
+            "1.8 TFSI 192cv",
+            "2.0 TFSI S1 231cv",
+            "S1 2.0 TFSI quattro 231cv",
+            "25 TFSI 95cv",
+            "30 TFSI 116cv",
+            "35 TFSI 150cv",
+            "40 TFSI 200cv"
+          ]
+        },
+        {
+          "name": "A3",
+          "submodels": [
+            "1.2 TFSI 105cv",
+            "1.4 TFSI 125cv",
+            "1.6 TDI 105cv",
+            "1.6 TDI 90cv",
+            "1.8 TFSI 180cv",
+            "1.8 TFSI 160cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 184cv",
+            "2.0 TFSI 265cv",
+            "S3 2.0 TFSI 265cv",
+            "S3 2.0 TFSI quattro 300cv",
+            "RS3 2.5 TFSI quattro 367cv",
+            "RS3 2.5 TFSI quattro 400cv",
+            "30 TDI 116cv",
+            "35 TDI 150cv",
+            "35 TFSI 150cv",
+            "40 TFSI 200cv",
+            "40 TFSI quattro 200cv",
+            "45 TFSI quattro 245cv",
+            "30 g-tron 130cv",
+            "35 TFSI e 204cv",
+            "40 TFSIe 204cv",
+            "S3 2.0 TFSI 333cv",
+            "RS3 2.5 TFSI quattro 421cv"
+          ]
+        },
+        {
+          "name": "A3 Cabriolet",
+          "submodels": [
+            "1.4 TFSI 125cv",
+            "1.8 TFSI 180cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 184cv",
+            "2.0 TFSI 265cv",
+            "S3 2.0 TFSI 265cv",
+            "S3 2.0 TFSI quattro 300cv",
+            "35 TFSI 150cv",
+            "40 TFSI 200cv",
+            "45 TFSI quattro 245cv"
+          ]
+        },
+        {
+          "name": "A3 Sedan",
+          "submodels": [
+            "1.4 TFSI 125cv",
+            "1.6 TDI 105cv",
+            "1.8 TFSI 180cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 184cv",
+            "S3 2.0 TFSI quattro 300cv",
+            "RS3 2.5 TFSI quattro 367cv",
+            "30 TDI 116cv",
+            "35 TDI 150cv",
+            "35 TFSI 150cv",
+            "40 TFSI 200cv",
+            "45 TFSI quattro 245cv",
+            "40 TFSIe 204cv",
+            "S3 2.0 TFSI 333cv",
+            "RS3 2.5 TFSI quattro 421cv"
+          ]
+        },
+        {
+          "name": "A3 Sportback",
+          "submodels": [
+            "1.2 TFSI 105cv",
+            "1.4 TFSI 125cv",
+            "1.6 TDI 105cv",
+            "1.6 TDI 90cv",
+            "1.8 TFSI 180cv",
+            "1.8 TFSI 160cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 184cv",
+            "2.0 TFSI 265cv",
+            "S3 2.0 TFSI 265cv",
+            "S3 2.0 TFSI quattro 300cv",
+            "RS3 2.5 TFSI quattro 367cv",
+            "RS3 2.5 TFSI quattro 400cv",
+            "1.4 TFSI e-tron 204cv",
+            "1.4 g-tron 110cv",
+            "30 TDI 116cv",
+            "35 TDI 150cv",
+            "35 TFSI 150cv",
+            "40 TFSI 200cv",
+            "40 TFSI quattro 200cv",
+            "45 TFSI quattro 245cv",
+            "30 g-tron 130cv",
+            "35 TFSI e 204cv",
+            "40 TFSIe 204cv",
+            "S3 2.0 TFSI 333cv",
+            "RS3 2.5 TFSI quattro 421cv"
+          ]
+        },
+        {
+          "name": "A4",
+          "submodels": [
+            "1.8 T 163cv",
+            "1.8 T quattro 163cv",
+            "1.9 TDI 130cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 143cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 170cv",
+            "2.0 TDI quattro 177cv",
+            "2.0 TFSI 200cv",
+            "2.0 TFSI quattro 252cv",
+            "2.5 TDI 163cv",
+            "2.7 TDI 190cv",
+            "3.0 TDI 204cv",
+            "3.0 TDI quattro 245cv",
+            "3.0 TDI quattro 272cv",
+            "3.0 TFSI quattro 272cv",
+            "3.2 FSI quattro 265cv",
+            "3.0 V6 218cv",
+            "S4 3.0 TFSI quattro 333cv",
+            "S4 4.2 V8 quattro 344cv",
+            "RS4 4.2 V8 quattro 420cv",
+            "30 TDI 116cv",
+            "35 TDI 150cv",
+            "35 TFSI 150cv",
+            "40 TDI 190cv",
+            "40 TDI quattro 190cv",
+            "40 TFSI 190cv",
+            "45 TFSI 245cv",
+            "45 TDI quattro 231cv",
+            "50 TDI quattro 286cv",
+            "S4 3.0 TDI quattro 347cv",
+            "S4 3.0 TFSI quattro 354cv",
+            "RS4 2.9 TFSI quattro 450cv",
+            "RS4 Competition 530cv"
+          ]
+        },
+        {
+          "name": "A4 Allroad",
+          "submodels": [
+            "2.0 TDI quattro 170cv",
+            "2.0 TDI quattro 177cv",
+            "2.0 TFSI quattro 211cv",
+            "2.7 TDI quattro 190cv",
+            "3.0 TDI quattro 218cv",
+            "3.0 TDI quattro 245cv",
+            "3.0 TFSI quattro 272cv",
+            "35 TDI quattro 163cv",
+            "40 TDI quattro 204cv",
+            "45 TFSI quattro 245cv",
+            "50 TDI quattro 286cv",
+            "45 TDI quattro 231cv",
+            "40 TDI quattro 190cv"
+          ]
+        },
+        {
+          "name": "A4 Avant",
+          "submodels": [
+            "1.8 T 163cv",
+            "1.8 T quattro 163cv",
+            "1.9 TDI 130cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 143cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 170cv",
+            "2.0 TDI quattro 177cv",
+            "2.0 TFSI 200cv",
+            "2.0 TFSI quattro 252cv",
+            "2.5 TDI 163cv",
+            "2.7 TDI 190cv",
+            "3.0 TDI 204cv",
+            "3.0 TDI quattro 245cv",
+            "3.0 TDI quattro 272cv",
+            "3.0 TFSI quattro 272cv",
+            "3.2 FSI quattro 265cv",
+            "S4 3.0 TFSI quattro 333cv",
+            "S4 4.2 V8 quattro 344cv",
+            "RS4 4.2 V8 quattro 420cv",
+            "RS4 4.2 V8 quattro 450cv",
+            "30 TDI 116cv",
+            "35 TDI 150cv",
+            "35 TFSI 150cv",
+            "40 TDI 190cv",
+            "40 TDI quattro 190cv",
+            "40 TFSI 190cv",
+            "45 TFSI 245cv",
+            "45 TDI quattro 231cv",
+            "50 TDI quattro 286cv",
+            "S4 3.0 TDI quattro 347cv",
+            "S4 3.0 TFSI quattro 354cv",
+            "RS4 2.9 TFSI quattro 450cv",
+            "RS4 Competition 530cv"
+          ]
+        },
+        {
+          "name": "A5",
+          "submodels": [
+            "1.8 TFSI 170cv",
+            "2.0 TDI 143cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 177cv",
+            "2.0 TFSI 180cv",
+            "2.0 TFSI 211cv",
+            "2.7 TDI 190cv",
+            "3.0 TDI 218cv",
+            "3.0 TDI quattro 245cv",
+            "3.0 TDI quattro 272cv",
+            "3.0 TFSI quattro 272cv",
+            "3.2 FSI quattro 265cv",
+            "S5 3.0 TFSI quattro 333cv",
+            "S5 4.2 V8 quattro 354cv",
+            "RS5 4.2 FSI quattro 450cv",
+            "35 TDI 163cv",
+            "40 TDI 204cv",
+            "40 TFSI 204cv",
+            "40 TDI quattro 204cv",
+            "45 TFSI quattro 245cv",
+            "50 TDI quattro 286cv",
+            "S5 3.0 TDI quattro 347cv",
+            "S5 3.0 TFSI quattro 354cv",
+            "RS5 2.9 TFSI quattro 450cv",
+            "RS5 Competition 530cv"
+          ]
+        },
+        {
+          "name": "A5 Cabriolet",
+          "submodels": [
+            "1.8 TFSI 170cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 177cv",
+            "2.0 TFSI 180cv",
+            "2.0 TFSI 211cv",
+            "3.0 TDI quattro 245cv",
+            "3.0 TFSI quattro 272cv",
+            "S5 3.0 TFSI quattro 333cv",
+            "S5 4.2 V8 quattro 354cv",
+            "40 TDI 204cv",
+            "40 TFSI 204cv",
+            "45 TFSI quattro 245cv",
+            "S5 3.0 TFSI quattro 354cv"
+          ]
+        },
+        {
+          "name": "A5 Coupé",
+          "submodels": [
+            "1.8 TFSI 170cv",
+            "2.0 TDI 143cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 177cv",
+            "2.0 TFSI 180cv",
+            "2.0 TFSI 211cv",
+            "2.7 TDI 190cv",
+            "3.0 TDI 218cv",
+            "3.0 TDI quattro 245cv",
+            "3.0 TDI quattro 272cv",
+            "3.0 TFSI quattro 272cv",
+            "3.2 FSI quattro 265cv",
+            "S5 3.0 TFSI quattro 333cv",
+            "S5 4.2 V8 quattro 354cv",
+            "RS5 4.2 FSI quattro 450cv",
+            "35 TDI 163cv",
+            "40 TDI 204cv",
+            "40 TFSI 204cv",
+            "40 TDI quattro 204cv",
+            "45 TFSI quattro 245cv",
+            "50 TDI quattro 286cv",
+            "S5 3.0 TDI quattro 347cv",
+            "S5 3.0 TFSI quattro 354cv",
+            "RS5 2.9 TFSI quattro 450cv",
+            "RS5 Competition 530cv"
+          ]
+        },
+        {
+          "name": "A5 Sportback",
+          "submodels": [
+            "1.8 TFSI 170cv",
+            "2.0 TDI 143cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 177cv",
+            "2.0 TFSI 180cv",
+            "2.0 TFSI 211cv",
+            "2.7 TDI 190cv",
+            "3.0 TDI 218cv",
+            "3.0 TDI quattro 245cv",
+            "3.0 TDI quattro 272cv",
+            "3.0 TFSI quattro 272cv",
+            "S5 3.0 TFSI quattro 333cv",
+            "S5 4.2 V8 quattro 354cv",
+            "RS5 4.2 FSI quattro 450cv",
+            "35 TDI 163cv",
+            "40 TDI 204cv",
+            "40 TFSI 204cv",
+            "40 TDI quattro 204cv",
+            "45 TFSI quattro 245cv",
+            "50 TDI quattro 286cv",
+            "S5 3.0 TDI quattro 347cv",
+            "S5 3.0 TFSI quattro 354cv",
+            "RS5 2.9 TFSI quattro 450cv",
+            "RS5 Competition 530cv"
+          ]
+        },
+        {
+          "name": "A6",
+          "submodels": [
+            "1.8 T 150cv",
+            "2.0 TDI 136cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 163cv",
+            "2.4 V6 177cv",
+            "2.5 TDI 155cv",
+            "2.7 TDI 190cv",
+            "2.8 FSI quattro 204cv",
+            "3.0 TDI 204cv",
+            "3.0 TDI quattro 218cv",
+            "3.0 TDI quattro 240cv",
+            "3.0 TDI quattro 272cv",
+            "3.0 TFSI quattro 290cv",
+            "3.0 TFSI quattro 310cv",
+            "3.2 FSI quattro 255cv",
+            "4.2 FSI quattro 350cv",
+            "S6 4.0 TFSI quattro 420cv",
+            "S6 5.2 V10 435cv",
+            "RS6 5.0 TFSI quattro 580cv",
+            "RS6 4.0 TFSI quattro 560cv",
+            "30 TDI 136cv",
+            "35 TDI 163cv",
+            "40 TDI quattro 204cv",
+            "45 TDI quattro 231cv",
+            "50 TDI quattro 286cv",
+            "40 TFSI 204cv",
+            "45 TFSI quattro 245cv",
+            "50 TFSI e quattro 299cv",
+            "55 TFSI quattro 340cv",
+            "S6 3.0 TDI quattro 344cv",
+            "RS6 4.0 TFSI quattro 600cv",
+            "RS6 performance 630cv"
+          ]
+        },
+        {
+          "name": "A6 Allroad",
+          "submodels": [
+            "2.7 TDI quattro 190cv",
+            "3.0 TDI quattro 218cv",
+            "3.0 TDI quattro 245cv",
+            "3.0 TDI quattro 272cv",
+            "3.0 TFSI quattro 290cv",
+            "4.2 FSI quattro 350cv",
+            "40 TDI quattro 204cv",
+            "45 TDI quattro 231cv",
+            "50 TDI quattro 286cv",
+            "45 TFSI quattro 245cv",
+            "55 TFSI quattro 340cv"
+          ]
+        },
+        {
+          "name": "A6 Avant",
+          "submodels": [
+            "1.8 T 150cv",
+            "2.0 TDI 136cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 163cv",
+            "2.4 V6 177cv",
+            "2.5 TDI 155cv",
+            "2.7 TDI 190cv",
+            "2.8 FSI quattro 204cv",
+            "3.0 TDI 204cv",
+            "3.0 TDI quattro 218cv",
+            "3.0 TDI quattro 240cv",
+            "3.0 TDI quattro 272cv",
+            "3.0 TFSI quattro 290cv",
+            "3.0 TFSI quattro 310cv",
+            "3.2 FSI quattro 255cv",
+            "4.2 FSI quattro 350cv",
+            "S6 4.0 TFSI quattro 420cv",
+            "S6 5.2 V10 435cv",
+            "RS6 5.0 TFSI quattro 580cv",
+            "RS6 4.0 TFSI quattro 560cv",
+            "30 TDI 136cv",
+            "35 TDI 163cv",
+            "40 TDI quattro 204cv",
+            "45 TDI quattro 231cv",
+            "50 TDI quattro 286cv",
+            "40 TFSI 204cv",
+            "45 TFSI quattro 245cv",
+            "50 TFSI e quattro 299cv",
+            "55 TFSI quattro 340cv",
+            "S6 3.0 TDI quattro 344cv",
+            "RS6 4.0 TFSI quattro 600cv",
+            "RS6 performance 630cv"
+          ]
+        },
+        {
+          "name": "A7",
+          "submodels": [
+            "2.8 FSI quattro 204cv",
+            "3.0 TDI 204cv",
+            "3.0 TDI quattro 218cv",
+            "3.0 TDI quattro 245cv",
+            "3.0 TFSI quattro 300cv",
+            "3.0 TFSI quattro 310cv",
+            "4.0 TFSI quattro 420cv",
+            "S7 4.0 TFSI quattro 420cv",
+            "RS7 4.0 TFSI quattro 560cv",
+            "30 TDI 136cv",
+            "40 TDI quattro 204cv",
+            "45 TDI quattro 231cv",
+            "50 TDI quattro 286cv",
+            "40 TFSI 204cv",
+            "45 TFSI quattro 245cv",
+            "50 TFSI e quattro 299cv",
+            "55 TFSI quattro 340cv",
+            "S7 3.0 TDI quattro 344cv",
+            "RS7 4.0 TFSI quattro 600cv",
+            "RS7 performance 630cv"
+          ]
+        },
+        {
+          "name": "A7 Sportback",
+          "submodels": [
+            "2.8 FSI quattro 204cv",
+            "3.0 TDI 204cv",
+            "3.0 TDI quattro 218cv",
+            "3.0 TDI quattro 245cv",
+            "3.0 TFSI quattro 300cv",
+            "3.0 TFSI quattro 310cv",
+            "4.0 TFSI quattro 420cv",
+            "S7 4.0 TFSI quattro 420cv",
+            "RS7 4.0 TFSI quattro 560cv",
+            "30 TDI 136cv",
+            "40 TDI quattro 204cv",
+            "45 TDI quattro 231cv",
+            "50 TDI quattro 286cv",
+            "40 TFSI 204cv",
+            "45 TFSI quattro 245cv",
+            "50 TFSI e quattro 299cv",
+            "55 TFSI quattro 340cv",
+            "S7 3.0 TDI quattro 344cv",
+            "RS7 4.0 TFSI quattro 600cv",
+            "RS7 performance 630cv"
+          ]
+        },
+        {
+          "name": "A8",
+          "submodels": [
+            "2.5 TDI 150cv",
+            "2.8 FSI 220cv",
+            "3.0 TDI 233cv",
+            "3.0 TDI quattro 250cv",
+            "3.7 V8 280cv",
+            "4.0 TDI quattro 275cv",
+            "4.2 FSI quattro 335cv",
+            "4.2 TDI quattro 326cv",
+            "4.2 V8 quattro 350cv",
+            "6.0 W12 quattro 450cv",
+            "S8 5.2 V10 quattro 450cv",
+            "S8 4.0 TFSI quattro 520cv",
+            "S8 plus 4.0 TFSI quattro 605cv",
+            "3.0 TDI quattro 190cv",
+            "3.0 TDI quattro 286cv",
+            "4.0 TFSI quattro 460cv",
+            "6.3 W12 quattro 500cv",
+            "50 TDI quattro 286cv",
+            "55 TFSI quattro 340cv",
+            "60 TFSI e quattro 449cv",
+            "S8 4.0 TFSI quattro 571cv"
+          ]
+        },
+        {
+          "name": "A8 L",
+          "submodels": [
+            "3.0 TDI quattro 250cv",
+            "4.2 FSI quattro 335cv",
+            "4.2 TDI quattro 326cv",
+            "4.2 V8 quattro 350cv",
+            "6.0 W12 quattro 450cv",
+            "S8 5.2 V10 quattro 450cv",
+            "S8 4.0 TFSI quattro 520cv",
+            "3.0 TDI quattro 286cv",
+            "4.0 TFSI quattro 460cv",
+            "6.3 W12 quattro 500cv",
+            "50 TDI quattro 286cv",
+            "55 TFSI quattro 340cv",
+            "60 TFSI e quattro 449cv",
+            "S8 4.0 TFSI quattro 571cv"
+          ]
+        },
+        {
+          "name": "Q2",
+          "submodels": [
+            "1.0 TFSI 116cv",
+            "1.4 TFSI COD 150cv",
+            "1.6 TDI 116cv",
+            "2.0 TDI 116cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI quattro 190cv",
+            "2.0 TFSI quattro 190cv",
+            "SQ2 2.0 TFSI quattro 300cv",
+            "30 TFSI 116cv",
+            "30 TDI 116cv",
+            "35 TFSI 150cv",
+            "35 TDI 150cv",
+            "40 TFSI quattro 200cv"
+          ]
+        },
+        {
+          "name": "Q3",
+          "submodels": [
+            "1.4 TFSI 150cv",
+            "1.6 TDI 120cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI quattro 177cv",
+            "2.0 TDI quattro 184cv",
+            "2.0 TFSI 170cv",
+            "2.0 TFSI quattro 211cv",
+            "RSQ3 2.5 TFSI quattro 310cv",
+            "RSQ3 2.5 TFSI quattro 340cv",
+            "30 TDI 116cv",
+            "35 TDI 150cv",
+            "35 TFSI 150cv",
+            "40 TDI quattro 200cv",
+            "40 TFSI quattro 200cv",
+            "45 TFSI quattro 245cv",
+            "RSQ3 2.5 TFSI quattro 400cv"
+          ]
+        },
+        {
+          "name": "Q3 Sportback",
+          "submodels": [
+            "35 TDI 150cv",
+            "35 TFSI 150cv",
+            "40 TDI quattro 200cv",
+            "40 TFSI quattro 200cv",
+            "45 TFSI quattro 245cv",
+            "RSQ3 2.5 TFSI quattro 400cv"
+          ]
+        },
+        {
+          "name": "Q4 e-tron",
+          "submodels": [
+            "35 e-tron 170cv",
+            "40 e-tron 204cv",
+            "45 e-tron quattro 265cv",
+            "50 e-tron quattro 299cv",
+            "SQ4 e-tron quattro 340cv"
+          ]
+        },
+        {
+          "name": "Q4 Sportback e-tron",
+          "submodels": [
+            "35 e-tron 170cv",
+            "40 e-tron 204cv",
+            "45 e-tron quattro 265cv",
+            "50 e-tron quattro 299cv",
+            "SQ4 Sportback e-tron quattro 340cv"
+          ]
+        },
+        {
+          "name": "Q5",
+          "submodels": [
+            "2.0 TDI 143cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI quattro 177cv",
+            "2.0 TDI quattro 190cv",
+            "2.0 TFSI quattro 211cv",
+            "2.0 TFSI quattro 220cv",
+            "3.0 TDI quattro 240cv",
+            "3.0 TDI quattro 258cv",
+            "3.0 TFSI quattro 272cv",
+            "SQ5 3.0 TFSI quattro 313cv",
+            "SQ5 3.0 TDI quattro 340cv",
+            "35 TDI 163cv",
+            "40 TDI 190cv",
+            "40 TDI quattro 204cv",
+            "45 TFSI 245cv",
+            "45 TFSI quattro 245cv",
+            "50 TFSI e quattro 299cv",
+            "55 TFSI e quattro 367cv",
+            "2.0 TDI quattro 190cv",
+            "SQ5 3.0 TFSI quattro 354cv",
+            "SQ5 3.0 TDI quattro 347cv",
+            "RSQ5 4.0 TFSI quattro 600cv"
+          ]
+        },
+        {
+          "name": "Q5 Sportback",
+          "submodels": [
+            "35 TDI 163cv",
+            "40 TDI quattro 204cv",
+            "45 TFSI quattro 245cv",
+            "50 TFSI e quattro 299cv",
+            "55 TFSI e quattro 367cv",
+            "SQ5 3.0 TFSI quattro 354cv",
+            "SQ5 3.0 TDI quattro 347cv"
+          ]
+        },
+        {
+          "name": "Q7",
+          "submodels": [
+            "3.0 TDI 204cv",
+            "3.0 TDI quattro 233cv",
+            "3.0 TDI quattro 245cv",
+            "3.0 TDI quattro 272cv",
+            "3.6 FSI quattro 280cv",
+            "4.2 FSI quattro 350cv",
+            "4.2 TDI quattro 340cv",
+            "SQ7 4.0 TDI quattro 435cv",
+            "3.0 TDI quattro 218cv",
+            "3.0 TFSI quattro 333cv",
+            "35 TDI 163cv",
+            "45 TDI quattro 231cv",
+            "50 TDI quattro 286cv",
+            "55 TFSI e quattro 374cv",
+            "60 TFSI e quattro 456cv",
+            "SQ7 4.0 TFSI quattro 507cv",
+            "SQ7 TDI 435cv"
+          ]
+        },
+        {
+          "name": "Q8",
+          "submodels": [
+            "50 TDI quattro 286cv",
+            "55 TFSI quattro 340cv",
+            "60 TFSI e quattro 462cv",
+            "SQ8 4.0 TFSI quattro 507cv",
+            "SQ8 TDI quattro 435cv",
+            "RSQ8 4.0 TFSI quattro 600cv",
+            "RSQ8 performance 640cv"
+          ]
+        },
+        {
+          "name": "Q8 e-tron",
+          "submodels": [
+            "50 e-tron quattro 340cv",
+            "55 e-tron quattro 408cv",
+            "SQ8 e-tron quattro 503cv"
+          ]
+        },
+        {
+          "name": "Q8 Sportback e-tron",
+          "submodels": [
+            "50 e-tron quattro 340cv",
+            "55 e-tron quattro 408cv",
+            "SQ8 Sportback e-tron quattro 503cv"
+          ]
+        },
+        {
+          "name": "R8",
+          "submodels": [
+            "4.2 FSI quattro 420cv",
+            "4.2 FSI quattro 430cv",
+            "5.2 FSI V10 525cv",
+            "5.2 FSI V10 560cv",
+            "R8 V10 5.2 FSI quattro 570cv",
+            "R8 V10 5.2 FSI quattro 620cv",
+            "R8 V10 plus 5.2 FSI quattro 610cv",
+            "R8 V10 plus 5.2 FSI quattro 640cv",
+            "R8 V10 performance 5.2 FSI quattro 620cv",
+            "R8 V10 performance 5.2 FSI quattro 570cv",
+            "R8 GT 5.2 FSI quattro 620cv"
+          ]
+        },
+        {
+          "name": "R8 Spyder",
+          "submodels": [
+            "4.2 FSI quattro 430cv",
+            "5.2 FSI V10 525cv",
+            "5.2 FSI V10 560cv",
+            "R8 V10 Spyder 5.2 FSI quattro 570cv",
+            "R8 V10 Spyder 5.2 FSI quattro 620cv",
+            "R8 V10 plus Spyder 5.2 FSI quattro 610cv",
+            "R8 V10 performance Spyder 5.2 FSI quattro 620cv"
+          ]
+        },
+        {
+          "name": "RS3",
+          "submodels": [
+            "RS3 2.5 TFSI quattro 340cv",
+            "RS3 2.5 TFSI quattro 367cv",
+            "RS3 2.5 TFSI quattro 400cv",
+            "RS3 2.5 TFSI quattro 421cv",
+            "RS3 performance 407cv"
+          ]
+        },
+        {
+          "name": "RS3 Sportback",
+          "submodels": [
+            "RS3 Sportback 2.5 TFSI quattro 340cv",
+            "RS3 Sportback 2.5 TFSI quattro 367cv",
+            "RS3 Sportback 2.5 TFSI quattro 400cv",
+            "RS3 Sportback 2.5 TFSI quattro 421cv",
+            "RS3 Sportback performance 407cv"
+          ]
+        },
+        {
+          "name": "RS4",
+          "submodels": [
+            "RS4 4.2 V8 quattro 420cv",
+            "RS4 4.2 FSI quattro 450cv",
+            "RS4 2.9 TFSI quattro 450cv",
+            "RS4 Competition 530cv"
+          ]
+        },
+        {
+          "name": "RS4 Avant",
+          "submodels": [
+            "RS4 Avant 4.2 V8 quattro 420cv",
+            "RS4 Avant 4.2 FSI quattro 450cv",
+            "RS4 Avant 2.9 TFSI quattro 450cv",
+            "RS4 Avant Competition 530cv"
+          ]
+        },
+        {
+          "name": "RS5",
+          "submodels": [
+            "RS5 4.2 FSI quattro 450cv",
+            "RS5 2.9 TFSI quattro 450cv",
+            "RS5 Competition 530cv"
+          ]
+        },
+        {
+          "name": "RS5 Sportback",
+          "submodels": [
+            "RS5 Sportback 2.9 TFSI quattro 450cv",
+            "RS5 Sportback Competition 530cv"
+          ]
+        },
+        {
+          "name": "RS6",
+          "submodels": [
+            "RS6 4.2 V8 quattro 450cv",
+            "RS6 plus 4.2 V8 quattro 480cv",
+            "RS6 5.0 TFSI quattro 580cv",
+            "RS6 5.0 TFSI plus quattro 700cv",
+            "RS6 4.0 TFSI quattro 560cv"
+          ]
+        },
+        {
+          "name": "RS6 Avant",
+          "submodels": [
+            "RS6 Avant 4.2 V8 quattro 450cv",
+            "RS6 Avant plus 4.2 V8 quattro 480cv",
+            "RS6 Avant 5.0 TFSI quattro 580cv",
+            "RS6 Avant 5.0 TFSI plus quattro 700cv",
+            "RS6 Avant 4.0 TFSI quattro 560cv",
+            "RS6 Avant performance 630cv",
+            "RS6 Avant GT 630cv"
+          ]
+        },
+        {
+          "name": "RS7",
+          "submodels": [
+            "RS7 4.0 TFSI quattro 560cv",
+            "RS7 performance 4.0 TFSI quattro 605cv",
+            "RS7 4.0 TFSI quattro 600cv",
+            "RS7 performance 630cv"
+          ]
+        },
+        {
+          "name": "S3",
+          "submodels": [
+            "S3 2.0 TFSI 265cv",
+            "S3 2.0 TFSI quattro 300cv",
+            "S3 2.0 TFSI 333cv"
+          ]
+        },
+        {
+          "name": "S3 Sportback",
+          "submodels": [
+            "S3 Sportback 2.0 TFSI 265cv",
+            "S3 Sportback 2.0 TFSI quattro 300cv",
+            "S3 Sportback 2.0 TFSI 333cv"
+          ]
+        },
+        {
+          "name": "S4",
+          "submodels": [
+            "S4 2.7 biturbo quattro 265cv",
+            "S4 4.2 V8 quattro 344cv",
+            "S4 3.0 TFSI quattro 333cv",
+            "S4 3.0 TDI quattro 347cv",
+            "S4 3.0 TFSI quattro 354cv"
+          ]
+        },
+        {
+          "name": "S4 Avant",
+          "submodels": [
+            "S4 Avant 2.7 biturbo quattro 265cv",
+            "S4 Avant 4.2 V8 quattro 344cv",
+            "S4 Avant 3.0 TFSI quattro 333cv",
+            "S4 Avant 3.0 TDI quattro 347cv",
+            "S4 Avant 3.0 TFSI quattro 354cv"
+          ]
+        },
+        {
+          "name": "S5",
+          "submodels": [
+            "S5 4.2 V8 quattro 354cv",
+            "S5 3.0 TFSI quattro 333cv",
+            "S5 3.0 TDI quattro 347cv",
+            "S5 3.0 TFSI quattro 354cv"
+          ]
+        },
+        {
+          "name": "S5 Cabriolet",
+          "submodels": [
+            "S5 Cabriolet 3.0 TFSI quattro 333cv",
+            "S5 Cabriolet 3.0 TFSI quattro 354cv"
+          ]
+        },
+        {
+          "name": "S5 Coupé",
+          "submodels": [
+            "S5 Coupé 4.2 V8 quattro 354cv",
+            "S5 Coupé 3.0 TFSI quattro 333cv",
+            "S5 Coupé 3.0 TDI quattro 347cv",
+            "S5 Coupé 3.0 TFSI quattro 354cv"
+          ]
+        },
+        {
+          "name": "S5 Sportback",
+          "submodels": [
+            "S5 Sportback 3.0 TFSI quattro 333cv",
+            "S5 Sportback 3.0 TDI quattro 347cv",
+            "S5 Sportback 3.0 TFSI quattro 354cv"
+          ]
+        },
+        {
+          "name": "S6",
+          "submodels": [
+            "S6 4.2 V8 quattro 344cv",
+            "S6 5.2 V10 quattro 435cv",
+            "S6 4.0 TFSI quattro 420cv",
+            "S6 3.0 TDI quattro 344cv"
+          ]
+        },
+        {
+          "name": "S6 Avant",
+          "submodels": [
+            "S6 Avant 4.2 V8 quattro 344cv",
+            "S6 Avant 5.2 V10 quattro 435cv",
+            "S6 Avant 4.0 TFSI quattro 420cv",
+            "S6 Avant 3.0 TDI quattro 344cv"
+          ]
+        },
+        {
+          "name": "S7",
+          "submodels": [
+            "S7 4.0 TFSI quattro 420cv",
+            "S7 3.0 TDI quattro 344cv"
+          ]
+        },
+        {
+          "name": "S7 Sportback",
+          "submodels": [
+            "S7 Sportback 4.0 TFSI quattro 420cv",
+            "S7 Sportback 3.0 TDI quattro 344cv"
+          ]
+        },
+        {
+          "name": "S8",
+          "submodels": [
+            "S8 4.2 V8 quattro 360cv",
+            "S8 5.2 V10 quattro 450cv",
+            "S8 4.0 TFSI quattro 520cv",
+            "S8 plus 4.0 TFSI quattro 605cv",
+            "S8 4.0 TFSI quattro 571cv"
+          ]
+        },
+        {
+          "name": "TT",
+          "submodels": [
+            "1.8 T 180cv",
+            "1.8 T quattro 225cv",
+            "3.2 V6 quattro 250cv",
+            "2.0 TFSI 200cv",
+            "2.0 TDI quattro 170cv",
+            "2.0 TFSI quattro 211cv",
+            "2.0 TFSI quattro 230cv",
+            "TTS 2.0 TFSI quattro 272cv",
+            "TTRS 2.5 TFSI quattro 340cv",
+            "TTRS 2.5 TFSI quattro 400cv",
+            "40 TFSI 197cv",
+            "45 TFSI quattro 245cv"
+          ]
+        },
+        {
+          "name": "TT Roadster",
+          "submodels": [
+            "1.8 T 180cv",
+            "1.8 T quattro 225cv",
+            "3.2 V6 quattro 250cv",
+            "2.0 TFSI 200cv",
+            "2.0 TDI quattro 170cv",
+            "2.0 TFSI quattro 211cv",
+            "TTS Roadster 2.0 TFSI quattro 272cv",
+            "TTRS Roadster 2.5 TFSI quattro 340cv",
+            "TTRS Roadster 2.5 TFSI quattro 400cv",
+            "40 TFSI 197cv",
+            "45 TFSI quattro 245cv"
+          ]
+        },
+        {
+          "name": "TT RS",
+          "submodels": [
+            "TT RS 2.5 TFSI quattro 340cv",
+            "TT RS 2.5 TFSI quattro 400cv",
+            "TT RS plus 2.5 TFSI quattro 360cv"
+          ]
+        },
+        {
+          "name": "TT RS Roadster",
+          "submodels": [
+            "TT RS Roadster 2.5 TFSI quattro 340cv",
+            "TT RS Roadster 2.5 TFSI quattro 400cv",
+            "TT RS Roadster plus 2.5 TFSI quattro 360cv"
+          ]
+        },
+        {
+          "name": "TTS",
+          "submodels": [
+            "TTS 2.0 TFSI quattro 265cv",
+            "TTS 2.0 TFSI quattro 272cv"
+          ]
+        },
+        {
+          "name": "TTS Roadster",
+          "submodels": [
+            "TTS Roadster 2.0 TFSI quattro 265cv",
+            "TTS Roadster 2.0 TFSI quattro 272cv"
+          ]
+        },
+        {
+          "name": "e-tron GT",
+          "submodels": [
+            "e-tron GT quattro 476cv",
+            "RS e-tron GT 598cv",
+            "e-tron GT quattro 530cv",
+            "RS e-tron GT 646cv",
+            "RS e-tron GT performance 680cv"
+          ]
+        },
+        {
+          "name": "RS e-tron GT",
+          "submodels": [
+            "RS e-tron GT 598cv",
+            "RS e-tron GT 646cv",
+            "RS e-tron GT performance 680cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Porsche",
+      "models": [
+        {
+          "name": "718 Boxster",
+          "submodels": [
+            "718 Boxster 2.0 300cv",
+            "718 Boxster 2.0 PDK 300cv",
+            "718 Boxster S 2.5 350cv",
+            "718 Boxster S PDK 2.5 350cv",
+            "718 Boxster T 2.0 300cv",
+            "718 Boxster 2.0 300cv Style Edition",
+            "718 Boxster 4.0 PDK 300cv"
+          ]
+        },
+        {
+          "name": "718 Boxster GTS",
+          "submodels": [
+            "718 Boxster GTS 2.5 365cv",
+            "718 Boxster GTS 2.5 PDK 365cv"
+          ]
+        },
+        {
+          "name": "718 Boxster GTS 4.0",
+          "submodels": [
+            "718 Boxster GTS 4.0 400cv",
+            "718 Boxster GTS 4.0 PDK 400cv"
+          ]
+        },
+        {
+          "name": "718 Boxster Spyder",
+          "submodels": [
+            "718 Boxster Spyder 4.0 420cv",
+            "718 Boxster Spyder RS 500cv"
+          ]
+        },
+        {
+          "name": "718 Cayman",
+          "submodels": [
+            "718 Cayman 2.0 300cv",
+            "718 Cayman 2.0 PDK 300cv",
+            "718 Cayman S 2.5 350cv",
+            "718 Cayman S PDK 2.5 350cv",
+            "718 Cayman T 2.0 300cv",
+            "718 Cayman Style Edition 2.0 300cv",
+            "718 Cayman 4.0 PDK 300cv"
+          ]
+        },
+        {
+          "name": "718 Cayman GT4",
+          "submodels": [
+            "718 Cayman GT4 3.8 385cv",
+            "718 Cayman GT4 4.0 420cv",
+            "718 Cayman GT4 4.0 PDK 420cv"
+          ]
+        },
+        {
+          "name": "718 Cayman GT4 RS",
+          "submodels": [
+            "718 Cayman GT4 RS 4.0 500cv",
+            "718 Cayman GT4 RS PDK 4.0 500cv"
+          ]
+        },
+        {
+          "name": "718 Cayman GTS",
+          "submodels": [
+            "718 Cayman GTS 2.5 365cv",
+            "718 Cayman GTS 2.5 PDK 365cv"
+          ]
+        },
+        {
+          "name": "718 Cayman GTS 4.0",
+          "submodels": [
+            "718 Cayman GTS 4.0 400cv",
+            "718 Cayman GTS 4.0 PDK 400cv"
+          ]
+        },
+        {
+          "name": "718 Spyder",
+          "submodels": [
+            "718 Spyder 4.0 420cv",
+            "718 Spyder RS 500cv"
+          ]
+        },
+        {
+          "name": "911",
+          "submodels": [
+            "Carrera 3.4 345cv",
+            "Carrera 3.6 325cv",
+            "Carrera 3.8 355cv",
+            "Carrera 3.0 385cv",
+            "Carrera PDK 3.0 385cv",
+            "Carrera T 3.0 385cv",
+            "Carrera S 3.8 400cv",
+            "Carrera S 3.8 430cv",
+            "Carrera S 3.0 450cv",
+            "Carrera S PDK 3.0 450cv",
+            "Carrera 4 3.0 385cv",
+            "Carrera 4 PDK 3.0 385cv",
+            "Carrera 4S 3.0 450cv",
+            "Carrera 4S PDK 3.0 450cv",
+            "Carrera GTS 3.0 480cv",
+            "Carrera GTS PDK 3.0 480cv",
+            "Carrera 4 GTS 3.0 480cv",
+            "Turbo 3.8 540cv",
+            "Turbo S 3.8 580cv",
+            "Turbo 3.8 580cv",
+            "Turbo S 3.8 650cv",
+            "GT3 3.8 440cv",
+            "GT3 3.8 475cv",
+            "GT3 4.0 500cv",
+            "GT3 RS 4.0 500cv",
+            "GT3 RS 4.0 520cv",
+            "GT2 RS 3.8 700cv",
+            "R 4.0 500cv",
+            "Speedster 4.0 500cv",
+            "Targa 4 3.0 385cv",
+            "Targa 4S 3.0 450cv",
+            "Targa 4 GTS 3.0 480cv"
+          ]
+        },
+        {
+          "name": "911 Carrera",
+          "submodels": [
+            "Carrera 3.4 345cv",
+            "Carrera 3.6 325cv",
+            "Carrera 3.8 355cv",
+            "Carrera 3.0 385cv",
+            "Carrera PDK 3.0 385cv",
+            "Carrera T 3.0 385cv",
+            "Carrera T PDK 3.0 385cv",
+            "Carrera GTS 3.0 480cv",
+            "Carrera GTS PDK 3.0 480cv"
+          ]
+        },
+        {
+          "name": "911 Carrera 4",
+          "submodels": [
+            "Carrera 4 3.4 345cv",
+            "Carrera 4 3.6 325cv",
+            "Carrera 4 3.0 385cv",
+            "Carrera 4 PDK 3.0 385cv",
+            "Carrera 4 GTS 3.0 480cv"
+          ]
+        },
+        {
+          "name": "911 Carrera 4 Cabriolet",
+          "submodels": [
+            "Carrera 4 Cabriolet 3.4 345cv",
+            "Carrera 4 Cabriolet 3.0 385cv",
+            "Carrera 4 Cabriolet PDK 3.0 385cv",
+            "Carrera 4 GTS Cabriolet 3.0 480cv"
+          ]
+        },
+        {
+          "name": "911 Carrera 4S",
+          "submodels": [
+            "Carrera 4S 3.8 400cv",
+            "Carrera 4S 3.8 430cv",
+            "Carrera 4S 3.0 450cv",
+            "Carrera 4S PDK 3.0 450cv"
+          ]
+        },
+        {
+          "name": "911 Carrera 4S Cabriolet",
+          "submodels": [
+            "Carrera 4S Cabriolet 3.8 400cv",
+            "Carrera 4S Cabriolet 3.8 430cv",
+            "Carrera 4S Cabriolet 3.0 450cv",
+            "Carrera 4S Cabriolet PDK 3.0 450cv"
+          ]
+        },
+        {
+          "name": "911 Carrera S",
+          "submodels": [
+            "Carrera S 3.8 355cv",
+            "Carrera S 3.8 400cv",
+            "Carrera S 3.8 430cv",
+            "Carrera S 3.0 450cv",
+            "Carrera S PDK 3.0 450cv"
+          ]
+        },
+        {
+          "name": "911 Carrera S Cabriolet",
+          "submodels": [
+            "Carrera S Cabriolet 3.8 355cv",
+            "Carrera S Cabriolet 3.8 400cv",
+            "Carrera S Cabriolet 3.8 430cv",
+            "Carrera S Cabriolet 3.0 450cv",
+            "Carrera S Cabriolet PDK 3.0 450cv"
+          ]
+        },
+        {
+          "name": "911 Carrera T",
+          "submodels": [
+            "Carrera T 3.0 385cv",
+            "Carrera T PDK 3.0 385cv"
+          ]
+        },
+        {
+          "name": "911 GT2 RS",
+          "submodels": [
+            "GT2 RS 3.6 462cv",
+            "GT2 RS 3.6 530cv",
+            "GT2 RS 3.8 620cv",
+            "GT2 RS 3.8 700cv",
+            "GT2 RS Weissach 700cv"
+          ]
+        },
+        {
+          "name": "911 GT3",
+          "submodels": [
+            "GT3 3.6 381cv",
+            "GT3 3.8 415cv",
+            "GT3 3.8 440cv",
+            "GT3 3.8 475cv",
+            "GT3 4.0 500cv",
+            "GT3 PDK 4.0 500cv",
+            "GT3 Touring 4.0 500cv",
+            "GT3 Touring PDK 4.0 500cv"
+          ]
+        },
+        {
+          "name": "911 GT3 RS",
+          "submodels": [
+            "GT3 RS 3.8 450cv",
+            "GT3 RS 4.0 500cv",
+            "GT3 RS 4.0 520cv",
+            "GT3 RS PDK 4.0 520cv",
+            "GT3 RS Weissach 4.0 520cv"
+          ]
+        },
+        {
+          "name": "911 GT3 Touring",
+          "submodels": [
+            "GT3 Touring 4.0 500cv",
+            "GT3 Touring PDK 4.0 500cv"
+          ]
+        },
+        {
+          "name": "911 R",
+          "submodels": [
+            "911 R 4.0 500cv"
+          ]
+        },
+        {
+          "name": "911 Speedster",
+          "submodels": [
+            "Speedster 3.8 408cv",
+            "Speedster 4.0 500cv"
+          ]
+        },
+        {
+          "name": "911 Targa 4",
+          "submodels": [
+            "Targa 4 3.4 345cv",
+            "Targa 4 3.0 385cv",
+            "Targa 4 PDK 3.0 385cv"
+          ]
+        },
+        {
+          "name": "911 Targa 4S",
+          "submodels": [
+            "Targa 4S 3.8 400cv",
+            "Targa 4S 3.8 430cv",
+            "Targa 4S 3.0 450cv",
+            "Targa 4S PDK 3.0 450cv"
+          ]
+        },
+        {
+          "name": "911 Targa 4 GTS",
+          "submodels": [
+            "Targa 4 GTS 3.0 480cv",
+            "Targa 4 GTS PDK 3.0 480cv"
+          ]
+        },
+        {
+          "name": "911 Turbo",
+          "submodels": [
+            "Turbo 3.6 420cv",
+            "Turbo 3.8 480cv",
+            "Turbo 3.8 500cv",
+            "Turbo 3.8 520cv",
+            "Turbo 3.8 540cv",
+            "Turbo 3.8 580cv",
+            "Turbo S 3.8 530cv",
+            "Turbo S 3.8 560cv",
+            "Turbo S 3.8 580cv",
+            "Turbo S 3.8 650cv",
+            "Turbo S E-Hybrid"
+          ]
+        },
+        {
+          "name": "911 Turbo Cabriolet",
+          "submodels": [
+            "Turbo Cabriolet 3.8 480cv",
+            "Turbo Cabriolet 3.8 520cv",
+            "Turbo Cabriolet 3.8 540cv",
+            "Turbo Cabriolet 3.8 580cv",
+            "Turbo S Cabriolet 3.8 530cv",
+            "Turbo S Cabriolet 3.8 560cv",
+            "Turbo S Cabriolet 3.8 650cv"
+          ]
+        },
+        {
+          "name": "911 Turbo S",
+          "submodels": [
+            "Turbo S 3.8 530cv",
+            "Turbo S 3.8 560cv",
+            "Turbo S 3.8 580cv",
+            "Turbo S 3.8 650cv",
+            "Turbo S E-Hybrid",
+            "Turbo S Sport Classic"
+          ]
+        },
+        {
+          "name": "911 Turbo S Cabriolet",
+          "submodels": [
+            "Turbo S Cabriolet 3.8 530cv",
+            "Turbo S Cabriolet 3.8 560cv",
+            "Turbo S Cabriolet 3.8 650cv",
+            "Turbo S E-Hybrid Cabriolet"
+          ]
+        },
+        {
+          "name": "Cayenne",
+          "submodels": [
+            "3.2 V6 250cv",
+            "3.2 V6 276cv",
+            "3.6 V6 290cv",
+            "3.6 V6 300cv",
+            "4.5 V8 340cv",
+            "4.5 V8 S 385cv",
+            "4.5 Turbo V8 450cv",
+            "4.8 S V8 385cv",
+            "4.8 GTS V8 405cv",
+            "4.8 GTS V8 420cv",
+            "4.8 Turbo V8 500cv",
+            "4.8 Turbo S V8 570cv",
+            "3.0 Diesel 240cv",
+            "3.0 Diesel V6 245cv",
+            "3.0 Diesel S V8 382cv",
+            "2.0 Turbo 252cv",
+            "3.0 V6 340cv",
+            "3.0 E-Hybrid 340cv",
+            "3.6 V6 440cv",
+            "4.0 V8 S 440cv",
+            "4.8 GTS 400cv",
+            "Turbo 4.0 V8 550cv",
+            "Turbo GT 640cv",
+            "Turbo S 4.0 V8 680cv",
+            "Turbo S E-Hybrid 680cv",
+            "GTS 4.0 V8 460cv"
+          ]
+        },
+        {
+          "name": "Cayenne Coupé",
+          "submodels": [
+            "Cayenne Coupé 3.0 340cv",
+            "Cayenne Coupé 2.0 Turbo 252cv",
+            "Cayenne Coupé S 2.9 440cv",
+            "Cayenne Coupé E-Hybrid 3.0 340cv",
+            "Cayenne Coupé GTS 4.0 460cv",
+            "Cayenne Coupé Turbo 4.0 550cv",
+            "Cayenne Coupé Turbo S E-Hybrid 680cv",
+            "Cayenne Coupé Turbo GT 640cv"
+          ]
+        },
+        {
+          "name": "Cayenne E-Hybrid",
+          "submodels": [
+            "Cayenne E-Hybrid 3.0 340cv",
+            "Cayenne E-Hybrid 3.0 462cv",
+            "Cayenne S E-Hybrid 3.0 416cv",
+            "Cayenne Turbo S E-Hybrid 4.0 680cv",
+            "Cayenne E-Hybrid Turbo 470cv"
+          ]
+        },
+        {
+          "name": "Cayenne E-Hybrid Coupé",
+          "submodels": [
+            "Cayenne E-Hybrid Coupé 3.0 340cv",
+            "Cayenne E-Hybrid Coupé 3.0 462cv",
+            "Cayenne Turbo S E-Hybrid Coupé 4.0 680cv"
+          ]
+        },
+        {
+          "name": "Cayenne GTS",
+          "submodels": [
+            "Cayenne GTS 4.8 V8 405cv",
+            "Cayenne GTS 4.8 V8 420cv",
+            "Cayenne GTS 4.0 V8 460cv"
+          ]
+        },
+        {
+          "name": "Cayenne GTS Coupé",
+          "submodels": [
+            "Cayenne GTS Coupé 4.0 V8 460cv"
+          ]
+        },
+        {
+          "name": "Cayenne S",
+          "submodels": [
+            "Cayenne S 4.5 V8 385cv",
+            "Cayenne S 4.8 V8 385cv",
+            "Cayenne S Diesel 4.2 V8 382cv",
+            "Cayenne S 3.0 TFSI 340cv",
+            "Cayenne S 2.9 Biturbo 440cv"
+          ]
+        },
+        {
+          "name": "Cayenne Turbo",
+          "submodels": [
+            "Cayenne Turbo 4.5 V8 450cv",
+            "Cayenne Turbo 4.8 V8 500cv",
+            "Cayenne Turbo S 4.8 V8 570cv",
+            "Cayenne Turbo 4.0 V8 550cv",
+            "Cayenne Turbo S E-Hybrid 4.0 V8 680cv"
+          ]
+        },
+        {
+          "name": "Cayenne Turbo GT",
+          "submodels": [
+            "Cayenne Turbo GT 4.0 V8 640cv"
+          ]
+        },
+        {
+          "name": "Macan",
+          "submodels": [
+            "Macan 2.0 252cv",
+            "Macan 2.0 245cv",
+            "Macan S 3.0 354cv",
+            "Macan S 3.0 340cv",
+            "Macan S Diesel 3.0 258cv",
+            "Macan GTS 2.9 380cv",
+            "Macan Turbo 3.6 400cv",
+            "Macan Turbo 2.9 440cv",
+            "Macan 2.0 265cv",
+            "Macan S 2.9 380cv",
+            "Macan Electric Standard Range 224cv",
+            "Macan Electric Long Range 408cv",
+            "Macan Electric Turbo 639cv"
+          ]
+        },
+        {
+          "name": "Macan GTS",
+          "submodels": [
+            "Macan GTS 2.5 360cv",
+            "Macan GTS 2.9 380cv",
+            "Macan Electric GTS 639cv"
+          ]
+        },
+        {
+          "name": "Macan S",
+          "submodels": [
+            "Macan S 3.0 340cv",
+            "Macan S 3.0 354cv",
+            "Macan S Diesel 3.0 258cv",
+            "Macan S 2.9 380cv",
+            "Macan Electric S 408cv"
+          ]
+        },
+        {
+          "name": "Macan Turbo",
+          "submodels": [
+            "Macan Turbo 3.6 400cv",
+            "Macan Turbo 2.9 440cv",
+            "Macan Electric Turbo 639cv"
+          ]
+        },
+        {
+          "name": "Panamera",
+          "submodels": [
+            "Panamera 3.6 300cv",
+            "Panamera 3.0 Diesel 250cv",
+            "Panamera 2.9 330cv",
+            "Panamera 4 3.0 330cv",
+            "Panamera 4 2.9 330cv",
+            "Panamera 4S 4.8 400cv",
+            "Panamera 4S 2.9 440cv",
+            "Panamera 4S Diesel 4.0 422cv",
+            "Panamera GTS 4.8 430cv",
+            "Panamera GTS 4.0 460cv",
+            "Panamera 4 E-Hybrid 2.9 462cv",
+            "Panamera 4 E-Hybrid 3.0 330cv",
+            "Panamera Turbo 4.8 500cv",
+            "Panamera Turbo 4.0 550cv",
+            "Panamera Turbo S 4.8 550cv",
+            "Panamera Turbo S 4.0 630cv",
+            "Panamera Turbo S E-Hybrid 4.0 700cv",
+            "Panamera Turbo S E-Hybrid 4.0 820cv"
+          ]
+        },
+        {
+          "name": "Panamera 4",
+          "submodels": [
+            "Panamera 4 3.6 310cv",
+            "Panamera 4 3.0 330cv",
+            "Panamera 4 2.9 330cv",
+            "Panamera 4 E-Hybrid 3.0 330cv",
+            "Panamera 4 E-Hybrid 2.9 462cv"
+          ]
+        },
+        {
+          "name": "Panamera 4 E-Hybrid",
+          "submodels": [
+            "Panamera 4 E-Hybrid 3.0 330cv",
+            "Panamera 4 E-Hybrid 2.9 462cv",
+            "Panamera 4 E-Hybrid Sport Turismo 462cv",
+            "Panamera Turbo S E-Hybrid 4.0 700cv",
+            "Panamera Turbo S E-Hybrid 4.0 820cv"
+          ]
+        },
+        {
+          "name": "Panamera 4S",
+          "submodels": [
+            "Panamera 4S 4.8 400cv",
+            "Panamera 4S 2.9 440cv",
+            "Panamera 4S Diesel 4.0 422cv",
+            "Panamera 4S E-Hybrid 2.9 571cv"
+          ]
+        },
+        {
+          "name": "Panamera GTS",
+          "submodels": [
+            "Panamera GTS 4.8 430cv",
+            "Panamera GTS 4.0 460cv",
+            "Panamera GTS Sport Turismo 4.0 460cv"
+          ]
+        },
+        {
+          "name": "Panamera Sport Turismo",
+          "submodels": [
+            "Panamera Sport Turismo 2.9 330cv",
+            "Panamera 4 Sport Turismo 2.9 330cv",
+            "Panamera 4S Sport Turismo 2.9 440cv",
+            "Panamera 4S E-Hybrid Sport Turismo 2.9 571cv",
+            "Panamera GTS Sport Turismo 4.0 460cv",
+            "Panamera Turbo Sport Turismo 4.0 550cv",
+            "Panamera Turbo S E-Hybrid Sport Turismo 4.0 700cv",
+            "Panamera Turbo S E-Hybrid Sport Turismo 4.0 820cv"
+          ]
+        },
+        {
+          "name": "Panamera Turbo",
+          "submodels": [
+            "Panamera Turbo 4.8 500cv",
+            "Panamera Turbo 4.0 550cv",
+            "Panamera Turbo S 4.8 550cv",
+            "Panamera Turbo S 4.0 630cv",
+            "Panamera Turbo Sport Turismo 4.0 550cv"
+          ]
+        },
+        {
+          "name": "Panamera Turbo S",
+          "submodels": [
+            "Panamera Turbo S 4.8 550cv",
+            "Panamera Turbo S 4.0 630cv",
+            "Panamera Turbo S E-Hybrid 4.0 700cv",
+            "Panamera Turbo S E-Hybrid 4.0 820cv"
+          ]
+        },
+        {
+          "name": "Taycan",
+          "submodels": [
+            "Taycan 300cv",
+            "Taycan 408cv",
+            "Taycan 4S 490cv",
+            "Taycan 4S performance battery 571cv",
+            "Taycan GTS 598cv",
+            "Taycan Turbo 680cv",
+            "Taycan Turbo S 761cv",
+            "Taycan Cross Turismo 408cv",
+            "Taycan Cross Turismo 4S 490cv",
+            "Taycan Cross Turismo GTS 598cv",
+            "Taycan Cross Turismo Turbo 680cv",
+            "Taycan Cross Turismo Turbo S 761cv",
+            "Taycan Sport Turismo 408cv",
+            "Taycan Sport Turismo 4S 490cv",
+            "Taycan Sport Turismo GTS 598cv",
+            "Taycan Sport Turismo Turbo 680cv",
+            "Taycan Turbo GT 1108cv"
+          ]
+        },
+        {
+          "name": "Taycan 4S",
+          "submodels": [
+            "Taycan 4S 490cv",
+            "Taycan 4S performance battery 571cv",
+            "Taycan 4S Cross Turismo 490cv",
+            "Taycan 4S Sport Turismo 490cv"
+          ]
+        },
+        {
+          "name": "Taycan Cross Turismo",
+          "submodels": [
+            "Taycan Cross Turismo 408cv",
+            "Taycan 4 Cross Turismo 490cv",
+            "Taycan 4S Cross Turismo 490cv",
+            "Taycan GTS Cross Turismo 598cv",
+            "Taycan Turbo Cross Turismo 680cv",
+            "Taycan Turbo S Cross Turismo 761cv"
+          ]
+        },
+        {
+          "name": "Taycan GTS",
+          "submodels": [
+            "Taycan GTS 598cv",
+            "Taycan GTS Sport Turismo 598cv",
+            "Taycan GTS Cross Turismo 598cv"
+          ]
+        },
+        {
+          "name": "Taycan Sport Turismo",
+          "submodels": [
+            "Taycan Sport Turismo 408cv",
+            "Taycan 4S Sport Turismo 490cv",
+            "Taycan GTS Sport Turismo 598cv",
+            "Taycan Turbo Sport Turismo 680cv",
+            "Taycan Turbo S Sport Turismo 761cv"
+          ]
+        },
+        {
+          "name": "Taycan Turbo",
+          "submodels": [
+            "Taycan Turbo 680cv",
+            "Taycan Turbo Cross Turismo 680cv",
+            "Taycan Turbo Sport Turismo 680cv"
+          ]
+        },
+        {
+          "name": "Taycan Turbo Cross Turismo",
+          "submodels": [
+            "Taycan Turbo Cross Turismo 680cv",
+            "Taycan Turbo S Cross Turismo 761cv"
+          ]
+        },
+        {
+          "name": "Taycan Turbo S",
+          "submodels": [
+            "Taycan Turbo S 761cv",
+            "Taycan Turbo S Cross Turismo 761cv",
+            "Taycan Turbo S Sport Turismo 761cv",
+            "Taycan Turbo GT 1108cv"
+          ]
+        }
+      ]
+    }
+  ]
+}

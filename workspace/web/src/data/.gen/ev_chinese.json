@@ -1,0 +1,810 @@
+{
+  "brands": [
+    {
+      "name": "Tesla",
+      "models": [
+        {
+          "name": "Model 3",
+          "submodels": [
+            "Standard Range Plus 263cv",
+            "Long Range AWD 351cv",
+            "Long Range AWD Highland 358cv",
+            "Performance AWD 450cv",
+            "Performance Highland 460cv",
+            "RWD 283cv",
+            "Long Range RWD 358cv"
+          ]
+        },
+        {
+          "name": "Model 3 Highland",
+          "submodels": [
+            "RWD 283cv",
+            "Long Range AWD 358cv",
+            "Performance AWD 460cv"
+          ]
+        },
+        {
+          "name": "Model S",
+          "submodels": [
+            "Standard Range 306cv",
+            "Long Range AWD 580cv",
+            "Plaid AWD 1020cv",
+            "Plaid+ AWD 1100cv",
+            "Model S 100D 422cv",
+            "Model S P100D 680cv"
+          ]
+        },
+        {
+          "name": "Model S Plaid",
+          "submodels": [
+            "Plaid AWD 1020cv",
+            "Plaid+ AWD 1100cv"
+          ]
+        },
+        {
+          "name": "Model X",
+          "submodels": [
+            "75D AWD 333cv",
+            "100D AWD 422cv",
+            "P100D AWD 680cv",
+            "Long Range AWD 670cv",
+            "Plaid AWD 1020cv",
+            "Standard Range AWD 400cv"
+          ]
+        },
+        {
+          "name": "Model X Plaid",
+          "submodels": [
+            "Plaid AWD 1020cv"
+          ]
+        },
+        {
+          "name": "Model Y",
+          "submodels": [
+            "Standard Range 244cv",
+            "Long Range AWD 351cv",
+            "Performance AWD 456cv",
+            "Long Range RWD 295cv",
+            "Long Range AWD Juniper 393cv",
+            "Performance Juniper 544cv"
+          ]
+        },
+        {
+          "name": "Cybertruck",
+          "submodels": [
+            "RWD 315cv",
+            "AWD Dual Motor 600cv",
+            "Cyberbeast AWD Tri Motor 845cv"
+          ]
+        },
+        {
+          "name": "Roadster",
+          "submodels": [
+            "Base 2.5 271cv",
+            "Sport 2.5 288cv",
+            "2020 AWD 1000cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Polestar",
+      "models": [
+        {
+          "name": "1",
+          "submodels": [
+            "PHEV AWD 609cv",
+            "PHEV AWD Launch Edition 609cv"
+          ]
+        },
+        {
+          "name": "2",
+          "submodels": [
+            "Standard Range Motor Único 224cv",
+            "Long Range Motor Único 231cv",
+            "Long Range AWD 408cv",
+            "Long Range AWD Performance 476cv",
+            "BST Edition 270 476cv"
+          ]
+        },
+        {
+          "name": "2 Long Range",
+          "submodels": [
+            "Long Range Motor Único 231cv",
+            "Long Range AWD 408cv",
+            "Long Range AWD Performance 476cv"
+          ]
+        },
+        {
+          "name": "3",
+          "submodels": [
+            "Long Range AWD 360cv",
+            "Long Range AWD Plus 510cv"
+          ]
+        },
+        {
+          "name": "4",
+          "submodels": [
+            "Standard Range RWD 272cv",
+            "Long Range RWD 272cv",
+            "Long Range AWD 544cv",
+            "Long Range AWD Performance 544cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "BYD",
+      "models": [
+        {
+          "name": "Atto 3",
+          "submodels": [
+            "Standard Range 204cv",
+            "Long Range 204cv",
+            "Extended Range 204cv"
+          ]
+        },
+        {
+          "name": "Atto 2",
+          "submodels": [
+            "Standard Range 95kW 129cv",
+            "Long Range 150kW 204cv"
+          ]
+        },
+        {
+          "name": "Dolphin",
+          "submodels": [
+            "Standard Range 95kW 95cv",
+            "Long Range 150kW 204cv",
+            "Boost 150kW 204cv",
+            "Free 150kW 204cv"
+          ]
+        },
+        {
+          "name": "Han",
+          "submodels": [
+            "EV RWD 517cv",
+            "EV AWD 664cv",
+            "DM PHEV 326cv",
+            "DM PHEV AWD 464cv",
+            "EV Premium AWD 664cv"
+          ]
+        },
+        {
+          "name": "Seal",
+          "submodels": [
+            "RWD Standard Range 204cv",
+            "RWD Long Range 313cv",
+            "AWD Performance 530cv",
+            "Excellence AWD 530cv"
+          ]
+        },
+        {
+          "name": "Seal U",
+          "submodels": [
+            "Standard Range RWD 204cv",
+            "Long Range RWD 204cv",
+            "DM PHEV 1.5T 231cv",
+            "DM PHEV 1.5T AWD 309cv"
+          ]
+        },
+        {
+          "name": "Sea Lion 6",
+          "submodels": [
+            "PHEV 1.5T 191cv",
+            "PHEV 1.5T AWD 316cv",
+            "EV RWD 218cv",
+            "EV AWD 390cv"
+          ]
+        },
+        {
+          "name": "Song Plus",
+          "submodels": [
+            "EV AWD 204cv",
+            "DM-i PHEV 1.5T 143cv",
+            "DM-i PHEV 1.5T AWD 197cv",
+            "Champion Edition PHEV 1.5T 143cv"
+          ]
+        },
+        {
+          "name": "Tang",
+          "submodels": [
+            "EV AWD 476cv",
+            "DM PHEV AWD 464cv",
+            "EV 7-Seat AWD 476cv",
+            "DM PHEV 7-Seat AWD 464cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "NIO",
+      "models": [
+        {
+          "name": "EC6",
+          "submodels": [
+            "75kWh Standard Range AWD 483cv",
+            "100kWh Long Range AWD 483cv",
+            "150kWh Ultra Long Range AWD 483cv",
+            "Performance AWD 544cv"
+          ]
+        },
+        {
+          "name": "EL6",
+          "submodels": [
+            "75kWh Standard Range AWD 483cv",
+            "100kWh Long Range AWD 483cv",
+            "150kWh Ultra Long Range AWD 483cv"
+          ]
+        },
+        {
+          "name": "EL7",
+          "submodels": [
+            "75kWh Standard Range AWD 483cv",
+            "100kWh Long Range AWD 483cv",
+            "150kWh Ultra Long Range AWD 483cv"
+          ]
+        },
+        {
+          "name": "ES6",
+          "submodels": [
+            "75kWh Standard Range AWD 483cv",
+            "100kWh Long Range AWD 483cv",
+            "150kWh Ultra Long Range AWD 483cv",
+            "Performance AWD 544cv"
+          ]
+        },
+        {
+          "name": "ES7",
+          "submodels": [
+            "75kWh Standard Range AWD 483cv",
+            "100kWh Long Range AWD 483cv",
+            "150kWh Ultra Long Range AWD 483cv"
+          ]
+        },
+        {
+          "name": "ES8",
+          "submodels": [
+            "75kWh Standard Range AWD 544cv",
+            "100kWh Long Range AWD 544cv",
+            "150kWh Ultra Long Range AWD 544cv",
+            "6-Seat AWD 544cv",
+            "7-Seat AWD 544cv"
+          ]
+        },
+        {
+          "name": "ET5",
+          "submodels": [
+            "75kWh Standard Range 326cv",
+            "100kWh Long Range 326cv",
+            "150kWh Ultra Long Range 326cv"
+          ]
+        },
+        {
+          "name": "ET5 Touring",
+          "submodels": [
+            "75kWh Standard Range Touring 326cv",
+            "100kWh Long Range Touring 326cv",
+            "150kWh Ultra Long Range Touring 326cv"
+          ]
+        },
+        {
+          "name": "ET7",
+          "submodels": [
+            "75kWh Standard Range AWD 483cv",
+            "100kWh Long Range AWD 483cv",
+            "150kWh Ultra Long Range AWD 483cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MG",
+      "models": [
+        {
+          "name": "3",
+          "submodels": [
+            "1.5 VTi 106cv",
+            "1.5 VTi 90cv",
+            "1.5T 179cv",
+            "Hybrid+ 1.5T 194cv"
+          ]
+        },
+        {
+          "name": "4",
+          "submodels": [
+            "Standard Range 51kWh 170cv",
+            "Long Range 64kWh 204cv",
+            "64kWh Trophy 204cv",
+            "Trophy Long Range 64kWh 204cv"
+          ]
+        },
+        {
+          "name": "4 XPOWER",
+          "submodels": [
+            "XPOWER AWD 435cv"
+          ]
+        },
+        {
+          "name": "5",
+          "submodels": [
+            "1.5 VTi 106cv",
+            "1.5T CVT 163cv",
+            "EV Standard Range 115cv",
+            "EV Long Range 115cv"
+          ]
+        },
+        {
+          "name": "5 Long Range",
+          "submodels": [
+            "EV Long Range 115cv",
+            "EV Long Range Luxury 115cv"
+          ]
+        },
+        {
+          "name": "Cyberster",
+          "submodels": [
+            "RWD 340cv",
+            "AWD Dual Motor 544cv",
+            "GT AWD 544cv"
+          ]
+        },
+        {
+          "name": "EHS",
+          "submodels": [
+            "PHEV 1.5T 258cv",
+            "PHEV 1.5T Trophy 258cv",
+            "PHEV 1.5T Exclusive 258cv"
+          ]
+        },
+        {
+          "name": "HS",
+          "submodels": [
+            "1.5T 163cv",
+            "2.0T 224cv",
+            "1.5T Trophy 163cv",
+            "2.0T Trophy 224cv",
+            "1.5T Exclusive 163cv"
+          ]
+        },
+        {
+          "name": "HS PHEV",
+          "submodels": [
+            "PHEV 1.5T 258cv",
+            "PHEV 1.5T Trophy 258cv"
+          ]
+        },
+        {
+          "name": "Marvel R",
+          "submodels": [
+            "RWD 179cv",
+            "AWD Performance 288cv",
+            "AWD 288cv"
+          ]
+        },
+        {
+          "name": "ZS",
+          "submodels": [
+            "1.0T VTi 111cv",
+            "1.5 VTi 106cv",
+            "1.5T 163cv",
+            "1.0T Trophy 111cv"
+          ]
+        },
+        {
+          "name": "ZS EV",
+          "submodels": [
+            "Standard Range 44.5kWh 143cv",
+            "Long Range 72.6kWh 177cv",
+            "Trophy Long Range 177cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Xpeng",
+      "models": [
+        {
+          "name": "G3",
+          "submodels": [
+            "Standard Range 145cv",
+            "Long Range 145cv",
+            "G3i Standard Range 145cv",
+            "G3i Long Range 145cv"
+          ]
+        },
+        {
+          "name": "G6",
+          "submodels": [
+            "RWD Standard Range 218cv",
+            "RWD Long Range 218cv",
+            "AWD Performance 449cv",
+            "RWD Max 218cv",
+            "AWD Max 449cv"
+          ]
+        },
+        {
+          "name": "G9",
+          "submodels": [
+            "RWD Standard Range 330cv",
+            "AWD Long Range 551cv",
+            "AWD Performance 551cv",
+            "X 551cv"
+          ]
+        },
+        {
+          "name": "P5",
+          "submodels": [
+            "RWD Standard Range 156cv",
+            "RWD Long Range 156cv",
+            "AWD Long Range 312cv"
+          ]
+        },
+        {
+          "name": "P7",
+          "submodels": [
+            "RWD Standard Range 196cv",
+            "RWD Long Range 196cv",
+            "AWD Performance 480cv",
+            "Wing AWD 480cv"
+          ]
+        },
+        {
+          "name": "P7i",
+          "submodels": [
+            "RWD 272cv",
+            "AWD 490cv",
+            "AWD Max 490cv"
+          ]
+        },
+        {
+          "name": "X9",
+          "submodels": [
+            "AWD Long Range 551cv",
+            "AWD Performance 551cv",
+            "6-Seat AWD 551cv",
+            "7-Seat AWD 551cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Lynk & Co",
+      "models": [
+        {
+          "name": "01",
+          "submodels": [
+            "1.5 TGDI 180cv",
+            "2.0 TGDI 218cv",
+            "PHEV 1.5T 261cv"
+          ]
+        },
+        {
+          "name": "01 PHEV",
+          "submodels": [
+            "PHEV 1.5T 261cv",
+            "PHEV 1.5T AWD 261cv"
+          ]
+        },
+        {
+          "name": "02",
+          "submodels": [
+            "1.5 TGDI 180cv",
+            "2.0 TGDI 190cv",
+            "2.0 TGDI AWD 254cv"
+          ]
+        },
+        {
+          "name": "02 PHEV",
+          "submodels": [
+            "PHEV 1.5T 261cv"
+          ]
+        },
+        {
+          "name": "03",
+          "submodels": [
+            "1.5 TGDI 180cv",
+            "2.0 TGDI 190cv",
+            "2.0 TGDI AWD 254cv"
+          ]
+        },
+        {
+          "name": "03+",
+          "submodels": [
+            "2.0 TGDI 265cv",
+            "2.0 TGDI AWD 304cv"
+          ]
+        },
+        {
+          "name": "05",
+          "submodels": [
+            "2.0 TGDI 218cv",
+            "2.0 TGDI AWD 254cv"
+          ]
+        },
+        {
+          "name": "05 PHEV",
+          "submodels": [
+            "PHEV 1.5T 261cv",
+            "PHEV 1.5T AWD 261cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "GWM / Ora",
+      "models": [
+        {
+          "name": "Haval H6",
+          "submodels": [
+            "1.5T 169cv",
+            "2.0T 224cv",
+            "PHEV 1.5T 321cv DHT",
+            "1.5T AT 169cv",
+            "2.0T AWD 224cv",
+            "PHEV 1.5T AWD 321cv DHT"
+          ]
+        },
+        {
+          "name": "Haval H6 PHEV",
+          "submodels": [
+            "PHEV 1.5T 321cv DHT",
+            "PHEV 1.5T AWD 321cv DHT"
+          ]
+        },
+        {
+          "name": "Haval Jolion",
+          "submodels": [
+            "1.5T 143cv",
+            "1.5T 150cv",
+            "1.5T DCT 150cv",
+            "HEV 1.5T Hybrid 190cv"
+          ]
+        },
+        {
+          "name": "Haval Jolion PHEV",
+          "submodels": [
+            "PHEV 1.5T HEV 190cv",
+            "PHEV 1.5T DHT 243cv"
+          ]
+        },
+        {
+          "name": "Ora 03",
+          "submodels": [
+            "Standard Range 171cv",
+            "Long Range 171cv",
+            "GT AWD 342cv"
+          ]
+        },
+        {
+          "name": "Ora Funky Cat",
+          "submodels": [
+            "Standard Range 171cv",
+            "Long Range 171cv",
+            "First Edition 171cv",
+            "300 Standard Range 171cv",
+            "400 Long Range 171cv"
+          ]
+        },
+        {
+          "name": "Poer",
+          "submodels": [
+            "2.0T 218cv",
+            "2.0T AWD 218cv",
+            "Kingkong 2.0T 218cv",
+            "Electrico 204cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "KG Mobility",
+      "models": [
+        {
+          "name": "Actyon",
+          "submodels": [
+            "2.0 e-XDi 149cv",
+            "2.0 e-XDi AWD 149cv",
+            "1.6T GDI 177cv"
+          ]
+        },
+        {
+          "name": "Actyon Sports",
+          "submodels": [
+            "2.0 e-XDi 149cv",
+            "2.0 e-XDi AWD 149cv",
+            "2.2 e-XDi 178cv"
+          ]
+        },
+        {
+          "name": "Korando",
+          "submodels": [
+            "1.5T GDI 163cv",
+            "1.6 e-XDi 136cv",
+            "2.2 e-XDi 181cv",
+            "1.5T AT 163cv",
+            "2.2 e-XDi AWD 181cv"
+          ]
+        },
+        {
+          "name": "Korando e-Motion",
+          "submodels": [
+            "EV 140cv",
+            "EV AWD 140cv",
+            "EV Premium 140cv"
+          ]
+        },
+        {
+          "name": "Musso",
+          "submodels": [
+            "2.2 e-XDi 181cv",
+            "2.2 e-XDi AWD 181cv",
+            "2.2 e-XDi 4WD 181cv",
+            "Grand 2.2 e-XDi 181cv"
+          ]
+        },
+        {
+          "name": "Musso Grand",
+          "submodels": [
+            "2.2 e-XDi 181cv",
+            "2.2 e-XDi AWD 181cv"
+          ]
+        },
+        {
+          "name": "Rexton",
+          "submodels": [
+            "2.2 e-XDi 181cv",
+            "2.2 e-XDi AWD 181cv",
+            "2.2 e-XDi 4WD 181cv",
+            "2.7 XDi 165cv",
+            "3.2 270cv"
+          ]
+        },
+        {
+          "name": "Tivoli",
+          "submodels": [
+            "1.2T GDI 128cv",
+            "1.5T GDI 163cv",
+            "1.6 e-XDi 136cv",
+            "1.5T AT 163cv",
+            "1.2T AT 128cv"
+          ]
+        },
+        {
+          "name": "Torres",
+          "submodels": [
+            "1.5T GDI 170cv",
+            "EVX 73kWh 218cv",
+            "1.5T AT 170cv",
+            "4WD 1.5T 170cv"
+          ]
+        },
+        {
+          "name": "Torres EVX",
+          "submodels": [
+            "EVX 73kWh 218cv",
+            "EVX AWD 73kWh 320cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Maxus",
+      "models": [
+        {
+          "name": "eDeliver 3",
+          "submodels": [
+            "Standard Range 110cv",
+            "Long Range 110cv",
+            "35kWh 110cv",
+            "52kWh 110cv"
+          ]
+        },
+        {
+          "name": "eDeliver 7",
+          "submodels": [
+            "Standard Range 136cv",
+            "Long Range 136cv",
+            "50kWh 136cv",
+            "72kWh 136cv"
+          ]
+        },
+        {
+          "name": "eDeliver 9",
+          "submodels": [
+            "Standard Range 204cv",
+            "Long Range 204cv",
+            "72kWh 204cv",
+            "88kWh 204cv"
+          ]
+        },
+        {
+          "name": "MIFA 9",
+          "submodels": [
+            "Standard Range 180cv",
+            "Long Range 245cv",
+            "AWD 360cv",
+            "90kWh Standard 180cv",
+            "90kWh Long Range 245cv"
+          ]
+        },
+        {
+          "name": "T60",
+          "submodels": [
+            "2.8T 150cv",
+            "2.0T 163cv",
+            "2.8T AWD 150cv",
+            "2.0T AWD 163cv"
+          ]
+        },
+        {
+          "name": "T90",
+          "submodels": [
+            "EV AWD 272cv",
+            "EV Standard Range 204cv",
+            "EV Long Range 272cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Omoda",
+      "models": [
+        {
+          "name": "5",
+          "submodels": [
+            "1.6T TGDI 197cv",
+            "1.5T TGDI 147cv",
+            "EV Standard Range 204cv",
+            "EV Long Range 204cv"
+          ]
+        },
+        {
+          "name": "5 EV",
+          "submodels": [
+            "EV Standard Range 204cv",
+            "EV Long Range 204cv",
+            "EV AWD 408cv"
+          ]
+        },
+        {
+          "name": "7",
+          "submodels": [
+            "1.6T TGDI 197cv",
+            "2.0T TGDI 268cv",
+            "PHEV 1.5T 197cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Leapmotor",
+      "models": [
+        {
+          "name": "C10",
+          "submodels": [
+            "Standard Range RWD 218cv",
+            "Long Range RWD 218cv",
+            "AWD 360cv",
+            "REEV 1.0T 218cv"
+          ]
+        },
+        {
+          "name": "T03",
+          "submodels": [
+            "Standard Range 95cv",
+            "Long Range 95cv",
+            "Urban 95cv"
+          ]
+        },
+        {
+          "name": "B10",
+          "submodels": [
+            "Standard Range RWD 170cv",
+            "Long Range RWD 204cv"
+          ]
+        }
+      ]
+    }
+  ]
+}

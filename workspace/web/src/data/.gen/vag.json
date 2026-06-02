@@ -1,0 +1,1339 @@
+{
+  "brands": [
+    {
+      "name": "Volkswagen",
+      "models": [
+        {
+          "name": "Golf",
+          "submodels": [
+            "1.0 TSI 90cv",
+            "1.0 TSI 110cv",
+            "1.2 TSI 85cv",
+            "1.2 TSI 105cv",
+            "1.4 TSI 122cv",
+            "1.4 TSI 125cv",
+            "1.4 TSI 140cv",
+            "1.4 TSI 160cv",
+            "1.4 TGI GNC 110cv",
+            "1.4 TGI GNC 130cv",
+            "1.4 GTE eHybrid 204cv",
+            "1.5 TSI ACT 130cv",
+            "1.5 TSI 150cv",
+            "1.5 eTSI 130cv",
+            "1.5 eTSI 150cv",
+            "1.6 TDI 90cv",
+            "1.6 TDI 105cv",
+            "1.6 TDI 110cv",
+            "1.6 TDI 115cv",
+            "1.9 TDI 90cv",
+            "1.9 TDI 105cv",
+            "2.0 TDI 110cv",
+            "2.0 TDI 115cv",
+            "2.0 TDI 136cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 4Motion 184cv",
+            "2.0 TDI DSG 150cv",
+            "eHybrid 204cv",
+            "2.0 FSI 150cv"
+          ]
+        },
+        {
+          "name": "Golf GTI",
+          "submodels": [
+            "GTI 2.0 TSI 200cv",
+            "GTI 2.0 TSI 210cv",
+            "GTI 2.0 TSI 220cv",
+            "GTI 2.0 TSI 230cv",
+            "GTI 2.0 TSI 245cv",
+            "GTI Clubsport 265cv",
+            "GTI Clubsport 300cv",
+            "GTI Clubsport S 265cv",
+            "GTI TCR 290cv",
+            "GTI 25 Aniversario",
+            "GTI Performance 245cv",
+            "GTI 1.8 T 150cv",
+            "GTI 1.8 T 180cv"
+          ]
+        },
+        {
+          "name": "Golf GTE",
+          "submodels": [
+            "GTE 1.4 TSI eHybrid 204cv",
+            "GTE 1.4 TSI eHybrid 245cv"
+          ]
+        },
+        {
+          "name": "Golf GTD",
+          "submodels": [
+            "GTD 2.0 TDI 170cv",
+            "GTD 2.0 TDI 184cv",
+            "GTD 2.0 TDI 200cv"
+          ]
+        },
+        {
+          "name": "Golf R",
+          "submodels": [
+            "R 3.2 V6 4Motion 250cv",
+            "R 2.0 TSI 4Motion 270cv",
+            "R 2.0 TSI 4Motion 300cv",
+            "R 2.0 TSI 300cv",
+            "R 2.0 TSI 320cv",
+            "R 2.0 TSI 4Motion 320cv",
+            "R 20 Years 333cv"
+          ]
+        },
+        {
+          "name": "Golf Variant",
+          "submodels": [
+            "1.0 TSI 90cv",
+            "1.0 TSI 110cv",
+            "1.2 TSI 85cv",
+            "1.2 TSI 105cv",
+            "1.4 TSI 122cv",
+            "1.4 TSI 125cv",
+            "1.4 TSI 140cv",
+            "1.4 TGI GNC 110cv",
+            "1.4 TGI GNC 130cv",
+            "1.5 TSI 130cv",
+            "1.5 TSI 150cv",
+            "1.5 eTSI 130cv",
+            "1.5 eTSI 150cv",
+            "1.6 TDI 90cv",
+            "1.6 TDI 105cv",
+            "1.6 TDI 110cv",
+            "1.6 TDI 115cv",
+            "1.9 TDI 90cv",
+            "1.9 TDI 105cv",
+            "2.0 TDI 110cv",
+            "2.0 TDI 115cv",
+            "2.0 TDI 136cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 4Motion 184cv",
+            "eHybrid 204cv",
+            "GTD 2.0 TDI 184cv",
+            "GTD 2.0 TDI 200cv",
+            "GTE 1.4 TSI eHybrid 204cv",
+            "GTE 1.4 TSI eHybrid 245cv",
+            "R-Line 2.0 TDI 150cv"
+          ]
+        },
+        {
+          "name": "Polo",
+          "submodels": [
+            "1.0 MPI 65cv",
+            "1.0 MPI 75cv",
+            "1.0 TSI 95cv",
+            "1.0 TSI 110cv",
+            "1.2 TSI 70cv",
+            "1.2 TSI 90cv",
+            "1.4 TDI 75cv",
+            "1.4 TDI 90cv",
+            "1.6 TDI 75cv",
+            "1.6 TDI 95cv",
+            "1.8 TSI GTI 192cv",
+            "1.8 TSI GTI 200cv",
+            "2.0 TSI GTI 207cv",
+            "2.0 TSI GTI 210cv",
+            "1.9 TDI 100cv",
+            "1.4 FSI 86cv",
+            "1.6 16v 105cv",
+            "GTI 1.4 TSI 180cv",
+            "GTI 1.8 TSI 192cv",
+            "R WRC 220cv",
+            "Cross 1.4 TDI 90cv",
+            "1.0 eTSI 95cv",
+            "1.0 eTSI 110cv"
+          ]
+        },
+        {
+          "name": "Passat",
+          "submodels": [
+            "1.4 TSI 125cv",
+            "1.4 TSI GTE eHybrid 218cv",
+            "1.5 TSI 150cv",
+            "1.6 TDI 105cv",
+            "1.8 TSI 152cv",
+            "1.8 TSI 160cv",
+            "1.9 TDI 105cv",
+            "1.9 TDI 130cv",
+            "2.0 FSI 150cv",
+            "2.0 TDI 105cv",
+            "2.0 TDI 120cv",
+            "2.0 TDI 136cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 170cv",
+            "2.0 TDI 190cv",
+            "2.0 TDI 4Motion 190cv",
+            "2.0 TSI 200cv",
+            "2.0 TSI 220cv",
+            "2.0 TSI 280cv",
+            "2.0 TSI R-Line 220cv",
+            "3.2 V6 4Motion 250cv",
+            "3.6 V6 4Motion 280cv",
+            "Alltrack 2.0 TDI 190cv",
+            "Alltrack 2.0 TDI 150cv",
+            "R36 3.6 V6 4Motion 300cv",
+            "2.5 TDI 150cv",
+            "GTE 1.4 TSI eHybrid 218cv"
+          ]
+        },
+        {
+          "name": "Passat Variant",
+          "submodels": [
+            "1.4 TSI 125cv",
+            "1.4 TSI GTE eHybrid 218cv",
+            "1.5 TSI 150cv",
+            "1.6 TDI 105cv",
+            "1.8 TSI 152cv",
+            "1.8 TSI 160cv",
+            "1.9 TDI 105cv",
+            "1.9 TDI 130cv",
+            "2.0 FSI 150cv",
+            "2.0 TDI 105cv",
+            "2.0 TDI 120cv",
+            "2.0 TDI 136cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 170cv",
+            "2.0 TDI 190cv",
+            "2.0 TDI 4Motion 190cv",
+            "2.0 TSI 200cv",
+            "2.0 TSI 220cv",
+            "2.0 TSI 280cv",
+            "2.0 TSI R-Line 220cv",
+            "3.6 V6 4Motion 280cv",
+            "Alltrack 2.0 TDI 190cv",
+            "Alltrack 2.0 TDI 150cv",
+            "Alltrack 2.0 TDI 4Motion 190cv",
+            "R36 3.6 V6 4Motion 300cv",
+            "2.5 TDI 150cv",
+            "GTE 1.4 TSI eHybrid 218cv"
+          ]
+        },
+        {
+          "name": "Arteon",
+          "submodels": [
+            "1.5 TSI 150cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 190cv",
+            "2.0 TDI 4Motion 190cv",
+            "2.0 TSI 190cv",
+            "2.0 TSI 4Motion 190cv",
+            "2.0 TSI 272cv",
+            "2.0 TSI 4Motion 272cv",
+            "R 2.0 TSI 4Motion 320cv",
+            "eHybrid 218cv",
+            "eHybrid 4Motion 218cv",
+            "R-Line 2.0 TDI 150cv",
+            "R-Line 2.0 TSI 272cv",
+            "Shooting Brake 2.0 TDI 150cv"
+          ]
+        },
+        {
+          "name": "Arteon Shooting Brake",
+          "submodels": [
+            "1.5 TSI 150cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 190cv",
+            "2.0 TDI 4Motion 190cv",
+            "2.0 TSI 190cv",
+            "2.0 TSI 4Motion 190cv",
+            "2.0 TSI 272cv",
+            "2.0 TSI 4Motion 272cv",
+            "R 2.0 TSI 4Motion 320cv",
+            "eHybrid 218cv",
+            "eHybrid 4Motion 218cv",
+            "R-Line 2.0 TDI 150cv"
+          ]
+        },
+        {
+          "name": "Tiguan",
+          "submodels": [
+            "1.4 TSI 125cv",
+            "1.4 TSI 150cv",
+            "1.4 eHybrid 245cv",
+            "1.5 TSI 130cv",
+            "1.5 TSI 150cv",
+            "1.5 eTSI 130cv",
+            "1.5 eTSI 150cv",
+            "2.0 TDI 110cv",
+            "2.0 TDI 115cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 190cv",
+            "2.0 TDI 4Motion 140cv",
+            "2.0 TDI 4Motion 150cv",
+            "2.0 TDI 4Motion 190cv",
+            "2.0 TSI 150cv",
+            "2.0 TSI 180cv",
+            "2.0 TSI 4Motion 180cv",
+            "2.0 TSI 4Motion 220cv",
+            "R-Line 2.0 TSI 4Motion 272cv",
+            "R 2.0 TSI 4Motion 320cv",
+            "Allspace 2.0 TDI 150cv",
+            "Allspace 2.0 TDI 190cv",
+            "Allspace 2.0 TSI 4Motion 220cv",
+            "eHybrid 245cv",
+            "eHybrid 4Motion 300cv"
+          ]
+        },
+        {
+          "name": "Tiguan Allspace",
+          "submodels": [
+            "1.5 TSI 130cv",
+            "1.5 TSI 150cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 190cv",
+            "2.0 TDI 4Motion 150cv",
+            "2.0 TDI 4Motion 190cv",
+            "2.0 TSI 180cv",
+            "2.0 TSI 4Motion 180cv",
+            "2.0 TSI 4Motion 220cv",
+            "eHybrid 245cv",
+            "R-Line 2.0 TDI 150cv",
+            "R-Line 2.0 TSI 4Motion 220cv"
+          ]
+        },
+        {
+          "name": "T-Roc",
+          "submodels": [
+            "1.0 TSI 110cv",
+            "1.0 TSI 115cv",
+            "1.5 TSI 150cv",
+            "1.5 eTSI 150cv",
+            "2.0 TDI 115cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 4Motion 150cv",
+            "2.0 TDI 4Motion 190cv",
+            "2.0 TSI 4Motion 190cv",
+            "2.0 TSI 4Motion 221cv",
+            "R 2.0 TSI 4Motion 300cv",
+            "Cabriolet 1.5 TSI 150cv",
+            "Cabriolet 1.0 TSI 115cv",
+            "R-Line 1.5 TSI 150cv",
+            "R-Line 2.0 TDI 150cv"
+          ]
+        },
+        {
+          "name": "T-Cross",
+          "submodels": [
+            "1.0 TSI 95cv",
+            "1.0 TSI 110cv",
+            "1.0 TSI 115cv",
+            "1.5 TSI 150cv",
+            "1.6 TDI 95cv",
+            "1.6 TDI 115cv",
+            "2.0 TDI 150cv",
+            "1.0 eTSI 110cv",
+            "R-Line 1.0 TSI 115cv",
+            "R-Line 1.5 TSI 150cv"
+          ]
+        },
+        {
+          "name": "Touareg",
+          "submodels": [
+            "2.5 TDI 174cv",
+            "2.5 TDI R5 174cv",
+            "3.0 TDI 204cv",
+            "3.0 TDI 225cv",
+            "3.0 TDI 231cv",
+            "3.0 TDI 245cv",
+            "3.0 TDI 286cv",
+            "3.0 V6 TSI eHybrid 381cv",
+            "3.6 V6 FSI 280cv",
+            "4.2 V8 TDI 340cv",
+            "5.0 V10 TDI 313cv",
+            "6.0 W12 450cv",
+            "R50 5.0 V10 TDI 350cv",
+            "R-Line 3.0 TDI 286cv",
+            "Elegance 3.0 TDI 231cv",
+            "3.0 TSI eHybrid 462cv",
+            "Black Edition 3.0 TDI 286cv",
+            "IQ.DRIVE 3.0 TDI 231cv"
+          ]
+        },
+        {
+          "name": "Touran",
+          "submodels": [
+            "1.2 TSI 105cv",
+            "1.4 TSI 140cv",
+            "1.4 TSI 150cv",
+            "1.4 TGI GNC 150cv",
+            "1.5 TSI 150cv",
+            "1.6 TDI 90cv",
+            "1.6 TDI 105cv",
+            "1.6 TDI 115cv",
+            "1.9 TDI 105cv",
+            "2.0 TDI 110cv",
+            "2.0 TDI 115cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 190cv",
+            "2.0 TSI 200cv",
+            "1.4 TSI EcoFuel 150cv",
+            "Cross 2.0 TDI 140cv"
+          ]
+        },
+        {
+          "name": "Sharan",
+          "submodels": [
+            "1.4 TSI 150cv",
+            "2.0 TDI 115cv",
+            "2.0 TDI 136cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 170cv",
+            "2.0 TDI 4Motion 170cv",
+            "2.0 TSI 200cv",
+            "2.0 TSI 220cv",
+            "1.9 TDI 130cv",
+            "1.8 T 150cv",
+            "2.8 V6 204cv",
+            "4Motion 2.0 TDI 150cv"
+          ]
+        },
+        {
+          "name": "Caddy",
+          "submodels": [
+            "1.0 TSI 102cv",
+            "1.2 TSI 84cv",
+            "1.4 TSI 125cv",
+            "1.5 TSI 114cv",
+            "1.6 TDI 75cv",
+            "1.6 TDI 102cv",
+            "2.0 TDI 75cv",
+            "2.0 TDI 102cv",
+            "2.0 TDI 122cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 4Motion 150cv",
+            "2.0 TGI GNC 110cv",
+            "1.9 TDI 105cv",
+            "e-Caddy electric",
+            "Kombi 2.0 TDI 102cv",
+            "Alltrack 2.0 TDI 150cv",
+            "PanAmericana 2.0 TDI 122cv"
+          ]
+        },
+        {
+          "name": "ID.3",
+          "submodels": [
+            "Pure 45 kWh 150cv",
+            "Pure Performance 45 kWh 170cv",
+            "Pro 58 kWh 204cv",
+            "Pro Performance 58 kWh 204cv",
+            "Pro S 77 kWh 204cv",
+            "Pro S 77 kWh 170cv",
+            "GTX 77 kWh 299cv",
+            "Tour 77 kWh 204cv",
+            "1st Edition 58 kWh 204cv",
+            "1st Max 77 kWh 204cv",
+            "Edition 58 kWh 204cv",
+            "Max 77 kWh 204cv"
+          ]
+        },
+        {
+          "name": "ID.4",
+          "submodels": [
+            "Pure 52 kWh 148cv",
+            "Pure Performance 52 kWh 170cv",
+            "Pro 77 kWh 204cv",
+            "Pro Performance 77 kWh 204cv",
+            "Pro 4Motion 77 kWh 306cv",
+            "GTX 77 kWh 299cv",
+            "GTX 4Motion 77 kWh 299cv",
+            "GTX 4Motion 77 kWh 220cv",
+            "1st Edition 77 kWh 204cv",
+            "X Pro 77 kWh 204cv",
+            "X Pro Performance 77 kWh 204cv",
+            "X GTX 77 kWh 299cv"
+          ]
+        },
+        {
+          "name": "ID.5",
+          "submodels": [
+            "Pro 77 kWh 204cv",
+            "Pro Performance 77 kWh 204cv",
+            "Pro 4Motion 77 kWh 306cv",
+            "GTX 77 kWh 299cv",
+            "GTX 4Motion 77 kWh 299cv",
+            "Edition 77 kWh 204cv"
+          ]
+        },
+        {
+          "name": "ID.7",
+          "submodels": [
+            "Pro 77 kWh 286cv",
+            "Pro S 86 kWh 286cv",
+            "GTX 4Motion 77 kWh 340cv",
+            "GTX 4Motion 86 kWh 340cv",
+            "Tourer Pro 77 kWh 286cv",
+            "Tourer Pro S 86 kWh 286cv",
+            "Tourer GTX 4Motion 77 kWh 340cv",
+            "1st Edition 77 kWh 286cv"
+          ]
+        },
+        {
+          "name": "ID. Buzz",
+          "submodels": [
+            "Pro 77 kWh 204cv",
+            "Pro 4Motion 77 kWh 299cv",
+            "GTX 4Motion 77 kWh 340cv",
+            "Cargo 77 kWh 204cv",
+            "1st Edition 77 kWh 204cv",
+            "Pro LWB 77 kWh 204cv",
+            "GTX LWB 4Motion 77 kWh 340cv"
+          ]
+        },
+        {
+          "name": "Phaeton",
+          "submodels": [
+            "3.0 TDI V6 240cv",
+            "3.0 V6 TDI 225cv",
+            "4.2 V8 TDI 313cv",
+            "3.2 V6 241cv",
+            "4.2 V8 FSI 335cv",
+            "6.0 W12 420cv",
+            "6.0 W12 450cv",
+            "5.0 TDI 313cv"
+          ]
+        },
+        {
+          "name": "Scirocco",
+          "submodels": [
+            "1.4 TSI 122cv",
+            "1.4 TSI 125cv",
+            "1.4 TSI 160cv",
+            "2.0 TSI 200cv",
+            "2.0 TSI 211cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 170cv",
+            "R 2.0 TSI 265cv",
+            "R 2.0 TSI 280cv",
+            "GTS 2.0 TSI 220cv"
+          ]
+        },
+        {
+          "name": "Beetle",
+          "submodels": [
+            "1.2 TSI 105cv",
+            "1.4 TSI 150cv",
+            "1.6 TDI 105cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 150cv",
+            "2.0 TSI 200cv",
+            "2.0 TSI 210cv",
+            "Cabriolet 1.2 TSI 105cv",
+            "Cabriolet 1.4 TSI 150cv",
+            "Cabriolet 2.0 TDI 140cv",
+            "Cabriolet 2.0 TSI 200cv",
+            "RSi 3.2 V6 4Motion 225cv",
+            "1.9 TDI 100cv",
+            "1.8 T 150cv",
+            "1.8 T 180cv",
+            "Dune 2.0 TDI 150cv",
+            "Dune 2.0 TSI 220cv"
+          ]
+        },
+        {
+          "name": "Up",
+          "submodels": [
+            "1.0 MPI 60cv",
+            "1.0 MPI 65cv",
+            "1.0 MPI 75cv",
+            "1.0 TSI 90cv",
+            "e-Up 83cv",
+            "GTI 1.0 TSI 115cv",
+            "Cross Up 1.0 MPI 75cv",
+            "1.0 TGI GNC 90cv"
+          ]
+        },
+        {
+          "name": "Jetta",
+          "submodels": [
+            "1.4 TSI 122cv",
+            "1.4 TSI 125cv",
+            "1.6 TDI 90cv",
+            "1.6 TDI 105cv",
+            "2.0 TDI 110cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 150cv",
+            "2.0 TSI 200cv",
+            "2.0 TSI 210cv",
+            "1.9 TDI 105cv",
+            "2.5 V5 170cv",
+            "GLI 2.0 TSI 200cv",
+            "Hybrid 1.4 TSI 170cv"
+          ]
+        },
+        {
+          "name": "California",
+          "submodels": [
+            "2.0 TDI 102cv",
+            "2.0 TDI 110cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 4Motion 150cv",
+            "2.0 TDI 4Motion 199cv",
+            "2.0 TSI 204cv",
+            "Beach 2.0 TDI 102cv",
+            "Beach 2.0 TDI 150cv",
+            "Coast 2.0 TDI 150cv",
+            "Ocean 2.0 TDI 150cv",
+            "Ocean 2.0 TDI 4Motion 150cv",
+            "eHybrid 1.4 eHybrid 204cv",
+            "e-California electric"
+          ]
+        },
+        {
+          "name": "Amarok",
+          "submodels": [
+            "2.0 BiTDI 120cv",
+            "2.0 BiTDI 140cv",
+            "2.0 BiTDI 163cv",
+            "2.0 BiTDI 180cv",
+            "2.0 BiTDI 4Motion 140cv",
+            "2.0 BiTDI 4Motion 163cv",
+            "2.0 BiTDI 4Motion 180cv",
+            "3.0 TDI 163cv",
+            "3.0 TDI 204cv",
+            "3.0 TDI 224cv",
+            "3.0 TDI 258cv",
+            "3.0 TDI 4Motion 204cv",
+            "3.0 TDI 4Motion 258cv",
+            "3.0 TDI V6 240cv",
+            "V6 TDI 224cv",
+            "PanAmericana 3.0 TDI 204cv",
+            "Aventura 3.0 TDI 258cv",
+            "Aventura V6 3.0 TDI 258cv",
+            "2.3 TDI 163cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Skoda",
+      "models": [
+        {
+          "name": "Octavia",
+          "submodels": [
+            "1.0 TSI 115cv",
+            "1.2 TSI 85cv",
+            "1.2 TSI 105cv",
+            "1.4 TSI 125cv",
+            "1.4 TSI 140cv",
+            "1.5 TSI 150cv",
+            "1.5 TSI ACT 150cv",
+            "1.6 MPI 75cv",
+            "1.6 MPI 102cv",
+            "1.6 TDI 90cv",
+            "1.6 TDI 105cv",
+            "1.6 TDI 110cv",
+            "1.6 TDI 115cv",
+            "1.9 TDI 90cv",
+            "1.9 TDI 105cv",
+            "2.0 FSI 150cv",
+            "2.0 TDI 110cv",
+            "2.0 TDI 115cv",
+            "2.0 TDI 136cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 184cv",
+            "2.0 TSI RS 230cv",
+            "2.0 TSI RS 245cv",
+            "iV 1.4 TSI eHybrid 204cv",
+            "iV 1.4 TSI eHybrid 245cv",
+            "RS 4x4 2.0 TSI 245cv",
+            "RS 4x4 2.0 TDI 200cv",
+            "Scout 2.0 TDI 150cv",
+            "Scout 2.0 TDI 4x4 184cv",
+            "vRS 2.0 TDI 184cv",
+            "vRS 2.0 TSI 220cv",
+            "Laurin & Klement 2.0 TDI 150cv",
+            "2.0 TDI DSG 150cv"
+          ]
+        },
+        {
+          "name": "Octavia Combi",
+          "submodels": [
+            "1.0 TSI 115cv",
+            "1.2 TSI 85cv",
+            "1.2 TSI 105cv",
+            "1.4 TSI 125cv",
+            "1.4 TSI 140cv",
+            "1.5 TSI 150cv",
+            "1.5 TSI ACT 150cv",
+            "1.6 TDI 90cv",
+            "1.6 TDI 105cv",
+            "1.6 TDI 110cv",
+            "1.6 TDI 115cv",
+            "1.9 TDI 90cv",
+            "1.9 TDI 105cv",
+            "2.0 TDI 110cv",
+            "2.0 TDI 115cv",
+            "2.0 TDI 136cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 184cv",
+            "2.0 TSI RS 245cv",
+            "iV 1.4 TSI eHybrid 204cv",
+            "iV 1.4 TSI eHybrid 245cv",
+            "RS 4x4 2.0 TSI 245cv",
+            "Scout 2.0 TDI 150cv",
+            "Scout 2.0 TDI 4x4 184cv",
+            "vRS 2.0 TDI 184cv",
+            "Laurin & Klement 2.0 TDI 150cv"
+          ]
+        },
+        {
+          "name": "Fabia",
+          "submodels": [
+            "1.0 MPI 60cv",
+            "1.0 MPI 65cv",
+            "1.0 MPI 75cv",
+            "1.0 TSI 95cv",
+            "1.0 TSI 110cv",
+            "1.2 TSI 70cv",
+            "1.2 TSI 90cv",
+            "1.4 TDI 70cv",
+            "1.4 TDI 80cv",
+            "1.4 TDI 90cv",
+            "1.6 TDI 75cv",
+            "1.6 TDI 90cv",
+            "1.6 TDI 95cv",
+            "1.2 HTP 60cv",
+            "1.4 16v 85cv",
+            "1.6 MPI 105cv",
+            "1.9 SDI 65cv",
+            "1.9 TDI 105cv",
+            "RS 1.4 TSI 180cv",
+            "RS 1.6 TDI 105cv",
+            "Monte Carlo 1.0 TSI 110cv",
+            "Monte Carlo 1.2 TSI 110cv",
+            "1.5 TSI 150cv",
+            "1.0 TSI 116cv"
+          ]
+        },
+        {
+          "name": "Fabia Combi",
+          "submodels": [
+            "1.0 MPI 60cv",
+            "1.0 MPI 65cv",
+            "1.0 MPI 75cv",
+            "1.0 TSI 95cv",
+            "1.0 TSI 110cv",
+            "1.2 TSI 70cv",
+            "1.2 TSI 90cv",
+            "1.4 TDI 70cv",
+            "1.4 TDI 80cv",
+            "1.4 TDI 90cv",
+            "1.6 TDI 75cv",
+            "1.6 TDI 90cv",
+            "1.6 TDI 95cv",
+            "1.2 HTP 60cv",
+            "1.4 16v 85cv",
+            "1.6 MPI 105cv",
+            "1.9 SDI 65cv",
+            "1.9 TDI 105cv",
+            "Scout 1.4 TSI 125cv",
+            "Scout 1.6 TDI 90cv",
+            "1.5 TSI 150cv",
+            "1.0 TSI 116cv"
+          ]
+        },
+        {
+          "name": "Superb",
+          "submodels": [
+            "1.4 TSI 125cv",
+            "1.4 TSI 150cv",
+            "1.5 TSI 150cv",
+            "1.6 TDI 88cv",
+            "1.6 TDI 120cv",
+            "1.8 TSI 160cv",
+            "1.8 TSI 180cv",
+            "1.9 TDI 105cv",
+            "2.0 FSI 150cv",
+            "2.0 TDI 110cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 190cv",
+            "2.0 TDI 4x4 190cv",
+            "2.0 TSI 200cv",
+            "2.0 TSI 280cv",
+            "2.5 TDI 163cv",
+            "3.6 V6 FSI 260cv",
+            "3.6 V6 4x4 260cv",
+            "iV 1.4 TSI eHybrid 218cv",
+            "Scout 2.0 TDI 4x4 190cv",
+            "Sportline 2.0 TSI 280cv",
+            "Laurin & Klement 2.0 TDI 190cv",
+            "Laurin & Klement 3.6 V6 260cv"
+          ]
+        },
+        {
+          "name": "Superb Combi",
+          "submodels": [
+            "1.4 TSI 125cv",
+            "1.4 TSI 150cv",
+            "1.5 TSI 150cv",
+            "1.6 TDI 88cv",
+            "1.6 TDI 120cv",
+            "1.8 TSI 160cv",
+            "1.8 TSI 180cv",
+            "1.9 TDI 105cv",
+            "2.0 FSI 150cv",
+            "2.0 TDI 110cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 190cv",
+            "2.0 TDI 4x4 190cv",
+            "2.0 TSI 200cv",
+            "2.0 TSI 280cv",
+            "2.5 TDI 163cv",
+            "3.6 V6 FSI 260cv",
+            "3.6 V6 4x4 260cv",
+            "iV 1.4 TSI eHybrid 218cv",
+            "Scout 2.0 TDI 4x4 190cv",
+            "Sportline 2.0 TSI 280cv",
+            "Laurin & Klement 2.0 TDI 190cv"
+          ]
+        },
+        {
+          "name": "Kodiaq",
+          "submodels": [
+            "1.4 TSI 125cv",
+            "1.5 TSI 150cv",
+            "2.0 TDI 115cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 190cv",
+            "2.0 TDI 4x4 150cv",
+            "2.0 TDI 4x4 190cv",
+            "2.0 TSI 180cv",
+            "2.0 TSI 4x4 180cv",
+            "2.0 TSI 4x4 190cv",
+            "2.0 TSI 4x4 245cv",
+            "iV 1.4 TSI eHybrid 245cv",
+            "Sportline 2.0 TSI 4x4 245cv",
+            "Laurin & Klement 2.0 TDI 4x4 190cv",
+            "Scout 2.0 TDI 4x4 190cv",
+            "RS 2.0 BiTDI 4x4 240cv",
+            "RS 2.0 TSI 4x4 265cv",
+            "Selection 2.0 TDI 150cv"
+          ]
+        },
+        {
+          "name": "Kodiaq RS",
+          "submodels": [
+            "RS 2.0 BiTDI 4x4 240cv",
+            "RS 2.0 TSI 4x4 265cv",
+            "RS 2.0 TSI 4x4 300cv"
+          ]
+        },
+        {
+          "name": "Karoq",
+          "submodels": [
+            "1.0 TSI 115cv",
+            "1.5 TSI 150cv",
+            "1.5 TSI ACT 150cv",
+            "2.0 TDI 115cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 4x4 150cv",
+            "2.0 TDI 4x4 190cv",
+            "2.0 TSI 4x4 190cv",
+            "Sportline 1.5 TSI 150cv",
+            "Sportline 2.0 TDI 150cv",
+            "Scout 2.0 TDI 4x4 150cv",
+            "Laurin & Klement 2.0 TDI 150cv"
+          ]
+        },
+        {
+          "name": "Kamiq",
+          "submodels": [
+            "1.0 TSI 95cv",
+            "1.0 TSI 110cv",
+            "1.0 TSI 115cv",
+            "1.5 TSI 150cv",
+            "1.6 TDI 115cv",
+            "2.0 TDI 115cv",
+            "Monte Carlo 1.5 TSI 150cv",
+            "Ambition 1.0 TSI 110cv"
+          ]
+        },
+        {
+          "name": "Scala",
+          "submodels": [
+            "1.0 TSI 115cv",
+            "1.5 TSI 150cv",
+            "1.6 TDI 115cv",
+            "2.0 TDI 115cv",
+            "2.0 TDI 150cv",
+            "Monte Carlo 1.5 TSI 150cv",
+            "Monte Carlo 2.0 TDI 150cv",
+            "Sportline 1.5 TSI 150cv"
+          ]
+        },
+        {
+          "name": "Enyaq",
+          "submodels": [
+            "50 55 kWh 148cv",
+            "60 62 kWh 177cv",
+            "80 77 kWh 204cv",
+            "80x 4x4 77 kWh 265cv",
+            "RS 84 kWh 299cv",
+            "iV 80 77 kWh 204cv",
+            "iV 80x 4x4 77 kWh 265cv",
+            "iV RS 84 kWh 299cv",
+            "Lounge 80 77 kWh 204cv",
+            "Edition 80 77 kWh 204cv",
+            "Sportline 80 77 kWh 204cv"
+          ]
+        },
+        {
+          "name": "Enyaq Coupé",
+          "submodels": [
+            "80 77 kWh 204cv",
+            "80x 4x4 77 kWh 265cv",
+            "RS 84 kWh 299cv",
+            "iV 80 77 kWh 204cv",
+            "iV 80x 4x4 77 kWh 265cv",
+            "iV RS 84 kWh 299cv",
+            "Sportline 80 77 kWh 204cv"
+          ]
+        },
+        {
+          "name": "Rapid",
+          "submodels": [
+            "1.2 TSI 85cv",
+            "1.2 TSI 105cv",
+            "1.4 TSI 122cv",
+            "1.4 TSI 125cv",
+            "1.6 MPI 87cv",
+            "1.6 TDI 90cv",
+            "1.6 TDI 105cv",
+            "Spaceback 1.2 TSI 85cv",
+            "Spaceback 1.2 TSI 105cv",
+            "Spaceback 1.6 TDI 90cv",
+            "Spaceback 1.6 TDI 105cv",
+            "Monte Carlo 1.4 TSI 122cv",
+            "GreenLine 1.6 TDI 90cv"
+          ]
+        },
+        {
+          "name": "Roomster",
+          "submodels": [
+            "1.2 TSI 85cv",
+            "1.4 TSI 125cv",
+            "1.6 MPI 105cv",
+            "1.6 TDI 90cv",
+            "1.9 TDI 105cv",
+            "Scout 1.4 TSI 125cv",
+            "Scout 1.9 TDI 105cv",
+            "1.9 SDI 65cv"
+          ]
+        },
+        {
+          "name": "Citigo",
+          "submodels": [
+            "1.0 MPI 60cv",
+            "1.0 MPI 75cv",
+            "e-Citigo 83cv",
+            "G-TEC 1.0 MPI CNG 68cv",
+            "Sport 1.0 MPI 75cv"
+          ]
+        },
+        {
+          "name": "Yeti",
+          "submodels": [
+            "1.2 TSI 105cv",
+            "1.4 TSI 122cv",
+            "1.4 TSI 125cv",
+            "1.8 TSI 160cv",
+            "2.0 TDI 110cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 4x4 140cv",
+            "2.0 TDI 4x4 170cv",
+            "2.0 TSI 4x4 200cv",
+            "Outdoor 2.0 TDI 4x4 110cv",
+            "Outdoor 2.0 TDI 4x4 140cv",
+            "GreenLine 2.0 TDI 110cv",
+            "1.9 TDI 105cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "SEAT",
+      "models": [
+        {
+          "name": "Leon",
+          "submodels": [
+            "1.0 TSI 90cv",
+            "1.0 TSI 115cv",
+            "1.2 TSI 105cv",
+            "1.4 TSI 125cv",
+            "1.4 TSI 140cv",
+            "1.4 TSI 150cv",
+            "1.5 TSI 130cv",
+            "1.5 TSI FR 150cv",
+            "1.5 eTSI 130cv",
+            "1.5 eTSI 150cv",
+            "1.6 TDI 90cv",
+            "1.6 TDI 105cv",
+            "1.6 TDI 110cv",
+            "1.6 TDI 115cv",
+            "1.8 TSI FR 180cv",
+            "2.0 FSI 150cv",
+            "2.0 TDI 110cv",
+            "2.0 TDI 115cv",
+            "2.0 TDI 136cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 150cv",
+            "2.0 TSI FR 190cv",
+            "2.0 TSI Cupra 265cv",
+            "2.0 TSI Cupra 280cv",
+            "2.0 TSI Cupra 300cv",
+            "e-Hybrid 204cv",
+            "e-Hybrid FR 204cv",
+            "e-Hybrid FR 245cv",
+            "1.9 TDI 100cv",
+            "1.9 TDI 105cv",
+            "1.9 TDI 130cv",
+            "1.9 TDI 160cv"
+          ]
+        },
+        {
+          "name": "Leon SC",
+          "submodels": [
+            "1.2 TSI 105cv",
+            "1.4 TSI 125cv",
+            "1.4 TSI 140cv",
+            "1.5 TSI 130cv",
+            "1.5 TSI FR 150cv",
+            "1.6 TDI 105cv",
+            "1.6 TDI 115cv",
+            "2.0 TDI 150cv",
+            "2.0 TSI FR 180cv",
+            "2.0 TSI FR 190cv",
+            "Cupra 2.0 TSI 265cv",
+            "Cupra 2.0 TSI 280cv",
+            "Cupra 2.0 TSI 300cv"
+          ]
+        },
+        {
+          "name": "Leon ST",
+          "submodels": [
+            "1.0 TSI 115cv",
+            "1.2 TSI 105cv",
+            "1.4 TSI 125cv",
+            "1.4 TSI 140cv",
+            "1.5 TSI 130cv",
+            "1.5 TSI FR 150cv",
+            "1.6 TDI 90cv",
+            "1.6 TDI 105cv",
+            "1.6 TDI 115cv",
+            "2.0 TDI 115cv",
+            "2.0 TDI 150cv",
+            "2.0 TSI FR 180cv",
+            "2.0 TSI FR 190cv",
+            "Cupra 2.0 TSI 300cv",
+            "X-Perience 2.0 TDI 4Drive 150cv",
+            "X-Perience 2.0 TDI 4Drive 184cv"
+          ]
+        },
+        {
+          "name": "Leon FR",
+          "submodels": [
+            "1.5 TSI FR 150cv",
+            "2.0 TDI FR 150cv",
+            "2.0 TSI FR 180cv",
+            "2.0 TSI FR 190cv",
+            "2.0 TSI FR 300cv",
+            "e-Hybrid FR 204cv",
+            "e-Hybrid FR 245cv",
+            "Sportstourer FR 1.5 TSI 150cv",
+            "Sportstourer FR 2.0 TDI 150cv",
+            "Sportstourer e-Hybrid FR 204cv"
+          ]
+        },
+        {
+          "name": "Ibiza",
+          "submodels": [
+            "1.0 MPI 65cv",
+            "1.0 MPI 75cv",
+            "1.0 TSI 95cv",
+            "1.0 TSI 110cv",
+            "1.0 TSI 115cv",
+            "1.2 TSI 70cv",
+            "1.2 TSI 90cv",
+            "1.4 TDI 70cv",
+            "1.4 TDI 90cv",
+            "1.6 TDI 80cv",
+            "1.6 TDI 90cv",
+            "1.6 TDI 95cv",
+            "1.4 TSI FR 150cv",
+            "1.5 TSI FR 150cv",
+            "1.8 TSI FR Cupra 180cv",
+            "1.8 TSI FR Cupra 192cv",
+            "SC 1.2 TSI 90cv",
+            "SC 1.4 TSI 150cv",
+            "SC Cupra 1.8 TSI 180cv",
+            "1.9 TDI 100cv",
+            "1.9 TDI 130cv",
+            "2.0 TDI 143cv",
+            "Bocanegra 1.4 TSI 150cv",
+            "FR 1.0 TSI 115cv",
+            "1.2 HTP 70cv"
+          ]
+        },
+        {
+          "name": "Arona",
+          "submodels": [
+            "1.0 TSI 95cv",
+            "1.0 TSI 110cv",
+            "1.0 TSI 115cv",
+            "1.0 EcoTSI 115cv",
+            "1.5 TSI FR 150cv",
+            "1.5 eTSI 110cv",
+            "1.5 eTSI 150cv",
+            "1.6 TDI 95cv",
+            "1.6 TDI 115cv",
+            "FR 1.5 TSI 150cv",
+            "FR 1.0 TSI 110cv",
+            "Xperience 1.0 TSI 110cv",
+            "Xperience 1.5 TSI 150cv"
+          ]
+        },
+        {
+          "name": "Ateca",
+          "submodels": [
+            "1.0 TSI 115cv",
+            "1.4 TSI 150cv",
+            "1.5 TSI 150cv",
+            "2.0 TDI 115cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 4Drive 150cv",
+            "2.0 TDI 4Drive 190cv",
+            "2.0 TSI 190cv",
+            "2.0 TSI 4Drive 190cv",
+            "2.0 TSI Cupra 300cv",
+            "2.0 TSI Cupra 4Drive 300cv",
+            "FR 2.0 TDI 150cv",
+            "FR 2.0 TSI 190cv",
+            "X-Perience 2.0 TDI 4Drive 150cv"
+          ]
+        },
+        {
+          "name": "Tarraco",
+          "submodels": [
+            "1.5 TSI 150cv",
+            "2.0 TDI 115cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 4Drive 150cv",
+            "2.0 TDI 4Drive 190cv",
+            "2.0 TSI 190cv",
+            "2.0 TSI 4Drive 190cv",
+            "e-Hybrid 245cv",
+            "FR 2.0 TDI 150cv",
+            "FR 2.0 TSI 4Drive 190cv",
+            "FR 2.0 TDI 4Drive 190cv",
+            "Xperience 2.0 TDI 4Drive 190cv"
+          ]
+        },
+        {
+          "name": "Mii",
+          "submodels": [
+            "1.0 MPI 60cv",
+            "1.0 MPI 68cv",
+            "1.0 MPI 75cv",
+            "electric 83cv",
+            "Mii by Mango 1.0 MPI 75cv"
+          ]
+        },
+        {
+          "name": "Toledo",
+          "submodels": [
+            "1.2 TSI 85cv",
+            "1.2 TSI 105cv",
+            "1.4 TSI 122cv",
+            "1.4 TSI 125cv",
+            "1.6 MPI 105cv",
+            "1.6 TDI 90cv",
+            "1.6 TDI 105cv",
+            "2.0 TDI 110cv",
+            "2.0 TDI 140cv",
+            "1.8 T 150cv",
+            "2.3 V5 150cv",
+            "1.9 TDI 100cv",
+            "1.9 TDI 130cv",
+            "2.5 V6 180cv"
+          ]
+        },
+        {
+          "name": "Altea",
+          "submodels": [
+            "1.4 TSI 125cv",
+            "1.6 MPI 102cv",
+            "1.6 TDI 105cv",
+            "1.8 TFSI 160cv",
+            "2.0 FSI 150cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 170cv",
+            "2.0 TSI 200cv",
+            "Freetrack 2.0 TDI 4x4 140cv",
+            "Freetrack 2.0 TSI 4x4 200cv",
+            "1.9 TDI 100cv",
+            "1.9 TDI 105cv",
+            "1.9 TDI 130cv"
+          ]
+        },
+        {
+          "name": "Altea XL",
+          "submodels": [
+            "1.4 TSI 125cv",
+            "1.6 MPI 102cv",
+            "1.6 TDI 105cv",
+            "1.8 TFSI 160cv",
+            "2.0 FSI 150cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 170cv",
+            "2.0 TSI 200cv",
+            "Freetrack 2.0 TDI 4x4 140cv",
+            "1.9 TDI 100cv",
+            "1.9 TDI 105cv"
+          ]
+        },
+        {
+          "name": "Alhambra",
+          "submodels": [
+            "1.4 TSI 150cv",
+            "2.0 TDI 115cv",
+            "2.0 TDI 140cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 170cv",
+            "2.0 TDI 4Drive 170cv",
+            "2.0 TSI 200cv",
+            "2.0 TSI 220cv",
+            "1.8 T 150cv",
+            "1.9 TDI 115cv",
+            "1.9 TDI 130cv",
+            "2.8 V6 200cv",
+            "4WD 2.0 TDI 150cv"
+          ]
+        },
+        {
+          "name": "Exeo",
+          "submodels": [
+            "1.6 MPI 102cv",
+            "1.8 TSI 120cv",
+            "1.8 TSI 160cv",
+            "2.0 TDI 120cv",
+            "2.0 TDI 143cv",
+            "2.0 TFSI 200cv",
+            "2.0 TDI ST 120cv",
+            "2.0 TDI ST 143cv",
+            "ST 1.8 TSI 120cv",
+            "ST 2.0 TDI 120cv",
+            "ST 2.0 TFSI 200cv",
+            "3.2 V6 FSI 250cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Cupra",
+      "models": [
+        {
+          "name": "Formentor",
+          "submodels": [
+            "1.5 TSI 150cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 4Drive 150cv",
+            "2.0 TSI 190cv",
+            "2.0 TSI 245cv",
+            "2.0 TSI 4Drive 245cv",
+            "2.0 TSI VZ 310cv",
+            "VZ2 2.0 TSI 4Drive 310cv",
+            "VZ5 2.5 TFSI 5 cilindros 390cv",
+            "e-Hybrid 204cv",
+            "e-Hybrid 245cv",
+            "e-Hybrid 4Drive 245cv",
+            "e-Hybrid VZ 272cv",
+            "1.4 TSI e-Hybrid 245cv"
+          ]
+        },
+        {
+          "name": "Born",
+          "submodels": [
+            "e-Boost 58 kWh 204cv",
+            "58 kWh 231cv",
+            "77 kWh 231cv",
+            "77 kWh VZ 231cv",
+            "58 kWh VZ 231cv",
+            "e-Boost 45 kWh 150cv",
+            "45 kWh 204cv",
+            "Pro 58 kWh 204cv",
+            "Pro 77 kWh 231cv",
+            "VZ 77 kWh 231cv",
+            "Edition 58 kWh 204cv"
+          ]
+        },
+        {
+          "name": "Leon",
+          "submodels": [
+            "1.5 TSI 150cv",
+            "2.0 TSI 245cv",
+            "2.0 TSI 300cv",
+            "2.0 TSI 4Drive 310cv",
+            "VZ 2.0 TSI 300cv",
+            "VZ 2.0 TSI 4Drive 310cv",
+            "e-Hybrid 204cv",
+            "e-Hybrid 245cv",
+            "e-Hybrid VZ 272cv",
+            "2.0 TDI 150cv"
+          ]
+        },
+        {
+          "name": "Leon Sportstourer",
+          "submodels": [
+            "1.5 TSI 150cv",
+            "2.0 TSI 245cv",
+            "2.0 TSI 300cv",
+            "2.0 TSI 4Drive 310cv",
+            "VZ 2.0 TSI 300cv",
+            "VZ 2.0 TSI 4Drive 310cv",
+            "e-Hybrid 204cv",
+            "e-Hybrid 245cv",
+            "e-Hybrid VZ 272cv",
+            "2.0 TDI 150cv"
+          ]
+        },
+        {
+          "name": "Ateca",
+          "submodels": [
+            "2.0 TSI 300cv",
+            "2.0 TSI 4Drive 300cv",
+            "VZ 2.0 TSI 4Drive 310cv",
+            "2.0 TDI 150cv",
+            "2.0 TDI 4Drive 150cv",
+            "1.5 TSI 150cv"
+          ]
+        },
+        {
+          "name": "Terramar",
+          "submodels": [
+            "1.5 TSI 150cv",
+            "1.5 eTSI 150cv",
+            "2.0 TSI 265cv",
+            "2.0 TSI 4Drive 265cv",
+            "e-Hybrid 204cv",
+            "e-Hybrid 272cv",
+            "VZ 2.0 TSI 265cv"
+          ]
+        }
+      ]
+    }
+  ]
+}
