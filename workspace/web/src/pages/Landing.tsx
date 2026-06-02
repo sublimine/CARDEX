@@ -6,6 +6,10 @@ import { useAuthContext } from '../auth/AuthContext'
 import { BRANDS, type Brand, type Model } from '../data/catalog'
 import LOGO_AR from '../data/logo-ar.json'
 import LandingSections from './landing-sections'
+import ShaderBackground from './landing/ShaderBackground'
+import Cursor from './landing/Cursor'
+import Preloader from './landing/Preloader'
+import { useLenis } from './landing/useLenis'
 
 const EXPO = [0.16, 1, 0.3, 1] as const
 const HERO_IMG = '/hero-cardex.jpg'
@@ -559,6 +563,9 @@ export default function Landing() {
   const [anoMax, setAnoMax] = useState<number | null>(null)
   const [kmMin, setKmMin] = useState(0)
   const [kmMax, setKmMax] = useState(KM_MAX)
+  const [booting, setBooting] = useState(true)
+  const finishBoot = useCallback(() => setBooting(false), [])
+  useLenis(booting)
 
   useEffect(() => {
     const fn = () => setNavScrolled(window.scrollY > 30)
@@ -572,6 +579,7 @@ export default function Landing() {
   const heroY = useTransform(heroP, [0, 1], ['0%', '15%'])
   const heroScale = useTransform(heroP, [0, 1], [1, 1.1])
   const heroFade = useTransform(heroP, [0, 0.8], [1, 0])
+  const heroTextY = useTransform(heroP, [0, 1], ['0px', '-80px'])   // text drifts faster than image — parallax depth
 
   function handleEnter() { nav(isAuthenticated ? '/dashboard' : '/login') }
   function handleSearch(e: React.FormEvent) { e.preventDefault(); nav('/dashboard') }
@@ -587,7 +595,12 @@ export default function Landing() {
   )
 
   return (
-    <div style={{ fontFamily: 'Inter, system-ui, sans-serif', background: '#07070f' }}>
+    <div className="cx-landing" style={{ fontFamily: 'Inter, system-ui, sans-serif', background: '#06060e', position: 'relative' }}>
+      <ShaderBackground />
+      <Cursor />
+      <AnimatePresence>{booting && <Preloader key="cx-preloader" onComplete={finishBoot} />}</AnimatePresence>
+
+      <div style={{ position: 'relative', zIndex: 1 }}>
 
       {/* ── NAVBAR ─────────────────────────────────────────────────────── */}
       <nav style={{
@@ -622,17 +635,17 @@ export default function Landing() {
       <div ref={heroRef} style={{ position: 'relative', width: '100%', height: '100dvh', overflow: 'hidden' }}>
         {/* cinematic image — flipped horizontally, parallax + Ken Burns */}
         <motion.div style={{ position: 'absolute', inset: '-8% 0 0 0', y: reduced ? 0 : heroY, scale: reduced ? 1 : heroScale, willChange: 'transform' }}>
-          <motion.div style={{ width: '100%', height: '108%' }} animate={reduced ? undefined : { scale: [1, 1.07, 1] }} transition={{ duration: 26, ease: 'easeInOut', repeat: Infinity }}>
+          <div className={reduced ? undefined : 'cx-kenburns'} style={{ width: '100%', height: '108%' }}>
             <img src={HERO_IMG} alt="" {...{ fetchpriority: 'high' }} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 64%' }} />
-          </motion.div>
+          </div>
         </motion.div>
         {/* grades: bottom fade + left/right scrim for legibility */}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(7,7,15,0.34) 0%, rgba(7,7,15,0.05) 28%, rgba(7,7,15,0.5) 72%, #07070f 100%)' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(7,7,15,0.34) 0%, rgba(7,7,15,0.05) 28%, rgba(7,7,15,0.5) 72%, #06060e 100%)' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(7,7,15,0.72) 0%, rgba(7,7,15,0.2) 32%, transparent 50%, rgba(7,7,15,0.4) 100%)' }} />
 
         <motion.div style={{ position: 'absolute', inset: 0, opacity: reduced ? 1 : heroFade, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'clamp(24px,5vw,80px)', padding: '88px clamp(20px,5vw,72px) 64px', pointerEvents: 'none' }}>
           {/* LEFT — editorial title over the image */}
-          <div style={{ pointerEvents: 'auto', maxWidth: 'min(640px, 56vw)', flexShrink: 1, minWidth: 0 }}>
+          <motion.div style={{ pointerEvents: 'auto', maxWidth: 'min(640px, 56vw)', flexShrink: 1, minWidth: 0, y: reduced ? 0 : heroTextY }}>
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: EXPO, delay: 0.1 }}
               style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(196,181,253,0.9)' }}>
               Inteligencia · Mercado · 6 países UE
@@ -650,7 +663,7 @@ export default function Landing() {
               style={{ margin: '24px 0 0', maxWidth: '46ch', fontSize: 'clamp(1rem,0.94rem+0.32vw,1.2rem)', lineHeight: 1.6, color: 'rgba(255,255,255,0.72)' }}>
               Indexamos, verificamos y deduplicamos el inventario de seis mercados. Una sola plataforma para el profesional que mueve coches entre fronteras.
             </motion.p>
-          </div>
+          </motion.div>
 
           {/* RIGHT — narrow glass search panel (more image than panel) */}
           <motion.aside initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, ease: EXPO, delay: 0.25 }}
@@ -707,12 +720,24 @@ export default function Landing() {
 
       {/* ── SCROLL NARRATIVE ───────────────────────────────────────────── */}
       <LandingSections onEnter={handleEnter} />
+      </div>
 
       <style>{`
         input::placeholder { color: rgba(255,255,255,0.33) !important; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+        html.lenis, html.lenis body { height: auto; }
+        .lenis.lenis-smooth { scroll-behavior: auto !important; }
+        .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+        .lenis.lenis-stopped { overflow: hidden; }
+        @media (pointer: fine) { .cx-landing, .cx-landing * { cursor: none !important; } }
+        .cx-landing a:focus-visible, .cx-landing button:focus-visible, .cx-landing input:focus-visible, .cx-landing [tabindex]:focus-visible {
+          outline: 2px solid #818cf8; outline-offset: 3px; border-radius: 8px;
+        }
+        .cx-kenburns { animation: cxKenBurns 26s ease-in-out infinite; will-change: transform; transform-origin: center; }
+        @keyframes cxKenBurns { 0%,100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+        @media (prefers-reduced-motion: reduce) { .cx-kenburns { animation: none; } }
       `}</style>
     </div>
   )

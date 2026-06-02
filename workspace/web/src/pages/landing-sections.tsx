@@ -18,7 +18,7 @@ const eyebrow: React.CSSProperties = { fontSize: 11, fontWeight: 700, letterSpac
 const lead: React.CSSProperties = { fontSize: 'clamp(1.02rem,0.96rem+0.4vw,1.2rem)', lineHeight: 1.6, color: T2, maxWidth: '50ch', margin: 0 }
 const h2: React.CSSProperties = { fontSize: 'clamp(1.9rem,1.1rem+2.4vw,3.1rem)', lineHeight: 1.04, fontWeight: 700, letterSpacing: '-0.035em', color: T1, margin: 0 }
 const mono: React.CSSProperties = { fontFamily: MONO, fontVariantNumeric: 'tabular-nums' }
-const coordLabel: React.CSSProperties = { fontFamily: MONO, fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: T4 }
+const coordLabel: React.CSSProperties = { fontFamily: MONO, fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: T3 }
 
 /* ─── motion primitives ──────────────────────────────────────────────────── */
 function Reveal({ children, y = 26, delay = 0, style }: { children: React.ReactNode; y?: number; delay?: number; style?: React.CSSProperties }) {
@@ -30,8 +30,14 @@ function Kinetic({ lines, style, delay = 0 }: { lines: React.ReactNode[]; style?
   return (
     <div style={style}>
       {lines.map((ln, i) => (
-        <div key={i} style={{ overflow: 'hidden', paddingBottom: '0.04em' }}>
-          <motion.div initial={r ? { y: 0 } : { y: '115%' }} whileInView={{ y: '0%' }} viewport={{ once: true, margin: '-12% 0px' }} transition={{ duration: 0.85, ease: EXPO, delay: delay + i * 0.09 }}>{ln}</motion.div>
+        <div key={i} style={{ overflow: 'hidden', paddingBottom: '0.06em' }}>
+          <motion.div
+            initial={r ? { y: 0 } : { y: '118%', opacity: 0, filter: 'blur(9px)' }}
+            whileInView={{ y: '0%', opacity: 1, filter: 'blur(0px)' }}
+            viewport={{ once: true, margin: '-12% 0px' }}
+            transition={{ duration: 1.05, ease: EXPO, delay: delay + i * 0.11, filter: { duration: 0.7, delay: delay + i * 0.11 } }}
+            style={{ willChange: 'transform, filter, opacity' }}
+          >{ln}</motion.div>
         </div>
       ))}
     </div>
@@ -51,16 +57,17 @@ function Counter({ to, suffix = '', prefix = '', duration = 1.6 }: { to: number;
   return <span ref={ref}>{prefix}{fmt(v)}{suffix}</span>
 }
 function Marquee({ children, duration = 34, vertical = false, height }: { children: React.ReactNode; duration?: number; vertical?: boolean; height?: number }) {
+  const reduced = useReducedMotion()
   if (vertical) {
     return (
       <div style={{ overflow: 'hidden', height, WebkitMaskImage: 'linear-gradient(180deg,transparent,#000 12%,#000 88%,transparent)', maskImage: 'linear-gradient(180deg,transparent,#000 12%,#000 88%,transparent)' }}>
-        <motion.div style={{ willChange: 'transform' }} animate={{ y: ['0%', '-50%'] }} transition={{ duration, ease: 'linear', repeat: Infinity }}>{children}{children}</motion.div>
+        <motion.div style={{ willChange: reduced ? 'auto' : 'transform' }} animate={reduced ? undefined : { y: ['0%', '-50%'] }} transition={reduced ? undefined : { duration, ease: 'linear', repeat: Infinity }}>{children}{reduced ? null : children}</motion.div>
       </div>
     )
   }
   return (
     <div style={{ overflow: 'hidden', WebkitMaskImage: 'linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)', maskImage: 'linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)' }}>
-      <motion.div style={{ display: 'flex', alignItems: 'center', gap: 44, width: 'max-content', willChange: 'transform' }} animate={{ x: ['0%', '-50%'] }} transition={{ duration, ease: 'linear', repeat: Infinity }}>{children}{children}</motion.div>
+      <motion.div style={{ display: 'flex', alignItems: 'center', gap: 44, width: 'max-content', willChange: reduced ? 'auto' : 'transform' }} animate={reduced ? undefined : { x: ['0%', '-50%'] }} transition={reduced ? undefined : { duration, ease: 'linear', repeat: Infinity }}>{children}{reduced ? null : children}</motion.div>
     </div>
   )
 }
@@ -71,28 +78,31 @@ function Magnetic({ children, strength = 0.35 }: { children: React.ReactNode; st
   return <motion.div ref={ref} style={{ x: sx, y: sy, display: 'inline-block' }} onMouseMove={e => { const r = ref.current!.getBoundingClientRect(); x.set((e.clientX - r.left - r.width / 2) * strength); y.set((e.clientY - r.top - r.height / 2) * strength) }} onMouseLeave={() => { x.set(0); y.set(0) }}>{children}</motion.div>
 }
 function Glow({ x = '50%', y = '50%', size = 520, color = 'rgba(99,102,241,0.14)' }: { x?: string; y?: string; size?: number; color?: string }) {
-  return <motion.div aria-hidden style={{ position: 'absolute', left: x, top: y, width: size, height: size, marginLeft: -size / 2, marginTop: -size / 2, borderRadius: '50%', background: `radial-gradient(closest-side, ${color}, transparent)`, filter: 'blur(30px)', pointerEvents: 'none' }} animate={{ scale: [1, 1.15, 1], opacity: [0.7, 1, 0.7] }} transition={{ duration: 11, ease: 'easeInOut', repeat: Infinity }} />
+  const reduced = useReducedMotion()
+  return <motion.div aria-hidden style={{ position: 'absolute', left: x, top: y, width: size, height: size, marginLeft: -size / 2, marginTop: -size / 2, borderRadius: '50%', background: `radial-gradient(closest-side, ${color}, transparent)`, filter: 'blur(30px)', pointerEvents: 'none' }} animate={reduced ? undefined : { scale: [1, 1.15, 1], opacity: [0.7, 1, 0.7] }} transition={reduced ? undefined : { duration: 11, ease: 'easeInOut', repeat: Infinity }} />
 }
 /** Scroll-driven 3D emergence — transform/opacity/filter only, will-change cleared on settle. */
 function Emerge({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   const ref = useRef<HTMLDivElement>(null)
   const reduced = useReducedMotion()
   const { scrollYProgress: p } = useScroll({ target: ref, offset: ['start end', 'center center'] })
-  const scale = useTransform(p, [0, 1], [0.93, 1])
+  const scale = useTransform(p, [0, 1], [0.9, 1])
   const opacity = useTransform(p, [0, 0.55], [0, 1])
-  const blur = useTransform(p, [0, 0.8], [6, 0])
+  const blur = useTransform(p, [0, 0.8], [7, 0])
+  const rotateX = useTransform(p, [0, 1], [9, 0])
+  const y = useTransform(p, [0, 1], [42, 0])
   const filter = useMotionTemplate`blur(${blur}px)`
   const [settled, setSettled] = useState(!!reduced)
   useMotionValueEvent(p, 'change', v => { if (v >= 0.98 && !settled) setSettled(true) })
   return (
-    <div ref={ref} style={{ position: 'relative' }}>
-      <motion.div style={reduced ? style : { scale, opacity, filter, willChange: settled ? 'auto' : 'transform, opacity, filter', ...style }}>{children}</motion.div>
+    <div ref={ref} style={{ position: 'relative', perspective: 1400 }}>
+      <motion.div style={reduced ? style : { scale, opacity, filter, rotateX, y, transformPerspective: 1400, transformOrigin: 'center 80%', willChange: settled ? 'auto' : 'transform, opacity, filter', ...style }}>{children}</motion.div>
     </div>
   )
 }
 
 /* ─── layout + brutalist frame ───────────────────────────────────────────── */
-function Section({ id, children, bg = '#07070f', style }: { id?: string; children: React.ReactNode; bg?: string; style?: React.CSSProperties }) {
+function Section({ id, children, bg = 'rgba(7,7,15,0.42)', style }: { id?: string; children: React.ReactNode; bg?: string; style?: React.CSSProperties }) {
   return (
     <section id={id} style={{ background: bg, padding: 'clamp(80px,10vw,150px) clamp(20px,5vw,72px)', position: 'relative', overflow: 'hidden', ...style }}>
       <div style={{ maxWidth: 1180, margin: '0 auto', position: 'relative' }}>{children}</div>
@@ -122,9 +132,10 @@ function Frame({ coord, idx, dark, scan, grid, children, style, right }: { coord
   )
 }
 function LiveDot({ color = EMERALD, label }: { color?: string; label?: string }) {
+  const reduced = useReducedMotion()
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, ...coordLabel, color: T3 }}>
-      <motion.span style={{ width: 6, height: 6, borderRadius: 999, background: color, boxShadow: `0 0 8px ${color}` }} animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.6, repeat: Infinity }} />{label}
+      <motion.span style={{ width: 6, height: 6, borderRadius: 999, background: color, boxShadow: `0 0 8px ${color}` }} animate={reduced ? undefined : { opacity: [1, 0.3, 1] }} transition={reduced ? undefined : { duration: 1.6, repeat: Infinity }} />{label}
     </span>
   )
 }
@@ -221,7 +232,7 @@ const ARB = [
 /* 0 · Scale band (reskinned into the grid system) */
 function ScaleBand() {
   return (
-    <Section bg="#0a0a16">
+    <Section bg="rgba(10,10,22,0.5)">
       <div className="cx-grid-bg" style={{ position: 'absolute', inset: 0, opacity: 0.5, pointerEvents: 'none' }} />
       <Stagger style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 0 }}>
         {STATS.map((s, i) => (
@@ -270,7 +281,7 @@ function DensityGrid() {
             </div>
             <Stagger>
               {POINTERS.map((p, i) => (
-                <motion.div key={i} variants={childV} className="cx-row" style={{ display: 'grid', gridTemplateColumns: '24px 1.7fr 0.5fr 0.7fr 0.8fr 0.5fr 0.9fr', alignItems: 'center', gap: 10, padding: '11px 16px', borderBottom: i < POINTERS.length - 1 ? `1px solid ${HAIR}` : 'none', background: i % 2 ? 'rgba(255,255,255,0.012)' : 'transparent', cursor: 'pointer' }}>
+                <motion.div key={i} variants={childV} className="cx-row" whileHover={{ backgroundColor: 'rgba(129,140,248,0.06)', x: 3 }} transition={{ type: 'spring', stiffness: 400, damping: 30 }} style={{ display: 'grid', gridTemplateColumns: '24px 1.7fr 0.5fr 0.7fr 0.8fr 0.5fr 0.9fr', alignItems: 'center', gap: 10, padding: '11px 16px', borderBottom: i < POINTERS.length - 1 ? `1px solid ${HAIR}` : 'none', background: i % 2 ? 'rgba(255,255,255,0.012)' : 'transparent', cursor: 'pointer' }} data-cursor="hover">
                   <span style={{ width: 18, height: 18, borderRadius: 3, background: PORTALS[p.src].bg, overflow: 'hidden', display: 'inline-flex' }}><img src={PORTALS[p.src].favicon} alt="" style={{ width: '100%', height: '100%' }} /></span>
                   <span style={{ fontSize: 13, fontWeight: 600, color: T1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.model}</span>
                   <span style={{ ...mono, fontSize: 12.5, color: T3 }}>{p.year}</span>
@@ -291,7 +302,7 @@ function DensityGrid() {
 /* 2 · Trust strip — thin rhythm band */
 function TrustStrip() {
   return (
-    <Section bg="#07070f" style={{ padding: 'clamp(40px,5vw,64px) clamp(20px,5vw,72px)' }}>
+    <Section bg="rgba(7,7,15,0.42)" style={{ padding: 'clamp(40px,5vw,64px) clamp(20px,5vw,72px)' }}>
       <Emerge>
         <Frame coord="Procedencia · verificación">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.3fr' }}>
@@ -341,7 +352,7 @@ function ResidualCorridor() {
   const subjPct = ((RES_SUBJECT.ageMonths) / 72) * 520
   const subjY = 240 - (RES_SUBJECT.value / 48000) * 240
   return (
-    <div ref={wrap} style={{ height: reduced ? 'auto' : '230vh', position: 'relative', background: '#0a0a16' }}>
+    <div ref={wrap} style={{ height: reduced ? 'auto' : '230vh', position: 'relative', background: 'rgba(10,10,22,0.5)' }}>
       <div style={{ position: reduced ? 'relative' : 'sticky', top: 0, minHeight: reduced ? 'auto' : '100dvh', display: 'flex', alignItems: 'center', padding: 'clamp(80px,10vw,120px) clamp(20px,5vw,72px)', overflow: 'hidden' }}>
         <div className="cx-grid-bg" style={{ position: 'absolute', inset: 0, opacity: 0.5, pointerEvents: 'none' }} />
         <Glow x="62%" y="38%" size={620} color="rgba(124,58,237,0.1)" />
@@ -447,7 +458,7 @@ function Donut({ pct, label, val }: { pct: number; label: string; val: string })
 }
 function InventoryHealth() {
   return (
-    <Section bg="#0a0a16">
+    <Section bg="rgba(10,10,22,0.5)">
       <Reveal style={{ marginBottom: 36 }}><p style={{ ...eyebrow, marginBottom: 18 }}>Salud del inventario</p><Kinetic style={h2} lines={['Un índice vivo,', <span key="n" style={{ color: INDIGO_SOFT }}>no un catálogo.</span>]} /></Reveal>
       <Emerge>
         <Frame coord="Inventario · 6 países · live" idx="//06" dark right={<LiveDot label="hace 4 min" />}>
@@ -530,7 +541,7 @@ function Cell({ v }: { v: boolean | string }) {
 }
 function Comparison() {
   return (
-    <Section bg="#07070f">
+    <Section bg="rgba(7,7,15,0.42)">
       <Kinetic style={{ ...h2, maxWidth: '24ch', marginBottom: 40 }} lines={['Un valuador da un número.', <span key="s" style={{ color: T3 }}>CARDEX da el sistema.</span>]} />
       <Emerge>
         <Frame coord="Paridad · capacidades">
@@ -562,7 +573,7 @@ function HowItWorks() {
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start 70%', 'end 60%'] })
   const h = useTransform(scrollYProgress, [0, 1], ['0%', '100%'])
   return (
-    <Section bg="#0a0a16">
+    <Section bg="rgba(10,10,22,0.5)">
       <Reveal style={{ marginBottom: 56 }}><p style={{ ...eyebrow, marginBottom: 18 }}>Cómo funciona</p><h2 style={{ ...h2, maxWidth: '16ch' }}>Del puntero crudo a la decisión.</h2></Reveal>
       <div ref={ref} style={{ position: 'relative', paddingLeft: 'clamp(40px,6vw,72px)' }}>
         <div style={{ position: 'absolute', left: 'clamp(15px,2.4vw,28px)', top: 6, bottom: 6, width: 2, background: HAIR }} />
@@ -583,7 +594,7 @@ function HowItWorks() {
 /* 9 · Final CTA */
 function FinalCta({ onEnter }: { onEnter: () => void }) {
   return (
-    <Section bg="#07070f" style={{ textAlign: 'center', paddingTop: 'clamp(110px,13vw,200px)', paddingBottom: 'clamp(110px,13vw,200px)' }}>
+    <Section bg="rgba(7,7,15,0.42)" style={{ textAlign: 'center', paddingTop: 'clamp(110px,13vw,200px)', paddingBottom: 'clamp(110px,13vw,200px)' }}>
       <Glow x="50%" y="42%" size={760} color="rgba(99,102,241,0.16)" />
       <div className="cx-grid-bg" style={{ position: 'absolute', inset: 0, opacity: 0.4, pointerEvents: 'none' }} />
       <Kinetic style={{ fontSize: 'clamp(2.5rem,1.2rem+5vw,5.4rem)', lineHeight: 1.0, fontWeight: 700, letterSpacing: '-0.045em', color: T1, maxWidth: '15ch', margin: '0 auto', textAlign: 'center', position: 'relative' }} lines={['Deja de buscar', <span key="x" style={{ background: 'linear-gradient(120deg,#c4b5fd,#818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>en siete sitios.</span>]} />
@@ -605,7 +616,7 @@ function Footer() {
     { h: 'Legal', items: ['Privacidad', 'Términos', 'Datos y fuentes'] },
   ]
   return (
-    <footer style={{ background: '#0c0c1c', borderTop: `1px solid ${HAIR}`, padding: 'clamp(56px,7vw,88px) clamp(20px,5vw,72px) 36px' }}>
+    <footer style={{ background: 'rgba(8,8,18,0.82)', borderTop: `1px solid ${HAIR}`, padding: 'clamp(56px,7vw,88px) clamp(20px,5vw,72px) 36px' }}>
       <div style={{ maxWidth: 1180, margin: '0 auto' }}>
         <Reveal>
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.4fr) repeat(4,minmax(0,1fr))', gap: 'clamp(24px,3vw,48px)' }}>
@@ -636,12 +647,76 @@ function Footer() {
 /* ─── brand marquee strip ────────────────────────────────────────────────── */
 function BrandStrip() {
   return (
-    <Section bg="#07070f" style={{ padding: 'clamp(40px,5vw,64px) clamp(20px,5vw,72px)' }}>
+    <Section bg="rgba(7,7,15,0.42)" style={{ padding: 'clamp(40px,5vw,64px) clamp(20px,5vw,72px)' }}>
       <Reveal>
         <div style={{ ...coordLabel, textAlign: 'center', marginBottom: 30 }}>// Toda marca · todo modelo · todo el catálogo europeo</div>
         <Marquee duration={44}>{MARQUEE_BRANDS.map(n => <span key={n} style={{ display: 'flex', alignItems: 'center', height: 30, flexShrink: 0 }}><BrandMark name={n} box={26} /></span>)}</Marquee>
       </Reveal>
     </Section>
+  )
+}
+
+/* H · Coverage — horizontal-scroll pinned band (6 territorios) */
+const COV = [
+  { code: 'de', dealers: '9.400+', fuentes: 'AutoScout24 · mobile.de', share: 31 },
+  { code: 'fr', dealers: '5.200+', fuentes: 'AutoScout24 · LaCentrale', share: 18 },
+  { code: 'es', dealers: '4.100+', fuentes: 'AutoScout24 · coches.net', share: 14 },
+  { code: 'nl', dealers: '3.600+', fuentes: 'AutoScout24 · marktplaats', share: 12 },
+  { code: 'be', dealers: '3.100+', fuentes: 'AutoScout24 · 2dehands', share: 11 },
+  { code: 'ch', dealers: '2.600+', fuentes: 'AutoScout24 · tutti.ch', share: 9 },
+]
+function CoverageScroll() {
+  const wrap = useRef<HTMLDivElement>(null)
+  const reduced = useReducedMotion()
+  const { scrollYProgress: p } = useScroll({ target: wrap, offset: ['start start', 'end end'] })
+  const xPct = useTransform(p, [0, 1], [1, -205])
+  const xs = useSpring(xPct, { stiffness: 90, damping: 26, mass: 0.4 })
+  const x = useMotionTemplate`${xs}vw`
+  const bar = useTransform(p, [0, 1], ['8%', '100%'])
+  return (
+    <div ref={wrap} style={{ height: reduced ? 'auto' : '300vh', position: 'relative', background: 'rgba(8,8,18,0.5)' }}>
+      <div style={{ position: reduced ? 'relative' : 'sticky', top: 0, height: reduced ? 'auto' : '100dvh', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 'clamp(72px,9vw,110px) 0' }}>
+        <div className="cx-grid-bg" style={{ position: 'absolute', inset: 0, opacity: 0.4, pointerEvents: 'none' }} />
+        {/* pinned header */}
+        <div style={{ position: 'absolute', top: 'clamp(40px,6vw,72px)', left: 'clamp(20px,5vw,72px)', right: 'clamp(20px,5vw,72px)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', zIndex: 3 }}>
+          <div>
+            <p style={{ ...eyebrow, marginBottom: 12 }}>Cobertura</p>
+            <h2 style={{ ...h2, fontSize: 'clamp(1.7rem,1.1rem+2vw,2.8rem)' }}>Seis territorios,<br /><span style={{ color: INDIGO_SOFT }}>un solo índice.</span></h2>
+          </div>
+          <div style={{ width: 'min(34vw,300px)', display: reduced ? 'none' : 'block' }}>
+            <div style={{ ...coordLabel, marginBottom: 8, textAlign: 'right' }}>// desliza →</div>
+            <div style={{ height: 2, background: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' }}>
+              <motion.div style={{ height: '100%', width: bar, background: `linear-gradient(90deg,${INDIGO},${INDIGO_SOFT})` }} />
+            </div>
+          </div>
+        </div>
+        {/* horizontal track */}
+        <motion.div style={{ display: 'flex', gap: 'clamp(18px,2.4vw,34px)', paddingInline: '6vw', x: reduced ? 0 : x, flexWrap: reduced ? 'wrap' : 'nowrap', willChange: reduced ? 'auto' : 'transform' }}>
+          {COV.map((c, i) => {
+            const n = NODE[c.code]
+            return (
+              <div key={c.code} className="cx-mil cx-mil-dark" style={{ position: 'relative', flex: reduced ? '1 1 280px' : '0 0 clamp(330px,44vw,600px)', borderRadius: 14, padding: 'clamp(24px,3vw,42px)', overflow: 'hidden', minHeight: reduced ? 'auto' : 'min(58vh,460px)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <Corner v="top" h="left" /><Corner v="top" h="right" /><Corner v="bottom" h="left" /><Corner v="bottom" h="right" />
+                {/* giant ghost code */}
+                <span aria-hidden style={{ position: 'absolute', right: '-2%', bottom: '-12%', fontFamily: MONO, fontWeight: 800, fontSize: 'clamp(9rem,16vw,16rem)', lineHeight: 0.8, color: 'rgba(129,140,248,0.05)', letterSpacing: '-0.04em', pointerEvents: 'none' }}>{c.code.toUpperCase()}</span>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ ...coordLabel, color: INDIGO_SOFT }}>{`//0${i + 1}`}</span>
+                  <img src={n.flag} alt={n.label} style={{ width: 46, height: 31, borderRadius: 4, objectFit: 'cover', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }} />
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <h3 style={{ fontSize: 'clamp(1.8rem,1.2rem+2vw,3rem)', fontWeight: 700, letterSpacing: '-0.03em', color: T1, margin: '0 0 18px' }}>{n.label}</h3>
+                  <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap' }}>
+                    <div><div style={{ ...mono, fontSize: 'clamp(1.2rem,0.9rem+0.8vw,1.7rem)', fontWeight: 600, color: T1 }}>{c.dealers}</div><div style={{ ...coordLabel, marginTop: 4 }}>dealers</div></div>
+                    <div><div style={{ ...mono, fontSize: 'clamp(1.2rem,0.9rem+0.8vw,1.7rem)', fontWeight: 600, color: EMERALD }}>{c.share}%</div><div style={{ ...coordLabel, marginTop: 4 }}>del índice</div></div>
+                  </div>
+                  <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${HAIR}`, ...coordLabel, color: T4 }}>{c.fuentes}</div>
+                </div>
+              </div>
+            )
+          })}
+        </motion.div>
+      </div>
+    </div>
   )
 }
 
@@ -653,6 +728,7 @@ export default function LandingSections({ onEnter }: { onEnter: () => void }) {
       <TrustStrip />
       <ResidualCorridor />
       <ArbTerminal />
+      <CoverageScroll />
       <InventoryHealth />
       <AlertConsole />
       <BrandStrip />
