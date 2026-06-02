@@ -623,7 +623,7 @@ export default function Landing() {
         {/* cinematic image — flipped horizontally, parallax + Ken Burns */}
         <motion.div style={{ position: 'absolute', inset: '-8% 0 0 0', y: reduced ? 0 : heroY, scale: reduced ? 1 : heroScale, willChange: 'transform' }}>
           <motion.div style={{ width: '100%', height: '108%' }} animate={reduced ? undefined : { scale: [1, 1.07, 1] }} transition={{ duration: 26, ease: 'easeInOut', repeat: Infinity }}>
-            <img src={HERO_IMG} alt="" fetchPriority="high" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 64%' }} />
+            <img src={HERO_IMG} alt="" {...{ fetchpriority: 'high' }} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 64%' }} />
           </motion.div>
         </motion.div>
         {/* grades: bottom fade + left/right scrim for legibility */}
