@@ -94,20 +94,22 @@ function useDark() {
 
 // ── Logomark (collapsed) ───────────────────────────────────────────────────
 
-function Logomark({ dark }: { dark: boolean }) {
+function Logomark({ dark, neutralAccent }: { dark: boolean; neutralAccent?: boolean }) {
   return (
     <div style={{
       width: 32,
       height: 32,
       borderRadius: 9,
-      background: 'linear-gradient(135deg, #7c3aed 0%, #2563eb 100%)',
+      background: neutralAccent
+        ? 'linear-gradient(135deg, #0891b2 0%, #22d3ee 100%)'
+        : 'linear-gradient(135deg, #7c3aed 0%, #2563eb 100%)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0,
-      boxShadow: dark
-        ? '0 0 22px rgba(124,58,237,0.38)'
-        : '0 2px 10px rgba(124,58,237,0.30)',
+      boxShadow: neutralAccent
+        ? (dark ? '0 0 22px rgba(34,211,238,0.34)' : '0 2px 10px rgba(8,145,178,0.28)')
+        : (dark ? '0 0 22px rgba(124,58,237,0.38)' : '0 2px 10px rgba(124,58,237,0.30)'),
     }}>
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3"/>
@@ -126,11 +128,18 @@ interface NavItemProps {
   end?: boolean
   collapsed: boolean
   dark: boolean
+  neutralAccent?: boolean
   onClick?: () => void
 }
 
-function NavItem({ to, label, icon: Icon, end, collapsed, dark, onClick }: NavItemProps) {
+function NavItem({ to, label, icon: Icon, end, collapsed, dark, neutralAccent, onClick }: NavItemProps) {
   const [hovered, setHovered] = useState(false)
+
+  // On the terminal route the active accent goes neutral cyan instead of the
+  // brand violet, so the chrome reads as pure dark/white alongside the page.
+  const acc = neutralAccent
+    ? { bgD: 'rgba(34,211,238,0.16)', bgL: 'rgba(8,145,178,0.10)', bdD: 'rgba(34,211,238,0.34)', bdL: 'rgba(8,145,178,0.24)', icoD: '#67e8f9', icoL: '#0891b2', lblL: '#0e3a44', glow: 'rgba(34,211,238,0.18)', icoGlow: 'rgba(103,232,249,0.45)' }
+    : { bgD: 'rgba(124,58,237,0.18)', bgL: 'rgba(124,58,237,0.10)', bdD: 'rgba(124,58,237,0.36)', bdL: 'rgba(124,58,237,0.22)', icoD: '#c4b5fd', icoL: '#7c3aed', lblL: '#3b0764', glow: 'rgba(124,58,237,0.16)', icoGlow: 'rgba(196,181,253,0.50)' }
 
   return (
     <NavLink
@@ -140,11 +149,11 @@ function NavItem({ to, label, icon: Icon, end, collapsed, dark, onClick }: NavIt
       style={{ display: 'block', padding: collapsed ? '0 8px' : '0 10px', marginBottom: 2 }}
     >
       {({ isActive }) => {
-        const activeBg    = dark ? 'rgba(124,58,237,0.18)' : 'rgba(124,58,237,0.10)'
-        const activeBorder = dark ? 'rgba(124,58,237,0.36)' : 'rgba(124,58,237,0.22)'
+        const activeBg    = dark ? acc.bgD : acc.bgL
+        const activeBorder = dark ? acc.bdD : acc.bdL
         const hoverBg     = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'
-        const iconColor   = isActive ? (dark ? '#c4b5fd' : '#7c3aed') : (dark ? '#94a3b8' : '#64748b')
-        const labelColor  = isActive ? (dark ? '#f8fafc' : '#3b0764')  : (dark ? '#cbd5e1' : '#374151')
+        const iconColor   = isActive ? (dark ? acc.icoD : acc.icoL) : (dark ? '#94a3b8' : '#64748b')
+        const labelColor  = isActive ? (dark ? '#f8fafc' : acc.lblL)  : (dark ? '#cbd5e1' : '#374151')
 
         return (
           <div
@@ -162,7 +171,7 @@ function NavItem({ to, label, icon: Icon, end, collapsed, dark, onClick }: NavIt
               border: `1px solid ${isActive ? activeBorder : 'transparent'}`,
               boxShadow: isActive
                 ? dark
-                  ? '0 0 18px rgba(124,58,237,0.16), inset 0 1px 0 rgba(255,255,255,0.08)'
+                  ? `0 0 18px ${acc.glow}, inset 0 1px 0 rgba(255,255,255,0.08)`
                   : 'inset 0 1px 0 rgba(255,255,255,0.50)'
                 : 'none',
               cursor: 'pointer',
@@ -175,7 +184,7 @@ function NavItem({ to, label, icon: Icon, end, collapsed, dark, onClick }: NavIt
                 height: 15,
                 flexShrink: 0,
                 color: iconColor,
-                filter: isActive && dark ? 'drop-shadow(0 0 5px rgba(196,181,253,0.50))' : 'none',
+                filter: isActive && dark ? `drop-shadow(0 0 5px ${acc.icoGlow})` : 'none',
                 transition: 'color 170ms, filter 170ms',
               }}
               strokeWidth={isActive ? 2.2 : 1.75}
@@ -217,10 +226,11 @@ interface NavGroupProps {
   items: ReadonlyArray<{ to: string; label: string; icon: React.ElementType; end?: boolean }>
   collapsed: boolean
   dark: boolean
+  neutralAccent?: boolean
   onItemClick?: () => void
 }
 
-function NavGroup({ label, items, collapsed, dark, onItemClick }: NavGroupProps) {
+function NavGroup({ label, items, collapsed, dark, neutralAccent, onItemClick }: NavGroupProps) {
   return (
     <div style={{ marginBottom: 2 }}>
       <AnimatePresence initial={false}>
@@ -263,6 +273,7 @@ function NavGroup({ label, items, collapsed, dark, onItemClick }: NavGroupProps)
           end={item.end}
           collapsed={collapsed}
           dark={dark}
+          neutralAccent={neutralAccent}
           onClick={onItemClick}
         />
       ))}
@@ -275,11 +286,12 @@ function NavGroup({ label, items, collapsed, dark, onItemClick }: NavGroupProps)
 interface SidebarInnerProps {
   collapsed: boolean
   dark: boolean
+  neutralAccent?: boolean
   onToggle?: () => void
   onClose?: () => void
 }
 
-function SidebarInner({ collapsed, dark, onToggle, onClose }: SidebarInnerProps) {
+function SidebarInner({ collapsed, dark, neutralAccent, onToggle, onClose }: SidebarInnerProps) {
   const { user, logout } = useAuthContext()
   const navigate = useNavigate()
 
@@ -316,7 +328,7 @@ function SidebarInner({ collapsed, dark, onToggle, onClose }: SidebarInnerProps)
               exit={{ opacity: 0, scale: 0.82 }}
               transition={{ duration: 0.14 }}
             >
-              <Logomark dark={dark} />
+              <Logomark dark={dark} neutralAccent={neutralAccent} />
             </motion.div>
           ) : (
             <motion.div
@@ -333,7 +345,9 @@ function SidebarInner({ collapsed, dark, onToggle, onClose }: SidebarInnerProps)
                 fontSize: 15,
                 fontWeight: 900,
                 letterSpacing: '0.18em',
-                background: 'linear-gradient(120deg, #a78bfa 0%, #60a5fa 55%, #67e8f9 100%)',
+                background: neutralAccent
+                  ? 'linear-gradient(120deg, #22d3ee 0%, #67e8f9 55%, #cffafe 100%)'
+                  : 'linear-gradient(120deg, #a78bfa 0%, #60a5fa 55%, #67e8f9 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
@@ -399,6 +413,7 @@ function SidebarInner({ collapsed, dark, onToggle, onClose }: SidebarInnerProps)
             items={group.items}
             collapsed={collapsed}
             dark={dark}
+            neutralAccent={neutralAccent}
             onItemClick={onClose}
           />
         ))}
@@ -418,7 +433,7 @@ function SidebarInner({ collapsed, dark, onToggle, onClose }: SidebarInnerProps)
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
         }}>
-          <Avatar name={user?.name ?? 'User'} size="sm" />
+          <Avatar name={user?.name ?? 'User'} size="sm" mono={neutralAccent} />
 
           <AnimatePresence initial={false}>
             {!collapsed && (
@@ -505,6 +520,7 @@ export default function Shell() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { dark, toggle } = useDark()
   const location = useLocation()
+  const neutralAccent = location.pathname.startsWith('/terminal')
   const W = collapsed ? 60 : 232
 
   const btnColor  = dark ? '#94a3b8' : '#64748b'
@@ -542,7 +558,7 @@ export default function Shell() {
               exit={{ x: -232 }}
               transition={{ type: 'spring', stiffness: 340, damping: 34 }}
             >
-              <SidebarInner collapsed={false} dark={dark} onClose={() => setMobileOpen(false)} />
+              <SidebarInner collapsed={false} dark={dark} neutralAccent={neutralAccent} onClose={() => setMobileOpen(false)} />
             </motion.aside>
           </>
         )}
@@ -558,6 +574,7 @@ export default function Shell() {
         <SidebarInner
           collapsed={collapsed}
           dark={dark}
+          neutralAccent={neutralAccent}
           onToggle={() => setCollapsed(c => !c)}
         />
 
