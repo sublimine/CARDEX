@@ -66,6 +66,7 @@ REGISTRY: list[PortalSpec] = [
     # T2 — Camoufox / stealth browser required (Akamai _abck or equivalent)
     PortalSpec("mobile.de",       Tier.T2, WAF.AKAMAI_V3,   can_escalate_to=Tier.T3, countries=["DE"], notes="Akamai Bot Manager on SRP HTML + JSON [VERIFIED 2026-06-03]"),
     PortalSpec("kleinanzeigen.de",Tier.T2, WAF.AKAMAI_V3,   can_escalate_to=Tier.T3, countries=["DE"], notes="Akamai; category HTML served passively [VERIFIED 2026-06-03]"),
+    PortalSpec("autoweek.nl",     Tier.T2, WAF.AKAMAI_V3,   can_escalate_to=Tier.T3, countries=["NL"], notes="DPG Media — Akamai Bot Manager + DPG WAF on every surface incl. robots.txt [VERIFIED 2026-06-03]"),
     PortalSpec("autoscout24.*",   Tier.T2, WAF.AKAMAI_V3,   can_escalate_to=Tier.T3, countries=["DE","ES","FR","NL","BE","CH"]),
     PortalSpec("wallapop.com",    Tier.T2, WAF.PERIMETER_X, can_escalate_to=Tier.T3, countries=["ES"]),
     PortalSpec("gocar.be",        Tier.T2, WAF.CF_BUSINESS, countries=["BE"]),
