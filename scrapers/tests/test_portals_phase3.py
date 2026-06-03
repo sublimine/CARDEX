@@ -24,6 +24,7 @@ from scrapers.engine.router.domain_map import Tier, WAF
 from scrapers.engine.router.domain_map import get as domain_get
 from scrapers.portals import get_scraper
 from scrapers.portals.base import BasePortalScraper
+from scrapers.portals.largus_fr import LargusFRScraper
 from scrapers.portals.paruvendu_fr import ParuVenduFRScraper
 
 
@@ -76,7 +77,7 @@ def _no_backoff(scraper: BasePortalScraper) -> None:
 _YP = {"year_from": 2018, "year_to": 2020, "price_from": 10_000, "price_to": 20_000}
 _YP_OPEN = {"year_from": 2024, "year_to": 2026, "price_from": 100_000, "price_to": None}
 
-_PHASE3 = [ParuVenduFRScraper]
+_PHASE3 = [ParuVenduFRScraper, LargusFRScraper]
 
 
 # --------------------------------------------------------------------------- #
@@ -159,6 +160,44 @@ def test_paruvendu_extract_returns_empty_on_garbage() -> None:
 
 
 # --------------------------------------------------------------------------- #
+# largus.fr — request shape & extraction
+# --------------------------------------------------------------------------- #
+@pytest.mark.unit
+def test_largus_build_url_full_uses_cents_and_open_price() -> None:
+    # price_min/price_max are CENTS (EUR ×100) — verified against the live counter.
+    full = LargusFRScraper()._build_url(_YP, 3)
+    assert full == (
+        "https://occasion.largus.fr/auto/"
+        "?price_min=1000000&price_max=2000000&year_min=2018&year_max=2020&currentpage=3"
+    )
+    open_top = LargusFRScraper()._build_url(_YP_OPEN, 1)
+    assert "price_max" not in open_top
+    assert open_top.startswith("https://occasion.largus.fr/auto/?price_min=10000000&")
+    assert open_top.endswith("&year_min=2024&year_max=2026&currentpage=1")
+
+
+@pytest.mark.unit
+def test_largus_extract_only_uuid_paths_and_dedups() -> None:
+    html = (
+        '<a href="/auto/annonce-04279b1b-ce4d-4cc1-863f-d0bbd8c978a8-renault-clio-2018-130000km">x</a>'
+        '<a href="/auto/annonce-1205e427-91f5-436e-8efa-c8a5cd2c9c67-volkswagen-golf-2024-25300km">y</a>'
+        '<a href="/auto/annonce-04279b1b-ce4d-4cc1-863f-d0bbd8c978a8-renault-clio-2018-130000km">dup</a>'
+        '<a href="/auto/annonce-NOTUUID-foo-bar">ignored — non-UUID id</a>'
+        '<a href="/auto/audi/a3/">ignored — make/model nav</a>'
+    )
+    assert LargusFRScraper()._extract(html) == [
+        "https://occasion.largus.fr/auto/annonce-04279b1b-ce4d-4cc1-863f-d0bbd8c978a8-renault-clio-2018-130000km",
+        "https://occasion.largus.fr/auto/annonce-1205e427-91f5-436e-8efa-c8a5cd2c9c67-volkswagen-golf-2024-25300km",
+    ]
+
+
+@pytest.mark.unit
+def test_largus_extract_returns_empty_on_garbage() -> None:
+    assert LargusFRScraper()._extract("") == []
+    assert LargusFRScraper()._extract("<html><body>404</body></html>") == []
+
+
+# --------------------------------------------------------------------------- #
 # fetch_segment — behavioural matrix
 # --------------------------------------------------------------------------- #
 _PARUVENDU_HTML = (
@@ -166,8 +205,16 @@ _PARUVENDU_HTML = (
 )
 _PARUVENDU_EXPECTED = ["https://www.paruvendu.fr/a/voiture-occasion/seat/leon/9999999A1KVVOSELEO"]
 
+_LARGUS_HTML = (
+    '<a href="/auto/annonce-04279b1b-ce4d-4cc1-863f-d0bbd8c978a8-renault-clio-2018-130000km">x</a>'
+)
+_LARGUS_EXPECTED = [
+    "https://occasion.largus.fr/auto/annonce-04279b1b-ce4d-4cc1-863f-d0bbd8c978a8-renault-clio-2018-130000km"
+]
+
 _OK_CASES = [
     (ParuVenduFRScraper, dict(_YP), _PARUVENDU_HTML, _PARUVENDU_EXPECTED),
+    (LargusFRScraper, dict(_YP), _LARGUS_HTML, _LARGUS_EXPECTED),
 ]
 
 
@@ -227,6 +274,7 @@ def test_fetch_segment_retries_transport_error(cls, params, body, expected) -> N
     "domain, cls",
     [
         ("paruvendu.fr", ParuVenduFRScraper),
+        ("largus.fr", LargusFRScraper),
     ],
 )
 def test_registry_resolves_domain_to_scraper(domain, cls) -> None:
@@ -240,6 +288,7 @@ def test_registry_resolves_domain_to_scraper(domain, cls) -> None:
     "domain, tier, waf, ceiling",
     [
         ("paruvendu.fr", Tier.T1, WAF.NONE, None),
+        ("largus.fr", Tier.T1, WAF.NONE, None),
     ],
 )
 def test_domain_map_baselines(domain, tier, waf, ceiling) -> None:

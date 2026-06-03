@@ -19,6 +19,7 @@ from scrapers.portals.es import AutoScout24ES
 from scrapers.portals.fr import AutoScout24FR
 from scrapers.portals.kleinanzeigen_de import KleinanzeigenDEScraper
 from scrapers.portals.lacentrale_fr import LaCentraleFRScraper
+from scrapers.portals.largus_fr import LargusFRScraper
 from scrapers.portals.leboncoin_fr import LeboncoinFRScraper
 from scrapers.portals.marktplaats_nl import MarktplaatsNLScraper
 from scrapers.portals.mobile_de import MobileDeScraper
@@ -43,6 +44,7 @@ _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
     LaCentraleFRScraper,
     # Phase 3 portals — Tier-0/Tier-1 high-volume targets
     ParuVenduFRScraper,
+    LargusFRScraper,
 )
 
 PORTAL_REGISTRY: dict[str, type[BasePortalScraper]] = {
