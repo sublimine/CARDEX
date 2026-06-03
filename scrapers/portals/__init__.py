@@ -15,8 +15,10 @@ from scrapers.portals.be import AutoScout24BE
 from scrapers.portals.ch import AutoScout24CH
 from scrapers.portals.de import AutoScout24DE
 from scrapers.portals.es import AutoScout24ES
+from scrapers.portals.es.autocasion import AutocasionES
 from scrapers.portals.fr import AutoScout24FR
 from scrapers.portals.nl import AutoScout24NL
+from scrapers.portals.nl.autotrack import AutotrackNL
 
 # Every concrete scraper the engine can dispatch. DOMAIN is the registry key.
 _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
@@ -26,6 +28,8 @@ _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
     AutoScout24NL,
     AutoScout24BE,
     AutoScout24CH,
+    AutotrackNL,
+    AutocasionES,
 )
 
 PORTAL_REGISTRY: dict[str, type[BasePortalScraper]] = {
