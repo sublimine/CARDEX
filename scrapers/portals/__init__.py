@@ -18,6 +18,7 @@ from scrapers.portals.coches_net import CochesNetScraper
 from scrapers.portals.de import AutoScout24DE
 from scrapers.portals.es import AutoScout24ES
 from scrapers.portals.fr import AutoScout24FR
+from scrapers.portals.gaspedaal_nl import GaspedaalNLScraper
 from scrapers.portals.kleinanzeigen_de import KleinanzeigenDEScraper
 from scrapers.portals.lacentrale_fr import LaCentraleFRScraper
 from scrapers.portals.largus_fr import LargusFRScraper
@@ -47,6 +48,7 @@ _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
     ParuVenduFRScraper,
     LargusFRScraper,
     AutoTrackNLScraper,
+    GaspedaalNLScraper,
 )
 
 PORTAL_REGISTRY: dict[str, type[BasePortalScraper]] = {

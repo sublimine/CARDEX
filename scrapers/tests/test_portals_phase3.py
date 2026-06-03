@@ -25,6 +25,7 @@ from scrapers.engine.router.domain_map import get as domain_get
 from scrapers.portals import get_scraper
 from scrapers.portals.autotrack_nl import AutoTrackNLScraper
 from scrapers.portals.base import BasePortalScraper
+from scrapers.portals.gaspedaal_nl import GaspedaalNLScraper, _slugify
 from scrapers.portals.largus_fr import LargusFRScraper
 from scrapers.portals.paruvendu_fr import ParuVenduFRScraper
 
@@ -244,6 +245,91 @@ def test_autotrack_extract_returns_empty_on_garbage() -> None:
 
 
 # --------------------------------------------------------------------------- #
+# gaspedaal.nl — JSON-LD ItemList extraction + slugification
+# --------------------------------------------------------------------------- #
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "raw, expected",
+    [
+        ("Renault", "renault"),
+        ("Mercedes-Benz", "mercedes-benz"),
+        ("Citroën", "citroen"),         # accent fold — verified vs live 404
+        ("DS 4", "ds-4"),
+        ("BMW", "bmw"),
+        ("3 Serie", "3-serie"),
+    ],
+)
+def test_gaspedaal_slugify(raw, expected) -> None:
+    assert _slugify(raw) == expected
+
+
+@pytest.mark.unit
+def test_gaspedaal_partition_is_single_empty_segment() -> None:
+    # The global SSR pager covers the whole 338k inventory; no partition needed.
+    assert GaspedaalNLScraper().partition_params() == [{}]
+
+
+@pytest.mark.unit
+def test_gaspedaal_subdivide_is_a_noop() -> None:
+    assert GaspedaalNLScraper().subdivide_segment({}) == []
+
+
+@pytest.mark.unit
+def test_gaspedaal_build_url_passes_only_page() -> None:
+    assert GaspedaalNLScraper()._build_url(1) == "https://www.gaspedaal.nl/zoeken?page=1"
+    assert GaspedaalNLScraper()._build_url(3389) == "https://www.gaspedaal.nl/zoeken?page=3389"
+
+
+_GASPEDAAL_LDJSON_HTML = """
+<html><head>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","numberOfItems":2,"itemListElement":[
+{"@type":"ListItem","position":1,"item":{"@type":["Car","Product"],"@id":"https://www.gaspedaal.nl/zoeken#136923530","brand":"Renault","model":"Captur"}},
+{"@type":"ListItem","position":2,"item":{"@type":["Car","Product"],"@id":"https://www.gaspedaal.nl/zoeken?page=2#122829592","brand":"DS","model":"DS 4"}}
+]}</script>
+<script type="application/ld+json">{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"item":{"@id":"/","name":"Home"}}]}</script>
+</head></html>
+"""
+
+
+@pytest.mark.unit
+def test_gaspedaal_extract_parses_json_ld_and_handles_page_echo() -> None:
+    # The page-2 @id format ".../zoeken?page=2#<ID>" must match exactly the same
+    # ID-extraction path as the page-1 ".../zoeken#<ID>" form.
+    assert GaspedaalNLScraper()._extract(_GASPEDAAL_LDJSON_HTML) == [
+        "https://www.gaspedaal.nl/auto/renault/captur/136923530",
+        "https://www.gaspedaal.nl/auto/ds/ds-4/122829592",
+    ]
+
+
+@pytest.mark.unit
+def test_gaspedaal_extract_skips_items_missing_brand_or_model() -> None:
+    html = (
+        '<script type="application/ld+json">'
+        '{"@type":"ItemList","itemListElement":['
+        '{"@type":"ListItem","position":1,"item":{"@id":"https://www.gaspedaal.nl/zoeken#1","brand":"Audi"}},'  # no model
+        '{"@type":"ListItem","position":2,"item":{"@id":"https://www.gaspedaal.nl/zoeken#2","model":"A4"}},'    # no brand
+        '{"@type":"ListItem","position":3,"item":{"@id":"https://www.gaspedaal.nl/zoeken#3","brand":"BMW","model":"X1"}}'  # ok
+        ']}</script>'
+    )
+    assert GaspedaalNLScraper()._extract(html) == [
+        "https://www.gaspedaal.nl/auto/bmw/x1/3",
+    ]
+
+
+@pytest.mark.unit
+def test_gaspedaal_extract_returns_empty_on_garbage() -> None:
+    assert GaspedaalNLScraper()._extract("") == []
+    # Valid JSON but missing the expected ItemList type.
+    assert GaspedaalNLScraper()._extract(
+        '<script type="application/ld+json">{"@type":"Organization"}</script>'
+    ) == []
+    # Broken JSON body — must not raise.
+    assert GaspedaalNLScraper()._extract(
+        '<script type="application/ld+json">not even json</script>'
+    ) == []
+
+
+# --------------------------------------------------------------------------- #
 # fetch_segment — behavioural matrix
 # --------------------------------------------------------------------------- #
 _PARUVENDU_HTML = (
@@ -263,10 +349,19 @@ _AUTOTRACK_HTML = (
 )
 _AUTOTRACK_EXPECTED = ["https://www.autotrack.nl/a/seat-leon-benzine-2020-59439031"]
 
+_GASPEDAAL_OK_HTML = (
+    '<script type="application/ld+json">'
+    '{"@type":"ItemList","itemListElement":['
+    '{"@type":"ListItem","position":1,"item":{"@id":"https://www.gaspedaal.nl/zoeken#777","brand":"Audi","model":"A4"}}'
+    ']}</script>'
+)
+_GASPEDAAL_EXPECTED = ["https://www.gaspedaal.nl/auto/audi/a4/777"]
+
 _OK_CASES = [
     (ParuVenduFRScraper, dict(_YP), _PARUVENDU_HTML, _PARUVENDU_EXPECTED),
     (LargusFRScraper, dict(_YP), _LARGUS_HTML, _LARGUS_EXPECTED),
     (AutoTrackNLScraper, {}, _AUTOTRACK_HTML, _AUTOTRACK_EXPECTED),
+    (GaspedaalNLScraper, {}, _GASPEDAAL_OK_HTML, _GASPEDAAL_EXPECTED),
 ]
 
 
@@ -328,6 +423,7 @@ def test_fetch_segment_retries_transport_error(cls, params, body, expected) -> N
         ("paruvendu.fr", ParuVenduFRScraper),
         ("largus.fr", LargusFRScraper),
         ("autotrack.nl", AutoTrackNLScraper),
+        ("gaspedaal.nl", GaspedaalNLScraper),
     ],
 )
 def test_registry_resolves_domain_to_scraper(domain, cls) -> None:
@@ -343,6 +439,7 @@ def test_registry_resolves_domain_to_scraper(domain, cls) -> None:
         ("paruvendu.fr", Tier.T1, WAF.NONE, None),
         ("largus.fr", Tier.T1, WAF.NONE, None),
         ("autotrack.nl", Tier.T1, WAF.NONE, None),
+        ("gaspedaal.nl", Tier.T1, WAF.NONE, None),
     ],
 )
 def test_domain_map_baselines(domain, tier, waf, ceiling) -> None:
