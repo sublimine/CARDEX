@@ -47,6 +47,12 @@ class PortalSpec:
 
 # Verified against production + diag.py (last check: 2026-05-07)
 REGISTRY: list[PortalSpec] = [
+    # T2 — mobile.de browser SRP fallback. MUST precede the bare "mobile.de" T0
+    # entry: get() is first-match-wins and the "mobile.de" pattern also matches the
+    # "suchen." subdomain, so this exact host has to win first to route the search
+    # page to T2/Akamai instead of the T0 mobile-API path.
+    PortalSpec("suchen.mobile.de", Tier.T2, WAF.AKAMAI_V3, can_escalate_to=Tier.T3, countries=["DE"], notes="search.html SRP fallback"),
+
     # T0 — Mobile API bypass
     PortalSpec("mobile.de",       Tier.T0, WAF.NONE,        countries=["DE"], notes="Ad-Stream WSS consumer"),
 
