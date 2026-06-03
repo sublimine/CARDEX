@@ -23,6 +23,7 @@ import pytest
 from scrapers.engine.router.domain_map import Tier, WAF
 from scrapers.engine.router.domain_map import get as domain_get
 from scrapers.portals import get_scraper
+from scrapers.portals.autotrack_nl import AutoTrackNLScraper
 from scrapers.portals.base import BasePortalScraper
 from scrapers.portals.largus_fr import LargusFRScraper
 from scrapers.portals.paruvendu_fr import ParuVenduFRScraper
@@ -198,6 +199,51 @@ def test_largus_extract_returns_empty_on_garbage() -> None:
 
 
 # --------------------------------------------------------------------------- #
+# autotrack.nl — single-segment scraper (global pager covers full inventory)
+# --------------------------------------------------------------------------- #
+@pytest.mark.unit
+def test_autotrack_partition_is_single_empty_segment() -> None:
+    # autotrack's pager reaches the whole 220k inventory; no partition is needed.
+    assert AutoTrackNLScraper().partition_params() == [{}]
+
+
+@pytest.mark.unit
+def test_autotrack_subdivide_is_a_noop() -> None:
+    # No subdivision should be attempted — the base scraper never has to escalate.
+    assert AutoTrackNLScraper().subdivide_segment({}) == []
+
+
+@pytest.mark.unit
+def test_autotrack_build_url_passes_only_pagenumber() -> None:
+    assert AutoTrackNLScraper()._build_url(1) == (
+        "https://www.autotrack.nl/aanbod?pageNumber=1"
+    )
+    assert AutoTrackNLScraper()._build_url(7336) == (
+        "https://www.autotrack.nl/aanbod?pageNumber=7336"
+    )
+
+
+@pytest.mark.unit
+def test_autotrack_extract_strips_tracking_query_and_dedups() -> None:
+    html = (
+        '<a data-vehicle-id="59439031" href="/a/seat-leon-benzine-2020-59439031?from_srp=true">x</a>'
+        '<a data-vehicle-id="59436164" href="/a/peugeot-5008-benzine-2018-59436164?from_srp=true">y</a>'
+        '<a href="/a/seat-leon-benzine-2020-59439031?from_srp=true">dup</a>'
+        '<a href="/a/missing-tracking">ignored — no ?from_srp=true</a>'
+    )
+    assert AutoTrackNLScraper()._extract(html) == [
+        "https://www.autotrack.nl/a/seat-leon-benzine-2020-59439031",
+        "https://www.autotrack.nl/a/peugeot-5008-benzine-2018-59436164",
+    ]
+
+
+@pytest.mark.unit
+def test_autotrack_extract_returns_empty_on_garbage() -> None:
+    assert AutoTrackNLScraper()._extract("") == []
+    assert AutoTrackNLScraper()._extract("<html><body>404</body></html>") == []
+
+
+# --------------------------------------------------------------------------- #
 # fetch_segment — behavioural matrix
 # --------------------------------------------------------------------------- #
 _PARUVENDU_HTML = (
@@ -212,9 +258,15 @@ _LARGUS_EXPECTED = [
     "https://occasion.largus.fr/auto/annonce-04279b1b-ce4d-4cc1-863f-d0bbd8c978a8-renault-clio-2018-130000km"
 ]
 
+_AUTOTRACK_HTML = (
+    '<a data-vehicle-id="59439031" href="/a/seat-leon-benzine-2020-59439031?from_srp=true">x</a>'
+)
+_AUTOTRACK_EXPECTED = ["https://www.autotrack.nl/a/seat-leon-benzine-2020-59439031"]
+
 _OK_CASES = [
     (ParuVenduFRScraper, dict(_YP), _PARUVENDU_HTML, _PARUVENDU_EXPECTED),
     (LargusFRScraper, dict(_YP), _LARGUS_HTML, _LARGUS_EXPECTED),
+    (AutoTrackNLScraper, {}, _AUTOTRACK_HTML, _AUTOTRACK_EXPECTED),
 ]
 
 
@@ -275,6 +327,7 @@ def test_fetch_segment_retries_transport_error(cls, params, body, expected) -> N
     [
         ("paruvendu.fr", ParuVenduFRScraper),
         ("largus.fr", LargusFRScraper),
+        ("autotrack.nl", AutoTrackNLScraper),
     ],
 )
 def test_registry_resolves_domain_to_scraper(domain, cls) -> None:
@@ -289,6 +342,7 @@ def test_registry_resolves_domain_to_scraper(domain, cls) -> None:
     [
         ("paruvendu.fr", Tier.T1, WAF.NONE, None),
         ("largus.fr", Tier.T1, WAF.NONE, None),
+        ("autotrack.nl", Tier.T1, WAF.NONE, None),
     ],
 )
 def test_domain_map_baselines(domain, tier, waf, ceiling) -> None:

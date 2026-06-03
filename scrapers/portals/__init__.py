@@ -10,6 +10,7 @@ between the class and its lookup key.
 """
 from __future__ import annotations
 
+from scrapers.portals.autotrack_nl import AutoTrackNLScraper
 from scrapers.portals.base import BasePortalScraper
 from scrapers.portals.be import AutoScout24BE
 from scrapers.portals.ch import AutoScout24CH
@@ -45,6 +46,7 @@ _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
     # Phase 3 portals — Tier-0/Tier-1 high-volume targets
     ParuVenduFRScraper,
     LargusFRScraper,
+    AutoTrackNLScraper,
 )
 
 PORTAL_REGISTRY: dict[str, type[BasePortalScraper]] = {
