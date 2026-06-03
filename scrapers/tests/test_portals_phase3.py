@@ -27,6 +27,7 @@ from scrapers.portals.autotrack_nl import AutoTrackNLScraper
 from scrapers.portals.base import BasePortalScraper
 from scrapers.portals.gaspedaal_nl import GaspedaalNLScraper, _slugify
 from scrapers.portals.largus_fr import LargusFRScraper
+from scrapers.portals.motor_es import MotorESScraper
 from scrapers.portals.paruvendu_fr import ParuVenduFRScraper
 
 
@@ -79,7 +80,7 @@ def _no_backoff(scraper: BasePortalScraper) -> None:
 _YP = {"year_from": 2018, "year_to": 2020, "price_from": 10_000, "price_to": 20_000}
 _YP_OPEN = {"year_from": 2024, "year_to": 2026, "price_from": 100_000, "price_to": None}
 
-_PHASE3 = [ParuVenduFRScraper, LargusFRScraper]
+_PHASE3 = [ParuVenduFRScraper, LargusFRScraper, MotorESScraper]
 
 
 # --------------------------------------------------------------------------- #
@@ -330,6 +331,55 @@ def test_gaspedaal_extract_returns_empty_on_garbage() -> None:
 
 
 # --------------------------------------------------------------------------- #
+# motor.es — base64 data-goto + cars-only filter
+# --------------------------------------------------------------------------- #
+import base64 as _b64
+
+
+def _b64encode_url(url: str) -> str:
+    return _b64.b64encode(url.encode()).decode()
+
+
+@pytest.mark.unit
+def test_motor_build_url_full_and_open_price() -> None:
+    full = MotorESScraper()._build_url(_YP, 3)
+    assert full == (
+        "https://www.motor.es/segunda-mano/coches/"
+        "?pagina=3&precio_min=10000&precio_max=20000&year_min=2018&year_max=2020"
+    )
+    open_top = MotorESScraper()._build_url(_YP_OPEN, 1)
+    assert "precio_max" not in open_top
+    assert open_top.endswith("&precio_min=100000&year_min=2024&year_max=2026")
+    assert "?pagina=1&" in open_top  # pagina is first param, no leading &
+
+
+@pytest.mark.unit
+def test_motor_extract_decodes_data_goto_keeps_cars_only_and_dedups() -> None:
+    car1 = _b64encode_url("https://www.motor.es/segunda-mano/anuncio/12345/")
+    car2 = _b64encode_url("https://www.motor.es/segunda-mano/anuncio/67890/")
+    moto = _b64encode_url(
+        "https://www.motor.es/motos/segunda-mano/anuncio/e08d153d-e509-42ef-a813-0ce9e49474d4/"
+    )
+    html = (
+        f'<span data-goto="{car1}">x</span>'
+        f'<span data-goto="{car2}">y</span>'
+        f'<span data-goto="{car1}">dup</span>'
+        f'<span data-goto="{moto}">moto — filtered</span>'
+        '<span data-goto="!!!notbase64!!!">garbage — filtered</span>'
+    )
+    assert MotorESScraper()._extract(html) == [
+        "https://www.motor.es/segunda-mano/anuncio/12345/",
+        "https://www.motor.es/segunda-mano/anuncio/67890/",
+    ]
+
+
+@pytest.mark.unit
+def test_motor_extract_returns_empty_on_garbage() -> None:
+    assert MotorESScraper()._extract("") == []
+    assert MotorESScraper()._extract("<html><body>no cards</body></html>") == []
+
+
+# --------------------------------------------------------------------------- #
 # fetch_segment — behavioural matrix
 # --------------------------------------------------------------------------- #
 _PARUVENDU_HTML = (
@@ -357,11 +407,17 @@ _GASPEDAAL_OK_HTML = (
 )
 _GASPEDAAL_EXPECTED = ["https://www.gaspedaal.nl/auto/audi/a4/777"]
 
+_MOTOR_OK_HTML = (
+    f'<span data-goto="{_b64encode_url("https://www.motor.es/segunda-mano/anuncio/777/")}">x</span>'
+)
+_MOTOR_EXPECTED = ["https://www.motor.es/segunda-mano/anuncio/777/"]
+
 _OK_CASES = [
     (ParuVenduFRScraper, dict(_YP), _PARUVENDU_HTML, _PARUVENDU_EXPECTED),
     (LargusFRScraper, dict(_YP), _LARGUS_HTML, _LARGUS_EXPECTED),
     (AutoTrackNLScraper, {}, _AUTOTRACK_HTML, _AUTOTRACK_EXPECTED),
     (GaspedaalNLScraper, {}, _GASPEDAAL_OK_HTML, _GASPEDAAL_EXPECTED),
+    (MotorESScraper, dict(_YP), _MOTOR_OK_HTML, _MOTOR_EXPECTED),
 ]
 
 
@@ -424,6 +480,7 @@ def test_fetch_segment_retries_transport_error(cls, params, body, expected) -> N
         ("largus.fr", LargusFRScraper),
         ("autotrack.nl", AutoTrackNLScraper),
         ("gaspedaal.nl", GaspedaalNLScraper),
+        ("motor.es", MotorESScraper),
     ],
 )
 def test_registry_resolves_domain_to_scraper(domain, cls) -> None:
@@ -440,6 +497,7 @@ def test_registry_resolves_domain_to_scraper(domain, cls) -> None:
         ("largus.fr", Tier.T1, WAF.NONE, None),
         ("autotrack.nl", Tier.T1, WAF.NONE, None),
         ("gaspedaal.nl", Tier.T1, WAF.NONE, None),
+        ("motor.es", Tier.T1, WAF.NONE, None),
     ],
 )
 def test_domain_map_baselines(domain, tier, waf, ceiling) -> None:
