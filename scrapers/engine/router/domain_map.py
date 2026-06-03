@@ -11,8 +11,10 @@ Fuente de verdad: este archivo. No engine.db (ese es el estado runtime, este es 
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from enum import Enum
+from functools import lru_cache
 
 
 class Tier(str, Enum):
@@ -81,14 +83,64 @@ REGISTRY: list[PortalSpec] = [
 ]
 
 
+_TIER_ORDER: tuple[Tier, ...] = (Tier.T0, Tier.T1, Tier.T2, Tier.T3)
+_DEFAULT_TIER = Tier.T1  # conservative-but-cheap baseline for unknown dealers
+
+
+def _tier_index(tier: Tier) -> int:
+    return _TIER_ORDER.index(tier)
+
+
+@lru_cache(maxsize=256)
+def _pattern_regex(pattern: str) -> re.Pattern[str]:
+    """
+    Compile a registry pattern into a domain matcher.
+
+    A literal '*' matches one-or-more dot-separated labels (used as a TLD wildcard,
+    e.g. autoscout24.*). Optional leading subdomains are always allowed so
+    'www.mobile.de' matches the pattern 'mobile.de'.
+    """
+    escaped = re.escape(pattern).replace(r"\*", r"[a-z0-9-]+(?:\.[a-z0-9-]+)*")
+    return re.compile(rf"^(?:[a-z0-9-]+\.)*{escaped}$", re.IGNORECASE)
+
+
 def get(domain: str) -> PortalSpec | None:
-    """Match domain against registry. Supports wildcard patterns (e.g. autoscout24.*)."""
-    raise NotImplementedError
+    """
+    Match domain against the registry. Supports wildcard patterns (autoscout24.*).
+
+    First match in REGISTRY order wins, so the most-preferred tier for a portal
+    (e.g. mobile.de's T0 mobile-API path) is listed before its fallbacks.
+    """
+    host = domain.strip().lower()
+    for spec in REGISTRY:
+        if _pattern_regex(spec.domain_pattern).match(host):
+            return spec
+    return None
 
 
 def effective_tier(domain: str, circuit_state: dict) -> Tier:
     """
     Return the tier to use now, considering circuit breaker escalation.
-    circuit_state: {(domain, tier): 'open'|'closed'|'half_open'}
+
+    circuit_state: {(domain, tier): 'open'|'closed'|'half_open'} where tier may be a
+    Tier or its string value. Walks up from the portal's baseline tier, skipping any
+    tier whose breaker is OPEN, bounded by the registry escalation ceiling
+    (can_escalate_to). Returns the baseline when no escalation is configured/possible.
     """
-    raise NotImplementedError
+    spec = get(domain)
+    baseline = spec.tier if spec else _DEFAULT_TIER
+    if spec and spec.can_escalate_to is not None:
+        ceiling = spec.can_escalate_to
+    else:
+        ceiling = baseline
+
+    def _is_open(tier: Tier) -> bool:
+        return (
+            circuit_state.get((domain, tier)) == "open"
+            or circuit_state.get((domain, tier.value)) == "open"
+        )
+
+    tier = baseline
+    while _is_open(tier) and _tier_index(tier) < _tier_index(ceiling):
+        tier = _TIER_ORDER[_tier_index(tier) + 1]
+    return tier
