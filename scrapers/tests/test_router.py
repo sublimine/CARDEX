@@ -39,9 +39,12 @@ def test_get_allows_leading_subdomain():
 
 
 @pytest.mark.unit
-def test_get_first_match_wins_prefers_t0():
-    # mobile.de is registered T0 (mobile-API) before its T1 fallback.
-    assert domain_map.get("mobile.de").tier is Tier.T0
+def test_get_first_match_wins_respects_registry_order(monkeypatch):
+    # When a host matches multiple patterns, the earliest REGISTRY entry wins.
+    first = PortalSpec("dup.example", Tier.T1, WAF.NONE)
+    second = PortalSpec("dup.example", Tier.T3, WAF.DATADOME)
+    monkeypatch.setattr(domain_map, "REGISTRY", [first, second])
+    assert domain_map.get("dup.example") is first
 
 
 @pytest.mark.unit

@@ -47,26 +47,25 @@ class PortalSpec:
 
 # Verified against production + diag.py (last check: 2026-05-07)
 REGISTRY: list[PortalSpec] = [
-    # T0 — Mobile API bypass
-    PortalSpec("mobile.de",       Tier.T0, WAF.NONE,        countries=["DE"], notes="Ad-Stream WSS consumer"),
+    # T0 — open JSON / mobile API, no anti-bot WAF
+    PortalSpec("marktplaats.nl",  Tier.T0, WAF.NONE,        countries=["NL"], notes="open LRP /lrp/api/search JSON; CloudFront, no WAF [VERIFIED 2026-06-03]"),
+    PortalSpec("tweedehands.be",  Tier.T0, WAF.NONE,        countries=["BE"], notes="API pública 2dehands"),
 
     # T1 — curl_cffi sufficient
-    PortalSpec("kleinanzeigen.de",Tier.T1, WAF.CF_PRO,      countries=["DE"]),
     PortalSpec("tutti.ch",        Tier.T1, WAF.CF_FREE,     countries=["CH"]),
     PortalSpec("autotrack.nl",    Tier.T1, WAF.NONE,        countries=["NL"]),
     PortalSpec("gaspedaal.nl",    Tier.T1, WAF.NONE,        countries=["NL"]),
-    PortalSpec("marktplaats.nl",  Tier.T1, WAF.CF_PRO,      countries=["NL"]),
     PortalSpec("paruvendu.fr",    Tier.T1, WAF.NONE,        countries=["FR"]),
     PortalSpec("largus.fr",       Tier.T1, WAF.NONE,        countries=["FR"]),
     PortalSpec("motor.es",        Tier.T1, WAF.NONE,        countries=["ES"]),
     PortalSpec("autocasion.com",  Tier.T1, WAF.CF_FREE,     countries=["ES"]),
-    PortalSpec("tweedehands.be",  Tier.T0, WAF.NONE,        countries=["BE"], notes="API pública 2dehands"),
 
     # T1 → escalate T2
-    PortalSpec("coches.net",      Tier.T1, WAF.CF_PRO,      can_escalate_to=Tier.T2, countries=["ES"]),
-    PortalSpec("mobile.de",       Tier.T1, WAF.NONE,        can_escalate_to=Tier.T2, countries=["DE"]),
+    PortalSpec("coches.net",      Tier.T1, WAF.NONE,        can_escalate_to=Tier.T2, countries=["ES"], notes="Adevinta SSR HTML / JSON /search (Spain egress); CloudFront, no WAF [VERIFIED 2026-06-03]"),
 
-    # T2 — Camoufox required
+    # T2 — Camoufox / stealth browser required (Akamai _abck or equivalent)
+    PortalSpec("mobile.de",       Tier.T2, WAF.AKAMAI_V3,   can_escalate_to=Tier.T3, countries=["DE"], notes="Akamai Bot Manager on SRP HTML + JSON [VERIFIED 2026-06-03]"),
+    PortalSpec("kleinanzeigen.de",Tier.T2, WAF.AKAMAI_V3,   can_escalate_to=Tier.T3, countries=["DE"], notes="Akamai; category HTML served passively [VERIFIED 2026-06-03]"),
     PortalSpec("autoscout24.*",   Tier.T2, WAF.AKAMAI_V3,   can_escalate_to=Tier.T3, countries=["DE","ES","FR","NL","BE","CH"]),
     PortalSpec("wallapop.com",    Tier.T2, WAF.PERIMETER_X, can_escalate_to=Tier.T3, countries=["ES"]),
     PortalSpec("gocar.be",        Tier.T2, WAF.CF_BUSINESS, countries=["BE"]),
@@ -108,8 +107,8 @@ def get(domain: str) -> PortalSpec | None:
     """
     Match domain against the registry. Supports wildcard patterns (autoscout24.*).
 
-    First match in REGISTRY order wins, so the most-preferred tier for a portal
-    (e.g. mobile.de's T0 mobile-API path) is listed before its fallbacks.
+    First match in REGISTRY order wins, so register a more-specific pattern
+    before a broader wildcard (e.g. a concrete dealer host before autoscout24.*).
     """
     host = domain.strip().lower()
     for spec in REGISTRY:

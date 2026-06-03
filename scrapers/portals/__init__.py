@@ -13,19 +13,33 @@ from __future__ import annotations
 from scrapers.portals.base import BasePortalScraper
 from scrapers.portals.be import AutoScout24BE
 from scrapers.portals.ch import AutoScout24CH
+from scrapers.portals.coches_net import CochesNetScraper
 from scrapers.portals.de import AutoScout24DE
 from scrapers.portals.es import AutoScout24ES
 from scrapers.portals.fr import AutoScout24FR
+from scrapers.portals.kleinanzeigen_de import KleinanzeigenDEScraper
+from scrapers.portals.lacentrale_fr import LaCentraleFRScraper
+from scrapers.portals.leboncoin_fr import LeboncoinFRScraper
+from scrapers.portals.marktplaats_nl import MarktplaatsNLScraper
+from scrapers.portals.mobile_de import MobileDeScraper
 from scrapers.portals.nl import AutoScout24NL
 
 # Every concrete scraper the engine can dispatch. DOMAIN is the registry key.
 _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
+    # AutoScout24 family (Phase 1)
     AutoScout24DE,
     AutoScout24FR,
     AutoScout24ES,
     AutoScout24NL,
     AutoScout24BE,
     AutoScout24CH,
+    # Phase 2 portals
+    MobileDeScraper,
+    MarktplaatsNLScraper,
+    LeboncoinFRScraper,
+    KleinanzeigenDEScraper,
+    CochesNetScraper,
+    LaCentraleFRScraper,
 )
 
 PORTAL_REGISTRY: dict[str, type[BasePortalScraper]] = {
