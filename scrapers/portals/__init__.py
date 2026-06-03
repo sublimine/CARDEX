@@ -23,6 +23,7 @@ from scrapers.portals.leboncoin_fr import LeboncoinFRScraper
 from scrapers.portals.marktplaats_nl import MarktplaatsNLScraper
 from scrapers.portals.mobile_de import MobileDeScraper
 from scrapers.portals.nl import AutoScout24NL
+from scrapers.portals.paruvendu_fr import ParuVenduFRScraper
 
 # Every concrete scraper the engine can dispatch. DOMAIN is the registry key.
 _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
@@ -40,6 +41,8 @@ _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
     KleinanzeigenDEScraper,
     CochesNetScraper,
     LaCentraleFRScraper,
+    # Phase 3 portals — Tier-0/Tier-1 high-volume targets
+    ParuVenduFRScraper,
 )
 
 PORTAL_REGISTRY: dict[str, type[BasePortalScraper]] = {
