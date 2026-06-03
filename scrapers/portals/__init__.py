@@ -10,6 +10,7 @@ between the class and its lookup key.
 """
 from __future__ import annotations
 
+from scrapers.portals.autocasion_com import AutocasionESScraper
 from scrapers.portals.autotrack_nl import AutoTrackNLScraper
 from scrapers.portals.base import BasePortalScraper
 from scrapers.portals.be import AutoScout24BE
@@ -51,6 +52,7 @@ _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
     AutoTrackNLScraper,
     GaspedaalNLScraper,
     MotorESScraper,
+    AutocasionESScraper,
 )
 
 PORTAL_REGISTRY: dict[str, type[BasePortalScraper]] = {

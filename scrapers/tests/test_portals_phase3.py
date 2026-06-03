@@ -23,6 +23,7 @@ import pytest
 from scrapers.engine.router.domain_map import Tier, WAF
 from scrapers.engine.router.domain_map import get as domain_get
 from scrapers.portals import get_scraper
+from scrapers.portals.autocasion_com import AutocasionESScraper
 from scrapers.portals.autotrack_nl import AutoTrackNLScraper
 from scrapers.portals.base import BasePortalScraper
 from scrapers.portals.gaspedaal_nl import GaspedaalNLScraper, _slugify
@@ -380,6 +381,58 @@ def test_motor_extract_returns_empty_on_garbage() -> None:
 
 
 # --------------------------------------------------------------------------- #
+# autocasion.com — province × fuel grid + ref-id detail extraction
+# --------------------------------------------------------------------------- #
+@pytest.mark.unit
+def test_autocasion_province_grid_is_52_x_6() -> None:
+    scraper = AutocasionESScraper()
+    segments = scraper.partition_params()
+    assert len(scraper.PROVINCES) == 52  # ES has 50 + Ceuta + Melilla
+    assert len(scraper.FUELS) == 6
+    assert len(segments) == 312
+    keys = {(s["province"], s["fuel"]) for s in segments}
+    assert len(keys) == 312  # every cell unique
+    # spot-check critical provinces/fuels
+    assert "madrid" in scraper.PROVINCES
+    assert "barcelona" in scraper.PROVINCES
+    assert "ceuta" in scraper.PROVINCES
+    assert "melilla" in scraper.PROVINCES
+    assert "diesel" in scraper.FUELS
+    assert "hibrido-enchufable" in scraper.FUELS
+
+
+@pytest.mark.unit
+def test_autocasion_build_url_uses_province_and_fuel_segments() -> None:
+    assert AutocasionESScraper()._build_url({"province": "madrid", "fuel": "diesel"}, 1) == (
+        "https://www.autocasion.com/coches-segunda-mano/madrid/diesel?page=1"
+    )
+    assert AutocasionESScraper()._build_url({"province": "barcelona", "fuel": "electrico"}, 50) == (
+        "https://www.autocasion.com/coches-segunda-mano/barcelona/electrico?page=50"
+    )
+
+
+@pytest.mark.unit
+def test_autocasion_extract_pulls_ref_id_hrefs_and_dedups() -> None:
+    html = (
+        '<a href="/coches-segunda-mano/audi-a3-ocasion/a3-sportback-30tdi-s-line-ref14494615">x</a>'
+        '<a href="/coches-segunda-mano/smart-forfour-ocasion/forfour-eq-passion-377-ref13832451">y</a>'
+        '<a href="/coches-segunda-mano/audi-a3-ocasion/a3-sportback-30tdi-s-line-ref14494615">dup</a>'
+        '<a href="/coches-segunda-mano/audi-ocasion">ignored — make-only nav</a>'
+        '<a href="/coches-segunda-mano/madrid/diesel">ignored — SRP nav</a>'
+    )
+    assert AutocasionESScraper()._extract(html) == [
+        "https://www.autocasion.com/coches-segunda-mano/audi-a3-ocasion/a3-sportback-30tdi-s-line-ref14494615",
+        "https://www.autocasion.com/coches-segunda-mano/smart-forfour-ocasion/forfour-eq-passion-377-ref13832451",
+    ]
+
+
+@pytest.mark.unit
+def test_autocasion_extract_returns_empty_on_garbage() -> None:
+    assert AutocasionESScraper()._extract("") == []
+    assert AutocasionESScraper()._extract("<html><body>no cards</body></html>") == []
+
+
+# --------------------------------------------------------------------------- #
 # fetch_segment — behavioural matrix
 # --------------------------------------------------------------------------- #
 _PARUVENDU_HTML = (
@@ -412,12 +465,20 @@ _MOTOR_OK_HTML = (
 )
 _MOTOR_EXPECTED = ["https://www.motor.es/segunda-mano/anuncio/777/"]
 
+_AUTOCASION_OK_HTML = (
+    '<a href="/coches-segunda-mano/audi-a3-ocasion/a3-sportback-30tdi-s-line-ref99">x</a>'
+)
+_AUTOCASION_EXPECTED = [
+    "https://www.autocasion.com/coches-segunda-mano/audi-a3-ocasion/a3-sportback-30tdi-s-line-ref99"
+]
+
 _OK_CASES = [
     (ParuVenduFRScraper, dict(_YP), _PARUVENDU_HTML, _PARUVENDU_EXPECTED),
     (LargusFRScraper, dict(_YP), _LARGUS_HTML, _LARGUS_EXPECTED),
     (AutoTrackNLScraper, {}, _AUTOTRACK_HTML, _AUTOTRACK_EXPECTED),
     (GaspedaalNLScraper, {}, _GASPEDAAL_OK_HTML, _GASPEDAAL_EXPECTED),
     (MotorESScraper, dict(_YP), _MOTOR_OK_HTML, _MOTOR_EXPECTED),
+    (AutocasionESScraper, {"province": "madrid", "fuel": "diesel"}, _AUTOCASION_OK_HTML, _AUTOCASION_EXPECTED),
 ]
 
 
@@ -481,6 +542,7 @@ def test_fetch_segment_retries_transport_error(cls, params, body, expected) -> N
         ("autotrack.nl", AutoTrackNLScraper),
         ("gaspedaal.nl", GaspedaalNLScraper),
         ("motor.es", MotorESScraper),
+        ("autocasion.com", AutocasionESScraper),
     ],
 )
 def test_registry_resolves_domain_to_scraper(domain, cls) -> None:
@@ -498,6 +560,9 @@ def test_registry_resolves_domain_to_scraper(domain, cls) -> None:
         ("autotrack.nl", Tier.T1, WAF.NONE, None),
         ("gaspedaal.nl", Tier.T1, WAF.NONE, None),
         ("motor.es", Tier.T1, WAF.NONE, None),
+        # autocasion.com is registered as Cloudflare-free in domain_map (CF JA3 only;
+        # not the same as the CF_FREE WAF challenge tier).
+        ("autocasion.com", Tier.T1, WAF.CF_FREE, None),
     ],
 )
 def test_domain_map_baselines(domain, tier, waf, ceiling) -> None:
