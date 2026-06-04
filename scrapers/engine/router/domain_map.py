@@ -1,18 +1,20 @@
 """
-DOMAIN_TIER_REGISTRY — ground truth verificado de qué tier requiere cada portal.
+DOMAIN_TIER_REGISTRY -- ground truth verificado de que tier requiere cada portal.
 
-T0: Mobile API directa — sin anti-bot web
-T1: curl_cffi chrome136 — sin browser
-T2: Camoufox + storageState + _abck — browser Firefox
-T3: Camoufox + Oxymouse behavioral + CapSolver + residential — browser behavioral
+T0: Mobile API directa -- sin anti-bot web
+T1: curl_cffi chrome136 -- sin browser
+T2: Camoufox + storageState + _abck -- browser Firefox
+T3: Camoufox + Oxymouse behavioral + CapSolver + residential -- browser behavioral
 
 Actualizar tras cada run de diag.py con resultado real.
 Fuente de verdad: este archivo. No engine.db (ese es el estado runtime, este es el baseline).
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from enum import Enum
+from functools import lru_cache
 
 
 class Tier(str, Enum):
@@ -35,7 +37,7 @@ class WAF(str, Enum):
 
 @dataclass
 class PortalSpec:
-    domain_pattern: str        # e.g. "autoscout24.*" or "mobile.de"
+    domain_pattern: str
     tier: Tier
     waf: WAF
     can_escalate_to: Tier | None = None
@@ -43,28 +45,27 @@ class PortalSpec:
     notes: str = ""
 
 
-# Verified against production + diag.py (last check: 2026-05-07)
 REGISTRY: list[PortalSpec] = [
-    # T0 — Mobile API bypass
-    PortalSpec("mobile.de",       Tier.T0, WAF.NONE,        countries=["DE"], notes="Ad-Stream WSS consumer"),
+    # T0 -- open JSON / mobile API, no anti-bot WAF
+    PortalSpec("marktplaats.nl",  Tier.T0, WAF.NONE,        countries=["NL"], notes="open LRP /lrp/api/search JSON; CloudFront, no WAF"),
+    PortalSpec("2dehands.be",     Tier.T0, WAF.NONE,        countries=["BE"], notes="API LRP abierta /lrp/api/search JSON; CloudFront, sin WAF"),
+    PortalSpec("tweedehands.be",  Tier.T0, WAF.NONE,        countries=["BE"], notes="alias de 2dehands.be"),
 
-    # T1 — curl_cffi sufficient
-    PortalSpec("kleinanzeigen.de",Tier.T1, WAF.CF_PRO,      countries=["DE"]),
+    # T1 -- curl_cffi sufficient
     PortalSpec("tutti.ch",        Tier.T1, WAF.CF_FREE,     countries=["CH"]),
     PortalSpec("autotrack.nl",    Tier.T1, WAF.NONE,        countries=["NL"]),
     PortalSpec("gaspedaal.nl",    Tier.T1, WAF.NONE,        countries=["NL"]),
-    PortalSpec("marktplaats.nl",  Tier.T1, WAF.CF_PRO,      countries=["NL"]),
     PortalSpec("paruvendu.fr",    Tier.T1, WAF.NONE,        countries=["FR"]),
     PortalSpec("largus.fr",       Tier.T1, WAF.NONE,        countries=["FR"]),
     PortalSpec("motor.es",        Tier.T1, WAF.NONE,        countries=["ES"]),
     PortalSpec("autocasion.com",  Tier.T1, WAF.CF_FREE,     countries=["ES"]),
-    PortalSpec("tweedehands.be",  Tier.T0, WAF.NONE,        countries=["BE"], notes="API pública 2dehands"),
 
-    # T1 → escalate T2
-    PortalSpec("coches.net",      Tier.T1, WAF.CF_PRO,      can_escalate_to=Tier.T2, countries=["ES"]),
-    PortalSpec("mobile.de",       Tier.T1, WAF.NONE,        can_escalate_to=Tier.T2, countries=["DE"]),
+    # T1 -> escalate T2
+    PortalSpec("coches.net",      Tier.T1, WAF.NONE,        can_escalate_to=Tier.T2, countries=["ES"]),
 
-    # T2 — Camoufox required
+    # T2 -- Camoufox / stealth browser required
+    PortalSpec("mobile.de",       Tier.T2, WAF.AKAMAI_V3,   can_escalate_to=Tier.T3, countries=["DE"]),
+    PortalSpec("kleinanzeigen.de",Tier.T2, WAF.AKAMAI_V3,   can_escalate_to=Tier.T3, countries=["DE"]),
     PortalSpec("autoscout24.*",   Tier.T2, WAF.AKAMAI_V3,   can_escalate_to=Tier.T3, countries=["DE","ES","FR","NL","BE","CH"]),
     PortalSpec("wallapop.com",    Tier.T2, WAF.PERIMETER_X, can_escalate_to=Tier.T3, countries=["ES"]),
     PortalSpec("gocar.be",        Tier.T2, WAF.CF_BUSINESS, countries=["BE"]),
@@ -74,21 +75,50 @@ REGISTRY: list[PortalSpec] = [
     PortalSpec("ouestfrance-auto.fr", Tier.T2, WAF.CF_PRO,  countries=["FR"]),
     PortalSpec("coches.com",      Tier.T2, WAF.CF_PRO,      countries=["ES"]),
 
-    # T3 — Behavioral required (DataDome + residential)
+    # T3 -- Behavioral required (DataDome + residential)
     PortalSpec("leboncoin.fr",    Tier.T3, WAF.DATADOME,    countries=["FR"]),
     PortalSpec("lacentrale.fr",   Tier.T3, WAF.DATADOME,    countries=["FR"]),
     PortalSpec("milanuncios.com", Tier.T3, WAF.DATADOME,    countries=["ES"]),
 ]
 
 
+_TIER_ORDER: tuple[Tier, ...] = (Tier.T0, Tier.T1, Tier.T2, Tier.T3)
+_DEFAULT_TIER = Tier.T1
+
+
+def _tier_index(tier: Tier) -> int:
+    return _TIER_ORDER.index(tier)
+
+
+@lru_cache(maxsize=256)
+def _pattern_regex(pattern: str) -> re.Pattern[str]:
+    escaped = re.escape(pattern).replace(r"\*", r"[a-z0-9-]+(?:\.[a-z0-9-]+)*")
+    return re.compile(rf"^(?:[a-z0-9-]+\.)*{escaped}$", re.IGNORECASE)
+
+
 def get(domain: str) -> PortalSpec | None:
-    """Match domain against registry. Supports wildcard patterns (e.g. autoscout24.*)."""
-    raise NotImplementedError
+    host = domain.strip().lower()
+    for spec in REGISTRY:
+        if _pattern_regex(spec.domain_pattern).match(host):
+            return spec
+    return None
 
 
 def effective_tier(domain: str, circuit_state: dict) -> Tier:
-    """
-    Return the tier to use now, considering circuit breaker escalation.
-    circuit_state: {(domain, tier): 'open'|'closed'|'half_open'}
-    """
-    raise NotImplementedError
+    spec = get(domain)
+    baseline = spec.tier if spec else _DEFAULT_TIER
+    if spec and spec.can_escalate_to is not None:
+        ceiling = spec.can_escalate_to
+    else:
+        ceiling = baseline
+
+    def _is_open(tier: Tier) -> bool:
+        return (
+            circuit_state.get((domain, tier)) == "open"
+            or circuit_state.get((domain, tier.value)) == "open"
+        )
+
+    tier = baseline
+    while _is_open(tier) and _tier_index(tier) < _tier_index(ceiling):
+        tier = _TIER_ORDER[_tier_index(tier) + 1]
+    return tier
