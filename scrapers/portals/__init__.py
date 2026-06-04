@@ -69,6 +69,24 @@ from scrapers.portals.jeanlain_fr import JeanLainFRScraper
 from scrapers.portals.gowago_ch import GowagoCHScraper
 from scrapers.portals.gueudet_fr import GueudetFRScraper
 from scrapers.portals.distinxion_fr import DistinxionFRScraper
+
+# Every concrete scraper the engine can dispatch. DOMAIN is the registry key.
+_PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
+    # AutoScout24 family (Phase 1)
+    AutoScout24DE,
+    AutoScout24FR,
+    AutoScout24ES,
+    AutoScout24NL,
+    AutoScout24BE,
+    AutoScout24CH,
+    # Phase 2 portals
+    MobileDeScraper,
+    MarktplaatsNLScraper,
+    LeboncoinFRScraper,
+    KleinanzeigenDEScraper,
+    CochesNetScraper,
+    LaCentraleFRScraper,
+    # Phase 3 portals
     ParuVenduFRScraper,
     LargusFRScraper,
     AutoTrackNLScraper,
@@ -122,5 +140,14 @@ from scrapers.portals.distinxion_fr import DistinxionFRScraper
     GowagoCHScraper,
     GueudetFRScraper,
     DistinxionFRScraper,
+)
+
+PORTAL_REGISTRY: dict[str, type[BasePortalScraper]] = {
+    cls.DOMAIN: cls for cls in _PORTAL_CLASSES
+}
+
+
+def get_scraper(domain: str) -> BasePortalScraper | None:
+    """Return a fresh scraper instance for domain, or None if unregistered."""
     cls = PORTAL_REGISTRY.get(domain)
     return cls() if cls is not None else None
