@@ -29,6 +29,9 @@ from scrapers.portals.mobile_de import MobileDeScraper
 from scrapers.portals.motor_es import MotorESScraper
 from scrapers.portals.nl import AutoScout24NL
 from scrapers.portals.paruvendu_fr import ParuVenduFRScraper
+from scrapers.portals.anibis_ch import AnibisCHScraper
+from scrapers.portals.autolina_ch import AutolinaCHScraper
+from scrapers.portals.tutti_ch import TuttiCHScraper
 from scrapers.portals.tweedehands_be import TweedehandsBEScraper
 from scrapers.portals.viabovag_nl import ViaBovagNLScraper
 
@@ -58,6 +61,9 @@ _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
     # Phase 5 portals
     TweedehandsBEScraper,
     ViaBovagNLScraper,
+    TuttiCHScraper,
+    AnibisCHScraper,
+    AutolinaCHScraper,
 )
 
 PORTAL_REGISTRY: dict[str, type[BasePortalScraper]] = {

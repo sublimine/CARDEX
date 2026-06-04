@@ -51,9 +51,11 @@ REGISTRY: list[PortalSpec] = [
     PortalSpec("2dehands.be",     Tier.T0, WAF.NONE,        countries=["BE"], notes="API LRP abierta /lrp/api/search JSON; CloudFront, sin WAF"),
     PortalSpec("tweedehands.be",  Tier.T0, WAF.NONE,        countries=["BE"], notes="alias de 2dehands.be"),
     PortalSpec("viabovag.nl",     Tier.T1, WAF.NONE,        countries=["NL"], notes="Next.js data route SSR, IIS, sin WAF [VERIFIED 2026-06-04]"),
+    PortalSpec("autolina.ch",     Tier.T0, WAF.NONE,        countries=["CH"], notes="API REST abierta m.autolina.ch, sin WAF [VERIFIED 2026-06-04]"),
 
     # T1 -- curl_cffi sufficient
     PortalSpec("tutti.ch",        Tier.T1, WAF.CF_FREE,     countries=["CH"]),
+    PortalSpec("anibis.ch",       Tier.T1, WAF.CF_FREE,     countries=["CH"], notes="gemelo FR de tutti.ch, mismo backend Scout24 [VERIFIED 2026-06-04]"),
     PortalSpec("autotrack.nl",    Tier.T1, WAF.NONE,        countries=["NL"]),
     PortalSpec("gaspedaal.nl",    Tier.T1, WAF.NONE,        countries=["NL"]),
     PortalSpec("paruvendu.fr",    Tier.T1, WAF.NONE,        countries=["FR"]),
@@ -119,7 +121,4 @@ def effective_tier(domain: str, circuit_state: dict) -> Tier:
             or circuit_state.get((domain, tier.value)) == "open"
         )
 
-    tier = baseline
-    while _is_open(tier) and _tier_index(tier) < _tier_index(ceiling):
-        tier = _TIER_ORDER[_tier_index(tier) + 1]
-    return tier
+  
