@@ -75,9 +75,9 @@ def test_effective_tier_bounded_by_ceiling():
 
 @pytest.mark.unit
 def test_effective_tier_no_escalation_config_stays_baseline():
-    # heycar.com is T2 with no can_escalate_to → ceiling == baseline.
-    state = {("heycar.com", "T2"): "open"}
-    assert domain_map.effective_tier("heycar.com", state) is Tier.T2
+    # gocar.be is T2 with no can_escalate_to → ceiling == baseline.
+    state = {("gocar.be", "T2"): "open"}
+    assert domain_map.effective_tier("gocar.be", state) is Tier.T2
 
 
 @pytest.mark.unit
