@@ -98,16 +98,21 @@ REGISTRY: list[PortalSpec] = [
     PortalSpec("vroom.be", Tier.T1, WAF.UNKNOWN, countries=["BE"], notes="Rossel/Roularta JV, ~40k cars [VERIFIED 2026-06-04]"),
     PortalSpec("carforyou.ch", Tier.T1, WAF.UNKNOWN, countries=["CH"], notes="#3 CH vehicles, ~966k visits [VERIFIED 2026-06-04]"),
     PortalSpec("occasions.jeanlain.com", Tier.T1, WAF.UNKNOWN, countries=["FR"], notes="Jean Lain, ~1800 vehicles [VERIFIED 2026-06-04]"),
+    # Phase 9 portals -- coverage gap closure
+    PortalSpec("gowago.ch", Tier.T1, WAF.NONE, countries=["CH"], notes="Swiss leasing marketplace, ~10k used cars, Next.js SSR [VERIFIED 2026-06-04]"),
+    PortalSpec("gueudet.fr", Tier.T1, WAF.NONE, countries=["FR"], notes="Gueudet 1880 dealer group, ~5.2k VO, SSR HTML [VERIFIED 2026-06-04]"),
+    PortalSpec("distinxion.fr", Tier.T1, WAF.NONE, countries=["FR"], notes="120+ POS network, ~1.6k VO, Symfony SSR [VERIFIED 2026-06-04]"),
     # T1 -> escalate T2
     PortalSpec("coches.net", Tier.T1, WAF.NONE, can_escalate_to=Tier.T2, countries=["ES"]),
     # T2 -- Camoufox / stealth browser required
     PortalSpec("mobile.de", Tier.T2, WAF.AKAMAI_V3, can_escalate_to=Tier.T3, countries=["DE"]),
     PortalSpec("kleinanzeigen.de", Tier.T2, WAF.AKAMAI_V3, can_escalate_to=Tier.T3, countries=["DE"]),
     PortalSpec("autoscout24.*", Tier.T2, WAF.AKAMAI_V3, can_escalate_to=Tier.T3, countries=["DE","ES","FR","NL","BE","CH"]),
-    PortalSpec("wallapop.com", Tier.T2, WAF.PERIMETER_X, can_escalate_to=Tier.T3, countries=["ES"]),
+    PortalSpec("wallapop.com", Tier.T0, WAF.PERIMETER_X, countries=["ES"], notes="T2->T0 bypass: mobile API api.wallapop.com/api/v3 bypasses PerimeterX [VERIFIED 2026-06-04]"),
     PortalSpec("gocar.be", Tier.T2, WAF.CF_BUSINESS, countries=["BE"]),
-    PortalSpec("comparis.ch", Tier.T2, WAF.CF_BUSINESS, countries=["CH"]),
-    PortalSpec("autohero.com", Tier.T2, WAF.CF_PRO, countries=["DE"]),
+    PortalSpec("comparis.ch", Tier.T1, WAF.NONE, countries=["CH"], notes="T2->T1 bypass: SSR HTML no WAF, meta-aggregator ~214k listings [VERIFIED 2026-06-04]"),
+    PortalSpec("autohero.com", Tier.T0, WAF.NONE, countries=["DE","IT","FR","ES","AT","PL","NL","SE"], notes="T2->T0 bypass: GraphQL API /v1/retail-customer-gateway/graphql/ no auth [VERIFIED 2026-06-04]"),
+    PortalSpec("heycar.com", Tier.T0, WAF.NONE, countries=["FR"], notes="T2->T0 bypass: REST API api.fr.prod.group-mobility-trader.com no auth, DE dead [VERIFIED 2026-06-04]"),
     PortalSpec("ouestfrance-auto.fr", Tier.T2, WAF.CF_PRO, countries=["FR"]),
     PortalSpec("zoomcar.fr", Tier.T2, WAF.CF_PRO, countries=["FR"], notes="ex-ouestfrance-auto.com [VERIFIED 2026-06-04]"),
     PortalSpec("coches.com", Tier.T2, WAF.CF_PRO, countries=["ES"]),
@@ -121,7 +126,7 @@ REGISTRY: list[PortalSpec] = [
 
 
 _TIER_ORDER: tuple[Tier, ...] = (Tier.T0, Tier.T1, Tier.T2, Tier.T3)
-_DEFAULT_TIER = Tier.T1
+_DEFAULT_TIER = Tier.T1  # conservative-but-cheap baseline for unknown dealers
 
 
 def _tier_index(tier: Tier) -> int:
@@ -130,11 +135,24 @@ def _tier_index(tier: Tier) -> int:
 
 @lru_cache(maxsize=256)
 def _pattern_regex(pattern: str) -> re.Pattern[str]:
+    """
+    Compile a registry pattern into a domain matcher.
+
+    A literal '*' matches one-and-more dot-separated labels (used as a TLD wildcard,
+    e.g. autoscout24.*). Optional leading subdomains are always allowed so
+    'www.mobile.de' matches the pattern 'mobile.de'.
+    """
     escaped = re.escape(pattern).replace(r"\*", r"[a-z0-9-]+(?:\.[a-z0-9-]+)*")
     return re.compile(rf"^(?:[a-z0-9-]+\.)*{escaped}$", re.IGNORECASE)
 
 
 def get(domain: str) -> PortalSpec | None:
+    """
+    Match domain against the registry. Supports wildcard patterns (autoscout24.*).
+
+    First match in REGISTRY order wins, so register a more-specific pattern
+    before a broader wildcard (e.g. a concrete dealer host before autoscout24.*).
+    """
     host = domain.strip().lower()
     for spec in REGISTRY:
         if _pattern_regex(spec.domain_pattern).match(host):
@@ -143,6 +161,14 @@ def get(domain: str) -> PortalSpec | None:
 
 
 def effective_tier(domain: str, circuit_state: dict) -> Tier:
+    """
+    Return the tier to use now, considering circuit breaker escalation.
+
+    circuit_state: {(domain, tier): 'open'|'closed'|'half_open'} where tier may be a
+    Tier or its string value. Walks up from the portal's baseline tier, skipping any
+    tier whose breaker is OPEN, bounded by the registry escalation ceiling
+    (can_escalate_to). Returns the baseline when no escalation is configured/possible.
+    """
     spec = get(domain)
     baseline = spec.tier if spec else _DEFAULT_TIER
     if spec and spec.can_escalate_to is not None:
