@@ -603,6 +603,215 @@ def _clean_title(t: str) -> str:
     return clean
 
 
+# ── JS framework data extraction ────────────────────────────────────────────
+
+_MAX_WALK_DEPTH = 20
+_MAX_WALK_ITEMS = 50
+
+_RE_NEXT_DATA = re.compile(
+    r'<script\b[^>]*\bid=["\']__NEXT_DATA__["\'][^>]*>(.*?)</script>',
+    re.DOTALL | re.IGNORECASE,
+)
+_RE_NUXT3_DATA = re.compile(
+    r'<script\b[^>]*\bid=["\']__NUXT_DATA__["\'][^>]*>(.*?)</script>',
+    re.DOTALL | re.IGNORECASE,
+)
+_RE_NUXT2_BLOCK = re.compile(
+    r'window\.__NUXT__\s*=\s*(.+?)\s*;?\s*</script>',
+    re.DOTALL,
+)
+
+_JS_KEY_MAP: dict[str, str] = {
+    "make": "make", "brand": "make", "manufacturer": "make",
+    "brandname": "make", "marque": "make", "marca": "make",
+    "model": "model", "modelname": "model", "modelo": "model",
+    "title": "title", "name": "title", "vehiclename": "title",
+    "listingtitle": "title", "adtitle": "title",
+    "color": "color", "colour": "color", "exteriorcolor": "color",
+    "fueltype": "fuel_type", "fuel": "fuel_type", "fuel_type": "fuel_type",
+    "carburant": "fuel_type", "combustible": "fuel_type",
+    "transmission": "transmission", "gearbox": "transmission",
+    "vehicletransmission": "transmission",
+    "year": "year", "modeldate": "year", "vehiclemodeldate": "year",
+    "productiondate": "year", "firstregistration": "year",
+    "registrationdate": "year",
+    "mileage": "mileage_km", "mileagefromodometer": "mileage_km",
+    "kilometrage": "mileage_km", "km": "mileage_km", "odometer": "mileage_km",
+    "kilometers": "mileage_km",
+    "price": "price_eur", "priceamount": "price_eur",
+    "prix": "price_eur", "precio": "price_eur", "preis": "price_eur",
+    "sellingprice": "price_eur", "askingprice": "price_eur",
+    "power": "power_kw", "enginepower": "power_kw",
+    "powerkw": "power_kw", "puissance": "power_kw",
+    "powerhp": "power_hp", "horsepower": "power_hp",
+    "cv": "power_hp", "ps": "power_hp", "ch": "power_hp",
+    "image": "image", "photo": "image", "thumbnail": "image",
+    "mainimage": "image", "primaryimage": "image", "imageurl": "image",
+    "description": "description",
+    "variant": "variant", "trim": "variant", "version": "variant",
+    "finition": "variant",
+}
+
+
+def _set_js_field(out: dict[str, Any], field: str, val: Any) -> None:
+    if isinstance(val, dict):
+        val = (
+            val.get("name") or val.get("value")
+            or val.get("label") or val.get("amount")
+        )
+    if isinstance(val, list):
+        val = val[0] if val else None
+    if val is None:
+        return
+    raw = str(val).strip()
+    if not raw:
+        return
+
+    if field == "year":
+        m = _RE_YEAR.search(raw)
+        if m:
+            y = int(m.group(1))
+            if 1990 <= y <= 2027:
+                out["year"] = y
+    elif field == "mileage_km":
+        v = _parse_int(raw)
+        if v and 0 < v < 1_000_000:
+            out["mileage_km"] = v
+    elif field == "price_eur":
+        v = _parse_float(raw)
+        if v and 500 < v < 1_000_000:
+            out["price_eur"] = v
+    elif field == "power_kw":
+        v = _parse_int(raw)
+        if v and 0 < v < 1000:
+            out["power_kw"] = v
+    elif field == "power_hp":
+        v = _parse_int(raw)
+        if v and 0 < v < 2000:
+            out["power_hp"] = v
+    elif field == "fuel_type":
+        out["fuel_type"] = _norm_fuel(raw)
+    elif field == "transmission":
+        out["transmission"] = _norm_tx(raw)
+    elif field == "color":
+        out["color"] = raw[:40]
+    elif field == "image":
+        if raw.startswith(("http://", "https://", "/")):
+            out["image"] = raw
+    elif field == "description":
+        out["description"] = raw[:1500]
+    else:
+        out[field] = raw[:200]
+
+
+def _walk_js_data(out: dict[str, Any], data: Any, depth: int = 0) -> None:
+    if depth > _MAX_WALK_DEPTH:
+        return
+    if isinstance(data, dict):
+        for key, val in data.items():
+            if val is None:
+                continue
+            field = _JS_KEY_MAP.get(key.lower())
+            if field and not out.get(field):
+                _set_js_field(out, field, val)
+            if isinstance(val, (dict, list)):
+                _walk_js_data(out, val, depth + 1)
+    elif isinstance(data, list):
+        for item in data[:_MAX_WALK_ITEMS]:
+            _walk_js_data(out, item, depth + 1)
+
+
+def _extract_next_data(html: str) -> dict[str, Any]:
+    out: dict[str, Any] = {}
+    m = _RE_NEXT_DATA.search(html)
+    if not m:
+        return out
+    raw = m.group(1).strip()
+    if not raw:
+        return out
+    try:
+        data = json.loads(raw)
+    except (json.JSONDecodeError, ValueError):
+        return out
+    if isinstance(data, dict):
+        data = data.get("props", {}).get("pageProps", data)
+    _walk_js_data(out, data)
+    return out
+
+
+def _extract_nuxt_data(html: str) -> dict[str, Any]:
+    out: dict[str, Any] = {}
+    m = _RE_NUXT3_DATA.search(html)
+    if m:
+        raw = m.group(1).strip()
+        if raw:
+            try:
+                data = json.loads(raw)
+                _walk_js_data(out, data)
+                if out:
+                    return out
+            except (json.JSONDecodeError, ValueError):
+                pass
+    m = _RE_NUXT2_BLOCK.search(html)
+    if m:
+        raw = m.group(1).strip().rstrip(";")
+        if raw:
+            try:
+                data = json.loads(raw)
+                _walk_js_data(out, data)
+            except (json.JSONDecodeError, ValueError):
+                pass
+    return out
+
+
+# ── HTML5 microdata extraction ──────────────────────────────────────────────
+
+_RE_ITEMPROP_EL = re.compile(
+    r"<([a-z]\w*)\b([^>]*\bitemprop\s*=\s*[\"'][^\"']+[\"'][^>]*)>"
+    r"([^<]{0,500})",
+    re.IGNORECASE,
+)
+_RE_ATTR_VAL = re.compile(r"(\w+)\s*=\s*[\"']([^\"']*)[\"']")
+
+_MICRO_MAP: dict[str, str] = {
+    "brand": "make", "manufacturer": "make",
+    "model": "model",
+    "name": "title",
+    "color": "color", "vehicleinteriorcolor": "color",
+    "fueltype": "fuel_type",
+    "vehicletransmission": "transmission",
+    "vehiclemodeldate": "year", "datevehiclefirstregistered": "year",
+    "modeldate": "year", "productiondate": "year",
+    "mileagefromodometer": "mileage_km",
+    "price": "price_eur", "lowprice": "price_eur",
+    "image": "image",
+    "description": "description",
+    "vehicleengine": "power_kw",
+}
+
+
+def _extract_microdata(html: str) -> dict[str, Any]:
+    out: dict[str, Any] = {}
+    for m in _RE_ITEMPROP_EL.finditer(html):
+        attrs_str = m.group(2)
+        inner = m.group(3).strip()
+        attrs: dict[str, str] = {}
+        for am in _RE_ATTR_VAL.finditer(attrs_str):
+            attrs[am.group(1).lower()] = am.group(2)
+        prop = attrs.get("itemprop", "")
+        field = _MICRO_MAP.get(prop.lower())
+        if not field or out.get(field):
+            continue
+        val = (
+            attrs.get("content") or attrs.get("src")
+            or attrs.get("href") or inner
+        )
+        if not val:
+            continue
+        _set_js_field(out, field, val)
+    return out
+
+
 def extract(html: str, url: str) -> tuple[dict[str, Any] | None, bool]:
     """
     Returns (doc, sold).
