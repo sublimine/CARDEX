@@ -68,12 +68,15 @@ from scrapers.portals.carforyou_ch import CarForYouCHScraper
 from scrapers.portals.jeanlain_fr import JeanLainFRScraper
 from scrapers.portals.gowago_ch import GowagoCHScraper
 from scrapers.portals.gueudet_fr import GueudetFRScraper
-from scrapers.portals.distinxion_fr import DistinxionFRScraper
 from scrapers.portals.comparis_ch import ComparisCHScraper
 from scrapers.portals.distinxion_fr import DistinxionFRScraper
 from scrapers.portals.wallapop_com import WallapopComScraper
 from scrapers.portals.autohero_com import AutoheroCOMScraper
 from scrapers.portals.heycar_com import HeycarFRScraper
+from scrapers.portals.gocar_be import GocarBEScraper
+from scrapers.portals.milanuncios_com import MilanunciosESScraper
+from scrapers.portals.zoomcar_fr import ZoomcarFRScraper
+from scrapers.portals.coches_com import CochesComESScraper
 
 # Every concrete scraper the engine can dispatch. DOMAIN is the registry key.
 _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
@@ -150,6 +153,11 @@ _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
     WallapopComScraper,
     AutoheroCOMScraper,
     HeycarFRScraper,
+    # Phase 11 portals -- T2/T3 Camoufox SSR
+    GocarBEScraper,
+    MilanunciosESScraper,
+    ZoomcarFRScraper,
+    CochesComESScraper,
 )
 
 PORTAL_REGISTRY: dict[str, type[BasePortalScraper]] = {
