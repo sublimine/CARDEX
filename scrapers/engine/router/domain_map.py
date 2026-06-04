@@ -50,6 +50,7 @@ REGISTRY: list[PortalSpec] = [
     PortalSpec("marktplaats.nl",  Tier.T0, WAF.NONE,        countries=["NL"], notes="open LRP /lrp/api/search JSON; CloudFront, no WAF"),
     PortalSpec("2dehands.be",     Tier.T0, WAF.NONE,        countries=["BE"], notes="API LRP abierta /lrp/api/search JSON; CloudFront, sin WAF"),
     PortalSpec("tweedehands.be",  Tier.T0, WAF.NONE,        countries=["BE"], notes="alias de 2dehands.be"),
+    PortalSpec("viabovag.nl",     Tier.T1, WAF.NONE,        countries=["NL"], notes="Next.js data route SSR, IIS, sin WAF [VERIFIED 2026-06-04]"),
 
     # T1 -- curl_cffi sufficient
     PortalSpec("tutti.ch",        Tier.T1, WAF.CF_FREE,     countries=["CH"]),

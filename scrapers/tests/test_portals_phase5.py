@@ -241,3 +241,218 @@ def test_tweedehands_domain_map_baseline() -> None:
     assert spec.tier is Tier.T0
     assert spec.waf is WAF.NONE
     assert spec.can_escalate_to is None
+
+
+# =========================================================================== #
+# viabovag.nl -- Next.js data route SSR scraper
+# =========================================================================== #
+from scrapers.portals.viabovag_nl import ViaBovagNLScraper, _BUILD_ID_RE
+
+# HTML stub con __NEXT_DATA__ conteniendo buildId
+_VIABOVAG_HTML = (
+    '<html><head><script id="__NEXT_DATA__" type="application/json">'
+    '{"props":{"pageProps":{}},"page":"/srp","query":{"mobilityType":"auto"},'
+    '"buildId":"testBuildId123","isFallback":false}'
+    '</script></head></html>'
+)
+
+# JSON stub de la data route con resultados
+_VIABOVAG_DATA_JSON = _json.dumps({
+    "pageProps": {
+        "serverSearchResults": {
+            "results": [
+                {
+                    "id": "aaa-111",
+                    "url": "https://www.viabovag.nl/auto/aanbod/renault-clio-abc123",
+                    "friendlyUriPart": "renault-clio-abc123",
+                    "price": 21895,
+                    "vehicle": {"brand": "Renault", "model": "Clio", "year": 2024}
+                },
+                {
+                    "id": "bbb-222",
+                    "url": "https://www.viabovag.nl/auto/aanbod/bmw-3-serie-def456",
+                    "friendlyUriPart": "bmw-3-serie-def456",
+                    "price": 35990,
+                    "vehicle": {"brand": "BMW", "model": "3 Serie", "year": 2022}
+                },
+                {
+                    "id": "aaa-111",
+                    "url": "https://www.viabovag.nl/auto/aanbod/renault-clio-abc123",
+                    "friendlyUriPart": "renault-clio-abc123",
+                    "price": 21895,
+                    "vehicle": {"brand": "Renault", "model": "Clio", "year": 2024}
+                },
+            ],
+            "count": 129069
+        }
+    }
+})
+
+_VIABOVAG_EXPECTED = [
+    "https://www.viabovag.nl/auto/aanbod/renault-clio-abc123",
+    "https://www.viabovag.nl/auto/aanbod/bmw-3-serie-def456",
+]
+
+
+@pytest.mark.unit
+def test_viabovag_build_id_regex() -> None:
+    match = _BUILD_ID_RE.search(_VIABOVAG_HTML)
+    assert match is not None
+    assert match.group(1) == "testBuildId123"
+
+
+@pytest.mark.unit
+def test_viabovag_partition_is_single_empty_segment() -> None:
+    assert ViaBovagNLScraper().partition_params() == [{}]
+
+
+@pytest.mark.unit
+def test_viabovag_subdivide_is_a_noop() -> None:
+    assert ViaBovagNLScraper().subdivide_segment({}) == []
+
+
+@pytest.mark.unit
+def test_viabovag_build_data_url() -> None:
+    scraper = ViaBovagNLScraper()
+    scraper._build_id = "testBuildId123"
+    assert scraper._build_data_url(1) == (
+        "https://www.viabovag.nl/_next/data/testBuildId123/srp.json"
+        "?mobilityType=auto&selectedFilters=pagina-1"
+    )
+    assert scraper._build_data_url(4167) == (
+        "https://www.viabovag.nl/_next/data/testBuildId123/srp.json"
+        "?mobilityType=auto&selectedFilters=pagina-4167"
+    )
+
+
+@pytest.mark.unit
+def test_viabovag_extract_pulls_urls_and_dedups() -> None:
+    assert ViaBovagNLScraper()._extract(_VIABOVAG_DATA_JSON) == _VIABOVAG_EXPECTED
+
+
+@pytest.mark.unit
+def test_viabovag_extract_returns_empty_on_garbage() -> None:
+    assert ViaBovagNLScraper()._extract("") == []
+    assert ViaBovagNLScraper()._extract("not json") == []
+    assert ViaBovagNLScraper()._extract('{"pageProps": {}}') == []
+    assert ViaBovagNLScraper()._extract('{"pageProps": {"serverSearchResults": "x"}}') == []
+
+
+@pytest.mark.unit
+def test_viabovag_extract_skips_items_without_url() -> None:
+    body = _json.dumps({
+        "pageProps": {
+            "serverSearchResults": {
+                "results": [
+                    {"id": "a", "price": 100},
+                    {"id": "b", "url": "", "price": 200},
+                    {"id": "c", "url": "https://www.viabovag.nl/auto/aanbod/ok-item", "price": 300},
+                ],
+                "count": 3
+            }
+        }
+    })
+    assert ViaBovagNLScraper()._extract(body) == [
+        "https://www.viabovag.nl/auto/aanbod/ok-item",
+    ]
+
+
+# -- fetch_segment: buildId resolution + data fetch --------------------------
+@pytest.mark.unit
+def test_viabovag_fetch_segment_resolves_build_id_then_fetches() -> None:
+    """Primera llamada resuelve buildId via HTML, luego fetch data route."""
+    scraper = ViaBovagNLScraper()
+    _no_backoff(scraper)
+    session = _Session([
+        _Resp(200, _VIABOVAG_HTML),        # buildId resolution (HTML)
+        _Resp(200, _VIABOVAG_DATA_JSON),   # data route fetch
+    ])
+    urls = _run(scraper.fetch_segment(session, {}, 1))
+    assert urls == _VIABOVAG_EXPECTED
+    assert len(session.calls) == 2
+    # Primera call debe ser al HTML /auto
+    assert "/auto" in session.urls[0]
+    assert "/_next/data/" not in session.urls[0]
+    # Segunda call debe ser a la data route
+    assert "/_next/data/testBuildId123/srp.json" in session.urls[1]
+
+
+@pytest.mark.unit
+def test_viabovag_fetch_segment_caches_build_id() -> None:
+    """Segunda llamada reutiliza el buildId cacheado."""
+    scraper = ViaBovagNLScraper()
+    _no_backoff(scraper)
+    session = _Session([
+        _Resp(200, _VIABOVAG_HTML),        # buildId resolution
+        _Resp(200, _VIABOVAG_DATA_JSON),   # page 1
+        _Resp(200, _VIABOVAG_DATA_JSON),   # page 2 (no HTML fetch)
+    ])
+    _run(scraper.fetch_segment(session, {}, 1))
+    urls2 = _run(scraper.fetch_segment(session, {}, 2))
+    assert urls2 == _VIABOVAG_EXPECTED
+    assert len(session.calls) == 3
+    # Tercera call debe ir directa a data route sin HTML
+    assert "/_next/data/" in session.urls[2]
+
+
+@pytest.mark.unit
+def test_viabovag_fetch_segment_retries_block_then_gives_up() -> None:
+    scraper = ViaBovagNLScraper()
+    scraper._build_id = "cached"
+    _no_backoff(scraper)
+    session = _Session([_Resp(429), _Resp(503), _Resp(403)])
+    assert _run(scraper.fetch_segment(session, {}, 1)) == []
+    assert len(session.calls) == scraper.RETRY_ATTEMPTS
+
+
+@pytest.mark.unit
+def test_viabovag_fetch_segment_recovers_after_block() -> None:
+    scraper = ViaBovagNLScraper()
+    scraper._build_id = "cached"
+    _no_backoff(scraper)
+    session = _Session([_Resp(503), _Resp(200, _VIABOVAG_DATA_JSON)])
+    assert _run(scraper.fetch_segment(session, {}, 1)) == _VIABOVAG_EXPECTED
+    assert len(session.calls) == 2
+
+
+@pytest.mark.unit
+def test_viabovag_fetch_segment_404_re_resolves_build_id() -> None:
+    """404 en la data route => re-resolver buildId (nuevo deploy)."""
+    scraper = ViaBovagNLScraper()
+    scraper._build_id = "stale"
+    _no_backoff(scraper)
+    session = _Session([
+        _Resp(404),                        # stale buildId
+        _Resp(200, _VIABOVAG_HTML),        # re-resolve
+        _Resp(200, _VIABOVAG_DATA_JSON),   # retry con nuevo buildId
+    ])
+    urls = _run(scraper.fetch_segment(session, {}, 1))
+    assert urls == _VIABOVAG_EXPECTED
+    assert scraper._build_id == "testBuildId123"
+
+
+@pytest.mark.unit
+def test_viabovag_fetch_segment_transport_error_retries() -> None:
+    scraper = ViaBovagNLScraper()
+    scraper._build_id = "cached"
+    _no_backoff(scraper)
+    session = _Session([ConnectionError("reset"), _Resp(200, _VIABOVAG_DATA_JSON)])
+    assert _run(scraper.fetch_segment(session, {}, 1)) == _VIABOVAG_EXPECTED
+    assert len(session.calls) == 2
+
+
+# -- wiring -------------------------------------------------------------------
+@pytest.mark.unit
+def test_viabovag_registry_resolves() -> None:
+    scraper = get_scraper("viabovag.nl")
+    assert isinstance(scraper, ViaBovagNLScraper)
+    assert scraper.DOMAIN == "viabovag.nl"
+
+
+@pytest.mark.unit
+def test_viabovag_domain_map_baseline() -> None:
+    spec = domain_get("viabovag.nl")
+    assert spec is not None, "viabovag.nl missing from REGISTRY"
+    assert spec.tier is Tier.T1
+    assert spec.waf is WAF.NONE
+    assert spec.can_escalate_to is None
