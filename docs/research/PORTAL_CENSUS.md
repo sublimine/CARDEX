@@ -1,8 +1,8 @@
 # CARDEX Portal Census — Ground Truth Coverage Tracker
 
-> Last updated: 2026-06-04 (Phase 12 dealer network discovery)
-> Total implemented scrapers: **68**
-> Total portals tracked: **97+**
+> Last updated: 2026-06-04 (Phase 13 commercial & niche specialist)
+> Total implemented scrapers: **70**
+> Total portals tracked: **99+**
 
 ---
 
@@ -42,6 +42,8 @@
 | autohaus24.de | LIVE | T1 | Unknown | 8 | ~1k | Allane SE (ex-Sixt Leasing) dealer |
 | autohus.de | LIVE | T1 | Unknown | 8 | ~3k | DAT AUTOHUS AG, used car specialist |
 | autohero.com | LIVE | T0 | None | 10 | ~15k | Auto1 Group, GraphQL API /v1/retail-customer-gateway/graphql/ |
+| truckscout24.com | LIVE | T1 | None | 13 | ~100k | AS24 Group, Yii2/PHP, commercial vehicles, 8 categories |
+| classic-trader.com | LIVE | T1 | None | 13 | ~8.5k | Astro SSR, luxury/classic marketplace |
 | heycar.de | SKIP-AGGREGATOR | — | — | — | — | Aggregator (VW Group), DE endpoint dead. FR endpoint LIVE as heycar.com |
 | wirkaufendeinauto.de | SKIP-OEM | — | — | — | — | Buy-only service (Auto1 Group), no listings |
 | autode.de | DEAD | — | — | — | — | Redirects to auto.de |
@@ -168,14 +170,14 @@
 
 | Country | LIVE | BLOCKED | SKIP/DEAD | Total Tracked |
 |---------|------|---------|-----------|---------------|
-| DE | 10 | 0 | 4 | 14 |
+| DE | 12 | 0 | 4 | 16 |
 | FR | 23 | 0 | 7 | 30 |
 | ES | 11 | 0 | 4 | 15 |
 | NL | 8 | 0 | 4 | 12 |
 | BE | 12 | 0 | 3 | 15 |
 | CH | 7 | 0 | 3 | 10 |
 | EU | 3 | 0 | 0 | 3 |
-| **Total** | **68** | **0** | **25** | **97** |
+| **Total** | **70** | **0** | **25** | **99** |
 
 ## Summary by Phase
 
@@ -192,16 +194,17 @@
 | 10 — T2 WAF bypass | 4 (wallapop.com, autohero.com, heycar.com, comparis.ch) | 62 |
 | 11 — T2/T3 Camoufox SSR | 4 (gocar.be, milanuncios.com, zoomcar.fr, coches.com) | 66 |
 | 12 — Dealer network discovery | 2 (caravenue.com, simplicicar.com) | 68 |
+| 13 — Commercial & niche specialist | 2 (truckscout24.com, classic-trader.com) | 70 |
 
 ## Summary by Tier
 
 | Tier | Count | Description |
 |------|-------|-------------|
 | T0 | 12 | Open API / no WAF |
-| T1 | 38 | curl_cffi sufficient |
+| T1 | 40 | curl_cffi sufficient |
 | T2 | 13 | Stealth browser required |
 | T3 | 5 | Behavioral + DataDome |
-| **Total** | **68** | |
+| **Total** | **70** | |
 
 ---
 

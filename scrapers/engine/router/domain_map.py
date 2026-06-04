@@ -120,6 +120,9 @@ REGISTRY: list[PortalSpec] = [
     # Phase 12 -- newly discovered dealer networks
     PortalSpec("caravenue.com", Tier.T0, WAF.NONE, countries=["FR","BE","LU","CH"], notes="Next.js, 62-dealership group, ~2.4k vehicles [VERIFIED 2026-06-04]"),
     PortalSpec("simplicicar.com", Tier.T1, WAF.NONE, countries=["FR","BE"], notes="PrestaShop, 100+ POS franchise, ~6k vehicles [VERIFIED 2026-06-04]"),
+    # Phase 13 -- commercial & niche specialist
+    PortalSpec("truckscout24.com", Tier.T1, WAF.NONE, countries=["DE","EU"], notes="Yii2/PHP, AS24 Group commercial vehicles, ~80-120k listings [VERIFIED 2026-06-04]"),
+    PortalSpec("classic-trader.com", Tier.T1, WAF.NONE, countries=["DE","EU"], notes="Astro SSR, luxury/classic marketplace, ~8.5k listings [VERIFIED 2026-06-04]"),
     # T3 -- Behavioral required (DataDome + residential)
     PortalSpec("leboncoin.fr", Tier.T3, WAF.DATADOME, countries=["FR"]),
     PortalSpec("lacentrale.fr", Tier.T3, WAF.DATADOME, countries=["FR"]),
