@@ -125,7 +125,7 @@ REGISTRY: list[PortalSpec] = [
 
 
 _TIER_ORDER: tuple[Tier, ...] = (Tier.T0, Tier.T1, Tier.T2, Tier.T3)
-_DEFAULT_TIER = Tier.T1
+_DEFAULT_TIER = Tier.T1  # conservative-but-cheap baseline for unknown dealers
 
 
 def _tier_index(tier: Tier) -> int:
@@ -134,11 +134,24 @@ def _tier_index(tier: Tier) -> int:
 
 @lru_cache(maxsize=256)
 def _pattern_regex(pattern: str) -> re.Pattern[str]:
+    """
+    Compile a registry pattern into a domain matcher.
+
+    A literal '*' matches one-or-more dot-separated labels (used as a TLD wildcard,
+    e.g. autoscout24.*). Optional leading subdomains are always allowed so
+    'www.mobile.de' matches the pattern 'mobile.de'.
+    """
     escaped = re.escape(pattern).replace(r"\*", r"[a-z0-9-]+(?:\.[a-z0-9-]+)*")
     return re.compile(rf"^(?:[a-z0-9-]+\.)*{escaped}$", re.IGNORECASE)
 
 
 def get(domain: str) -> PortalSpec | None:
+    """
+    Match domain against the registry. Supports wildcard patterns (autoscout24.*).
+
+    First match in REGISTRY order wins, so register a more-specific pattern
+    before a broader wildcard (e.g. a concrete dealer host before autoscout24.*).
+    """
     host = domain.strip().lower()
     for spec in REGISTRY:
         if _pattern_regex(spec.domain_pattern).match(host):
@@ -147,6 +160,14 @@ def get(domain: str) -> PortalSpec | None:
 
 
 def effective_tier(domain: str, circuit_state: dict) -> Tier:
+    """
+    Return the tier to use now, considering circuit breaker escalation.
+
+    circuit_state: {(domain, tier): 'open'|'closed'|'half_open'} where tier may be a
+    Tier or its string value. Walks up from the portal's baseline tier, skipping any
+    tier whose breaker is OPEN, bounded by the registry escalation ceiling
+    (can_escalate_to). Returns the baseline when no escalation is configured/possible.
+    """
     spec = get(domain)
     baseline = spec.tier if spec else _DEFAULT_TIER
     if spec and spec.can_escalate_to is not None:

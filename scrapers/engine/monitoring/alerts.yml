@@ -1,0 +1,67 @@
+# Prometheus alerting rules for the CARDEX scraping engine.
+#
+# The 5 alerts that matter (SCRAPING_ENGINE.md §E). No vanity alerts: every rule
+# maps to an automatic response in the resilience matrix (§F) and a metric emitted
+# by engine/monitoring/metrics.py. Metric names use Prometheus conventions — the
+# Counter `scraper_schema_change` exposes the `scraper_schema_change_total` sample,
+# and `scraper_last_success_timestamp` / `scraper_null_field_rate` are gauges.
+#
+# Load into Prometheus via `rule_files:` in prometheus.yml. `expr` strings are
+# verbatim from the design doc so the alerting contract cannot silently drift.
+groups:
+  - name: cardex_scraping_engine
+    rules:
+      # Soft-block cascade: the WAF serves 200s with empty/poisoned bodies. No HTTP
+      # signal — only the null-field rate exposes it. → quarantine + rotate identity.
+      - alert: SoftBlockCascade
+        expr: scraper_null_field_rate > 0.15
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Soft block on {{ $labels.portal }} (null_field_rate {{ $value | humanizePercentage }})"
+          description: "scraper_null_field_rate has exceeded 15% for 10m — identities are being silently starved of data."
+
+      # Premium pool exhausted: fewer than 3 identities with trust_score >= 7.0, so
+      # T3 portals (leboncoin, lacentrale) cannot be covered. → start warming.
+      - alert: PremiumPoolExhausted
+        expr: premium_identity_count < 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Premium identity pool low ({{ $value }} < 3)"
+          description: "Fewer than 3 identities with trust_score >= 7.0 — T3 coverage at risk."
+
+      # Scraper stale: no successful scrape in over 2h. Upstream is broken or the
+      # whole fleet is blocked. → page oncall.
+      - alert: ScraperStale
+        expr: time() - scraper_last_success_timestamp > 7200
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "No successful scrape on {{ $labels.portal }} in over 2h"
+          description: "scraper_last_success_timestamp is older than 7200s — portal is dark."
+
+      # DLQ growing: dead-letter queue accreting faster than 100/h sustained. →
+      # upstream failures piling up; investigate the failing portal/stage.
+      - alert: DLQGrowing
+        expr: rate(pipeline_dlq_size[1h]) > 100
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "DLQ growing > 100/h"
+          description: "pipeline_dlq_size growth rate exceeds 100/h for 15m — failures are accumulating."
+
+      # Schema change: a portal's extraction fingerprint diverged. Every pending job
+      # is now suspect. → pause portal + DLQ pending + alert immediately.
+      - alert: SchemaChangeDetected
+        expr: scraper_schema_change_total > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Schema change detected on {{ $labels.portal }}"
+          description: "scraper_schema_change_total incremented — selectors may be broken; portal extraction is unreliable."

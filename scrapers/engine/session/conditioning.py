@@ -21,6 +21,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from scrapers.engine.antidetect import behavioral
 from scrapers.engine.session.intent import BuyerPersona, build_plan
 
 log = logging.getLogger(__name__)
@@ -35,6 +36,28 @@ async def condition_session(
     """
     Run the conditioning flow on the given page before extraction starts.
     Page must already have storageState injected (session/state.py).
-    On return: page is at the search results page, ready for intercept_paginate.
+
+    Navigates to the portal homepage with a Google referer (when the persona
+    enters via search) and performs persona-driven organic dwell + scroll, so the
+    first cookies/_abck are minted under a human footprint. On return the page is
+    warmed on the homepage; the portal scraper then navigates to its search-results
+    URL (built by its own search_url_fn) — conditioning does NOT fabricate that
+    URL, keeping the portal-specific scheme owned by the portal layer.
     """
-    raise NotImplementedError
+    plan = build_plan(persona, domain)
+    entry = plan.steps[0]
+    target = portal_base_url or entry.url
+    if not target:
+        log.warning("conditioning %s: no entry URL available", domain)
+        return
+    try:
+        await page.goto(
+            target, referer=entry.referer, wait_until="domcontentloaded", timeout=30_000
+        )
+    except Exception as exc:
+        log.warning("conditioning %s: entry navigation failed: %s", domain, exc)
+        return
+
+    await behavioral.human_dwell(*persona.results_dwell_s)
+    await behavioral.simulate_reading(page, persona.results_dwell_s)
+    log.debug("conditioning %s: homepage warmed (persona=%s)", domain, persona.id)
