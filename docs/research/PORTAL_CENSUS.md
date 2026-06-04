@@ -1,8 +1,8 @@
 # CARDEX Portal Census — Ground Truth Coverage Tracker
 
-> Last updated: 2026-06-04 (Phase 9 coverage gap closure)
-> Total implemented scrapers: **58**
-> Total portals tracked: **90+**
+> Last updated: 2026-06-04 (Phase 11 T2/T3 Camoufox SSR)
+> Total implemented scrapers: **66**
+> Total portals tracked: **95+**
 
 ---
 
@@ -41,8 +41,8 @@
 | pkw.de | LIVE | T1 | Unknown | 8 | ~100k | Multi-dealer SSR marketplace |
 | autohaus24.de | LIVE | T1 | Unknown | 8 | ~1k | Allane SE (ex-Sixt Leasing) dealer |
 | autohus.de | LIVE | T1 | Unknown | 8 | ~3k | DAT AUTOHUS AG, used car specialist |
-| autohero.com | BLOCKED | T2 | CF Pro | — | ~15k | Auto1 Group, Cloudflare Pro |
-| heycar.de | SKIP-AGGREGATOR | — | — | — | — | Aggregator (VW Group), pulls from dealers |
+| autohero.com | LIVE | T0 | None | 10 | ~15k | Auto1 Group, GraphQL API /v1/retail-customer-gateway/graphql/ |
+| heycar.de | SKIP-AGGREGATOR | — | — | — | — | Aggregator (VW Group), DE endpoint dead. FR endpoint LIVE as heycar.com |
 | wirkaufendeinauto.de | SKIP-OEM | — | — | — | — | Buy-only service (Auto1 Group), no listings |
 | autode.de | DEAD | — | — | — | — | Redirects to auto.de |
 | gebrauchtwagen.de | SKIP-REBRAND | — | — | — | — | Redirects to mobile.de |
@@ -70,8 +70,9 @@
 | occasions.jeanlain.com | LIVE | T1 | Unknown | 8 | ~1.8k | Jean Lain Mobilités, Alpine arc dealer |
 | gueudet.fr | LIVE | T1 | None | 9 | ~5.2k | Gueudet 1880 dealer group, SSR HTML |
 | distinxion.fr | LIVE | T1 | None | 9 | ~1.6k | 120+ POS multi-brand network, Symfony SSR |
-| ouestfrance-auto.fr | BLOCKED | T2 | CF Pro | — | ~50k | Ouest-France media group |
-| zoomcar.fr | BLOCKED | T2 | CF Pro | — | ~50k | Ex-ouestfrance-auto.com rebrand |
+| heycar.com | LIVE | T0 | None | 10 | ~5k | REST API api.fr.prod.group-mobility-trader.com (FR only, DE dead) |
+| ouestfrance-auto.fr | SKIP-REBRAND | — | — | — | — | Rebranded to zoomcar.fr |
+| zoomcar.fr | LIVE | T2 | CF Pro | 11 | ~190k | Ex-ouestfrance-auto.com, Camoufox SSR HTML |
 | promoneuve.fr | SKIP-NEWONLY | T3 | DataDome | — | — | New cars only, DataDome |
 | vinceauto.com | SKIP-SMALL | — | — | — | — | Too small, regional dealer |
 | kyump.com | SKIP-SMALL | — | — | — | — | Niche startup, negligible inventory |
@@ -91,9 +92,9 @@
 | flexicar.es | LIVE | T1 | Unknown | 7 | ~25k | Growing VO chain |
 | clicars.com | LIVE | T1 | Unknown | 7 | ~2k | Online-first used car dealer |
 | buscocoches.com | LIVE | T1 | Unknown | 8 | ~15k | National classifieds |
-| wallapop.com | BLOCKED | T2 | PerimeterX | — | ~200k | General classifieds, PerimeterX |
-| milanuncios.com | BLOCKED | T3 | DataDome | — | ~150k | Major classifieds, DataDome |
-| coches.com | BLOCKED | T2 | CF Pro | — | ~50k | Adevinta group |
+| wallapop.com | LIVE | T0 | None | 10 | ~200k | Mobile API api.wallapop.com/api/v3, cursor pagination, 8 cities × 8 price bands |
+| milanuncios.com | LIVE | T3 | DataDome | 11 | ~150k | __NEXT_DATA__ extraction via Camoufox, DataDome bypass |
+| coches.com | LIVE | T2 | CF Pro | 11 | ~50k | Adevinta @s-ui/ssr, Camoufox SSR HTML |
 | motorflash.com | SKIP-AGGREGATOR | — | — | — | — | B2B dealer SaaS, not consumer portal |
 | km77.com | SKIP-OEM | — | — | — | — | Auto media, reviews only |
 | cochesya.com | SKIP-SMALL | — | — | — | — | Tiny classified board |
@@ -111,7 +112,7 @@
 | autokopen.nl | LIVE | T1 | None | 6 | ~106k | Next.js SSR portal |
 | nederlandmobiel.nl | LIVE | T0 | None | 6 | ~313k | PHP SSR free platform |
 | autowereld.nl | LIVE | T1 | Unknown | 7 | ~270k | PHP SSR occasions portal |
-| autoweek.nl | BLOCKED | T2 | Akamai V3 | — | ~50k | Automotive media + classifieds |
+| autoweek.nl | SKIP-AGGREGATOR | T2 | Akamai V3 | — | 0 | DPG Media property, mirrors AutoTrack.nl (already LIVE). Zero own inventory |
 | autovisie.nl | SKIP-OEM | — | — | — | — | Auto media, reviews only |
 | autobytel.nl | DEAD | — | — | — | — | Domain parked |
 | wijkopenautos.nl | SKIP-OEM | — | — | — | — | Buy-only service, no listings |
@@ -131,7 +132,7 @@
 | myway.be | LIVE | T1 | Unknown | 7 | ~3k | D'Ieteren certified used cars |
 | belgiemobiel.be | LIVE | T1 | None | 8 | ~20k | PHP SSR, sister of nederlandmobiel.nl |
 | vroom.be | LIVE | T1 | Unknown | 8 | ~40k | Rossel/Roularta JV media portal |
-| gocar.be | BLOCKED | T2 | CF Business | — | ~30k | Cloudflare Business, premium portal |
+| gocar.be | LIVE | T2 | CF Business | 11 | ~30k | Sitemap-based extraction via Camoufox |
 | kapaza.be | DEAD | — | — | — | — | Merged into 2dehands.be |
 | autovlan.be | SKIP-REBRAND | — | — | — | — | Merged into vroom.be |
 | topoccasions.be | SKIP-SMALL | — | — | — | — | Tiny portal, negligible inventory |
@@ -146,7 +147,7 @@
 | autolina.ch | LIVE | T0 | None | 5 | ~30k | Open REST API, m.autolina.ch |
 | carforyou.ch | LIVE | T1 | Unknown | 8 | ~20k | #3 CH auto portal, ~966k visits/mo |
 | gowago.ch | LIVE | T1 | None | 9 | ~10k | Swiss leasing marketplace, Next.js SSR |
-| comparis.ch | BLOCKED | T2 | CF Business | — | ~100k | Insurance/comparison giant, CF Business |
+| comparis.ch | LIVE | T1 | None | 10 | ~100k | SSR HTML without WAF, regex extraction, 11 years × 10 prices = 110 segments |
 | autoricardo.ch | SKIP-REBRAND | — | — | — | — | Merged into autoscout24.ch |
 | car4you.ch | SKIP-REBRAND | — | — | — | — | Old domain → carforyou.ch |
 | autogalerie.ch | SKIP-SMALL | — | — | — | — | Tiny dealer portal |
@@ -165,14 +166,14 @@
 
 | Country | LIVE | BLOCKED | SKIP/DEAD | Total Tracked |
 |---------|------|---------|-----------|---------------|
-| DE | 9 | 1 | 4 | 14 |
-| FR | 18 | 2 | 6 | 26 |
-| ES | 8 | 3 | 4 | 15 |
-| NL | 8 | 1 | 3 | 12 |
-| BE | 11 | 1 | 3 | 15 |
-| CH | 6 | 1 | 3 | 10 |
+| DE | 10 | 0 | 4 | 14 |
+| FR | 21 | 0 | 7 | 28 |
+| ES | 11 | 0 | 4 | 15 |
+| NL | 8 | 0 | 4 | 12 |
+| BE | 12 | 0 | 3 | 15 |
+| CH | 7 | 0 | 3 | 10 |
 | EU | 3 | 0 | 0 | 3 |
-| **Total** | **58** | **9** | **23** | **90** |
+| **Total** | **66** | **0** | **25** | **95** |
 
 ## Summary by Phase
 
@@ -186,16 +187,18 @@
 | 7 — Remaining T0/T1 | 7 (flexicar, clicars, autowereld, auto.de, youcar, myway, capcar) | 47 |
 | 8 — Deep sweep | 8 (pkw.de, autohaus24, autohus, buscocoches, belgiemobiel, vroom.be, carforyou, jeanlain) | 55 |
 | 9 — Coverage gap closure | 3 (gowago.ch, gueudet.fr, distinxion.fr) | 58 |
+| 10 — T2 WAF bypass | 4 (wallapop.com, autohero.com, heycar.com, comparis.ch) | 62 |
+| 11 — T2/T3 Camoufox SSR | 4 (gocar.be, milanuncios.com, zoomcar.fr, coches.com) | 66 |
 
 ## Summary by Tier
 
 | Tier | Count | Description |
 |------|-------|-------------|
-| T0 | 8 | Open API / no WAF |
-| T1 | 36 | curl_cffi sufficient |
-| T2 | 10 | Stealth browser required |
-| T3 | 4 | Behavioral + DataDome |
-| **Total** | **58** | |
+| T0 | 11 | Open API / no WAF |
+| T1 | 37 | curl_cffi sufficient |
+| T2 | 13 | Stealth browser required |
+| T3 | 5 | Behavioral + DataDome |
+| **Total** | **66** | |
 
 ---
 
@@ -217,12 +220,12 @@
 - **vinceauto.com** — SKIP-SMALL. Regional dealer, too small.
 - **kyump.com** — SKIP-SMALL. Niche startup, negligible inventory.
 - **changermonauto.fr** — SKIP-SMALL. Small broker under 500 listings.
-- **zoomcar.fr** — BLOCKED (T2, CF Pro). Rebrand of ouestfrance-auto.com.
+- **zoomcar.fr** — LIVE (Phase 11). SSR HTML via Camoufox. Rebrand of ouestfrance-auto.com, ~190k listings.
 
 ### ES — Investigated & Excluded
 
-- **wallapop.com** — BLOCKED (T2, PerimeterX). General classifieds with strong auto section; PerimeterX makes T1 impossible.
-- **milanuncios.com** — BLOCKED (T3, DataDome). Major classifieds; DataDome enforcement.
+- **wallapop.com** — LIVE (Phase 10). Mobile API bypass at api.wallapop.com/api/v3. PerimeterX only protects web frontend; mobile API is open T0.
+- **milanuncios.com** — LIVE (Phase 11). __NEXT_DATA__ extraction via Camoufox, DataDome T3.
 - **motorflash.com** — SKIP-AGGREGATOR. B2B dealer SaaS platform, not a consumer-facing portal.
 - **km77.com** — SKIP-OEM. Auto journalism/reviews, no classifieds.
 - **cochesya.com** — SKIP-SMALL. Tiny board.
@@ -230,21 +233,21 @@
 
 ### NL — Investigated & Excluded
 
-- **autoweek.nl** — BLOCKED (T2, Akamai V3). Automotive media with classifieds; Akamai makes T1 impossible.
+- **autoweek.nl** — SKIP-AGGREGATOR. DPG Media property, mirrors AutoTrack.nl inventory. Zero own listings.
 - **autovisie.nl** — SKIP-OEM. Auto media, reviews only.
 - **autobytel.nl** — DEAD. Domain parked.
 - **wijkopenautos.nl** — SKIP-OEM. Buy-only service (like wirkaufendeinauto.de).
 
 ### BE — Investigated & Excluded
 
-- **gocar.be** — BLOCKED (T2, CF Business). Premium Belgian portal; Cloudflare Business tier.
+- **gocar.be** — LIVE (Phase 11). Sitemap-based extraction via Camoufox, CF Business T2.
 - **kapaza.be** — DEAD. Fully merged into 2dehands.be years ago.
 - **autovlan.be** — SKIP-REBRAND. Merged into vroom.be by Rossel Group.
 - **topoccasions.be** — SKIP-SMALL. Negligible inventory.
 
 ### CH — Investigated & Excluded
 
-- **comparis.ch** — BLOCKED (T2, CF Business). Swiss comparison giant; Cloudflare Business.
+- **comparis.ch** — LIVE (Phase 10). SSR HTML endpoint bypasses CF Business WAF. Regex extraction, 110 segments.
 - **autoricardo.ch** — SKIP-REBRAND. Merged into autoscout24.ch.
 - **car4you.ch** — SKIP-REBRAND. Old domain, now carforyou.ch.
 - **autogalerie.ch** — SKIP-SMALL. Tiny dealer portal.
@@ -321,9 +324,7 @@ With 58 implemented scrapers covering T0-T2 tiers, the estimated coverage by acc
 | BE | ~550k | ~650k | ~85% |
 | CH | ~235k | ~350k | ~67% |
 
-Remaining gaps are primarily behind T2/T3 WAFs (autohero, gocar, comparis, wallapop, milanuncios, autoweek) which require Camoufox browser infrastructure.
-
-**Phase 9 conclusion**: All remaining T0/T1 portals with meaningful used-car inventory have been implemented. Further coverage gains require T2/T3 browser infrastructure.
+**Phase 11 update**: milanuncios.com (__NEXT_DATA__ via Camoufox, T3 DataDome), zoomcar.fr (SSR HTML via Camoufox, T2 CF Pro), gocar.be (sitemap XML via Camoufox, T2 CF Business), and coches.com (SSR HTML via Camoufox, T2 CF Pro) implemented. Remaining blocked: autoweek.nl (Akamai V3, SKIP-AGGREGATOR — mirrors AutoTrack.nl). All previously BLOCKED portals with real inventory are now LIVE. Total blocked with unique inventory: 0.
 
 ---
 
