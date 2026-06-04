@@ -51,6 +51,13 @@ from scrapers.portals.annonces_automobile_com import AnnoncesAutomobileFRScraper
 from scrapers.portals.starterre_fr import StarterreFRScraper
 from scrapers.portals.carizy_com import CarizyFRScraper
 from scrapers.portals.moniteur_auto_be import MoniteurAutoBEScraper
+from scrapers.portals.flexicar_es import FlexicarESScraper
+from scrapers.portals.clicars_com import ClicarsESScraper
+from scrapers.portals.autowereld_nl import AutowereldNLScraper
+from scrapers.portals.auto_de import AutoDEScraper
+from scrapers.portals.youcar_be import YoucarBEScraper
+from scrapers.portals.myway_be import MyWayBEScraper
+from scrapers.portals.capcar_fr import CapCarFRScraper
 
 # Every concrete scraper the engine can dispatch. DOMAIN is the registry key.
 _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
@@ -101,6 +108,14 @@ _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
     StarterreFRScraper,
     CarizyFRScraper,
     MoniteurAutoBEScraper,
+    # Phase 7 portals -- remaining T0/T1 coverage
+    FlexicarESScraper,
+    ClicarsESScraper,
+    AutowereldNLScraper,
+    AutoDEScraper,
+    YoucarBEScraper,
+    MyWayBEScraper,
+    CapCarFRScraper,
 )
 
 PORTAL_REGISTRY: dict[str, type[BasePortalScraper]] = {

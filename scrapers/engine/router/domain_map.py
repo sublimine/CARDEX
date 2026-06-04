@@ -86,6 +86,15 @@ REGISTRY: list[PortalSpec] = [
     PortalSpec("carizy.com",      Tier.T1, WAF.NONE,        countries=["FR"], notes="Nuxt.js SSR, ~1.2k P2P [VERIFIED 2026-06-04]"),
     PortalSpec("moniteurautomobile.be", Tier.T1, WAF.NONE,  countries=["BE"], notes="SSR HTML, ~120k annonces [VERIFIED 2026-06-04]"),
 
+    # T1 -- Phase 7 remaining portals
+    PortalSpec("flexicar.es",     Tier.T1, WAF.UNKNOWN,     countries=["ES"], notes="SSR HTML, ~25k vehicles, 180+ concesionarios [VERIFIED 2026-06-04]"),
+    PortalSpec("clicars.com",     Tier.T1, WAF.UNKNOWN,     countries=["ES"], notes="SSR HTML, ~2k+ stock, online dealer [VERIFIED 2026-06-04]"),
+    PortalSpec("autowereld.nl",   Tier.T1, WAF.UNKNOWN,     countries=["NL"], notes="PHP SSR, ~270k occasions, largest free NL portal [VERIFIED 2026-06-04]"),
+    PortalSpec("auto.de",         Tier.T1, WAF.NONE,        countries=["DE"], notes="WordPress, UUID vehicle IDs, Santander integration [VERIFIED 2026-06-04]"),
+    PortalSpec("youcar.be",       Tier.T1, WAF.UNKNOWN,     countries=["BE"], notes="SSR HTML, NL/FR/EN, dealers + private [VERIFIED 2026-06-04]"),
+    PortalSpec("myway.be",        Tier.T1, WAF.UNKNOWN,     countries=["BE"], notes="D'Ieteren certified, 30+ brands, 100+ inspection points [VERIFIED 2026-06-04]"),
+    PortalSpec("capcar.fr",       Tier.T1, WAF.UNKNOWN,     countries=["FR"], notes="P2P with 350+ agents, inspected vehicles [VERIFIED 2026-06-04]"),
+
     # T1 -> escalate T2
     PortalSpec("coches.net",      Tier.T1, WAF.NONE,        can_escalate_to=Tier.T2, countries=["ES"]),
 
