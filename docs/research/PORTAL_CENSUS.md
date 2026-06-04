@@ -1,8 +1,8 @@
 # CARDEX Portal Census — Ground Truth Coverage Tracker
 
-> Last updated: 2026-06-04 (Phase 11 T2/T3 Camoufox SSR)
-> Total implemented scrapers: **66**
-> Total portals tracked: **95+**
+> Last updated: 2026-06-04 (Phase 12 dealer network discovery)
+> Total implemented scrapers: **68**
+> Total portals tracked: **97+**
 
 ---
 
@@ -73,6 +73,8 @@
 | heycar.com | LIVE | T0 | None | 10 | ~5k | REST API api.fr.prod.group-mobility-trader.com (FR only, DE dead) |
 | ouestfrance-auto.fr | SKIP-REBRAND | — | — | — | — | Rebranded to zoomcar.fr |
 | zoomcar.fr | LIVE | T2 | CF Pro | 11 | ~190k | Ex-ouestfrance-auto.com, Camoufox SSR HTML |
+| caravenue.com | LIVE | T0 | None | 12 | ~2.4k | 62-dealership group, Next.js, FR/BE/LU/CH |
+| simplicicar.com | LIVE | T1 | None | 12 | ~6k | 100+ POS franchise, PrestaShop, FR/BE |
 | promoneuve.fr | SKIP-NEWONLY | T3 | DataDome | — | — | New cars only, DataDome |
 | vinceauto.com | SKIP-SMALL | — | — | — | — | Too small, regional dealer |
 | kyump.com | SKIP-SMALL | — | — | — | — | Niche startup, negligible inventory |
@@ -167,13 +169,13 @@
 | Country | LIVE | BLOCKED | SKIP/DEAD | Total Tracked |
 |---------|------|---------|-----------|---------------|
 | DE | 10 | 0 | 4 | 14 |
-| FR | 21 | 0 | 7 | 28 |
+| FR | 23 | 0 | 7 | 30 |
 | ES | 11 | 0 | 4 | 15 |
 | NL | 8 | 0 | 4 | 12 |
 | BE | 12 | 0 | 3 | 15 |
 | CH | 7 | 0 | 3 | 10 |
 | EU | 3 | 0 | 0 | 3 |
-| **Total** | **66** | **0** | **25** | **95** |
+| **Total** | **68** | **0** | **25** | **97** |
 
 ## Summary by Phase
 
@@ -189,16 +191,17 @@
 | 9 — Coverage gap closure | 3 (gowago.ch, gueudet.fr, distinxion.fr) | 58 |
 | 10 — T2 WAF bypass | 4 (wallapop.com, autohero.com, heycar.com, comparis.ch) | 62 |
 | 11 — T2/T3 Camoufox SSR | 4 (gocar.be, milanuncios.com, zoomcar.fr, coches.com) | 66 |
+| 12 — Dealer network discovery | 2 (caravenue.com, simplicicar.com) | 68 |
 
 ## Summary by Tier
 
 | Tier | Count | Description |
 |------|-------|-------------|
-| T0 | 11 | Open API / no WAF |
-| T1 | 37 | curl_cffi sufficient |
+| T0 | 12 | Open API / no WAF |
+| T1 | 38 | curl_cffi sufficient |
 | T2 | 13 | Stealth browser required |
 | T3 | 5 | Behavioral + DataDome |
-| **Total** | **66** | |
+| **Total** | **68** | |
 
 ---
 
@@ -323,6 +326,8 @@ With 58 implemented scrapers covering T0-T2 tiers, the estimated coverage by acc
 | NL | ~1.2M | ~1.3M | ~92% |
 | BE | ~550k | ~650k | ~85% |
 | CH | ~235k | ~350k | ~67% |
+
+**Phase 12 update**: caravenue.com (Next.js, 62-dealership group, ~2.4k vehicles across FR/BE/LU/CH) and simplicicar.com (PrestaShop, 100+ POS franchise, ~6k vehicles) added. Both have unique, non-aggregated dealer inventory. autotrader.nl confirmed as AutoScout24 whitelabel (SKIP). instamotion.com confirmed as Carvago.com whitelabel since July 2024 (SKIP).
 
 **Phase 11 update**: milanuncios.com (__NEXT_DATA__ via Camoufox, T3 DataDome), zoomcar.fr (SSR HTML via Camoufox, T2 CF Pro), gocar.be (sitemap XML via Camoufox, T2 CF Business), and coches.com (SSR HTML via Camoufox, T2 CF Pro) implemented. Remaining blocked: autoweek.nl (Akamai V3, SKIP-AGGREGATOR — mirrors AutoTrack.nl). All previously BLOCKED portals with real inventory are now LIVE. Total blocked with unique inventory: 0.
 
