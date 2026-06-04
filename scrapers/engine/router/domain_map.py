@@ -108,10 +108,11 @@ REGISTRY: list[PortalSpec] = [
     PortalSpec("mobile.de", Tier.T2, WAF.AKAMAI_V3, can_escalate_to=Tier.T3, countries=["DE"]),
     PortalSpec("kleinanzeigen.de", Tier.T2, WAF.AKAMAI_V3, can_escalate_to=Tier.T3, countries=["DE"]),
     PortalSpec("autoscout24.*", Tier.T2, WAF.AKAMAI_V3, can_escalate_to=Tier.T3, countries=["DE","ES","FR","NL","BE","CH"]),
-    PortalSpec("wallapop.com", Tier.T2, WAF.PERIMETER_X, can_escalate_to=Tier.T3, countries=["ES"]),
+    PortalSpec("wallapop.com", Tier.T0, WAF.PERIMETER_X, countries=["ES"], notes="T2->T0 bypass: mobile API api.wallapop.com/api/v3 bypasses PerimeterX [VERIFIED 2026-06-04]"),
     PortalSpec("gocar.be", Tier.T2, WAF.CF_BUSINESS, countries=["BE"]),
-    PortalSpec("comparis.ch", Tier.T2, WAF.CF_BUSINESS, countries=["CH"]),
-    PortalSpec("autohero.com", Tier.T2, WAF.CF_PRO, countries=["DE"]),
+    PortalSpec("comparis.ch", Tier.T1, WAF.NONE, countries=["CH"], notes="T2->T1 bypass: SSR HTML no WAF, meta-aggregator ~214k listings [VERIFIED 2026-06-04]"),
+    PortalSpec("autohero.com", Tier.T0, WAF.NONE, countries=["DE","IT","FR","ES","AT","PL","NL","SE"], notes="T2->T0 bypass: GraphQL API /v1/retail-customer-gateway/graphql/ no auth [VERIFIED 2026-06-04]"),
+    PortalSpec("heycar.com", Tier.T0, WAF.NONE, countries=["FR"], notes="T2->T0 bypass: REST API api.fr.prod.group-mobility-trader.com no auth, DE dead [VERIFIED 2026-06-04]"),
     PortalSpec("ouestfrance-auto.fr", Tier.T2, WAF.CF_PRO, countries=["FR"]),
     PortalSpec("zoomcar.fr", Tier.T2, WAF.CF_PRO, countries=["FR"], notes="ex-ouestfrance-auto.com [VERIFIED 2026-06-04]"),
     PortalSpec("coches.com", Tier.T2, WAF.CF_PRO, countries=["ES"]),
@@ -138,6 +139,7 @@ def _pattern_regex(pattern: str) -> re.Pattern[str]:
     Compile a registry pattern into a domain matcher.
 
     A literal '*' matches one-or-more dot-separated labels (used as a TLD wildcard,
+    A literal '*' matches one-and-more dot-separated labels (used as a TLD wildcard,
     e.g. autoscout24.*). Optional leading subdomains are always allowed so
     'www.mobile.de' matches the pattern 'mobile.de'.
     """
