@@ -52,6 +52,7 @@ REGISTRY: list[PortalSpec] = [
     PortalSpec("tweedehands.be",  Tier.T0, WAF.NONE,        countries=["BE"], notes="alias de 2dehands.be"),
     PortalSpec("viabovag.nl",     Tier.T1, WAF.NONE,        countries=["NL"], notes="Next.js data route SSR, IIS, sin WAF [VERIFIED 2026-06-04]"),
     PortalSpec("autolina.ch",     Tier.T0, WAF.NONE,        countries=["CH"], notes="API REST abierta m.autolina.ch, sin WAF [VERIFIED 2026-06-04]"),
+    PortalSpec("nederlandmobiel.nl", Tier.T0, WAF.NONE,    countries=["NL"], notes="PHP SSR, ~313k auto listings, gratis platform, sin WAF [VERIFIED 2026-06-04]"),
 
     # T1 -- curl_cffi sufficient
     PortalSpec("tutti.ch",        Tier.T1, WAF.CF_FREE,     countries=["CH"]),
@@ -62,6 +63,11 @@ REGISTRY: list[PortalSpec] = [
     PortalSpec("largus.fr",       Tier.T1, WAF.NONE,        countries=["FR"]),
     PortalSpec("motor.es",        Tier.T1, WAF.NONE,        countries=["ES"]),
     PortalSpec("autocasion.com",  Tier.T1, WAF.CF_FREE,     countries=["ES"]),
+    PortalSpec("ocasionplus.com", Tier.T1, WAF.NONE,       countries=["ES"], notes="Next.js SSR, ~20k listings, sin WAF [VERIFIED 2026-06-04]"),
+    PortalSpec("autokopen.nl",   Tier.T1, WAF.NONE,        countries=["NL"], notes="Next.js SSR, ~106k listings, Dealerdirect Media, sin WAF [VERIFIED 2026-06-04]"),
+    PortalSpec("autowereld.nl",  Tier.T1, WAF.UNKNOWN,     countries=["NL"], notes="empty response on probe -- possible bot detection [2026-06-04]"),
+    PortalSpec("flexicar.es",    Tier.T1, WAF.UNKNOWN,     countries=["ES"], notes="dealer chain, 25k+ vehicles, needs probe"),
+    PortalSpec("clicars.com",    Tier.T1, WAF.UNKNOWN,     countries=["ES"], notes="online dealer platform, needs probe"),
 
     # T1 -> escalate T2
     PortalSpec("coches.net",      Tier.T1, WAF.NONE,        can_escalate_to=Tier.T2, countries=["ES"]),
@@ -76,6 +82,8 @@ REGISTRY: list[PortalSpec] = [
     PortalSpec("heycar.com",      Tier.T2, WAF.CF_PRO,      countries=["DE","FR"]),
     PortalSpec("autohero.com",    Tier.T2, WAF.CF_PRO,      countries=["DE"]),
     PortalSpec("ouestfrance-auto.fr", Tier.T2, WAF.CF_PRO,  countries=["FR"]),
+    PortalSpec("coches.com",      Tier.T2, WAF.CF_PRO,      countries=["ES"]),
+    PortalSpec("autoweek.nl",    Tier.T2, WAF.AKAMAI_V3,   countries=["NL"], notes="automotive media + classifieds, Akamai V3"),
     PortalSpec("coches.com",      Tier.T2, WAF.CF_PRO,      countries=["ES"]),
 
     # T3 -- Behavioral required (DataDome + residential)
