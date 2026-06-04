@@ -116,7 +116,7 @@ REGISTRY: list[PortalSpec] = [
     PortalSpec("ouestfrance-auto.fr", Tier.T2, WAF.CF_PRO, countries=["FR"]),
     PortalSpec("zoomcar.fr", Tier.T2, WAF.CF_PRO, countries=["FR"], notes="ex-ouestfrance-auto.com [VERIFIED 2026-06-04]"),
     PortalSpec("coches.com", Tier.T2, WAF.CF_PRO, countries=["ES"]),
-    PortalSpec("autoweek.nl", Tier.T2, WAF.AKAMAI_V3, countries=["NL"], notes="automotive media + classifieds"),
+    PortalSpec("autoweek.nl", Tier.T2, WAF.AKAMAI_V3, countries=["NL"], notes="DPG Media, syndication mirror of autotrack.nl via MediaVentions JV, ~187k listings [VERIFIED 2026-06-04]"),
     # Phase 12 -- newly discovered dealer networks
     PortalSpec("caravenue.com", Tier.T0, WAF.NONE, countries=["FR","BE","LU","CH"], notes="Next.js, 62-dealership group, ~2.4k vehicles [VERIFIED 2026-06-04]"),
     PortalSpec("simplicicar.com", Tier.T1, WAF.NONE, countries=["FR","BE"], notes="PrestaShop, 100+ POS franchise, ~6k vehicles [VERIFIED 2026-06-04]"),
