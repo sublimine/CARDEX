@@ -1,5 +1,5 @@
 """
-Portal registry — domain -> scraper class for every onboarded portal.
+Portal registry -- domain -> scraper class for every onboarded portal.
 
 `get_scraper(domain)` is the coordinator's single resolution point: it maps a
 work_queue row's `portal` to a fresh scraper instance, or None when the domain
@@ -58,6 +58,14 @@ from scrapers.portals.auto_de import AutoDEScraper
 from scrapers.portals.youcar_be import YoucarBEScraper
 from scrapers.portals.myway_be import MyWayBEScraper
 from scrapers.portals.capcar_fr import CapCarFRScraper
+from scrapers.portals.pkw_de import PkwDEScraper
+from scrapers.portals.autohaus24_de import Autohaus24DEScraper
+from scrapers.portals.autohus_de import AutohusDEScraper
+from scrapers.portals.buscocoches_com import BuscocochesESScraper
+from scrapers.portals.belgiemobiel_be import BelgieMobielBEScraper
+from scrapers.portals.vroom_be import VroomBEScraper
+from scrapers.portals.carforyou_ch import CarForYouCHScraper
+from scrapers.portals.jeanlain_fr import JeanLainFRScraper
 
 # Every concrete scraper the engine can dispatch. DOMAIN is the registry key.
 _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
@@ -75,7 +83,7 @@ _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
     KleinanzeigenDEScraper,
     CochesNetScraper,
     LaCentraleFRScraper,
-    # Phase 3 portals -- Tier-0/Tier-1 high-volume targets
+    # Phase 3 portals
     ParuVenduFRScraper,
     LargusFRScraper,
     AutoTrackNLScraper,
@@ -116,6 +124,15 @@ _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
     YoucarBEScraper,
     MyWayBEScraper,
     CapCarFRScraper,
+    # Phase 8 portals -- deep sweep
+    PkwDEScraper,
+    Autohaus24DEScraper,
+    AutohusDEScraper,
+    BuscocochesESScraper,
+    BelgieMobielBEScraper,
+    VroomBEScraper,
+    CarForYouCHScraper,
+    JeanLainFRScraper,
 )
 
 PORTAL_REGISTRY: dict[str, type[BasePortalScraper]] = {
