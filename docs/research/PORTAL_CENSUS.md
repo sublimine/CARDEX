@@ -1,8 +1,8 @@
 # CARDEX Portal Census — Ground Truth Coverage Tracker
 
-> Last updated: 2026-06-04 (Phase 8 deep sweep)
-> Total implemented scrapers: **55**
-> Total portals tracked: **80+**
+> Last updated: 2026-06-04 (Phase 9 coverage gap closure)
+> Total implemented scrapers: **58**
+> Total portals tracked: **90+**
 
 ---
 
@@ -68,6 +68,8 @@
 | carizy.com | LIVE | T1 | None | 6 | ~1.2k | P2P car sales platform |
 | capcar.fr | LIVE | T1 | Unknown | 7 | ~2k | P2P with 350+ inspection agents |
 | occasions.jeanlain.com | LIVE | T1 | Unknown | 8 | ~1.8k | Jean Lain Mobilités, Alpine arc dealer |
+| gueudet.fr | LIVE | T1 | None | 9 | ~5.2k | Gueudet 1880 dealer group, SSR HTML |
+| distinxion.fr | LIVE | T1 | None | 9 | ~1.6k | 120+ POS multi-brand network, Symfony SSR |
 | ouestfrance-auto.fr | BLOCKED | T2 | CF Pro | — | ~50k | Ouest-France media group |
 | zoomcar.fr | BLOCKED | T2 | CF Pro | — | ~50k | Ex-ouestfrance-auto.com rebrand |
 | promoneuve.fr | SKIP-NEWONLY | T3 | DataDome | — | — | New cars only, DataDome |
@@ -143,6 +145,7 @@
 | anibis.ch | LIVE | T1 | CF Free | 5 | ~10k | FR twin of tutti.ch |
 | autolina.ch | LIVE | T0 | None | 5 | ~30k | Open REST API, m.autolina.ch |
 | carforyou.ch | LIVE | T1 | Unknown | 8 | ~20k | #3 CH auto portal, ~966k visits/mo |
+| gowago.ch | LIVE | T1 | None | 9 | ~10k | Swiss leasing marketplace, Next.js SSR |
 | comparis.ch | BLOCKED | T2 | CF Business | — | ~100k | Insurance/comparison giant, CF Business |
 | autoricardo.ch | SKIP-REBRAND | — | — | — | — | Merged into autoscout24.ch |
 | car4you.ch | SKIP-REBRAND | — | — | — | — | Old domain → carforyou.ch |
@@ -163,13 +166,13 @@
 | Country | LIVE | BLOCKED | SKIP/DEAD | Total Tracked |
 |---------|------|---------|-----------|---------------|
 | DE | 9 | 1 | 4 | 14 |
-| FR | 16 | 2 | 6 | 24 |
+| FR | 18 | 2 | 6 | 26 |
 | ES | 8 | 3 | 4 | 15 |
 | NL | 8 | 1 | 3 | 12 |
 | BE | 11 | 1 | 3 | 15 |
-| CH | 5 | 1 | 3 | 9 |
+| CH | 6 | 1 | 3 | 10 |
 | EU | 3 | 0 | 0 | 3 |
-| **Total** | **55** | **9** | **23** | **87** |
+| **Total** | **58** | **9** | **23** | **90** |
 
 ## Summary by Phase
 
@@ -182,16 +185,17 @@
 | 6 — ES/NL/DE/FR/BE expansion | 17 (ocasionplus, autokopen, nederlandmobiel, autoboerse, carvago, 2ememain, cardoen, aramis, leparking, autosphere, reezocar, spoticar, auto-selection, annonces-automobile, starterre, carizy, moniteur) | 40 |
 | 7 — Remaining T0/T1 | 7 (flexicar, clicars, autowereld, auto.de, youcar, myway, capcar) | 47 |
 | 8 — Deep sweep | 8 (pkw.de, autohaus24, autohus, buscocoches, belgiemobiel, vroom.be, carforyou, jeanlain) | 55 |
+| 9 — Coverage gap closure | 3 (gowago.ch, gueudet.fr, distinxion.fr) | 58 |
 
 ## Summary by Tier
 
 | Tier | Count | Description |
 |------|-------|-------------|
 | T0 | 8 | Open API / no WAF |
-| T1 | 33 | curl_cffi sufficient |
+| T1 | 36 | curl_cffi sufficient |
 | T2 | 10 | Stealth browser required |
 | T3 | 4 | Behavioral + DataDome |
-| **Total** | **55** | |
+| **Total** | **58** | |
 
 ---
 
@@ -247,22 +251,79 @@
 
 ---
 
+## Phase 9 Research — Portals Investigated but NOT Implemented
+
+### DE — Investigated & Excluded (Phase 9)
+
+- **meinauto.de** — SKIP-NEWONLY. Neuwagen-Konfigurator; only new car configurations, no used inventory.
+- **pkw-center.de** — SKIP-SMALL. Regional dealer group, fewer than 200 listings.
+- **autohaus.de** — SKIP-OEM. B2B automotive industry news portal, no consumer classifieds.
+- **hey.car** (heycar.de) — SKIP-AGGREGATOR. VW Group aggregator pulling from dealer DMS systems; no unique inventory.
+
+### FR — Investigated & Excluded (Phase 9)
+
+- **gueudet.fr** — LIVE (implemented). Gueudet 1880 dealer group, 5.2k VO, SSR HTML.
+- **distinxion.fr** — LIVE (implemented). 120+ point-of-sale network, 1.6k VO, Symfony SSR.
+- **bymycar.fr** — SKIP-SMALL. Regional dealer group, ~800 VO scattered across sub-sites.
+- **autojm.fr** — SKIP-SMALL. Mandataire with minimal used inventory, focus on new.
+- **ewigo.com** — SKIP-SMALL. Franchise network, listings fragmented per agency, no central listing page.
+- **claar.fr** — DEAD. Domain parked / under construction.
+- **paruvendu-auto.fr** — SKIP-REBRAND. Redirects to paruvendu.fr main domain.
+
+### ES — Investigated & Excluded (Phase 9)
+
+- **drivek.es** — SKIP-NEWONLY. Configurator for new cars only.
+- **canalcar.com** — DEAD. Domain parked.
+- **segundamano.es** — DEAD. Redirected to vibbo, which merged into wallapop.
+- **compramostucoche.es** — SKIP-OEM. Buy-only service, no public listings.
+
+### NL — Investigated & Excluded (Phase 9)
+
+- **ikwilvanmijnautoaf.nl** — SKIP-OEM. Buy-only service (Autohero NL).
+- **automatch.nl** — SKIP-AGGREGATOR. Price comparison tool, no direct listings.
+- **autokopen.com** — SKIP-REBRAND. Redirects to autokopen.nl.
+
+### BE — Investigated & Excluded (Phase 9)
+
+- **autovlan.be** — Already tracked as SKIP-REBRAND (merged into vroom.be).
+- **automarket.be** — DEAD. Domain parked.
+- **autodoccasion.be** — SKIP-SMALL. Fewer than 100 listings.
+
+### CH — Investigated & Excluded (Phase 9)
+
+- **gowago.ch** — LIVE (implemented). Swiss leasing marketplace, ~10k used cars, Next.js SSR.
+- **autosprint.ch** — SKIP-SMALL. Tiny dealer portal, fewer than 50 listings.
+- **carmarket.ch** — DEAD. Domain inactive / no classifieds.
+- **occasionauto.ch** — SKIP-REBRAND. Redirects to comparis.ch.
+
+### Pan-European / CPO — Investigated & Excluded (Phase 9)
+
+- **carwow.de/fr/es** — SKIP-AGGREGATOR. YouTube-centric car buying platform; no scrapable classifieds index.
+- **kavak.com** — SKIP-SMALL. LatAm unicorn with minimal EU footprint (~Turkey only in EU region).
+- **BMW Premium Selection** — SKIP-OEM. Manufacturer CPO program, listings on dealer sites only.
+- **Mercedes Certified** — SKIP-OEM. Manufacturer CPO program, no central listing index.
+- **Volkswagen Das WeltAuto** — SKIP-OEM. Manufacturer CPO via dealer sites, no scrapable central index.
+- **Audi Approved :plus** — SKIP-OEM. Manufacturer CPO, dealer-distributed.
+- **Volvo Selekt** — SKIP-OEM. Manufacturer CPO, dealer-distributed.
+
 ## Coverage Assessment
 
 **Estimated total addressable used car inventory across 6 countries: ~6M+ listings**
 
-With 55 implemented scrapers covering T0-T2 tiers, the estimated coverage by accessible listing volume:
+With 58 implemented scrapers covering T0-T2 tiers, the estimated coverage by accessible listing volume:
 
 | Country | Estimated Accessible | Total Market Est. | Coverage |
 |---------|---------------------|-------------------|----------|
 | DE | ~4.5M | ~5M | ~90% |
-| FR | ~1.6M | ~2M | ~80% |
+| FR | ~1.61M | ~2M | ~80.5% |
 | ES | ~700k | ~1M | ~70% |
 | NL | ~1.2M | ~1.3M | ~92% |
 | BE | ~550k | ~650k | ~85% |
-| CH | ~225k | ~350k | ~65% |
+| CH | ~235k | ~350k | ~67% |
 
 Remaining gaps are primarily behind T2/T3 WAFs (autohero, gocar, comparis, wallapop, milanuncios, autoweek) which require Camoufox browser infrastructure.
+
+**Phase 9 conclusion**: All remaining T0/T1 portals with meaningful used-car inventory have been implemented. Further coverage gains require T2/T3 browser infrastructure.
 
 ---
 

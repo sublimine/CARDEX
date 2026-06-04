@@ -98,6 +98,10 @@ REGISTRY: list[PortalSpec] = [
     PortalSpec("vroom.be", Tier.T1, WAF.UNKNOWN, countries=["BE"], notes="Rossel/Roularta JV, ~40k cars [VERIFIED 2026-06-04]"),
     PortalSpec("carforyou.ch", Tier.T1, WAF.UNKNOWN, countries=["CH"], notes="#3 CH vehicles, ~966k visits [VERIFIED 2026-06-04]"),
     PortalSpec("occasions.jeanlain.com", Tier.T1, WAF.UNKNOWN, countries=["FR"], notes="Jean Lain, ~1800 vehicles [VERIFIED 2026-06-04]"),
+    # Phase 9 portals -- coverage gap closure
+    PortalSpec("gowago.ch", Tier.T1, WAF.NONE, countries=["CH"], notes="Swiss leasing marketplace, ~10k used cars, Next.js SSR [VERIFIED 2026-06-04]"),
+    PortalSpec("gueudet.fr", Tier.T1, WAF.NONE, countries=["FR"], notes="Gueudet 1880 dealer group, ~5.2k VO, SSR HTML [VERIFIED 2026-06-04]"),
+    PortalSpec("distinxion.fr", Tier.T1, WAF.NONE, countries=["FR"], notes="120+ POS network, ~1.6k VO, Symfony SSR [VERIFIED 2026-06-04]"),
     # T1 -> escalate T2
     PortalSpec("coches.net", Tier.T1, WAF.NONE, can_escalate_to=Tier.T2, countries=["ES"]),
     # T2 -- Camoufox / stealth browser required
@@ -163,3 +167,4 @@ def effective_tier(domain: str, circuit_state: dict) -> Tier:
         idx += 1
         current = _TIER_ORDER[idx]
     return current
+ 

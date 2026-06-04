@@ -66,6 +66,9 @@ from scrapers.portals.belgiemobiel_be import BelgieMobielBEScraper
 from scrapers.portals.vroom_be import VroomBEScraper
 from scrapers.portals.carforyou_ch import CarForYouCHScraper
 from scrapers.portals.jeanlain_fr import JeanLainFRScraper
+from scrapers.portals.gowago_ch import GowagoCHScraper
+from scrapers.portals.gueudet_fr import GueudetFRScraper
+from scrapers.portals.distinxion_fr import DistinxionFRScraper
 
 # Every concrete scraper the engine can dispatch. DOMAIN is the registry key.
 _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
@@ -133,6 +136,10 @@ _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
     VroomBEScraper,
     CarForYouCHScraper,
     JeanLainFRScraper,
+    # Phase 9 portals -- coverage gap closure
+    GowagoCHScraper,
+    GueudetFRScraper,
+    DistinxionFRScraper,
 )
 
 PORTAL_REGISTRY: dict[str, type[BasePortalScraper]] = {
