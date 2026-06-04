@@ -117,6 +117,9 @@ REGISTRY: list[PortalSpec] = [
     PortalSpec("zoomcar.fr", Tier.T2, WAF.CF_PRO, countries=["FR"], notes="ex-ouestfrance-auto.com [VERIFIED 2026-06-04]"),
     PortalSpec("coches.com", Tier.T2, WAF.CF_PRO, countries=["ES"]),
     PortalSpec("autoweek.nl", Tier.T2, WAF.AKAMAI_V3, countries=["NL"], notes="automotive media + classifieds"),
+    # Phase 12 -- newly discovered dealer networks
+    PortalSpec("caravenue.com", Tier.T0, WAF.NONE, countries=["FR","BE","LU","CH"], notes="Next.js, 62-dealership group, ~2.4k vehicles [VERIFIED 2026-06-04]"),
+    PortalSpec("simplicicar.com", Tier.T1, WAF.NONE, countries=["FR","BE"], notes="PrestaShop, 100+ POS franchise, ~6k vehicles [VERIFIED 2026-06-04]"),
     # T3 -- Behavioral required (DataDome + residential)
     PortalSpec("leboncoin.fr", Tier.T3, WAF.DATADOME, countries=["FR"]),
     PortalSpec("lacentrale.fr", Tier.T3, WAF.DATADOME, countries=["FR"]),
@@ -138,7 +141,6 @@ def _pattern_regex(pattern: str) -> re.Pattern[str]:
     """
     Compile a registry pattern into a domain matcher.
 
-    A literal '*' matches one-or-more dot-separated labels (used as a TLD wildcard,
     A literal '*' matches one-and-more dot-separated labels (used as a TLD wildcard,
     e.g. autoscout24.*). Optional leading subdomains are always allowed so
     'www.mobile.de' matches the pattern 'mobile.de'.
