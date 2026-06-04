@@ -167,4 +167,3 @@ def effective_tier(domain: str, circuit_state: dict) -> Tier:
         idx += 1
         current = _TIER_ORDER[idx]
     return current
- 
