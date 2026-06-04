@@ -1,7 +1,7 @@
 # CARDEX Portal Census — Ground Truth Coverage Tracker
 
-> Last updated: 2026-06-04 (Phase 13 commercial & niche specialist)
-> Total implemented scrapers: **70**
+> Last updated: 2026-06-04 (Phase 14 zero-loss safety net)
+> Total implemented scrapers: **71**
 > Total portals tracked: **99+**
 
 ---
@@ -116,7 +116,7 @@
 | autokopen.nl | LIVE | T1 | None | 6 | ~106k | Next.js SSR portal |
 | nederlandmobiel.nl | LIVE | T0 | None | 6 | ~313k | PHP SSR free platform |
 | autowereld.nl | LIVE | T1 | Unknown | 7 | ~270k | PHP SSR occasions portal |
-| autoweek.nl | SKIP-AGGREGATOR | T2 | Akamai V3 | — | 0 | DPG Media property, mirrors AutoTrack.nl (already LIVE). Zero own inventory |
+| autoweek.nl | LIVE | T2 | Akamai V3 | 14 | ~187k | DPG Media, syndication mirror of AutoTrack.nl — safety net per zero-loss policy |
 | autovisie.nl | SKIP-OEM | — | — | — | — | Auto media, reviews only |
 | autobytel.nl | DEAD | — | — | — | — | Domain parked |
 | wijkopenautos.nl | SKIP-OEM | — | — | — | — | Buy-only service, no listings |
@@ -173,11 +173,11 @@
 | DE | 12 | 0 | 4 | 16 |
 | FR | 23 | 0 | 7 | 30 |
 | ES | 11 | 0 | 4 | 15 |
-| NL | 8 | 0 | 4 | 12 |
+| NL | 9 | 0 | 3 | 12 |
 | BE | 12 | 0 | 3 | 15 |
 | CH | 7 | 0 | 3 | 10 |
 | EU | 3 | 0 | 0 | 3 |
-| **Total** | **70** | **0** | **25** | **99** |
+| **Total** | **71** | **0** | **24** | **99** |
 
 ## Summary by Phase
 
@@ -195,6 +195,7 @@
 | 11 — T2/T3 Camoufox SSR | 4 (gocar.be, milanuncios.com, zoomcar.fr, coches.com) | 66 |
 | 12 — Dealer network discovery | 2 (caravenue.com, simplicicar.com) | 68 |
 | 13 — Commercial & niche specialist | 2 (truckscout24.com, classic-trader.com) | 70 |
+| 14 — Zero-loss safety net | 1 (autoweek.nl) | 71 |
 
 ## Summary by Tier
 
@@ -202,9 +203,9 @@
 |------|-------|-------------|
 | T0 | 12 | Open API / no WAF |
 | T1 | 40 | curl_cffi sufficient |
-| T2 | 13 | Stealth browser required |
+| T2 | 14 | Stealth browser required |
 | T3 | 5 | Behavioral + DataDome |
-| **Total** | **70** | |
+| **Total** | **71** | |
 
 ---
 

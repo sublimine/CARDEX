@@ -81,6 +81,7 @@ from scrapers.portals.caravenue_com import CaravenueFRScraper
 from scrapers.portals.simplicicar_com import SimplicicarFRScraper
 from scrapers.portals.truckscout24_com import TruckScout24DEScraper
 from scrapers.portals.classic_trader_com import ClassicTraderDEScraper
+from scrapers.portals.autoweek_nl import AutoweekNLScraper
 
 # Every concrete scraper the engine can dispatch. DOMAIN is the registry key.
 _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
@@ -168,6 +169,8 @@ _PORTAL_CLASSES: tuple[type[BasePortalScraper], ...] = (
     # Phase 13 portals -- commercial & niche specialist
     TruckScout24DEScraper,
     ClassicTraderDEScraper,
+    # Phase 14 -- safety-net / zero-loss policy
+    AutoweekNLScraper,
 )
 
 PORTAL_REGISTRY: dict[str, type[BasePortalScraper]] = {
