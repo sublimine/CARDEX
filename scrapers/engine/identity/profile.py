@@ -35,6 +35,7 @@ class TLSProfile(str, Enum):
 
 
 class ProxyTier(str, Enum):
+    DIRECT = "direct"                       # no proxy — UA rotation only (T0/T1)
     ISP_STICKY = "isp_sticky"
     RESIDENTIAL_ROTATING = "residential_rotating"
     MOBILE = "mobile"
@@ -258,4 +259,26 @@ def generate(
         fingerprint=fingerprint,
         status=IdentityStatus.NEW,
         created_at=int(time.time()),
+    )
+
+
+def generate_direct(country: str, identity_id: str | None = None) -> Identity:
+    """
+    Generate a coherent identity for a DIRECT (no-proxy) connection.
+
+    T0 (open JSON / mobile APIs) and T1 (curl_cffi, no browser) portals need no
+    residential IP: a coherent, rotated User-Agent over a direct TLS-impersonated
+    session is sufficient (verified — marktplaats's LRP API answers 200 to a naked
+    chrome-impersonated client). The proxy fields are empty by design: proxy_ip=""
+    makes tls.make_session skip the proxy (direct connection), and webrtc_ip stays
+    "" — coherent with the empty proxy_ip (coherence.validate_creation), and
+    curl_cffi leaks no WebRTC anyway. T2/T3 still require a proxied identity and are
+    never served a direct one (see proxy.tiers.requires_proxy).
+    """
+    return generate(
+        country,
+        proxy_ip="",
+        proxy_tier=ProxyTier.DIRECT,
+        proxy_provider="direct",
+        identity_id=identity_id,
     )

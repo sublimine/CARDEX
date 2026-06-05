@@ -42,6 +42,7 @@ from scrapers.db import connect, migrate
 from scrapers.engine.identity import store as identity_store
 from scrapers.engine.identity.aging import release_quarantine
 from scrapers.engine.monitoring import metrics
+from scrapers.engine.proxy import tiers as proxy_tiers
 from scrapers.engine.router import circuit, escalator
 from scrapers.engine.router.domain_map import Tier
 from scrapers.pipeline import dlq
@@ -333,10 +334,20 @@ async def make_live_session(conn: sqlite3.Connection, scraper: Any) -> Any | Non
     Picks the identity with the SAME query `BasePortalScraper.run` will use
     (store.pick_for_portal, deterministic ORDER BY), so the session's JA3/proxy
     belong to the very identity the run then rewards — no identity/session drift.
+
+    T0/T1 accept a DIRECT (no-proxy) identity; T2/T3 require a proxied one
+    (proxy_tiers.requires_proxy), so with only direct identities provisioned a
+    T2/T3 job finds none here → the coordinator parks it on NO_IDENTITY backoff.
     """
     tier = escalator.get_effective_tier(conn, scraper.DOMAIN)
     min_trust = _PREMIUM_TRUST if tier is Tier.T3 else 0.0
-    identity = identity_store.pick_for_portal(conn, scraper.COUNTRY, scraper.DOMAIN, min_trust=min_trust)
+    identity = identity_store.pick_for_portal(
+        conn,
+        scraper.COUNTRY,
+        scraper.DOMAIN,
+        min_trust=min_trust,
+        require_proxy=proxy_tiers.requires_proxy(tier),
+    )
     if identity is None:
         return None
     from scrapers.engine.antidetect import tls  # lazy: pulls curl_cffi

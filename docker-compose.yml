@@ -52,6 +52,16 @@ services:
   # ---------------------------------------------------------------------------
   postgres:
     <<: *hardening
+    # The official postgres entrypoint starts as root, chowns PGDATA, then drops
+    # to the 'postgres' user via gosu. cap_drop:[ALL] from *hardening strips the
+    # caps that needs; re-add only the minimal set (file ownership + priv drop).
+    # cap_add coexists with the inherited cap_drop — Docker drops ALL, then adds.
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
     image: postgres:16-bookworm
     container_name: cardex-pg
     networks:
@@ -107,6 +117,16 @@ services:
   # ---------------------------------------------------------------------------
   clickhouse:
     <<: *hardening
+    # ClickHouse entrypoint starts as root, chowns its data/tmp dirs, then drops
+    # to the 'clickhouse' user via setuid/setgid. cap_drop:[ALL] from *hardening
+    # blocks chown + setgid ("Cannot do 'setgid'"); re-add the minimal set.
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+      - KILL          # entrypoint stops its temporary init server (different uid)
     image: clickhouse/clickhouse-server:24.8
     container_name: cardex-ch
     networks:
@@ -200,6 +220,9 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD:-cardex_dev_only}
+      # redis has --requirepass; redis-cli reads REDISCLI_AUTH automatically for
+      # every call, so the bootstrap script authenticates without -a on each cmd.
+      REDISCLI_AUTH: ${REDIS_PASSWORD:-cardex_dev_only}
     restart: "no"
     deploy:
       resources:

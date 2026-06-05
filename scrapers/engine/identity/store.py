@@ -142,6 +142,7 @@ def pick_for_portal(
     domain: str,
     min_trust: float = 0.0,
     require_warming: bool = True,
+    require_proxy: bool = False,
 ) -> Identity | None:
     """
     Select best available identity for (country, domain).
@@ -150,8 +151,20 @@ def pick_for_portal(
     affinity / warm _abck) first, then trust_score DESC, then last_used ASC so
     rested identities are preferred over recently hammered ones.
     Returns None if no eligible identity exists (caller should start warming).
+
+    `require_proxy=True` excludes DIRECT (no-proxy) identities: T2/T3 portals run
+    behind Akamai/DataDome and need a residential/ISP proxy, so a direct identity
+    must never be handed to them (see proxy.tiers.requires_proxy). T0/T1 leave it
+    False — a direct identity is the cheapest viable session there.
     """
     warming_clause = "AND warming_done = 1" if require_warming else ""
+    proxy_clause = "AND proxy_tier != ?" if require_proxy else ""
+    # Params are appended in the exact textual order of their '?' placeholders:
+    # domain (has_affinity), country, min_trust, [proxy_tier], quarantine time.
+    params: list[object] = [domain, country, min_trust]
+    if require_proxy:
+        params.append(ProxyTier.DIRECT.value)
+    params.append(int(time.time()))
     rows = conn.execute(
         f"""
         SELECT *,
@@ -162,13 +175,14 @@ def pick_for_portal(
           AND status = 'active'
           AND trust_score >= ?
           {warming_clause}
+          {proxy_clause}
           AND (quarantine_until IS NULL OR quarantine_until <= ?)
         ORDER BY has_affinity DESC,
                  trust_score DESC,
                  COALESCE(last_used, 0) ASC
         LIMIT 1
         """,
-        (domain, country, min_trust, int(time.time())),
+        tuple(params),
     ).fetchone()
     return _row_to_identity(rows) if rows is not None else None
 
@@ -237,16 +251,24 @@ def list_by_status(
 
 
 def premium_count(conn: sqlite3.Connection, country: str | None = None) -> int:
-    """Count identities with trust_score >= 7.0 and status=active."""
+    """
+    Count premium identities: status=active, trust_score >= 7.0, and proxied.
+
+    DIRECT identities are excluded: premium gates T3 (DataDome) dispatch
+    (scheduler.decide_dispatch), and a direct identity can never serve T3
+    (pick_for_portal require_proxy rejects it). Counting one as premium would let
+    the scheduler dispatch a T3 job that then dies on NO_IDENTITY.
+    """
     if country is None:
         row = conn.execute(
-            "SELECT COUNT(*) AS n FROM identities WHERE status='active' AND trust_score >= ?",
-            (_PREMIUM_TRUST,),
+            "SELECT COUNT(*) AS n FROM identities WHERE status='active' "
+            "AND proxy_tier != ? AND trust_score >= ?",
+            (ProxyTier.DIRECT.value, _PREMIUM_TRUST),
         ).fetchone()
     else:
         row = conn.execute(
             "SELECT COUNT(*) AS n FROM identities WHERE status='active' "
-            "AND trust_score >= ? AND country = ?",
-            (_PREMIUM_TRUST, country),
+            "AND proxy_tier != ? AND trust_score >= ? AND country = ?",
+            (ProxyTier.DIRECT.value, _PREMIUM_TRUST, country),
         ).fetchone()
     return int(row["n"])

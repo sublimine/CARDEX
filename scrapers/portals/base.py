@@ -38,9 +38,10 @@ from sqlite3 import Connection
 from typing import Any, Awaitable, Callable
 
 from scrapers.engine.identity import store
-from scrapers.engine.identity.profile import Identity
+from scrapers.engine.identity.profile import Identity, ProxyTier
 from scrapers.engine.monitoring import metrics
 from scrapers.engine.monitoring.softblock import ZeroUrlTracker
+from scrapers.engine.proxy.tiers import requires_proxy
 from scrapers.engine.router import circuit
 from scrapers.engine.router.domain_map import Tier, effective_tier
 from scrapers.engine.session.warming import enforce_no_extraction_before_warming
@@ -52,6 +53,15 @@ _TRUST_SUCCESS = 0.05
 _TRUST_SOFTBLOCK = -1.0
 # T3 portals (DataDome) are premium-only: trust_score >= 7.0 (§A1, §B fleet T3).
 _PREMIUM_TRUST = 7.0
+
+# Conservative per-request interval floor for DIRECT (no-proxy) identities, by
+# portal tier: T0 = 1 req/s, T1 = 0.5 req/s (2s). A direct connection has no
+# residential IP to hide behind, so it must be polite per domain. Proxied
+# identities keep the jittered SLEEP_BASE rhythm (pace 0.0 → no floor).
+_DIRECT_MIN_INTERVAL_S: dict[Tier, float] = {
+    Tier.T0: 1.0,
+    Tier.T1: 2.0,
+}
 
 UrlSink = Callable[[list[str]], Awaitable[None]]
 
@@ -135,7 +145,11 @@ class BasePortalScraper(ABC):
             return RunResult(RunStatus.CIRCUIT_OPEN, tier=tier.value)
 
         identity = store.pick_for_portal(
-            conn, self.COUNTRY, self.DOMAIN, min_trust=self._min_trust(tier)
+            conn,
+            self.COUNTRY,
+            self.DOMAIN,
+            min_trust=self._min_trust(tier),
+            require_proxy=requires_proxy(tier),
         )
         if identity is None:
             log.warning("%s no eligible identity for %s — needs warming", self.DOMAIN, self.COUNTRY)
@@ -144,7 +158,8 @@ class BasePortalScraper(ABC):
         # Defensive double-check; pick_for_portal already filters warming_done.
         enforce_no_extraction_before_warming(identity, self.DOMAIN)
 
-        urls, segments, soft_blocked = await self._scrape_segments(session)
+        pace = self._direct_pace(tier, identity)
+        urls, segments, soft_blocked = await self._scrape_segments(session, pace)
         status = RunStatus.SOFT_BLOCKED if soft_blocked else RunStatus.OK
         self._record_outcome(conn, identity, status)
 
@@ -166,6 +181,18 @@ class BasePortalScraper(ABC):
         """T3 (DataDome) is premium-only; every other tier accepts any active identity."""
         return _PREMIUM_TRUST if tier is Tier.T3 else 0.0
 
+    def _direct_pace(self, tier: Tier, identity: Identity) -> float:
+        """
+        Per-request interval floor (seconds) for this run, 0.0 = use SLEEP_BASE.
+
+        A floor applies only to DIRECT (no-proxy) identities — the conservative
+        per-domain rate limit for direct connections (1 req/s T0, 0.5 req/s T1).
+        Proxied identities rotate IPs and keep the jittered SLEEP_BASE rhythm.
+        """
+        if identity.proxy_tier is ProxyTier.DIRECT:
+            return _DIRECT_MIN_INTERVAL_S.get(tier, 0.0)
+        return 0.0
+
     def _select_tier(self, conn: Connection) -> Tier:
         """Registry baseline, walked up past any OPEN breaker (circuit escalation)."""
         state = {
@@ -174,7 +201,9 @@ class BasePortalScraper(ABC):
         }
         return effective_tier(self.DOMAIN, state)
 
-    async def _scrape_segments(self, session: Any) -> tuple[list[str], int, bool]:
+    async def _scrape_segments(
+        self, session: Any, pace: float = 0.0
+    ) -> tuple[list[str], int, bool]:
         """Walk every segment, dedup deep links, abort on a zero-URL soft block."""
         seen: set[str] = set()
         collected: list[str] = []
@@ -182,7 +211,7 @@ class BasePortalScraper(ABC):
         segments = 0
 
         for params in self.partition_params():
-            seg_urls = await self._collect_segment(session, params, seen)
+            seg_urls = await self._collect_segment(session, params, seen, pace)
             segments += 1
             collected.extend(seg_urls)
             metrics.record_urls_collected(self.DOMAIN, self.COUNTRY, len(seg_urls))
@@ -191,23 +220,23 @@ class BasePortalScraper(ABC):
             if zero.is_soft_blocked:
                 log.warning("%s soft block — %d empty cycles", self.DOMAIN, zero.consecutive_empty)
                 return collected, segments, True
-            await self._sleep()
+            await self._sleep(pace)
 
         return collected, segments, False
 
     async def _collect_segment(
-        self, session: Any, params: dict[str, Any], seen: set[str]
+        self, session: Any, params: dict[str, Any], seen: set[str], pace: float = 0.0
     ) -> list[str]:
         """Paginate one segment; subdivide and re-paginate when it hits the page cap."""
-        urls, hit_ceiling = await self._paginate(session, params, seen)
+        urls, hit_ceiling = await self._paginate(session, params, seen, pace)
         if hit_ceiling:
             for sub in self.subdivide_segment(params):
-                sub_urls, _ = await self._paginate(session, sub, seen)
+                sub_urls, _ = await self._paginate(session, sub, seen, pace)
                 urls.extend(sub_urls)
         return urls
 
     async def _paginate(
-        self, session: Any, params: dict[str, Any], seen: set[str]
+        self, session: Any, params: dict[str, Any], seen: set[str], pace: float = 0.0
     ) -> tuple[list[str], bool]:
         """
         Page through a segment, deduping against `seen`.
@@ -229,7 +258,7 @@ class BasePortalScraper(ABC):
             if page == self.MAX_PAGES:
                 hit_ceiling = True
                 break
-            await self._sleep()
+            await self._sleep(pace)
         return out, hit_ceiling
 
     def _record_outcome(self, conn: Connection, identity: Identity, status: RunStatus) -> None:
@@ -239,5 +268,15 @@ class BasePortalScraper(ABC):
             store.update_trust(conn, identity.id, _TRUST_SUCCESS)
             metrics.record_success(self.DOMAIN)
 
-    async def _sleep(self) -> None:
-        await asyncio.sleep(self.SLEEP_BASE + random.uniform(-self.SLEEP_JITTER, self.SLEEP_JITTER))
+    async def _sleep(self, pace: float = 0.0) -> None:
+        """
+        Inter-request delay. A positive `pace` is a DIRECT-connection rate-limit
+        floor: jitter is added on top so the floor is never undercut (the 1/0.5
+        req/s guarantee holds) while timing stays non-uniform (§22 anti-bot).
+        pace 0.0 keeps the original proxied rhythm: SLEEP_BASE ± SLEEP_JITTER.
+        """
+        if pace > 0.0:
+            delay = pace + random.uniform(0.0, self.SLEEP_JITTER)
+        else:
+            delay = self.SLEEP_BASE + random.uniform(-self.SLEEP_JITTER, self.SLEEP_JITTER)
+        await asyncio.sleep(delay)

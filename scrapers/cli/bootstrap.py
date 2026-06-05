@@ -2,7 +2,8 @@
 Bootstrap CLI — initialize all production state for a fresh CARDEX deployment.
 
 Runs in order:
-  1. SQLite engine.db: create tables + migrate (idempotent)
+  1. SQLite engine.db: create tables + migrate (idempotent) + ensure direct
+     identities (no-proxy identities so the coordinator can serve T0/T1 at once)
   2. PG: ensure portal_cadence table + seed all 71+ portals
   3. PG: ensure vehicle_index + vehicle_events tables (indexer schema)
   4. SQLite: populate work_queue with one immediate job per portal (optional)
@@ -29,6 +30,7 @@ import time
 from urllib.parse import urlsplit
 
 from scrapers.db import connect, migrate
+from scrapers.engine.identity.direct import ensure_direct_identities
 from scrapers.engine.router.domain_map import Tier, get as get_portal_spec
 from scrapers.portals import PORTAL_REGISTRY
 from scrapers.scheduler import SchedulerConfig, enqueue
@@ -86,10 +88,10 @@ async def _bootstrap_pg(dsn: str, dry_run: bool) -> dict[str, int]:
 
 
 def _bootstrap_sqlite(db_path: str, dry_run: bool) -> dict[str, int]:
-    """Create engine.db and run migrations."""
-    stats: dict[str, int] = {"sqlite_version": 0}
+    """Create engine.db, run migrations, and ensure no-proxy direct identities."""
+    stats: dict[str, int] = {"sqlite_version": 0, "direct_identities": 0}
     if dry_run:
-        log.info("[DRY RUN] would create/migrate engine.db at %s", db_path)
+        log.info("[DRY RUN] would create/migrate engine.db at %s + ensure direct identities", db_path)
         return stats
 
     conn = connect(db_path)
@@ -97,7 +99,9 @@ def _bootstrap_sqlite(db_path: str, dry_run: bool) -> dict[str, int]:
         migrate(conn)
         version = conn.execute("PRAGMA user_version").fetchone()[0]
         stats["sqlite_version"] = version
-        log.info("SQLite: engine.db at version %d", version)
+        created = ensure_direct_identities(conn)
+        stats["direct_identities"] = created
+        log.info("SQLite: engine.db at version %d, %d direct identities ensured", version, created)
     finally:
         conn.close()
 
@@ -159,7 +163,10 @@ async def run(args: argparse.Namespace) -> None:
 
     # 1. SQLite engine.db
     sqlite_stats = _bootstrap_sqlite(db_path, args.dry_run)
-    print(f"  [1/4] SQLite engine.db: version {sqlite_stats.get('sqlite_version', '?')}")
+    print(
+        f"  [1/4] SQLite engine.db: version {sqlite_stats.get('sqlite_version', '?')} "
+        f"| direct identities ensured: {sqlite_stats.get('direct_identities', 0)}"
+    )
 
     # 2. PG tables + seed
     try:

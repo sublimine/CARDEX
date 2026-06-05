@@ -49,7 +49,9 @@ CREATE TABLE cardex.vehicle_inventory (
 ) ENGINE = ReplacingMergeTree(last_updated_at)
 ORDER BY (make, model, vehicle_ulid)
 PARTITION BY toYYYYMM(first_seen_at)
-TTL first_seen_at + INTERVAL 2 YEAR DELETE
+-- TTL needs a Date/DateTime expression; first_seen_at is DateTime64(3), so cast
+-- it down to DateTime (ClickHouse rejects DateTime64 directly: BAD_TTL_EXPRESSION).
+TTL toDateTime(first_seen_at) + INTERVAL 2 YEAR DELETE
 SETTINGS index_granularity = 8192;
 
 -- =============================================================================
