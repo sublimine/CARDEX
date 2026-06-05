@@ -88,6 +88,14 @@ print(json.dumps(m.encode(texts, normalize_embeddings=True).tolist()))
 		return nil, err
 	}
 
+	// Defensive: refuse to exec a python binary whose path contains characters
+	// that aren't part of a normal file path. exec.Command separates args
+	// from the binary so shell injection isn't possible, but a path like
+	// "/usr/bin/python3; rm -rf /" indicates the operator passed something
+	// surprising via QUALITY_V21_PYTHON.
+	if !isSafePythonPath(s.python) {
+		return nil, fmt.Errorf("subprocess embedder: refusing to exec python path with unsafe characters: %q", s.python)
+	}
 	cmd := exec.CommandContext(ctx, s.python, "-c", script)
 	cmd.Stdin = strings.NewReader(string(input))
 	out, err := cmd.Output()
@@ -192,4 +200,24 @@ func fnv32(s string) uint32 {
 		h *= 16777619
 	}
 	return h
+}
+
+// isSafePythonPath restricts the python binary path to the characters that
+// appear in a normal file system path (letters, digits, dot, dash,
+// underscore, slash, colon for Windows drive letters).
+func isSafePythonPath(p string) bool {
+	if p == "" {
+		return false
+	}
+	for _, r := range p {
+		switch {
+		case r >= 'a' && r <= 'z':
+		case r >= 'A' && r <= 'Z':
+		case r >= '0' && r <= '9':
+		case r == '/' || r == '\\' || r == '.' || r == '_' || r == '-' || r == ':':
+		default:
+			return false
+		}
+	}
+	return true
 }

@@ -37,6 +37,7 @@ func (s *WebhookSource) Poll(_ context.Context, _ time.Time) ([]RawInquiry, erro
 func (s *WebhookSource) IngestHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var raw RawInquiry
+		r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 		if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
 			http.Error(w, `{"error":"invalid JSON"}`, http.StatusBadRequest)
 			return

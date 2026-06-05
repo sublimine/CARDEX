@@ -8,6 +8,11 @@ import (
 	"strings"
 )
 
+// maxBodyBytes caps the JSON request body decoded by this package's
+// handlers to prevent DoS via oversized payloads.
+const maxBodyBytes = 262144
+
+
 // Server mounts all kanban and calendar HTTP routes.
 type Server struct {
 	store *Store
@@ -69,6 +74,7 @@ func (srv *Server) handleColumns(w http.ResponseWriter, r *http.Request) {
 			VehicleLimit int    `json:"vehicle_limit"`
 			Position     int    `json:"position"`
 		}
+		r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			http.Error(w, "invalid JSON", http.StatusBadRequest)
 			return
@@ -101,6 +107,7 @@ func (srv *Server) handleColumnByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var patch ColumnPatch
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	if err := json.NewDecoder(r.Body).Decode(&patch); err != nil {
 		http.Error(w, "invalid JSON", http.StatusBadRequest)
 		return
@@ -134,6 +141,7 @@ func (srv *Server) handleCards(w http.ResponseWriter, r *http.Request) {
 	if strings.HasSuffix(rest, "/move") {
 		vehicleID := strings.TrimSuffix(rest, "/move")
 		var req MoveRequest
+		r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "invalid JSON", http.StatusBadRequest)
 			return
@@ -151,6 +159,7 @@ func (srv *Server) handleCards(w http.ResponseWriter, r *http.Request) {
 	} else {
 		vehicleID := rest
 		var patch CardPatch
+		r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 		if err := json.NewDecoder(r.Body).Decode(&patch); err != nil {
 			http.Error(w, "invalid JSON", http.StatusBadRequest)
 			return
@@ -198,6 +207,7 @@ func (srv *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, events)
 	case http.MethodPost:
 		var e Event
+		r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 		if err := json.NewDecoder(r.Body).Decode(&e); err != nil {
 			http.Error(w, "invalid JSON", http.StatusBadRequest)
 			return
@@ -254,6 +264,7 @@ func (srv *Server) handleEventByID(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPut:
 		var patch EventPatch
+		r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 		if err := json.NewDecoder(r.Body).Decode(&patch); err != nil {
 			http.Error(w, "invalid JSON", http.StatusBadRequest)
 			return

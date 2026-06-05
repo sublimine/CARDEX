@@ -322,8 +322,17 @@ func parseCSV(data []byte) ([]*pipeline.VehicleRaw, error) {
 // -- XLSX parsing -------------------------------------------------------------
 
 // parseXLSX parses an XLSX file's first sheet into vehicle records.
+// maxXLSXUnzipBytes caps the total decompressed XLSX payload that excelize
+// will buffer in memory. Without it a malicious XLSX with a 100:1
+// compression ratio could expand to gigabytes from a 16 MiB ZIP.
+const maxXLSXUnzipBytes = 64 * 1024 * 1024 // 64 MiB
+
+// maxXLSXRows caps how many rows we will iterate per sheet.
+const maxXLSXRows = 50_000
+
 func parseXLSX(data []byte) ([]*pipeline.VehicleRaw, error) {
-	f, err := excelize.OpenReader(bytes.NewReader(data))
+	f, err := excelize.OpenReader(bytes.NewReader(data),
+		excelize.Options{UnzipSizeLimit: maxXLSXUnzipBytes})
 	if err != nil {
 		return nil, fmt.Errorf("excelize.OpenReader: %w", err)
 	}
@@ -336,6 +345,9 @@ func parseXLSX(data []byte) ([]*pipeline.VehicleRaw, error) {
 	}
 	if len(rows) < 2 {
 		return nil, nil
+	}
+	if len(rows) > maxXLSXRows {
+		rows = rows[:maxXLSXRows]
 	}
 	colMap := detectHeaderRow(rows[0])
 	return mapSpreadsheetRows(rows[1:], colMap), nil

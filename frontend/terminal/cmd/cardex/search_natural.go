@@ -294,10 +294,12 @@ func runSQLFallback(query string) error {
 		args = append(args, flagNatCountry)
 	}
 	if flagNatPriceMax > 0 {
-		where += fmt.Sprintf(" AND vr.price_gross_eur <= %d", flagNatPriceMax)
+		where += " AND vr.price_gross_eur <= ?"
+		args = append(args, flagNatPriceMax)
 	}
 	if flagNatKmMax > 0 {
-		where += fmt.Sprintf(" AND vr.mileage_km <= %d", flagNatKmMax)
+		where += " AND vr.mileage_km <= ?"
+		args = append(args, flagNatKmMax)
 	}
 
 	sql := fmt.Sprintf(`

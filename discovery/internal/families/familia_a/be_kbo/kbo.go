@@ -184,7 +184,10 @@ func (k *KBO) login(ctx context.Context) error {
 	}
 
 	// GET login page.
-	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
+	if err != nil {
+		return fmt.Errorf("kbo: build login GET: %w", err)
+	}
 	req.Header.Set("User-Agent", cardexUA)
 	resp, err := k.client.Do(req)
 	if err != nil {
@@ -210,8 +213,11 @@ func (k *KBO) login(ctx context.Context) error {
 	for k, v := range fields {
 		form.Set(k, v)
 	}
-	req2, _ := http.NewRequestWithContext(ctx, http.MethodPost,
+	req2, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		formAction, strings.NewReader(form.Encode()))
+	if err != nil {
+		return fmt.Errorf("kbo: build login POST: %w", err)
+	}
 	req2.Header.Set("User-Agent", cardexUA)
 	req2.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req2.Header.Set("Referer", target)
@@ -238,7 +244,10 @@ func (k *KBO) discoverZipURL(ctx context.Context) (string, error) {
 		target = k.downloadPageOverride
 	}
 
-	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
+	if err != nil {
+		return "", fmt.Errorf("kbo: build download GET: %w", err)
+	}
 	req.Header.Set("User-Agent", cardexUA)
 	resp, err := k.client.Do(req)
 	if err != nil {
@@ -260,7 +269,10 @@ func (k *KBO) discoverZipURL(ctx context.Context) (string, error) {
 
 // downloadFile streams the resource at url to a local file.
 func (k *KBO) downloadFile(ctx context.Context, srcURL, destPath string) error {
-	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, srcURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, srcURL, nil)
+	if err != nil {
+		return fmt.Errorf("kbo: build download request: %w", err)
+	}
 	req.Header.Set("User-Agent", cardexUA)
 
 	resp, err := k.client.Do(req)

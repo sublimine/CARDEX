@@ -29,6 +29,7 @@ func (s *Server) Handler() http.Handler {
 }
 
 func (s *Server) handleCalculate(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 64*1024)
 	var req CalculationRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid JSON body", http.StatusBadRequest)
@@ -56,20 +57,24 @@ func (s *Server) handleCalculate(w http.ResponseWriter, r *http.Request) {
 	resp := Calculate(req, viesStatus)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		s.logger.Warn("encode calculate response", "err", err)
+	}
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+	if err := json.NewEncoder(w).Encode(map[string]string{
 		"status":  "ok",
 		"service": "cardex-tax-engine",
 		"port":    "8504",
-	})
+	}); err != nil {
+		s.logger.Warn("encode health response", "err", err)
+	}
 }
 
 func jsonError(w http.ResponseWriter, msg string, code int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	json.NewEncoder(w).Encode(map[string]string{"error": msg})
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg})
 }

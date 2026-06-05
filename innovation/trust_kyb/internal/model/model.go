@@ -2,9 +2,11 @@
 package model
 
 import (
+	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"os"
 	"time"
 )
 
@@ -50,12 +52,34 @@ func TierFromScore(score float64) string {
 	}
 }
 
-// ComputeHash returns a deterministic SHA-256 fingerprint of the profile
-// binding dealer ID, trust score, and issuance time.
+// ComputeHash returns an HMAC-SHA-256 fingerprint of the profile binding
+// dealer ID, trust score, and issuance time. The secret key comes from
+// CARDEX_TRUST_HASH_SECRET — without it the function falls back to a plain
+// SHA-256 hash so existing data keeps verifying, but a startup check in
+// cmd/trust-service refuses to start when the env var is empty in
+// non-development mode.
+//
+// Plain SHA-256 (the previous design) was trivially reproducible by anyone
+// who knew the dealer ID, score, and issuance time — all public fields of
+// the JSON profile. With HMAC, forging a valid hash requires knowledge of
+// the server-side secret.
 func ComputeHash(dealerID string, score float64, issuedAt time.Time) string {
+	payload := fmt.Sprintf("%s:%.6f:%d", dealerID, score, issuedAt.Unix())
+	if secret := os.Getenv("CARDEX_TRUST_HASH_SECRET"); secret != "" {
+		mac := hmac.New(sha256.New, []byte(secret))
+		mac.Write([]byte(payload))
+		return hex.EncodeToString(mac.Sum(nil))
+	}
 	h := sha256.New()
-	fmt.Fprintf(h, "%s:%.6f:%d", dealerID, score, issuedAt.Unix())
+	h.Write([]byte(payload))
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+// VerifyHash returns true iff `got` matches the recomputed hash for the
+// (dealerID, score, issuedAt) tuple. Uses hmac.Equal to avoid timing leaks.
+func VerifyHash(dealerID string, score float64, issuedAt time.Time, got string) bool {
+	want := ComputeHash(dealerID, score, issuedAt)
+	return hmac.Equal([]byte(want), []byte(got))
 }
 
 // IsExpired reports whether the profile has passed its 90-day validity window.

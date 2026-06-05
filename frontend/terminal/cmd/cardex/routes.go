@@ -299,7 +299,7 @@ func runRoutesBatch(_ *cobra.Command, _ []string) error {
 	}
 
 	// Write raw JSON to output file.
-	if err := os.WriteFile(flagRoutesOutput, respBody, 0o644); err != nil {
+	if err := os.WriteFile(flagRoutesOutput, respBody, 0o600); err != nil {
 		return fmt.Errorf("write output: %w", err)
 	}
 	fmt.Printf("Fleet plan written to %s (%d vehicles)\n", flagRoutesOutput, len(vehicles))

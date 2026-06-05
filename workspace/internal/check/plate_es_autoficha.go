@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -33,8 +34,15 @@ var afLimiter = &struct {
 
 const (
 	afEndpoint = "https://2sq7c2ojwjcevkft3hv6uspfqq.appsync-api.eu-west-3.amazonaws.com/graphql"
-	afAPIKey   = "da2-5qw4535jhbbmzaslbspbpxcsma"
 )
+
+// autofichaAPIKey reads the AppSync key from the environment. The key was
+// previously hardcoded — that key MUST be considered leaked and rotated.
+// Set CARDEX_AUTOFICHA_API_KEY at startup. When empty the resolver returns
+// an "unconfigured" error instead of dialing AppSync with a missing key.
+func autofichaAPIKey() string {
+	return os.Getenv("CARDEX_AUTOFICHA_API_KEY")
+}
 
 const afQuery = `
 query GetInfoVehiculo($id: String!) {
@@ -130,6 +138,10 @@ func (r *esPlateResolver) fetchAutoficha(ctx context.Context, plate string) (*Pl
 }
 // fetchAutofichaOnce makes a single attempt against the AppSync endpoint.
 func (r *esPlateResolver) fetchAutofichaOnce(ctx context.Context, plate string) (*PlateResult, bool, error) {
+	apiKey := autofichaAPIKey()
+	if apiKey == "" {
+		return nil, false, fmt.Errorf("autoficha: CARDEX_AUTOFICHA_API_KEY not configured")
+	}
 	body := map[string]interface{}{
 		"query":     afQuery,
 		"variables": map[string]string{"id": "P-" + plate},
@@ -144,7 +156,7 @@ func (r *esPlateResolver) fetchAutofichaOnce(ctx context.Context, plate string) 
 		return nil, false, fmt.Errorf("autoficha request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-api-key", afAPIKey)
+	req.Header.Set("x-api-key", apiKey)
 
 	resp, err := r.client.Do(req)
 	if err != nil {

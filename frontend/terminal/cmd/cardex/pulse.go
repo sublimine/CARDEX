@@ -83,7 +83,7 @@ func newPulseShowCmd() *cobra.Command {
 
 func runPulseShow(dealerID string) error {
 	url := pulseBaseURL() + "/pulse/health/" + dealerID
-	resp, err := http.Get(url) //nolint:noctx
+	resp, err := pulseHTTPClient.Get(url)
 	if err != nil {
 		return fmt.Errorf("pulse service unavailable (%s): %w", pulseBaseURL(), err)
 	}
@@ -178,7 +178,7 @@ func runPulseWatchlist(tier, country string) error {
 		url += "&country=" + country
 	}
 
-	resp, err := http.Get(url) //nolint:noctx
+	resp, err := pulseHTTPClient.Get(url)
 	if err != nil {
 		return fmt.Errorf("pulse service unavailable (%s): %w", pulseBaseURL(), err)
 	}
@@ -265,3 +265,7 @@ func pulseAbs(v float64) float64 {
 	}
 	return v
 }
+
+// pulseHTTPClient is a shared http.Client with a hard read timeout so that
+// a hung pulse service does not block the CLI indefinitely.
+var pulseHTTPClient = &http.Client{Timeout: 15 * time.Second}

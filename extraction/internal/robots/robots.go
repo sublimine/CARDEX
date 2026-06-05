@@ -25,12 +25,19 @@ package robots
 import (
 	"bufio"
 	"context"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
+
+	"cardex.eu/extraction/internal/safeurl"
 )
+
+// maxRobotsBytes caps the bytes parsed from a robots.txt response. The RFC
+// suggests 500 KiB; we cap at 1 MiB.
+const maxRobotsBytes = 1 << 20
 
 // Checker fetches, parses, and caches robots.txt files.
 type Checker struct {
@@ -47,8 +54,8 @@ type cachedRobots struct {
 }
 
 type rule struct {
-	userAgent string // lowercase; "*" means wildcard
-	allowed   []string
+	userAgent  string // lowercase; "*" means wildcard
+	allowed    []string
 	disallowed []string
 }
 
@@ -65,7 +72,16 @@ func New(client *http.Client, ttl time.Duration) *Checker {
 // Allowed returns true if the given userAgent is permitted to fetch the URL
 // according to the host's robots.txt. Returns true on any fetch or parse error
 // (fail-open — transient errors must not block legitimate crawling).
+//
+// Returns false when the URL targets a reserved/private host or uses a
+// non-http(s) scheme: the SSRF guard rejects the fetch outright rather than
+// silently allowing it.
 func (c *Checker) Allowed(ctx context.Context, userAgent, rawURL string) bool {
+	if err := safeurl.CheckURL(rawURL); err != nil {
+		// SSRF guard: refuse to crawl or even consult robots.txt for hosts
+		// in reserved ranges (loopback, RFC1918, link-local, cloud metadata).
+		return false
+	}
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return true
@@ -140,6 +156,9 @@ func (c *Checker) storeRules(host string, rules []rule) {
 // Returns empty rules (allow all) on any error.
 func (c *Checker) fetch(ctx context.Context, host string) []rule {
 	robotsURL := host + "/robots.txt"
+	if err := safeurl.CheckURL(robotsURL); err != nil {
+		return nil
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, robotsURL, nil)
 	if err != nil {
 		return nil
@@ -152,17 +171,15 @@ func (c *Checker) fetch(ctx context.Context, host string) []rule {
 		return nil
 	}
 	defer resp.Body.Close()
-	return parseRobots(resp.Body)
+	return parseRobots(io.LimitReader(resp.Body, maxRobotsBytes))
 }
 
 // parseRobots parses a robots.txt body from r.
-func parseRobots(r interface{ Read([]byte) (int, error) }) []rule {
+func parseRobots(r io.Reader) []rule {
 	var rules []rule
 	var current *rule
 
-	scanner := bufio.NewScanner(r.(interface {
-		Read([]byte) (int, error)
-	}))
+	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		// Strip inline comments.

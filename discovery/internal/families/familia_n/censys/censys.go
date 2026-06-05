@@ -163,7 +163,10 @@ outer:
 
 func (c *Censys) searchDomain(ctx context.Context, domain, dealerID string) (int, error) {
 	query := fmt.Sprintf("services.tls.certificates.leaf_data.names: %s", domain)
-	body, _ := json.Marshal(searchReq{Q: query, PerPage: 100})
+	body, err := json.Marshal(searchReq{Q: query, PerPage: 100})
+	if err != nil {
+		return 0, fmt.Errorf("censys: marshal request: %w", err)
+	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		c.baseURL+"/api/v2/hosts/search", bytes.NewReader(body))

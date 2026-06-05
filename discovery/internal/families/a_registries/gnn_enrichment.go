@@ -125,10 +125,14 @@ func (g *GNNClient) PredictLinks(ctx context.Context, dealerID string) ([]Predic
 		return nil, nil
 	}
 
-	body, _ := json.Marshal(map[string]any{
+	body, err := json.Marshal(map[string]any{
 		"dealer_id": dealerID,
 		"top_k":     g.topK,
 	})
+	if err != nil {
+		metricPredictionsTotal.WithLabelValues("error").Inc()
+		return nil, fmt.Errorf("gnn: marshal request: %w", err)
+	}
 
 	start := time.Now()
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,

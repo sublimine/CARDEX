@@ -12,6 +12,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// maxBodyBytes caps the JSON request body decoded by this package's
+// handlers to prevent DoS via oversized payloads.
+const maxBodyBytes = 65536
+
+
 // Handler exposes the auth HTTP endpoints.
 type Handler struct {
 	db            *sql.DB
@@ -92,6 +97,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req loginRequest
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonAuthErr(w, http.StatusBadRequest, "invalid JSON")
 		return
@@ -152,6 +158,7 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req registerRequest
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonAuthErr(w, http.StatusBadRequest, "invalid JSON")
 		return
@@ -180,7 +187,7 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		id, req.TenantID, req.Email, string(hash),
 		req.Name, "dealer", now, now)
 	if err != nil {
-		if strings.Contains(err.Error(), "UNIQUE") {
+		if isUniqueConstraintErr(err) {
 			jsonAuthErr(w, http.StatusConflict, "email already registered for this tenant")
 			return
 		}
@@ -277,4 +284,18 @@ func newUserID() string {
 	b := make([]byte, 16)
 	_, _ = rand.Read(b)
 	return hex.EncodeToString(b)
+}
+
+// isUniqueConstraintErr reports whether err is a SQLite UNIQUE constraint
+// violation. The modernc.org/sqlite driver does not expose a stable typed
+// error code in every release, so we fall back to a case-insensitive
+// substring scan of the message ("UNIQUE constraint failed", etc.).
+func isUniqueConstraintErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "unique constraint") ||
+		strings.Contains(msg, "unique violation") ||
+		strings.Contains(msg, "constraint failed: unique")
 }
