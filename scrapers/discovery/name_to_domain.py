@@ -105,15 +105,17 @@ async def _resolve_one(
     t1 = tokens[1] if len(tokens) > 1 else ""
     pattern = f"%{t0}%.{tld}"
     try:
+        # Bound parameters ($1/$2) — `name` is attacker-influenced registry data,
+        # so it must never be concatenated into SQL (manual quote-escaping is not
+        # a sufficient defense against injection).
         sql = (
             "SELECT DISTINCT lower(ci.NAME_VALUE) AS d "
             "FROM certificate_and_identities ci "
-            "WHERE plainto_tsquery('certwatch', '" + t0.replace("'", "''") + "') "
-            "      @@ identities(ci.CERTIFICATE) "
-            "AND ci.NAME_VALUE ILIKE '" + pattern.replace("'", "''") + "' "
+            "WHERE plainto_tsquery('certwatch', $1) @@ identities(ci.CERTIFICATE) "
+            "AND ci.NAME_VALUE ILIKE $2 "
             "LIMIT 1000"
         )
-        rows = await asyncio.wait_for(conn.fetch(sql), timeout=90)
+        rows = await asyncio.wait_for(conn.fetch(sql, t0, pattern), timeout=90)
     except Exception:
         return None
 
@@ -171,14 +173,19 @@ async def run() -> None:
             tld = _COUNTRY_TLD.get(row["country"])
             if not tld:
                 return
+            conn = None
             try:
                 conn = await asyncpg.connect(_CRT_DSN, ssl="prefer", timeout=30, statement_cache_size=0)
                 await conn.execute("SET statement_timeout='120s'")
                 domain = await _resolve_one(conn, row["name"], tld)
-                await conn.close()
             except Exception as exc:
                 log.debug("resolve %s: %s", row["name"], exc)
                 return
+            finally:
+                # Close even when _resolve_one raises — otherwise every failed
+                # row leaks a crt.sh connection across the gather.
+                if conn is not None:
+                    await conn.close()
             if not domain:
                 return
             stats["resolved"] += 1

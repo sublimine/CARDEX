@@ -104,7 +104,11 @@ class MilanunciosESScraper(BasePortalScraper):
         if price_to is not None:
             url += f"&hasta={price_to}"
 
-        resp = await session.get(url, timeout=30)
+        try:
+            resp = await session.get(url, timeout=30)
+        except Exception as exc:  # transport-level: DNS, reset, timeout, proxy drop
+            log.debug("milanuncios.com transport error %s: %s", url[:90], exc)
+            return []
         if resp.status_code != 200:
             log.warning(
                 "milanuncios.com status=%d price=%d-%s page=%d",

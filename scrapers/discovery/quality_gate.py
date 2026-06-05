@@ -49,56 +49,57 @@ def _is_complete(doc: dict) -> bool:
 
 async def run() -> None:
     pool = await asyncpg.create_pool(_DSN, min_size=1, max_size=4)
-    async with httpx.AsyncClient(timeout=120.0) as client:
-        offset = 0
-        kept = 0
-        deleted = 0
-        to_delete_ulids: list[str] = []
-        to_delete_hashes: list[str] = []
+    try:
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            offset = 0
+            kept = 0
+            deleted = 0
+            to_delete_ulids: list[str] = []
+            to_delete_hashes: list[str] = []
 
-        while True:
-            r = await client.get(
-                f"{_MEILI_URL}/indexes/{_INDEX}/documents",
-                headers=_HDR,
-                params={"limit": _BATCH, "offset": offset,
-                        "fields": "vehicle_ulid," + ",".join(_REQUIRED)},
-            )
-            if r.status_code != 200:
-                log.error("meili GET %d: %s", r.status_code, r.text[:200])
-                break
-            data = r.json()
-            results = data.get("results", [])
-            if not results:
-                break
+            while True:
+                r = await client.get(
+                    f"{_MEILI_URL}/indexes/{_INDEX}/documents",
+                    headers=_HDR,
+                    params={"limit": _BATCH, "offset": offset,
+                            "fields": "vehicle_ulid," + ",".join(_REQUIRED)},
+                )
+                if r.status_code != 200:
+                    log.error("meili GET %d: %s", r.status_code, r.text[:200])
+                    break
+                data = r.json()
+                results = data.get("results", [])
+                if not results:
+                    break
 
-            for doc in results:
-                if _is_complete(doc):
-                    kept += 1
-                else:
-                    ulid = doc.get("vehicle_ulid")
-                    if ulid:
-                        to_delete_ulids.append(ulid)
-                        if ulid.startswith("vi"):
-                            to_delete_hashes.append(ulid[2:])
-                    deleted += 1
+                for doc in results:
+                    if _is_complete(doc):
+                        kept += 1
+                    else:
+                        ulid = doc.get("vehicle_ulid")
+                        if ulid:
+                            to_delete_ulids.append(ulid)
+                            if ulid.startswith("vi"):
+                                to_delete_hashes.append(ulid[2:])
+                        deleted += 1
 
-            if len(to_delete_ulids) >= 5000:
+                if len(to_delete_ulids) >= 5000:
+                    await _flush(client, pool, to_delete_ulids, to_delete_hashes)
+                    to_delete_ulids.clear()
+                    to_delete_hashes.clear()
+
+                offset += len(results)
+                if offset % 10000 == 0:
+                    log.info("scanned=%d kept=%d deleted=%d", offset, kept, deleted)
+                if len(results) < _BATCH:
+                    break
+
+            if to_delete_ulids:
                 await _flush(client, pool, to_delete_ulids, to_delete_hashes)
-                to_delete_ulids.clear()
-                to_delete_hashes.clear()
 
-            offset += len(results)
-            if offset % 10000 == 0:
-                log.info("scanned=%d kept=%d deleted=%d", offset, kept, deleted)
-            if len(results) < _BATCH:
-                break
-
-        if to_delete_ulids:
-            await _flush(client, pool, to_delete_ulids, to_delete_hashes)
-
-        log.info("DONE scanned=%d kept=%d deleted=%d", offset, kept, deleted)
-
-    await pool.close()
+            log.info("DONE scanned=%d kept=%d deleted=%d", offset, kept, deleted)
+    finally:
+        await pool.close()
 
 
 async def _flush(

@@ -68,7 +68,11 @@ class ClassicTraderDEScraper(BasePortalScraper):
         """Load search page and extract listing URLs."""
         url = f"{_BASE_URL}?page={page_num}"
 
-        resp = await session.get(url, timeout=30)
+        try:
+            resp = await session.get(url, timeout=30)
+        except Exception as exc:  # transport-level: DNS, reset, timeout, proxy drop
+            log.debug("classic-trader.com transport error %s: %s", url[:90], exc)
+            return []
         if resp.status_code != 200:
             log.warning(
                 "classic-trader.com status=%d page=%d",

@@ -65,79 +65,81 @@ def _apex(url: str) -> str | None:
 
 async def run() -> None:
     pool = await asyncpg.create_pool(_DSN, min_size=2, max_size=4)
-    async with httpx.AsyncClient(timeout=60.0, follow_redirects=True, http2=True) as client:
-        inserted = 0
-        seen: set[str] = set()
+    try:
+        async with httpx.AsyncClient(timeout=60.0, follow_redirects=True, http2=True) as client:
+            inserted = 0
+            seen: set[str] = set()
 
-        # Approach 1: try known JSON endpoints
-        for page in range(0, 500):
-            any_json = False
-            data_rows: list[dict] = []
-            for template in _SEARCH_ENDPOINTS:
-                url = template.format(page=page, offset=page * 50)
-                try:
-                    r = await client.get(url, headers=_HDR)
-                except Exception:
-                    continue
-                if r.status_code != 200:
-                    continue
-                if "application/json" in r.headers.get("content-type", ""):
+            # Approach 1: try known JSON endpoints
+            for page in range(0, 500):
+                any_json = False
+                data_rows: list[dict] = []
+                for template in _SEARCH_ENDPOINTS:
+                    url = template.format(page=page, offset=page * 50)
                     try:
-                        payload = r.json()
+                        r = await client.get(url, headers=_HDR)
                     except Exception:
                         continue
-                    # find any list inside
-                    if isinstance(payload, dict):
-                        for key in ("results", "members", "items", "data"):
-                            v = payload.get(key)
-                            if isinstance(v, list) and v:
-                                data_rows = v
-                                break
-                    elif isinstance(payload, list):
-                        data_rows = payload
-                    if data_rows:
-                        any_json = True
+                    if r.status_code != 200:
+                        continue
+                    if "application/json" in r.headers.get("content-type", ""):
+                        try:
+                            payload = r.json()
+                        except Exception:
+                            continue
+                        # find any list inside
+                        if isinstance(payload, dict):
+                            for key in ("results", "members", "items", "data"):
+                                v = payload.get(key)
+                                if isinstance(v, list) and v:
+                                    data_rows = v
+                                    break
+                        elif isinstance(payload, list):
+                            data_rows = payload
+                        if data_rows:
+                            any_json = True
+                            break
+                    else:
+                        # HTML fallback — regex-extract external URLs
+                        hrefs = _HREF_SITE_RE.findall(r.text)
+                        for href in hrefs:
+                            dom = _apex(href)
+                            if not dom or dom in seen:
+                                continue
+                            if not dom.endswith(".nl") and not dom.endswith(".be"):
+                                continue
+                            seen.add(dom)
+                            if await _insert(pool, dom, "NL"):
+                                inserted += 1
+                        if hrefs:
+                            any_json = True
                         break
-                else:
-                    # HTML fallback — regex-extract external URLs
-                    hrefs = _HREF_SITE_RE.findall(r.text)
-                    for href in hrefs:
-                        dom = _apex(href)
-                        if not dom or dom in seen:
-                            continue
-                        if not dom.endswith(".nl") and not dom.endswith(".be"):
-                            continue
-                        seen.add(dom)
-                        if await _insert(pool, dom, "NL"):
-                            inserted += 1
-                    if hrefs:
-                        any_json = True
+
+                if not any_json:
+                    log.warning("bovag page %d: no data — stop", page)
                     break
 
-            if not any_json:
-                log.warning("bovag page %d: no data — stop", page)
-                break
+                for row in data_rows:
+                    site = None
+                    for k in ("website", "url", "homepage", "webUrl"):
+                        if isinstance(row, dict) and row.get(k):
+                            site = row[k]
+                            break
+                    if not site:
+                        continue
+                    dom = _apex(site)
+                    if not dom or dom in seen:
+                        continue
+                    seen.add(dom)
+                    if await _insert(pool, dom, "NL"):
+                        inserted += 1
 
-            for row in data_rows:
-                site = None
-                for k in ("website", "url", "homepage", "webUrl"):
-                    if isinstance(row, dict) and row.get(k):
-                        site = row[k]
-                        break
-                if not site:
-                    continue
-                dom = _apex(site)
-                if not dom or dom in seen:
-                    continue
-                seen.add(dom)
-                if await _insert(pool, dom, "NL"):
-                    inserted += 1
+                if page % 5 == 0:
+                    log.info("bovag page=%d seen=%d inserted=%d", page, len(seen), inserted)
 
-            if page % 5 == 0:
-                log.info("bovag page=%d seen=%d inserted=%d", page, len(seen), inserted)
-
-        log.info("DONE bovag seen=%d inserted=%d", len(seen), inserted)
-    await pool.close()
+            log.info("DONE bovag seen=%d inserted=%d", len(seen), inserted)
+    finally:
+        await pool.close()
 
 
 async def _insert(pool: asyncpg.Pool, domain: str, country: str) -> bool:

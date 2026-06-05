@@ -18,16 +18,42 @@ Not installed: [audio-transcription, youtube-transcription, llm-client]
 from __future__ import annotations
 
 import asyncio
+import io
 import logging
 import os
 import tempfile
+import zipfile
 from pathlib import Path
 from typing import Literal
 
 log = logging.getLogger(__name__)
 
+# Untrusted documents arrive as raw bytes from dealer/portal downloads. Bound the
+# input so a single huge file cannot exhaust memory, and bound the *uncompressed*
+# size of ZIP-container formats (.xlsx/.docx) to defuse decompression bombs — a
+# few-KB crafted zip can otherwise expand to gigabytes inside MarkItDown.
+_MAX_DOC_BYTES = 64 * 1024 * 1024            # 64 MiB raw input ceiling
+_MAX_UNCOMPRESSED_BYTES = 512 * 1024 * 1024  # 512 MiB expansion ceiling for zips
+_MAX_HTML_CHARS = 8 * 1024 * 1024            # ~8 Mi chars of HTML
+
 # Lazy singleton — avoid paying import cost when the module is not used.
 _md_instance = None
+
+
+def _is_zip_bomb(data: bytes) -> bool:
+    """True when `data` is a ZIP container whose declared expansion is hostile.
+
+    Non-zip payloads return False (the raw-size cap covers them). A malformed zip
+    is treated as hostile.
+    """
+    if not zipfile.is_zipfile(io.BytesIO(data)):
+        return False
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as zf:
+            total = sum(info.file_size for info in zf.infolist())
+    except (zipfile.BadZipFile, OSError):
+        return True
+    return total > _MAX_UNCOMPRESSED_BYTES
 
 
 def _get_md():
@@ -52,10 +78,10 @@ def html_to_markdown(html: str, *, url: str = "") -> str:
         Markdown string. Empty string on failure (caller decides to skip or retry).
     """
     if isinstance(html, bytes):
-        try:
-            html = html.decode("utf-8", errors="replace")
-        except Exception:
-            pass
+        html = html.decode("utf-8", errors="replace")
+    if len(html) > _MAX_HTML_CHARS:
+        log.warning("html_to_markdown rejected oversize input", extra={"url": url, "chars": len(html)})
+        return ""
 
     tmp = None
     try:
@@ -105,8 +131,15 @@ def bytes_to_markdown(data: bytes, suffix: SupportedSuffix) -> str:
                 Required so MarkItDown picks the right converter.
 
     Returns:
-        Markdown string. Empty string on failure.
+        Markdown string. Empty string on failure or rejected input.
     """
+    if len(data) > _MAX_DOC_BYTES:
+        log.warning("bytes_to_markdown rejected oversize input", extra={"suffix": suffix, "size": len(data)})
+        return ""
+    if _is_zip_bomb(data):
+        log.warning("bytes_to_markdown rejected decompression bomb", extra={"suffix": suffix, "size": len(data)})
+        return ""
+
     tmp = None
     try:
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:

@@ -77,6 +77,8 @@ import asyncpg
 import httpx
 import redis.asyncio as aioredis
 
+from scrapers.common.net_guard import is_safe_public_url
+
 # ── Reuse sealed indexer primitives — DO NOT mutate the module ───────────────
 from scrapers.sitemap_indexer import (
     _index_source,  # type: ignore[attr-defined]
@@ -263,6 +265,14 @@ async def _index_one(
         row["url_regex_override"],
         _decode_jsonb(row["external_refs"]),
     )
+
+    if not is_safe_public_url(sitemap_url):
+        log.warning(
+            "sitemap_bridge: %s/%s skipped: unsafe sitemap url %s",
+            source_key, country, sitemap_url,
+        )
+        await _finalize(pool, row["id"], 0, 0, 0, "unsafe_sitemap_url")
+        return {"found": 0, "new": 0, "gone": 0, "errored": 1}
 
     try:
         stats = await _index_source(

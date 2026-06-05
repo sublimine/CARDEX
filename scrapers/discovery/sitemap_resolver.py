@@ -59,6 +59,8 @@ from typing import Awaitable
 import asyncpg
 import httpx
 
+from scrapers.common.net_guard import is_safe_public_url
+
 log = logging.getLogger(__name__)
 
 _DEFAULT_DSN = os.environ.get(
@@ -140,6 +142,10 @@ async def _probe(
     robots_text: str | None = None
     transient_error: str | None = None
 
+    if not is_safe_public_url(robots_url):
+        log.warning("sitemap_resolver: skipping unsafe domain %s", domain)
+        return "error", None, "unsafe_domain"
+
     try:
         r = await client.get(robots_url, headers=_HEADERS, timeout=_PROBE_TIMEOUT)
         if r.status_code == 200:
@@ -172,6 +178,9 @@ async def _probe(
     first_network_error: str | None = None
 
     for sm_url in candidates:
+        if not is_safe_public_url(sm_url):
+            log.debug("sitemap_resolver: skipping unsafe sitemap url %s", sm_url)
+            continue
         try:
             ok = await _validate_sitemap(client, sm_url)
             any_probe_attempted = True
@@ -278,19 +287,18 @@ async def run() -> None:
     pool = await asyncpg.create_pool(
         _DEFAULT_DSN, min_size=2, max_size=6, command_timeout=60,
     )
-    log.info(
-        "sitemap_resolver: starting — batch=%d concurrency=%d oneshot=%s",
-        _BATCH_SIZE, _CONCURRENCY, _ONESHOT,
-    )
-
-    # Crash recovery: unwedge stale 'probing' rows from a previous crashed run.
-    reclaimed = await pool.execute(_RECLAIM_STALE_SQL)
-    if reclaimed:
-        log.info("sitemap_resolver: reclaimed stale 'probing' rows: %s", reclaimed)
-
     totals = {"found": 0, "none": 0, "error": 0}
-
     try:
+        log.info(
+            "sitemap_resolver: starting — batch=%d concurrency=%d oneshot=%s",
+            _BATCH_SIZE, _CONCURRENCY, _ONESHOT,
+        )
+
+        # Crash recovery: unwedge stale 'probing' rows from a previous crashed run.
+        reclaimed = await pool.execute(_RECLAIM_STALE_SQL)
+        if reclaimed:
+            log.info("sitemap_resolver: reclaimed stale 'probing' rows: %s", reclaimed)
+
         async with httpx.AsyncClient(
             follow_redirects=True,
             timeout=_PROBE_TIMEOUT,

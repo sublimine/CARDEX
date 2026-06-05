@@ -82,7 +82,11 @@ class TruckScout24DEScraper(BasePortalScraper):
         category = params["category"]
         url = f"{_BASE_URL}/{category}/used?page={page_num}"
 
-        resp = await session.get(url, timeout=30)
+        try:
+            resp = await session.get(url, timeout=30)
+        except Exception as exc:  # transport-level: DNS, reset, timeout, proxy drop
+            log.debug("truckscout24.com transport error %s: %s", url[:90], exc)
+            return []
         if resp.status_code != 200:
             log.warning(
                 "truckscout24.com status=%d cat=%s page=%d",

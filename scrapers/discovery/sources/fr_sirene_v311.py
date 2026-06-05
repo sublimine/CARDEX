@@ -153,67 +153,69 @@ async def run() -> None:
     total_seen = 0
     t0 = time.monotonic()
 
-    async with httpx.AsyncClient(timeout=60.0, follow_redirects=True, http2=True) as client:
-        for naf in _NAF_CODES:
-            cursor = "*"
-            log.info("starting NAF %s", naf)
-            page_count = 0
-            naf_written = 0
-            seen_cursors: set[str] = set()
-            while True:
-                rows, grand_total, next_cursor = await _query_page(client, naf, cursor)
-                if not rows:
-                    log.info("NAF %s done: total=%d written=%d", naf, grand_total, naf_written)
-                    break
-                for et in rows:
-                    cand = _to_candidate(et, naf)
-                    if not cand:
-                        continue
-                    total_seen += 1
-                    try:
-                        await pool.execute(
-                            """
-                            INSERT INTO discovery_candidates
-                              (domain, country, source_layer, source, url, name, address, city, postcode, phone, email, lat, lng, registry_id, external_refs)
-                            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb)
-                            ON CONFLICT (source, registry_id, country) WHERE domain IS NULL AND registry_id IS NOT NULL
-                            DO NOTHING
-                            """,
-                            cand.get("domain"),
-                            cand.get("country"),
-                            cand.get("source_layer"),
-                            cand.get("source"),
-                            cand.get("url"),
-                            cand.get("name"),
-                            cand.get("address"),
-                            cand.get("city"),
-                            cand.get("postcode"),
-                            cand.get("phone"),
-                            cand.get("email"),
-                            cand.get("lat"),
-                            cand.get("lng"),
-                            cand.get("registry_id"),
-                            json.dumps(cand.get("external_refs") or {}),
-                        )
-                        total_written += 1
-                        naf_written += 1
-                    except Exception as exc:
-                        log.debug("upsert: %s", exc)
-                page_count += 1
-                if not next_cursor or next_cursor == cursor or next_cursor in seen_cursors:
-                    log.info("NAF %s done (cursor exhausted): total=%d written=%d",
-                             naf, grand_total, naf_written)
-                    break
-                seen_cursors.add(cursor)
-                cursor = next_cursor
-                if page_count % 10 == 0:
-                    log.info("NAF %s progress: page=%d/%d written=%d (%.0fs)",
-                             naf, page_count, (grand_total // _PAGE_SIZE) + 1,
-                             naf_written, time.monotonic() - t0)
-                await asyncio.sleep(_REQ_DELAY)
-    log.info("DONE seen=%d written=%d elapsed=%.0fs",
-             total_seen, total_written, time.monotonic() - t0)
-    await pool.close()
+    try:
+        async with httpx.AsyncClient(timeout=60.0, follow_redirects=True, http2=True) as client:
+            for naf in _NAF_CODES:
+                cursor = "*"
+                log.info("starting NAF %s", naf)
+                page_count = 0
+                naf_written = 0
+                seen_cursors: set[str] = set()
+                while True:
+                    rows, grand_total, next_cursor = await _query_page(client, naf, cursor)
+                    if not rows:
+                        log.info("NAF %s done: total=%d written=%d", naf, grand_total, naf_written)
+                        break
+                    for et in rows:
+                        cand = _to_candidate(et, naf)
+                        if not cand:
+                            continue
+                        total_seen += 1
+                        try:
+                            await pool.execute(
+                                """
+                                INSERT INTO discovery_candidates
+                                  (domain, country, source_layer, source, url, name, address, city, postcode, phone, email, lat, lng, registry_id, external_refs)
+                                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb)
+                                ON CONFLICT (source, registry_id, country) WHERE domain IS NULL AND registry_id IS NOT NULL
+                                DO NOTHING
+                                """,
+                                cand.get("domain"),
+                                cand.get("country"),
+                                cand.get("source_layer"),
+                                cand.get("source"),
+                                cand.get("url"),
+                                cand.get("name"),
+                                cand.get("address"),
+                                cand.get("city"),
+                                cand.get("postcode"),
+                                cand.get("phone"),
+                                cand.get("email"),
+                                cand.get("lat"),
+                                cand.get("lng"),
+                                cand.get("registry_id"),
+                                json.dumps(cand.get("external_refs") or {}),
+                            )
+                            total_written += 1
+                            naf_written += 1
+                        except Exception as exc:
+                            log.debug("upsert: %s", exc)
+                    page_count += 1
+                    if not next_cursor or next_cursor == cursor or next_cursor in seen_cursors:
+                        log.info("NAF %s done (cursor exhausted): total=%d written=%d",
+                                 naf, grand_total, naf_written)
+                        break
+                    seen_cursors.add(cursor)
+                    cursor = next_cursor
+                    if page_count % 10 == 0:
+                        log.info("NAF %s progress: page=%d/%d written=%d (%.0fs)",
+                                 naf, page_count, (grand_total // _PAGE_SIZE) + 1,
+                                 naf_written, time.monotonic() - t0)
+                    await asyncio.sleep(_REQ_DELAY)
+        log.info("DONE seen=%d written=%d elapsed=%.0fs",
+                 total_seen, total_written, time.monotonic() - t0)
+    finally:
+        await pool.close()
 
 
 if __name__ == "__main__":

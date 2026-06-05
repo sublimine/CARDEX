@@ -51,14 +51,21 @@ class BaseMobileClient(ABC):
         """
         ...
 
-    async def exhaust(self, params: dict) -> list[str]:
-        """Paginate until no next_page_token. Returns all listing URLs."""
+    async def exhaust(self, params: dict, *, max_pages: int = 200) -> list[str]:
+        """Paginate until no next_page_token (bounded). Returns all listing URLs.
+
+        A hostile or buggy API that always returns a non-null — or a repeating —
+        page token would otherwise loop forever, accumulating URLs until OOM.
+        The page ceiling and the seen-token cycle guard make termination certain.
+        """
         all_urls: list[str] = []
-        token = None
-        while True:
+        token: str | None = None
+        seen_tokens: set[str] = set()
+        for _ in range(max_pages):
             result = await self.search(params, token)
             all_urls.extend(result.listing_urls)
-            if not result.next_page_token:
-                break
             token = result.next_page_token
+            if not token or token in seen_tokens:
+                break
+            seen_tokens.add(token)
         return all_urls

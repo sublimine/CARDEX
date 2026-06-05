@@ -86,7 +86,11 @@ class AutoweekNLScraper(BasePortalScraper):
         if price_to is not None:
             url += f"&prijstot={price_to}"
 
-        resp = await session.get(url, timeout=30)
+        try:
+            resp = await session.get(url, timeout=30)
+        except Exception as exc:  # transport-level: DNS, reset, timeout, proxy drop
+            log.debug("autoweek.nl transport error %s: %s", url[:90], exc)
+            return []
         if resp.status_code != 200:
             log.warning(
                 "autoweek.nl status=%d price=%d-%s page=%d",

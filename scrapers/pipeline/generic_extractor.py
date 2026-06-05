@@ -34,6 +34,7 @@ from typing import Any, Awaitable, Callable
 import re
 from urllib.parse import urljoin, urlparse
 
+from scrapers.common.net_guard import is_safe_public_url
 from scrapers.pipeline.delta import is_deep_link
 from scrapers.pipeline.normalize import to_record
 from scrapers.pipeline.parse import parse_listing
@@ -196,7 +197,9 @@ async def discover_sitemap_candidates(base_url: str, fetcher: Fetcher) -> list[s
     if robots is not None and robots.status_code == 200:
         for match in _ROBOTS_SITEMAP_RE.finditer(robots.text):
             url = match.group(1).strip()
-            if url and url not in seen:
+            # SSRF guard: a hostile dealer's robots.txt can declare a Sitemap on
+            # an internal host / metadata IP. Only follow public http(s) targets.
+            if url and url not in seen and is_safe_public_url(url):
                 seen.add(url)
                 candidates.append(url)
 
@@ -247,7 +250,9 @@ async def discover_sitemap_listings(
         locs = parse_sitemap_locs(xml)
         if is_sitemap_index(xml):
             for loc in locs:
-                if loc not in visited:
+                # SSRF guard: sitemapindex children are attacker-controlled and may
+                # point off-host at internal infrastructure — validate before queueing.
+                if loc not in visited and is_safe_public_url(loc):
                     queue.append(loc)
             continue
 

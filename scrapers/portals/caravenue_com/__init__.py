@@ -74,7 +74,11 @@ class CaravenueFRScraper(BasePortalScraper):
         """Load search page, extract listing URLs from __NEXT_DATA__ or HTML."""
         url = f"{_BASE_URL}?page={page_num}"
 
-        resp = await session.get(url, timeout=30)
+        try:
+            resp = await session.get(url, timeout=30)
+        except Exception as exc:  # transport-level: DNS, reset, timeout, proxy drop
+            log.debug("caravenue.com transport error %s: %s", url[:90], exc)
+            return []
         if resp.status_code != 200:
             log.warning("caravenue.com status=%d page=%d", resp.status_code, page_num)
             return []
@@ -105,29 +109,33 @@ def _extract_from_next_data(html: str) -> list[str]:
         return []
 
     urls: list[str] = []
-    page_props = data.get("props", {}).get("pageProps", {})
+    try:
+        page_props = data.get("props", {}).get("pageProps", {})
 
-    # Try common Next.js vehicle listing structures
-    vehicles = (
-        page_props.get("vehicles")
-        or page_props.get("listings")
-        or page_props.get("cars")
-        or page_props.get("results", {}).get("items")
-        or page_props.get("data", {}).get("vehicles")
-        or []
-    )
+        # Try common Next.js vehicle listing structures
+        vehicles = (
+            page_props.get("vehicles")
+            or page_props.get("listings")
+            or page_props.get("cars")
+            or page_props.get("results", {}).get("items")
+            or page_props.get("data", {}).get("vehicles")
+            or []
+        )
 
-    for item in vehicles:
-        url = item.get("url") or item.get("slug") or item.get("href")
-        if url:
-            if not url.startswith("http"):
-                url = f"https://www.caravenue.com{url}"
-            urls.append(url)
-            continue
-        # Fallback: construct from ID
-        vid = item.get("id") or item.get("vehicleId")
-        if vid:
-            urls.append(f"https://www.caravenue.com/vehicule/{vid}")
+        for item in vehicles:
+            url = item.get("url") or item.get("slug") or item.get("href")
+            if url:
+                if not url.startswith("http"):
+                    url = f"https://www.caravenue.com{url}"
+                urls.append(url)
+                continue
+            # Fallback: construct from ID
+            vid = item.get("id") or item.get("vehicleId")
+            if vid:
+                urls.append(f"https://www.caravenue.com/vehicule/{vid}")
+    except (AttributeError, TypeError, KeyError, ValueError, json.JSONDecodeError):
+        log.debug("caravenue.com: unexpected __NEXT_DATA__ shape")
+        return []
 
     return urls
 

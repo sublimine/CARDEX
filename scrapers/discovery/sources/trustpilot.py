@@ -93,41 +93,43 @@ async def run() -> None:
     pool = await asyncpg.create_pool(_DSN, min_size=2, max_size=4)
     total_ins = 0
     total_seen = 0
-    async with AsyncSession() as sess:
-        for country in _COUNTRIES:
-            tlds = _TLDS_OK[country]
-            seen_c: set[str] = set()
-            for category in _CATEGORIES:
-                for page in range(1, _MAX_PAGES + 1):
-                    url = f"https://www.trustpilot.com/categories/{category}?country={country}&page={page}"
-                    html = await _fetch(sess, url)
-                    if not html:
-                        break
-                    matches = _REVIEW_RE.findall(html)
-                    if not matches:
-                        break
-                    new_on_page = 0
-                    for m in matches:
-                        dom = m.replace("/review/", "").strip().lower()
-                        if not dom or dom in seen_c:
-                            continue
-                        # Filter by TLD
-                        if not any(dom.endswith(t) for t in tlds):
-                            continue
-                        seen_c.add(dom)
-                        if await _upsert(pool, dom, country):
-                            total_ins += 1
-                            new_on_page += 1
-                    total_seen += new_on_page
-                    log.info("%s/%s p=%d new=%d seen_c=%d total_ins=%d",
-                             country, category, page, new_on_page, len(seen_c), total_ins)
-                    if new_on_page == 0:
-                        break
-                    await asyncio.sleep(0.5)
-            log.info("%s done: seen_domains=%d total_inserted=%d",
-                     country, len(seen_c), total_ins)
-    log.info("DONE total_seen=%d inserted=%d", total_seen, total_ins)
-    await pool.close()
+    try:
+        async with AsyncSession() as sess:
+            for country in _COUNTRIES:
+                tlds = _TLDS_OK[country]
+                seen_c: set[str] = set()
+                for category in _CATEGORIES:
+                    for page in range(1, _MAX_PAGES + 1):
+                        url = f"https://www.trustpilot.com/categories/{category}?country={country}&page={page}"
+                        html = await _fetch(sess, url)
+                        if not html:
+                            break
+                        matches = _REVIEW_RE.findall(html)
+                        if not matches:
+                            break
+                        new_on_page = 0
+                        for m in matches:
+                            dom = m.replace("/review/", "").strip().lower()
+                            if not dom or dom in seen_c:
+                                continue
+                            # Filter by TLD
+                            if not any(dom.endswith(t) for t in tlds):
+                                continue
+                            seen_c.add(dom)
+                            if await _upsert(pool, dom, country):
+                                total_ins += 1
+                                new_on_page += 1
+                        total_seen += new_on_page
+                        log.info("%s/%s p=%d new=%d seen_c=%d total_ins=%d",
+                                 country, category, page, new_on_page, len(seen_c), total_ins)
+                        if new_on_page == 0:
+                            break
+                        await asyncio.sleep(0.5)
+                log.info("%s done: seen_domains=%d total_inserted=%d",
+                         country, len(seen_c), total_ins)
+        log.info("DONE total_seen=%d inserted=%d", total_seen, total_ins)
+    finally:
+        await pool.close()
 
 
 if __name__ == "__main__":

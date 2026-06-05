@@ -71,7 +71,11 @@ class SimplicicarFRScraper(BasePortalScraper):
         """Load search result page and extract vehicle listing URLs."""
         url = f"{_BASE_URL}?page={page_num}"
 
-        resp = await session.get(url, timeout=30)
+        try:
+            resp = await session.get(url, timeout=30)
+        except Exception as exc:  # transport-level: DNS, reset, timeout, proxy drop
+            log.debug("simplicicar.com transport error %s: %s", url[:90], exc)
+            return []
         if resp.status_code != 200:
             log.warning(
                 "simplicicar.com status=%d page=%d", resp.status_code, page_num

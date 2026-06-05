@@ -82,7 +82,11 @@ class GocarBEScraper(BasePortalScraper):
         brand = params["brand"]
         url = f"https://www.gocar.be/sitemaps/vehicles-{lang}-{brand}.xml"
 
-        resp = await session.get(url, timeout=30)
+        try:
+            resp = await session.get(url, timeout=30)
+        except Exception as exc:  # transport-level: DNS, reset, timeout, proxy drop
+            log.debug("gocar.be transport error %s: %s", url[:90], exc)
+            return []
         if resp.status_code == 404:
             # Brand has no listings or sitemap doesn't exist for this brand
             log.debug("gocar.be sitemap 404 for %s/%s", lang, brand)

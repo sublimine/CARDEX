@@ -46,6 +46,8 @@ from urllib.parse import urljoin, urlparse
 import asyncpg
 import httpx
 
+from scrapers.common.net_guard import is_safe_public_url
+
 logging.basicConfig(
     level=os.environ.get("LOG_LEVEL", "INFO").upper(),
     format="%(asctime)s %(levelname)s [wp_rest] %(message)s",
@@ -316,6 +318,10 @@ async def _harvest_domain(
 ) -> int:
     base = f"https://{domain}"
 
+    if not is_safe_public_url(base):
+        log.warning("wp_rest: skipping unsafe domain %s", domain)
+        return 0
+
     root = await _wp_root(client, base)
     if not root:
         return 0
@@ -367,47 +373,49 @@ async def _harvest_domain(
 
 async def run() -> None:
     pool = await asyncpg.create_pool(_DSN, min_size=2, max_size=4, command_timeout=120)
-    fetch = httpx.AsyncClient(
-        timeout=_TIMEOUT,
-        follow_redirects=True,
-        http2=True,
-        limits=httpx.Limits(
-            max_keepalive_connections=_CONC * 2,
-            max_connections=_CONC * 4,
-        ),
-    )
-    meili = httpx.AsyncClient(timeout=60.0)
-    sem = asyncio.Semaphore(_CONC)
-
-    rows = await pool.fetch(
-        "SELECT DISTINCT domain, country FROM discovery_candidates "
-        "WHERE domain IS NOT NULL AND sitemap_status IN ('found','none','pending') "
-        "ORDER BY domain"
-    )
-    log.info("WP-REST harvest: %d domains to probe", len(rows))
-
-    totals = {"domains": 0, "wp_sites": 0, "items": 0}
-    t0 = time.monotonic()
-
-    async def _process(row: asyncpg.Record) -> None:
-        async with sem:
-            try:
-                n = await _harvest_domain(fetch, meili, pool, row["domain"], row["country"])
-            except Exception as exc:
-                log.debug("harvest %s: %s", row["domain"], exc)
-                n = 0
-            totals["domains"] += 1
-            if n > 0:
-                totals["wp_sites"] += 1
-                totals["items"] += n
-            if totals["domains"] % 50 == 0:
-                el = time.monotonic() - t0
-                log.info(
-                    "progress: domains=%d wp_sites=%d items=%d (%.1fs)",
-                    totals["domains"], totals["wp_sites"], totals["items"], el,
-                )
-
+    fetch: httpx.AsyncClient | None = None
+    meili: httpx.AsyncClient | None = None
     try:
+        fetch = httpx.AsyncClient(
+            timeout=_TIMEOUT,
+            follow_redirects=True,
+            http2=True,
+            limits=httpx.Limits(
+                max_keepalive_connections=_CONC * 2,
+                max_connections=_CONC * 4,
+            ),
+        )
+        meili = httpx.AsyncClient(timeout=60.0)
+        sem = asyncio.Semaphore(_CONC)
+
+        rows = await pool.fetch(
+            "SELECT DISTINCT domain, country FROM discovery_candidates "
+            "WHERE domain IS NOT NULL AND sitemap_status IN ('found','none','pending') "
+            "ORDER BY domain"
+        )
+        log.info("WP-REST harvest: %d domains to probe", len(rows))
+
+        totals = {"domains": 0, "wp_sites": 0, "items": 0}
+        t0 = time.monotonic()
+
+        async def _process(row: asyncpg.Record) -> None:
+            async with sem:
+                try:
+                    n = await _harvest_domain(fetch, meili, pool, row["domain"], row["country"])
+                except Exception as exc:
+                    log.debug("harvest %s: %s", row["domain"], exc)
+                    n = 0
+                totals["domains"] += 1
+                if n > 0:
+                    totals["wp_sites"] += 1
+                    totals["items"] += n
+                if totals["domains"] % 50 == 0:
+                    el = time.monotonic() - t0
+                    log.info(
+                        "progress: domains=%d wp_sites=%d items=%d (%.1fs)",
+                        totals["domains"], totals["wp_sites"], totals["items"], el,
+                    )
+
         await asyncio.gather(*(_process(r) for r in rows))
         el = time.monotonic() - t0
         log.info(
@@ -415,8 +423,10 @@ async def run() -> None:
             totals["domains"], totals["wp_sites"], totals["items"], el,
         )
     finally:
-        await fetch.aclose()
-        await meili.aclose()
+        if fetch is not None:
+            await fetch.aclose()
+        if meili is not None:
+            await meili.aclose()
         await pool.close()
 
 

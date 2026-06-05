@@ -25,6 +25,7 @@ import sqlite3
 import time
 from collections.abc import Mapping
 
+from scrapers.common.net_guard import is_safe_public_url
 from scrapers.engine.router.domain_map import PortalSpec, Tier, WAF
 
 log = logging.getLogger("router.classifier")
@@ -128,6 +129,13 @@ async def classify(domain: str, proxy_url: str | None = None) -> PortalSpec:
 
     host = domain.strip().rstrip("/")
     url = f"https://{host}/"
+    # SSRF guard: `domain` is external (newly discovered dealer host) and the probe
+    # may run WITHOUT a proxy (direct egress from the scraper host). Refuse internal
+    # / loopback / link-local targets — most importantly the cloud metadata service.
+    # resolve=True also blocks a public name that resolves to a private IP.
+    if not is_safe_public_url(url, resolve=True):
+        log.warning("classify refused unsafe target %s (SSRF guard)", host)
+        return PortalSpec(domain_pattern=host, tier=Tier.T2, waf=WAF.UNKNOWN, notes="ssrf-blocked")
     proxies = {"https": proxy_url, "http": proxy_url} if proxy_url else None
     try:
         async with AsyncSession() as sess:

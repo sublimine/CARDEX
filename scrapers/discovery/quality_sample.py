@@ -27,6 +27,9 @@ _FIELDS = [
 async def run() -> None:
     async with httpx.AsyncClient(timeout=60.0) as client:
         r = await client.get(f"{_MEILI_URL}/indexes/{_INDEX}/stats", headers=_HDR)
+        if r.status_code != 200:
+            print(f"meili stats GET failed: HTTP {r.status_code}")
+            return
         total = r.json().get("numberOfDocuments", 0)
 
         sample_size = 500

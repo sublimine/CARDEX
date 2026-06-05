@@ -13,6 +13,7 @@ substring of another's the more specific category is tested first, so:
 """
 from __future__ import annotations
 
+import math
 import re
 from decimal import Decimal, InvalidOperation
 
@@ -130,6 +131,11 @@ def parse_decimal(raw: str | float | int | None) -> Decimal | None:
     if raw is None:
         return None
     if isinstance(raw, (int, float)):
+        # A non-finite float (NaN/±inf) from a permissive upstream JSON parser
+        # would crash here: Decimal('NaN') >= 0 raises InvalidOperation and
+        # Decimal('Infinity') would propagate as a poisoned price.
+        if isinstance(raw, float) and not math.isfinite(raw):
+            return None
         try:
             value = Decimal(str(raw))
         except InvalidOperation:
@@ -160,6 +166,10 @@ def parse_int_loose(raw: str | float | int | None) -> int | None:
     if raw is None:
         return None
     if isinstance(raw, (int, float)):
+        # int(float('nan')) raises ValueError and int(float('inf')) raises
+        # OverflowError — guard both before the conversion.
+        if isinstance(raw, float) and not math.isfinite(raw):
+            return None
         return int(raw)
     token = _strip_to_number(raw)
     if not token:

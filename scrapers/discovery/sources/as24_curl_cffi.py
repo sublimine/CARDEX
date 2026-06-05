@@ -166,14 +166,16 @@ async def _scrape_country(
 async def run() -> None:
     pool = await asyncpg.create_pool(_DSN, min_size=1, max_size=4)
     total = 0
-    async with AsyncSession() as sess:
-        for country, dir_url in _COUNTRIES.items():
-            try:
-                total += await _scrape_country(sess, pool, country, dir_url)
-            except Exception as exc:
-                log.warning("country %s errored: %s", country, exc)
-    log.info("ALL DONE written=%d", total)
-    await pool.close()
+    try:
+        async with AsyncSession() as sess:
+            for country, dir_url in _COUNTRIES.items():
+                try:
+                    total += await _scrape_country(sess, pool, country, dir_url)
+                except Exception as exc:
+                    log.warning("country %s errored: %s", country, exc)
+        log.info("ALL DONE written=%d", total)
+    finally:
+        await pool.close()
 
 
 if __name__ == "__main__":

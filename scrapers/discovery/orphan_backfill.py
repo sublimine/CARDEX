@@ -36,59 +36,61 @@ _HDR = {"Authorization": f"Bearer {_MEILI_KEY}"}
 
 async def run() -> None:
     pool = await asyncpg.create_pool(_DSN, min_size=2, max_size=4)
-    async with httpx.AsyncClient(timeout=120.0) as client:
-        offset = 0
-        total = 0
-        inserted = 0
-        while True:
-            r = await client.get(
-                f"{_MEILI_URL}/indexes/{_INDEX}/documents",
-                headers=_HDR,
-                params={"limit": _BATCH, "offset": offset,
-                        "fields": "vehicle_ulid,source_url,source_country"},
-            )
-            if r.status_code != 200:
-                log.error("meili GET %d: %s", r.status_code, r.text[:200])
-                break
-            results = r.json().get("results", [])
-            if not results:
-                break
-
-            rows: list[tuple] = []
-            for doc in results:
-                ulid = doc.get("vehicle_ulid") or ""
-                src = doc.get("source_url")
-                cc = doc.get("source_country") or ""
-                if not (ulid.startswith("vi") and src):
-                    continue
-                url_hash = ulid[2:]
-                try:
-                    dom = urlparse(src).netloc.lower().removeprefix("www.")
-                except Exception:
-                    dom = ""
-                rows.append((url_hash, src, dom, cc))
-
-            if rows:
-                n = await pool.executemany(
-                    """
-                    INSERT INTO vehicle_index
-                      (url_hash, url_original, source_domain, country, sitemap_source, last_seen)
-                    VALUES ($1,$2,$3,$4,'orphan_backfill',NOW())
-                    ON CONFLICT (url_hash) DO NOTHING
-                    """,
-                    rows,
+    try:
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            offset = 0
+            total = 0
+            inserted = 0
+            while True:
+                r = await client.get(
+                    f"{_MEILI_URL}/indexes/{_INDEX}/documents",
+                    headers=_HDR,
+                    params={"limit": _BATCH, "offset": offset,
+                            "fields": "vehicle_ulid,source_url,source_country"},
                 )
-                inserted += len(rows)
+                if r.status_code != 200:
+                    log.error("meili GET %d: %s", r.status_code, r.text[:200])
+                    break
+                results = r.json().get("results", [])
+                if not results:
+                    break
 
-            total += len(results)
-            offset += len(results)
-            if offset % 20000 == 0:
-                log.info("scanned=%d inserted=%d", total, inserted)
-            if len(results) < _BATCH:
-                break
+                rows: list[tuple] = []
+                for doc in results:
+                    ulid = doc.get("vehicle_ulid") or ""
+                    src = doc.get("source_url")
+                    cc = doc.get("source_country") or ""
+                    if not (ulid.startswith("vi") and src):
+                        continue
+                    url_hash = ulid[2:]
+                    try:
+                        dom = urlparse(src).netloc.lower().removeprefix("www.")
+                    except Exception:
+                        dom = ""
+                    rows.append((url_hash, src, dom, cc))
 
-        log.info("DONE scanned=%d inserted=%d", total, inserted)
-    await pool.close()
+                if rows:
+                    n = await pool.executemany(
+                        """
+                        INSERT INTO vehicle_index
+                          (url_hash, url_original, source_domain, country, sitemap_source, last_seen)
+                        VALUES ($1,$2,$3,$4,'orphan_backfill',NOW())
+                        ON CONFLICT (url_hash) DO NOTHING
+                        """,
+                        rows,
+                    )
+                    inserted += len(rows)
+
+                total += len(results)
+                offset += len(results)
+                if offset % 20000 == 0:
+                    log.info("scanned=%d inserted=%d", total, inserted)
+                if len(results) < _BATCH:
+                    break
+
+            log.info("DONE scanned=%d inserted=%d", total, inserted)
+    finally:
+        await pool.close()
 
 
 if __name__ == "__main__":

@@ -41,6 +41,8 @@ from xml.etree.ElementTree import iterparse
 import asyncpg
 import httpx
 
+from scrapers.common.net_guard import is_safe_public_url
+
 logging.basicConfig(
     level=os.environ.get("LOG_LEVEL", "INFO").upper(),
     format="%(asctime)s %(levelname)s [sitemap_img] %(message)s",
@@ -172,6 +174,10 @@ async def _harvest_sitemap(
         return []
     seen.add(url)
 
+    if not is_safe_public_url(url):
+        log.debug("sitemap_img: skipping unsafe sitemap loc %s", url)
+        return []
+
     body = await _fetch_xml(client, url)
     if not body:
         return []
@@ -208,75 +214,81 @@ async def _push_batch(meili: httpx.AsyncClient, docs: list[dict]) -> None:
 
 async def run() -> None:
     pool = await asyncpg.create_pool(_DSN, min_size=2, max_size=4, command_timeout=120)
-    fetch = httpx.AsyncClient(
-        timeout=_TIMEOUT,
-        follow_redirects=True,
-        http2=True,
-        limits=httpx.Limits(
-            max_keepalive_connections=_CONC * 2,
-            max_connections=_CONC * 4,
-        ),
-    )
-    meili = httpx.AsyncClient(timeout=60.0)
-    sem = asyncio.Semaphore(_CONC)
-
-    log.info("starting — concurrency=%d batch=%d", _CONC, _BATCH)
-
-    rows = await pool.fetch(
-        "SELECT id, sitemap_url FROM discovery_candidates "
-        "WHERE sitemap_status='found' AND sitemap_url IS NOT NULL"
-    )
-    log.info("dealers to harvest: %d", len(rows))
-
-    pending: list[dict] = []
-    totals = {"sitemaps": 0, "with_images": 0, "without_images": 0, "updates": 0}
-    t0 = time.monotonic()
-
-    async def _process(row: asyncpg.Record) -> None:
-        async with sem:
-            seen: set[str] = set()
-            try:
-                records = await _harvest_sitemap(fetch, row["sitemap_url"], seen)
-            except Exception as exc:
-                log.debug("harvest %s: %s", row["sitemap_url"], exc)
-                return
-
-            local_with = 0
-            local_without = 0
-            for loc, imgs in records:
-                # Filter logo URLs
-                imgs_clean = [i for i in imgs if not _is_logo(i)]
-                if not imgs_clean:
-                    local_without += 1
-                    continue
-                local_with += 1
-                first = urljoin(loc, imgs_clean[0])
-                pending.append({
-                    "vehicle_ulid": f"vi{_url_hash(loc)}",
-                    "thumbnail_url": first,
-                    "thumb_url": first,
-                })
-
-            totals["sitemaps"] += 1
-            totals["with_images"] += local_with
-            totals["without_images"] += local_without
-
-            if pending:
-                while len(pending) >= _BATCH:
-                    chunk = pending[:_BATCH]
-                    del pending[:_BATCH]
-                    await _push_batch(meili, chunk)
-                    totals["updates"] += len(chunk)
-
-            if totals["sitemaps"] % 10 == 0:
-                el = time.monotonic() - t0
-                log.info(
-                    "progress: dealers=%d with_imgs=%d without=%d updates=%d (%.1fs)",
-                    totals["sitemaps"], totals["with_images"],
-                    totals["without_images"], totals["updates"], el,
-                )
-
+    fetch: httpx.AsyncClient | None = None
+    meili: httpx.AsyncClient | None = None
     try:
+        fetch = httpx.AsyncClient(
+            timeout=_TIMEOUT,
+            follow_redirects=True,
+            http2=True,
+            limits=httpx.Limits(
+                max_keepalive_connections=_CONC * 2,
+                max_connections=_CONC * 4,
+            ),
+        )
+        meili = httpx.AsyncClient(timeout=60.0)
+        sem = asyncio.Semaphore(_CONC)
+
+        log.info("starting — concurrency=%d batch=%d", _CONC, _BATCH)
+
+        rows = await pool.fetch(
+            "SELECT id, sitemap_url FROM discovery_candidates "
+            "WHERE sitemap_status='found' AND sitemap_url IS NOT NULL"
+        )
+        log.info("dealers to harvest: %d", len(rows))
+
+        pending: list[dict] = []
+        totals = {"sitemaps": 0, "with_images": 0, "without_images": 0, "updates": 0}
+        t0 = time.monotonic()
+
+        async def _process(row: asyncpg.Record) -> None:
+            async with sem:
+                sitemap_url = row["sitemap_url"]
+                if not is_safe_public_url(sitemap_url):
+                    log.warning("sitemap_img: skipping unsafe sitemap url %s", sitemap_url)
+                    return
+                seen: set[str] = set()
+                try:
+                    records = await _harvest_sitemap(fetch, sitemap_url, seen)
+                except Exception as exc:
+                    log.debug("harvest %s: %s", sitemap_url, exc)
+                    return
+
+                local_with = 0
+                local_without = 0
+                for loc, imgs in records:
+                    # Filter logo URLs
+                    imgs_clean = [i for i in imgs if not _is_logo(i)]
+                    if not imgs_clean:
+                        local_without += 1
+                        continue
+                    local_with += 1
+                    first = urljoin(loc, imgs_clean[0])
+                    pending.append({
+                        "vehicle_ulid": f"vi{_url_hash(loc)}",
+                        "thumbnail_url": first,
+                        "thumb_url": first,
+                    })
+
+                totals["sitemaps"] += 1
+                totals["with_images"] += local_with
+                totals["without_images"] += local_without
+
+                if pending:
+                    while len(pending) >= _BATCH:
+                        chunk = pending[:_BATCH]
+                        del pending[:_BATCH]
+                        await _push_batch(meili, chunk)
+                        totals["updates"] += len(chunk)
+
+                if totals["sitemaps"] % 10 == 0:
+                    el = time.monotonic() - t0
+                    log.info(
+                        "progress: dealers=%d with_imgs=%d without=%d updates=%d (%.1fs)",
+                        totals["sitemaps"], totals["with_images"],
+                        totals["without_images"], totals["updates"], el,
+                    )
+
         await asyncio.gather(*(_process(r) for r in rows))
         if pending:
             await _push_batch(meili, pending)
@@ -289,8 +301,10 @@ async def run() -> None:
             totals["without_images"], totals["updates"], el,
         )
     finally:
-        await fetch.aclose()
-        await meili.aclose()
+        if fetch is not None:
+            await fetch.aclose()
+        if meili is not None:
+            await meili.aclose()
         await pool.close()
 
 

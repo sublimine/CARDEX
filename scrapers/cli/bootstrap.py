@@ -26,12 +26,32 @@ import os
 import sys
 import time
 
+from urllib.parse import urlsplit
+
 from scrapers.db import connect, migrate
 from scrapers.engine.router.domain_map import Tier, get as get_portal_spec
 from scrapers.portals import PORTAL_REGISTRY
 from scrapers.scheduler import SchedulerConfig, enqueue
 
 log = logging.getLogger(__name__)
+
+
+def _mask_dsn(dsn: str) -> str:
+    """Render a DSN for display with the password redacted.
+
+    The previous `dsn.split('@')[0]` kept the whole userinfo — including the
+    password — before the '@', so the secret was printed verbatim.
+    """
+    try:
+        parts = urlsplit(dsn)
+    except ValueError:
+        return "<unparseable DSN>"
+    if not parts.hostname:
+        return "<dsn hidden>"
+    user = parts.username or ""
+    cred = f"{user}:***@" if parts.password else (f"{user}@" if user else "")
+    port = f":{parts.port}" if parts.port else ""
+    return f"{parts.scheme}://{cred}{parts.hostname}{port}{parts.path}"
 
 
 async def _bootstrap_pg(dsn: str, dry_run: bool) -> dict[str, int]:
@@ -131,7 +151,7 @@ async def run(args: argparse.Namespace) -> None:
     db_path = os.environ.get("ENGINE_DB_PATH", "scrapers/engine.db")
 
     print(f"CARDEX Bootstrap — {len(PORTAL_REGISTRY)} registered portals")
-    print(f"  PG DSN:      {dsn.split('@')[0]}@...")  # mask credentials
+    print(f"  PG DSN:      {_mask_dsn(dsn)}")
     print(f"  Engine DB:   {db_path}")
     print(f"  Dry run:     {args.dry_run}")
     print(f"  Seed queue:  {args.seed_queue}")

@@ -180,122 +180,123 @@ async def run() -> None:
     pool = await asyncpg.create_pool(_DSN, min_size=2, max_size=4)
     meili = httpx.AsyncClient(timeout=120.0)
     sess = AsyncSession()
+    try:
+        sem = asyncio.Semaphore(_CONC)
+        totals = {"scanned": 0, "fetched": 0, "repaired": 0,
+                  "dead": 0, "sold": 0, "scam": 0, "unchanged": 0}
+        pending_updates: list[dict] = []
+        pending_deletes: list[str] = []
 
-    sem = asyncio.Semaphore(_CONC)
-    totals = {"scanned": 0, "fetched": 0, "repaired": 0,
-              "dead": 0, "sold": 0, "scam": 0, "unchanged": 0}
-    pending_updates: list[dict] = []
-    pending_deletes: list[str] = []
+        # Meili pagination
+        offset = 0
+        while True:
+            r = None
+            for attempt in range(8):
+                try:
+                    r = await meili.get(
+                        f"{_MEILI_URL}/indexes/{_INDEX}/documents",
+                        headers=_HDR_MEILI,
+                        params={"limit": _BATCH, "offset": offset,
+                                "fields": "vehicle_ulid,source_url,make,model,variant,"
+                                          "year,mileage_km,price_eur,thumbnail_url,"
+                                          "description,fuel_type,transmission,power_kw,"
+                                          "power_hp,listing_status"},
+                    )
+                    if r.status_code == 200:
+                        break
+                    log.warning("meili GET %d attempt %d", r.status_code, attempt)
+                except Exception as exc:
+                    log.warning("meili GET err attempt %d: %s", attempt, exc)
+                await asyncio.sleep(3 + attempt * 2)
+            if not r or r.status_code != 200:
+                log.error("meili GET failed after retries, sleeping 60s and retrying offset")
+                await asyncio.sleep(60)
+                continue
+            docs = r.json().get("results", [])
+            if not docs:
+                break
 
-    # Meili pagination
-    offset = 0
-    while True:
-        r = None
-        for attempt in range(8):
-            try:
-                r = await meili.get(
-                    f"{_MEILI_URL}/indexes/{_INDEX}/documents",
-                    headers=_HDR_MEILI,
-                    params={"limit": _BATCH, "offset": offset,
-                            "fields": "vehicle_ulid,source_url,make,model,variant,"
-                                      "year,mileage_km,price_eur,thumbnail_url,"
-                                      "description,fuel_type,transmission,power_kw,"
-                                      "power_hp,listing_status"},
-                )
-                if r.status_code == 200:
-                    break
-                log.warning("meili GET %d attempt %d", r.status_code, attempt)
-            except Exception as exc:
-                log.warning("meili GET err attempt %d: %s", attempt, exc)
-            await asyncio.sleep(3 + attempt * 2)
-        if not r or r.status_code != 200:
-            log.error("meili GET failed after retries, sleeping 60s and retrying offset")
-            await asyncio.sleep(60)
-            continue
-        docs = r.json().get("results", [])
-        if not docs:
-            break
+            # Skip docs not in this shard
+            def in_shard(ulid: str) -> bool:
+                if _SHARDS <= 1:
+                    return True
+                h = ulid[2:] if ulid.startswith("vi") else ulid
+                try:
+                    return int(h[:8], 16) % _SHARDS == _SHARD
+                except ValueError:
+                    return False
 
-        # Skip docs not in this shard
-        def in_shard(ulid: str) -> bool:
-            if _SHARDS <= 1:
-                return True
-            h = ulid[2:] if ulid.startswith("vi") else ulid
-            try:
-                return int(h[:8], 16) % _SHARDS == _SHARD
-            except ValueError:
-                return False
+            async def _process(doc: dict) -> None:
+                async with sem:
+                    totals["scanned"] += 1
+                    ulid = doc.get("vehicle_ulid") or ""
+                    if not in_shard(ulid):
+                        return
 
-        async def _process(doc: dict) -> None:
-            async with sem:
-                totals["scanned"] += 1
-                ulid = doc.get("vehicle_ulid") or ""
-                if not in_shard(ulid):
-                    return
+                    missing = [f for f in ("make", "model", "price_eur",
+                                           "year", "mileage_km", "thumbnail_url",
+                                           "description") if not doc.get(f)]
+                    if not missing:
+                        totals["unchanged"] += 1
+                        return
 
-                missing = [f for f in ("make", "model", "price_eur",
-                                       "year", "mileage_km", "thumbnail_url",
-                                       "description") if not doc.get(f)]
-                if not missing:
-                    totals["unchanged"] += 1
-                    return
+                    if _is_scam(doc):
+                        totals["scam"] += 1
+                        pending_deletes.append(ulid)
+                        return
 
-                if _is_scam(doc):
-                    totals["scam"] += 1
-                    pending_deletes.append(ulid)
-                    return
+                    url = doc.get("source_url")
+                    if not url:
+                        return
 
-                url = doc.get("source_url")
-                if not url:
-                    return
+                    status, html = await _fetch_html(sess, url)
+                    totals["fetched"] += 1
+                    if status in (404, 410):
+                        totals["dead"] += 1
+                        pending_deletes.append(ulid)
+                        return
+                    if not html:
+                        return
 
-                status, html = await _fetch_html(sess, url)
-                totals["fetched"] += 1
-                if status in (404, 410):
-                    totals["dead"] += 1
-                    pending_deletes.append(ulid)
-                    return
-                if not html:
-                    return
+                    if _looks_sold(html):
+                        totals["sold"] += 1
+                        pending_deletes.append(ulid)
+                        return
 
-                if _looks_sold(html):
-                    totals["sold"] += 1
-                    pending_deletes.append(ulid)
-                    return
+                    update = _merge_extracted(doc, html, url)
+                    if update:
+                        update["vehicle_ulid"] = ulid
+                        pending_updates.append(update)
+                        totals["repaired"] += 1
 
-                update = _merge_extracted(doc, html, url)
-                if update:
-                    update["vehicle_ulid"] = ulid
-                    pending_updates.append(update)
-                    totals["repaired"] += 1
+            await asyncio.gather(*[_process(d) for d in docs])
 
-        await asyncio.gather(*[_process(d) for d in docs])
+            # Flush
+            if len(pending_updates) >= 200:
+                await _flush_updates(meili, pending_updates)
+                pending_updates.clear()
+            if len(pending_deletes) >= 500:
+                await _flush_deletes(meili, pool, pending_deletes)
+                pending_deletes.clear()
 
-        # Flush
-        if len(pending_updates) >= 200:
+            offset += len(docs)
+            if offset % 5000 == 0:
+                log.info("scanned=%d repaired=%d dead=%d sold=%d scam=%d unchanged=%d",
+                         totals["scanned"], totals["repaired"], totals["dead"],
+                         totals["sold"], totals["scam"], totals["unchanged"])
+            if len(docs) < _BATCH:
+                break
+
+        if pending_updates:
             await _flush_updates(meili, pending_updates)
-            pending_updates.clear()
-        if len(pending_deletes) >= 500:
+        if pending_deletes:
             await _flush_deletes(meili, pool, pending_deletes)
-            pending_deletes.clear()
 
-        offset += len(docs)
-        if offset % 5000 == 0:
-            log.info("scanned=%d repaired=%d dead=%d sold=%d scam=%d unchanged=%d",
-                     totals["scanned"], totals["repaired"], totals["dead"],
-                     totals["sold"], totals["scam"], totals["unchanged"])
-        if len(docs) < _BATCH:
-            break
-
-    if pending_updates:
-        await _flush_updates(meili, pending_updates)
-    if pending_deletes:
-        await _flush_deletes(meili, pool, pending_deletes)
-
-    log.info("DONE totals=%s", totals)
-    await sess.close()
-    await meili.aclose()
-    await pool.close()
+        log.info("DONE totals=%s", totals)
+    finally:
+        await sess.close()
+        await meili.aclose()
+        await pool.close()
 
 
 async def _flush_updates(meili: httpx.AsyncClient, updates: list[dict]) -> None:

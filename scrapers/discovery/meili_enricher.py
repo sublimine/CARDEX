@@ -1,4 +1,4 @@
-"""
+r"""
 Meilisearch enricher v2 — multi-strategy HTML extraction.
 
 Pipeline per URL

@@ -192,34 +192,37 @@ async def _paginate_camoufox(
                     if api_pattern.search(response.url):
                         body = await response.text()
                         captured.extend(extract_fn(body, response.url))
-                except Exception:
-                    pass
+                except Exception as exc:
+                    log.debug("%s/%s response handler error: %s", source, country, exc)
             page.on("response", _on_response)
 
         for pg_num in range(1, max_pages + 1):
             captured.clear()
             url = search_url_fn(pg_num)
+            # Navigation AND extraction share one guard: a failed goto, a torn
+            # page.content(), or an extract_fn bug must stop this segment, never
+            # abort the whole portal run.
             try:
                 await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
                 await page.wait_for_timeout(page_wait_ms)
-            except Exception as exc:
-                log.debug("%s/%s camoufox page=%d nav error: %s", source, country, pg_num, exc)
-                break
 
-            if fn_type == "intercept":
-                page_urls = set(captured)
-                if not page_urls:
+                if fn_type == "intercept":
+                    page_urls = set(captured)
+                    if not page_urls:
+                        dom = await page.content()
+                        if _is_softblocked(dom):
+                            log.warning("%s/%s page=%d: softblock detected", source, country, pg_num)
+                            break
+                        page_urls = set(extract_fn(dom, url))
+                else:
                     dom = await page.content()
                     if _is_softblocked(dom):
                         log.warning("%s/%s page=%d: softblock detected", source, country, pg_num)
                         break
-                    page_urls = set(extract_fn(dom, url))
-            else:
-                dom = await page.content()
-                if _is_softblocked(dom):
-                    log.warning("%s/%s page=%d: softblock detected", source, country, pg_num)
-                    break
-                page_urls = set(extract_fn(dom))
+                    page_urls = set(extract_fn(dom))
+            except Exception as exc:
+                log.debug("%s/%s camoufox page=%d error: %s", source, country, pg_num, exc)
+                break
 
             if not page_urls:
                 log.debug("%s/%s page=%d: 0 URLs — stopping", source, country, pg_num)
@@ -254,73 +257,78 @@ async def _paginate_chromium(
     from playwright.async_api import async_playwright
 
     collected: set[str] = set()
+    # `start()` spawns the Playwright driver subprocess; if the subsequent
+    # launch() raises, pw.stop() must still run or the driver process leaks.
     pw = await async_playwright().start()
-    browser = await pw.chromium.launch(
-        headless=True,
-        proxy=proxy,
-        args=[
-            "--disable-blink-features=AutomationControlled",
-            "--no-sandbox",
-            "--disable-dev-shm-usage",
-            "--disable-features=IsolateOrigins,site-per-process",
-        ],
-    )
     try:
-        context = await browser.new_context(
-            user_agent=_UA_CHROME136,
-            locale=locale,
-            viewport={"width": 1280, "height": 900},
-            extra_http_headers={"Accept-Language": f"{locale},{locale[:2]};q=0.9,en;q=0.8"},
+        browser = await pw.chromium.launch(
+            headless=True,
+            proxy=proxy,
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-features=IsolateOrigins,site-per-process",
+            ],
         )
-        await context.add_init_script(_STEALTH_JS)
-        page = await context.new_page()
-        captured: list[str] = []
+        try:
+            context = await browser.new_context(
+                user_agent=_UA_CHROME136,
+                locale=locale,
+                viewport={"width": 1280, "height": 900},
+                extra_http_headers={"Accept-Language": f"{locale},{locale[:2]};q=0.9,en;q=0.8"},
+            )
+            await context.add_init_script(_STEALTH_JS)
+            page = await context.new_page()
+            captured: list[str] = []
 
-        if fn_type == "intercept" and api_pattern is not None:
-            async def _on_response(response) -> None:
+            if fn_type == "intercept" and api_pattern is not None:
+                async def _on_response(response) -> None:
+                    try:
+                        if api_pattern.search(response.url):
+                            body = await response.text()
+                            captured.extend(extract_fn(body, response.url))
+                    except Exception as exc:
+                        log.debug("%s/%s response handler error: %s", source, country, exc)
+                page.on("response", _on_response)
+
+            for pg_num in range(1, max_pages + 1):
+                captured.clear()
+                url = search_url_fn(pg_num)
+                # Navigation AND extraction share one guard (see camoufox path).
                 try:
-                    if api_pattern.search(response.url):
-                        body = await response.text()
-                        captured.extend(extract_fn(body, response.url))
-                except Exception:
-                    pass
-            page.on("response", _on_response)
+                    await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
+                    await page.wait_for_timeout(page_wait_ms)
 
-        for pg_num in range(1, max_pages + 1):
-            captured.clear()
-            url = search_url_fn(pg_num)
-            try:
-                await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
-                await page.wait_for_timeout(page_wait_ms)
-            except Exception as exc:
-                log.debug("%s/%s chromium page=%d nav error: %s", source, country, pg_num, exc)
-                break
-
-            if fn_type == "intercept":
-                page_urls = set(captured)
-                if not page_urls:
-                    dom = await page.content()
-                    if _is_softblocked(dom):
-                        log.warning("%s/%s page=%d: softblock detected", source, country, pg_num)
-                        break
-                    page_urls = set(extract_fn(dom, url))
-            else:
-                dom = await page.content()
-                if _is_softblocked(dom):
-                    log.warning("%s/%s page=%d: softblock detected", source, country, pg_num)
+                    if fn_type == "intercept":
+                        page_urls = set(captured)
+                        if not page_urls:
+                            dom = await page.content()
+                            if _is_softblocked(dom):
+                                log.warning("%s/%s page=%d: softblock detected", source, country, pg_num)
+                                break
+                            page_urls = set(extract_fn(dom, url))
+                    else:
+                        dom = await page.content()
+                        if _is_softblocked(dom):
+                            log.warning("%s/%s page=%d: softblock detected", source, country, pg_num)
+                            break
+                        page_urls = set(extract_fn(dom))
+                except Exception as exc:
+                    log.debug("%s/%s chromium page=%d error: %s", source, country, pg_num, exc)
                     break
-                page_urls = set(extract_fn(dom))
 
-            if not page_urls:
-                break
+                if not page_urls:
+                    break
 
-            prev = len(collected)
-            collected.update(page_urls)
-            log.debug("%s/%s page=%d +%d (total=%d)", source, country, pg_num, len(page_urls), len(collected))
-            if len(collected) == prev:
-                break
+                prev = len(collected)
+                collected.update(page_urls)
+                log.debug("%s/%s page=%d +%d (total=%d)", source, country, pg_num, len(page_urls), len(collected))
+                if len(collected) == prev:
+                    break
+        finally:
+            await browser.close()
     finally:
-        await browser.close()
         await pw.stop()
 
     return list(collected)

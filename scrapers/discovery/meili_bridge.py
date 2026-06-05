@@ -488,9 +488,10 @@ async def _push_batch(client: httpx.AsyncClient, docs: list[dict]) -> None:
 
 async def run() -> None:
     pool = await asyncpg.create_pool(_DSN, min_size=2, max_size=4, command_timeout=120)
-    client = httpx.AsyncClient(timeout=120.0)
+    client: httpx.AsyncClient | None = None
 
     try:
+        client = httpx.AsyncClient(timeout=120.0)
         await _ensure_index(client)
 
         sql = (
@@ -534,7 +535,8 @@ async def run() -> None:
             total, skipped, elapsed, total / elapsed if elapsed else 0,
         )
     finally:
-        await client.aclose()
+        if client is not None:
+            await client.aclose()
         await pool.close()
 
 

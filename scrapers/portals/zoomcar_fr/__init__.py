@@ -97,7 +97,11 @@ class ZoomcarFRScraper(BasePortalScraper):
         if price_max is not None:
             url += f"&prix_max={price_max}"
 
-        resp = await session.get(url, timeout=30)
+        try:
+            resp = await session.get(url, timeout=30)
+        except Exception as exc:  # transport-level: DNS, reset, timeout, proxy drop
+            log.debug("zoomcar.fr transport error %s: %s", url[:90], exc)
+            return []
         if resp.status_code != 200:
             log.warning(
                 "zoomcar.fr status=%d price=%d-%s page=%d",

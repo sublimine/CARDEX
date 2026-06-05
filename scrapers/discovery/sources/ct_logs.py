@@ -112,15 +112,17 @@ async def _query_crt_pg(
 
     try:
         await conn.execute("SET statement_timeout='300s'")
+        # Bound parameters ($1/$2). Keyword/pattern are static today, but the
+        # concat-with-quote-escape pattern is injection-prone — parameterize it.
+        # _QUERY_LIMIT is a validated int; int() guards the f-string interpolation.
         sql = (
             "SELECT DISTINCT lower(ci.NAME_VALUE) AS d "
             "FROM certificate_and_identities ci "
-            "WHERE plainto_tsquery('certwatch', '" + keyword.replace("'", "''") + "') "
-            "      @@ identities(ci.CERTIFICATE) "
-            "AND ci.NAME_VALUE ILIKE '" + pattern.replace("'", "''") + "' "
-            f"LIMIT {_QUERY_LIMIT}"
+            "WHERE plainto_tsquery('certwatch', $1) @@ identities(ci.CERTIFICATE) "
+            "AND ci.NAME_VALUE ILIKE $2 "
+            f"LIMIT {int(_QUERY_LIMIT)}"
         )
-        rows = await asyncio.wait_for(conn.fetch(sql), timeout=_TIMEOUT)
+        rows = await asyncio.wait_for(conn.fetch(sql, keyword, pattern), timeout=_TIMEOUT)
     except asyncio.TimeoutError:
         log.warning("crt.sh timeout %s/%s", keyword, tld)
         rows = []
