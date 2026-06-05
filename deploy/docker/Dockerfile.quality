@@ -1,9 +1,14 @@
 # Dockerfile.quality — CARDEX Quality Pipeline
 # Multi-stage build: Go 1.26.2 builder → distroless/static runtime
 # Quality service uses modernc.org/sqlite (pure Go, no CGO) → stays statically linkable.
+#
+# Build context is the repo root (see docker-compose.yml: context ../..).
+# Health probe: /health is served on the metrics port (:9103), NOT :8080.
 
 # ── Stage 1: build ───────────────────────────────────────────────
 FROM golang:1.26.2-bookworm AS builder
+
+ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOWORK=off
 
 WORKDIR /src
 
@@ -11,18 +16,26 @@ COPY go.work go.work.sum ./
 COPY quality/go.mod quality/go.sum ./quality/
 
 WORKDIR /src/quality
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
 WORKDIR /src
 COPY quality/ ./quality/
 
 WORKDIR /src/quality
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOWORK=off \
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
     go build \
     -ldflags="-s -w -extldflags=-static" \
     -trimpath \
     -o /out/cardex-quality \
     ./cmd/quality-service/
+
+# Build the distroless-compatible health probe (stdlib only, no deps)
+COPY deploy/docker/healthcheck/ /src/healthcheck/
+WORKDIR /src/healthcheck
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    go build -ldflags="-s -w" -trimpath -o /out/healthcheck .
 
 # ── Stage 2: runtime ─────────────────────────────────────────────
 # Pin digest in production to prevent supply-chain substitution:
@@ -30,13 +43,29 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOWORK=off \
 # Then replace :nonroot with :nonroot@sha256:<digest>
 FROM gcr.io/distroless/static-debian12:nonroot
 
-LABEL org.opencontainers.image.title="cardex-quality"
-LABEL org.opencontainers.image.description="CARDEX Quality Pipeline — V01-V20"
-LABEL org.opencontainers.image.licenses="UNLICENSED"
+ARG VERSION=dev
+ARG VCS_REF=unknown
+ARG BUILD_DATE=unknown
+LABEL org.opencontainers.image.title="cardex-quality" \
+      org.opencontainers.image.description="CARDEX Quality Pipeline — V01-V20" \
+      org.opencontainers.image.source="https://github.com/cardex/cardex" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.licenses="UNLICENSED"
+
+USER 65532:65532
 
 COPY --from=builder /out/cardex-quality /cardex-quality
+COPY --from=builder /out/healthcheck /healthcheck
 
-# Health + metrics ports
-EXPOSE 8080 9103
+# /health + /metrics are served on the metrics port.
+EXPOSE 9103
+
+# /health lives on the metrics port (QUALITY_METRICS_ADDR, compose sets :9103).
+ENV HEALTHCHECK_URL=http://127.0.0.1:9103/health
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD ["/healthcheck"]
 
 ENTRYPOINT ["/cardex-quality"]

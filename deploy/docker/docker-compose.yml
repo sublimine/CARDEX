@@ -1,5 +1,7 @@
 # docker-compose.yml — CARDEX local development & staging
-# Boots the full stack: 3 core services + observability + reverse proxy
+# Boots the deployed stack: 3 core Go services + observability + reverse proxy.
+# This is the REAL deployed topology (Phase 5). PostgreSQL/Redis/MeiliSearch are
+# NOT part of it — storage is SQLite (see CONTEXT_FOR_AI.md).
 #
 # Usage:
 #   cp .env.example .env          # fill in secrets
@@ -8,16 +10,41 @@
 #
 # Ports exposed on localhost:
 #   80/443  → Caddy (API + health)
-#   9091    → Grafana (admin UI)
-#   9090    → Prometheus (internal metrics, not exposed externally)
-#   8888    → SearXNG (meta-search, loopback only)
+#   3001    → Grafana (admin UI, loopback only)
+#   9090    → Prometheus (loopback only)
+#   9101-3  → core service metrics (loopback only, Prometheus scrape)
+#
+# Network segmentation (least privilege):
+#   cardex-edge       → Caddy ingress only
+#   cardex-core       → core services + Caddy + Prometheus (scrape + crawl egress)
+#   cardex-monitoring → Prometheus + Grafana + Alertmanager (dashboards/alerts)
+# Grafana/Alertmanager cannot reach the crawling services; services cannot reach
+# the dashboards. Core is a bridge network (NAT egress required for crawling).
+
+# ── Reusable hardening defaults (DRY via YAML anchors) ───────────────
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-hardening: &hardening
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  logging: *default-logging
 
 networks:
-  cardex-net:
+  cardex-edge:
+    driver: bridge
+  cardex-core:
     driver: bridge
     ipam:
       config:
         - subnet: 172.20.0.0/24
+  cardex-monitoring:
+    driver: bridge
 
 volumes:
   cardex-db:
@@ -28,18 +55,25 @@ volumes:
     driver: local
   alertmanager-data:
     driver: local
+  caddy-data:
+  caddy-certs:
 
 services:
   # ── Core: Discovery ──────────────────────────────────────────────
   discovery:
+    <<: *hardening
     build:
       context: ../..
       dockerfile: deploy/docker/Dockerfile.discovery
     image: cardex/discovery:dev
     container_name: cardex-discovery
     restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
     networks:
-      - cardex-net
+      - cardex-core
     volumes:
       - cardex-db:/srv/cardex/db
     environment:
@@ -48,24 +82,37 @@ services:
       DISCOVERY_CYCLE_INTERVAL:   6h
       DISCOVERY_COUNTRIES:        ${DISCOVERY_COUNTRIES:-DE,FR,ES,BE,NL,CH,AT,IT}
     ports:
-      - "127.0.0.1:9101:9101"     # metrics (Prometheus scrape)
+      - "127.0.0.1:9101:9101"     # metrics + /healthz (Prometheus scrape)
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz || exit 1"]
+      test: ["CMD", "/healthcheck"]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3
       start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
 
   # ── Core: Extraction ─────────────────────────────────────────────
   extraction:
+    <<: *hardening
     build:
       context: ../..
       dockerfile: deploy/docker/Dockerfile.extraction
     image: cardex/extraction:dev
     container_name: cardex-extraction
     restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128m
     networks:
-      - cardex-net
+      - cardex-core
     volumes:
       - cardex-db:/srv/cardex/db
     environment:
@@ -77,25 +124,38 @@ services:
     ports:
       - "127.0.0.1:9102:9102"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz || exit 1"]
+      test: ["CMD", "/healthcheck"]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3
       start_period: 15s
     depends_on:
       discovery:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 1G
+        reservations:
+          cpus: "0.5"
+          memory: 256M
 
   # ── Core: Quality ────────────────────────────────────────────────
   quality:
+    <<: *hardening
     build:
       context: ../..
       dockerfile: deploy/docker/Dockerfile.quality
     image: cardex/quality:dev
     container_name: cardex-quality
     restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
     networks:
-      - cardex-net
+      - cardex-core
     volumes:
       - cardex-db:/srv/cardex/db
     environment:
@@ -107,22 +167,35 @@ services:
     ports:
       - "127.0.0.1:9103:9103"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz || exit 1"]
+      test: ["CMD", "/healthcheck"]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3
       start_period: 15s
     depends_on:
       extraction:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 768M
+        reservations:
+          cpus: "0.5"
+          memory: 256M
 
   # ── Observability: Prometheus ─────────────────────────────────────
   prometheus:
+    <<: *hardening
     image: prom/prometheus:v3.0.1
     container_name: cardex-prometheus
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
     networks:
-      - cardex-net
+      - cardex-core
+      - cardex-monitoring
     ports:
       - "127.0.0.1:9090:9090"
     volumes:
@@ -134,28 +207,59 @@ services:
       - '--storage.tsdb.retention.time=30d'
       - '--storage.tsdb.path=/prometheus'
       - '--web.enable-lifecycle'
-    mem_limit: 512m
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
 
   # ── Observability: Alertmanager ───────────────────────────────────
   alertmanager:
+    <<: *hardening
     image: prom/alertmanager:v0.27.0
     container_name: cardex-alertmanager
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
     networks:
-      - cardex-net
+      - cardex-monitoring
     ports:
       - "127.0.0.1:9093:9093"
     volumes:
       - alertmanager-data:/alertmanager
-    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+        reservations:
+          cpus: "0.05"
+          memory: 32M
 
   # ── Observability: Grafana ────────────────────────────────────────
   grafana:
+    <<: *hardening
     image: grafana/grafana:11.5.0
     container_name: cardex-grafana
     restart: unless-stopped
     networks:
-      - cardex-net
+      - cardex-monitoring
     ports:
       - "127.0.0.1:3001:3000"     # loopback only — access via SSH tunnel in prod
     volumes:
@@ -167,16 +271,35 @@ services:
       GF_SECURITY_ADMIN_PASSWORD:   ${GRAFANA_ADMIN_PASSWORD:-changeme}
       GF_SERVER_ROOT_URL:           http://localhost:3001
       GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
       GF_USERS_ALLOW_SIGN_UP:       "false"
-    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.05"
+          memory: 64M
 
   # ── Reverse proxy: Caddy ──────────────────────────────────────────
   caddy:
+    <<: *hardening
     image: caddy:2.9-alpine
     container_name: cardex-caddy
     restart: unless-stopped
+    # Caddy binds privileged ports 80/443 — restore only that single capability.
+    cap_add:
+      - NET_BIND_SERVICE
     networks:
-      - cardex-net
+      - cardex-edge
+      - cardex-core
     ports:
       - "80:80"
       - "443:443"
@@ -186,8 +309,17 @@ services:
       - caddy-certs:/config
     environment:
       CARDEX_DOMAIN: ${CARDEX_DOMAIN:-localhost}
-    mem_limit: 128m
-
-volumes:
-  caddy-data:
-  caddy-certs:
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:2019/config/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+        reservations:
+          cpus: "0.05"
+          memory: 32M

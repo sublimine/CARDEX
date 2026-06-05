@@ -1,0 +1,18 @@
+# .dockerignore — innovation/gnn_dealer_inference build context
+data/
+models/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/pytest-cache-files-*
+tests/
+**/test_*.py
+**/*.db
+**/*.sqlite*
+**/*.log
+.env
+.env.*
+*.md
+.git

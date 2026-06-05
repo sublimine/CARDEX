@@ -1,15 +1,20 @@
 # docker-compose.prod.yml — CARDEX production override
-# Used on the Hetzner CX42 VPS (single-node deployment)
+# Used on the Hetzner CX42 VPS (single-node deployment, ~16 GB shared).
 #
 # Usage (on VPS):
 #   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 #
-# Differences from base docker-compose.yml:
+# Inherited from base docker-compose.yml (do NOT repeat here):
+#   - network segmentation (edge/core/monitoring)
+#   - security_opt no-new-privileges + cap_drop ALL (+ NET_BIND_SERVICE for caddy)
+#   - read_only root + tmpfs, healthchecks, CPU/memory reservations
+#
+# Overrides applied here:
 #   - Images pulled from registry instead of built locally
 #   - Grafana NOT exposed externally (access via SSH tunnel: ssh -L 3001:localhost:3001 cardex@vps)
-#   - Resource limits tighter (16 GB shared across all services)
+#   - Resource limits tightened for the single 16 GB node
 #   - Logging via journald (picked up by systemd)
-#   - SQLite DB mounted from /srv/cardex/db on host (persistent NVMe storage)
+#   - SQLite DB + observability data mounted from /srv/cardex on host (persistent NVMe)
 #   - Restart policy: always (not unless-stopped)
 
 services:

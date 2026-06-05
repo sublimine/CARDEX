@@ -1,0 +1,18 @@
+# .dockerignore — innovation/chronos_forecasting build context
+data/
+timeseries/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/pytest-cache-files-*
+tests/
+**/test_*.py
+**/*.db
+**/*.sqlite*
+**/*.log
+.env
+.env.*
+*.md
+.git

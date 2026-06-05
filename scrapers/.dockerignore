@@ -1,0 +1,34 @@
+# .dockerignore — scrapers/ build context
+# Keep all package .py + requirements.txt; drop tests, caches, local state.
+
+# Caches & bytecode
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/pytest-cache-files-*
+
+# Tests are not needed in the runtime image
+tests/
+**/test_*.py
+**/*_test.py
+conftest.py
+
+# Local state, secrets, scratch
+.env
+.env.*
+**/*.db
+**/*.db-wal
+**/*.db-shm
+**/*.sqlite
+**/*.sqlite3
+**/*.log
+.venv/
+venv/
+
+# Docs & VCS noise
+*.md
+.git
+.gitignore

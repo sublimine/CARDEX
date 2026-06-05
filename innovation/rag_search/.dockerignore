@@ -1,0 +1,19 @@
+# .dockerignore — innovation/rag_search build context
+# Runtime data/models are mounted as volumes; never bake them into the image.
+data/
+models/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/pytest-cache-files-*
+tests/
+**/test_*.py
+**/*.db
+**/*.sqlite*
+**/*.log
+.env
+.env.*
+*.md
+.git

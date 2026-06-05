@@ -1,0 +1,68 @@
+# .dockerignore — repo-root build context (deploy/docker/* and services/* images)
+# Goal: ship the smallest, secret-free build context. The Go Dockerfiles only
+# COPY go.work(.sum), discovery/ extraction/ quality/ internal/ services/ and
+# deploy/docker/healthcheck/ — everything below is either secret, large, or
+# irrelevant to those builds. Anything a Dockerfile needs MUST stay un-ignored.
+
+# ── Version control & tooling ────────────────────────────────────
+.git
+.gitignore
+.github
+.vscode
+.cursor
+.claude
+.agents
+**/.idea
+
+# ── Secrets — never copy into an image layer ─────────────────────
+.env
+.env.*
+!.env.example
+secrets/
+deploy/secrets/
+**/*.pem
+**/*.key
+**/*.crt
+**/*.p12
+
+# ── Local databases & data artifacts ─────────────────────────────
+**/*.db
+**/*.db-wal
+**/*.db-shm
+**/*.sqlite
+**/*.sqlite3
+**/*.log
+
+# ── Python caches (scrapers/innovation build via their own contexts) ─
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/pytest-cache-files-*
+**/.mypy_cache/
+**/.ruff_cache/
+**/.venv/
+**/venv/
+
+# ── Node / web build outputs ─────────────────────────────────────
+**/node_modules/
+**/.next/
+**/dist/
+bin/
+*.exe
+
+# ── Trees not needed by the Go (root-context) builds ─────────────
+# Each of these is either not deployed, or built from its own context.
+apps/
+extensions/
+workspace/
+scrapers/
+innovation/
+e2e/
+planning/
+docs/
+
+# ── Docs & local scratch ─────────────────────────────────────────
+*.md
+.playwright-mcp/
+dev-log.txt
+*.png
