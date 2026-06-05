@@ -28,6 +28,7 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+	"io"
 	"math/bits"
 	"net/http"
 	"strings"
@@ -36,7 +37,13 @@ import (
 	"github.com/corona10/goimagehash"
 
 	"cardex.eu/quality/internal/pipeline"
+	"cardex.eu/quality/internal/safeurl"
 )
+
+// maxImageBytes caps image decode input. Images larger than this are refused
+// before image.Decode is asked to allocate. A 20 MiB cap fits 4k JPEGs with
+// generous headroom; multi-GB image bombs are rejected.
+const maxImageBytes = 20 * 1024 * 1024
 
 const (
 	strategyID = "V16"
@@ -163,6 +170,12 @@ func (v *PhotoPHash) Validate(ctx context.Context, vehicle *pipeline.Vehicle) (*
 
 // computePHash downloads the image at url and returns its 64-bit perceptual hash.
 func (v *PhotoPHash) computePHash(ctx context.Context, url string) (uint64, error) {
+	if err := safeurl.CheckURL(url); err != nil {
+		// SSRF guard: refuse to dereference photo URLs that target reserved
+		// hosts. A poisoned vehicle.PhotoURLs entry could otherwise be used to
+		// hit cloud metadata or internal services and have image.Decode panic.
+		return 0, fmt.Errorf("safeurl: %w", err)
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return 0, fmt.Errorf("build request: %w", err)
@@ -178,7 +191,9 @@ func (v *PhotoPHash) computePHash(ctx context.Context, url string) (uint64, erro
 		return 0, fmt.Errorf("HTTP %d for %s", resp.StatusCode, url)
 	}
 
-	img, _, err := image.Decode(resp.Body)
+	// Cap the bytes fed to image.Decode. A multi-GB JPEG would otherwise
+	// allocate proportional RAM during decode.
+	img, _, err := image.Decode(io.LimitReader(resp.Body, maxImageBytes))
 	if err != nil {
 		return 0, fmt.Errorf("decode image %s: %w", url, err)
 	}

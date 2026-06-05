@@ -20,6 +20,7 @@
 package server
 
 import (
+	"io"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -84,6 +85,11 @@ func New(db *DB, store Storage) *Server {
 	}
 }
 
+// maxEdgeVehiclesPerStream caps how many vehicles may accumulate in
+// memory across a single PushListings stream. Beyond this the server
+// aborts the stream with ResourceExhausted.
+const maxEdgeVehiclesPerStream = 100_000
+
 // ─── PushListings ─────────────────────────────────────────────────────────────
 
 // PushListings implements edgepb.EdgePushServer.
@@ -100,9 +106,16 @@ func (s *Server) PushListings(stream edgepb.EdgePush_PushListingsServer) error {
 
 	for {
 		batch, err := stream.Recv()
-		if err != nil {
-			// io.EOF is the normal stream end.
+		if err == io.EOF {
 			break
+		}
+		if err != nil {
+			return status.Errorf(codes.Internal, "stream recv: %v", err)
+		}
+		// Cap the in-memory accumulation. An attacker could otherwise stream
+		// an unbounded sequence of valid batches and exhaust server memory.
+		if len(allVehicles) > maxEdgeVehiclesPerStream {
+			return status.Errorf(codes.ResourceExhausted, "batch limit exceeded")
 		}
 
 		// ── First batch: authenticate ────────────────────────────────────────

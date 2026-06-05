@@ -1,6 +1,7 @@
 package tax
 
 import (
+	"io"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -136,11 +137,14 @@ func (c *VIESClient) fetchVIES(ctx context.Context, cc, number string) (bool, er
 	}
 	defer resp.Body.Close()
 
+	// Cap the VIES response size. Real responses are <1 KiB; anything bigger
+	// is a corrupted or malicious upstream and should not be allowed to
+	// consume process memory.
 	var body struct {
 		IsValid   bool   `json:"isValid"`
 		UserError string `json:"userError"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 64*1024)).Decode(&body); err != nil {
 		return false, err
 	}
 	return body.IsValid, nil

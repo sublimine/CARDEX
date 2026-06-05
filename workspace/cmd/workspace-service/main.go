@@ -301,15 +301,26 @@ func main() {
 	})
 
 	// Wrap main mux with CORS so browser cross-origin calls (tunnel, CDN, etc.) work.
+	//
+	// Tunnel suffixes (trycloudflare, ngrok, etc.) are wildcard-matched, so leaving
+	// them in the default list lets ANY attacker who registers a free tunnel
+	// (https://attacker.trycloudflare.com) make credentialed cross-origin requests
+	// against an authenticated session. Gate them behind CARDEX_CORS_ALLOW_TUNNELS=true
+	// so production deployments are closed-by-default. CORS_ORIGIN remains the
+	// preferred way to whitelist a known production origin.
 	corsOrigins := []string{
 		"http://localhost:5173",
 		"http://localhost:3000",
 		"http://localhost:4173",
-		".trycloudflare.com",
-		".ngrok-free.app",
-		".ngrok.io",
-		".loca.lt",
-		".serveo.net",
+	}
+	if os.Getenv("CARDEX_CORS_ALLOW_TUNNELS") == "true" {
+		corsOrigins = append(corsOrigins,
+			".trycloudflare.com",
+			".ngrok-free.app",
+			".ngrok.io",
+			".loca.lt",
+			".serveo.net",
+		)
 	}
 	if extra := os.Getenv("CORS_ORIGIN"); extra != "" {
 		corsOrigins = append(corsOrigins, extra)

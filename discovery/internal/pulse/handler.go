@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -51,11 +52,15 @@ func handleHealth(w http.ResponseWriter, r *http.Request, db *sql.DB, weights We
 			http.Error(w, fmt.Sprintf("dealer %q not found", dealerID), http.StatusNotFound)
 			return
 		}
-		http.Error(w, "internal error: "+err.Error(), http.StatusInternalServerError)
+		slog.Warn("pulse health: compute signals", "dealer_id", dealerID, "err", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 
-	history, _ := LoadHistory(ctx, db, dealerID, 30)
+	history, herr := LoadHistory(ctx, db, dealerID, 30)
+	if herr != nil {
+		slog.Warn("pulse health: load history", "dealer_id", dealerID, "err", herr)
+	}
 	Score(score, weights, history)
 	ScoreComputeDuration.Observe(time.Since(t0).Seconds())
 
@@ -85,7 +90,8 @@ func handleWatchlist(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 	results, err := Watchlist(ctx, db, maxScore, country)
 	if err != nil {
-		http.Error(w, "internal error: "+err.Error(), http.StatusInternalServerError)
+		slog.Warn("pulse watchlist", "err", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 	writeJSON(w, map[string]any{"dealers": results, "total": len(results)})
@@ -97,7 +103,8 @@ func handleTrend(w http.ResponseWriter, r *http.Request, db *sql.DB, dealerID st
 
 	history, err := LoadHistory(ctx, db, dealerID, 30)
 	if err != nil {
-		http.Error(w, "internal error: "+err.Error(), http.StatusInternalServerError)
+		slog.Warn("pulse trend: load history", "dealer_id", dealerID, "err", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 	writeJSON(w, map[string]any{
@@ -112,6 +119,6 @@ func writeJSON(w http.ResponseWriter, v any) {
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	if err := enc.Encode(v); err != nil {
-		http.Error(w, "encode error: "+err.Error(), http.StatusInternalServerError)
+		slog.Warn("pulse: encode response", "err", err)
 	}
 }

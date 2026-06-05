@@ -255,7 +255,7 @@ func (e *VLMExtractor) fetchListingImageURLs(ctx context.Context, urlRoot string
 		return nil, fmt.Errorf("HTTP %d: access denied", resp.StatusCode)
 	}
 
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	doc, err := goquery.NewDocumentFromReader(io.LimitReader(resp.Body, 4<<20))
 	if err != nil {
 		return nil, fmt.Errorf("parse HTML: %w", err)
 	}

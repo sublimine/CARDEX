@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+// maxBodyBytes caps the JSON request body decoded by this package's
+// handlers to prevent DoS via oversized payloads.
+const maxBodyBytes = 131072
+
+
 // ReorderRequest is the JSON body for PUT /api/v1/vehicles/:id/media/reorder.
 type ReorderRequest struct {
 	PhotoIDs []string `json:"photo_ids"` // ordered list; first = sort_order 0
@@ -36,6 +41,7 @@ func ReorderHandler(storage MediaStorage) http.HandlerFunc {
 		}
 
 		var req ReorderRequest
+		r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "invalid JSON", http.StatusBadRequest)
 			return

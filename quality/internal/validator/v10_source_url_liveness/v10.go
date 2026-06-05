@@ -24,6 +24,7 @@ package v10_source_url_liveness
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -31,6 +32,7 @@ import (
 	"time"
 
 	"cardex.eu/quality/internal/pipeline"
+	"cardex.eu/quality/internal/safeurl"
 )
 
 const (
@@ -101,6 +103,27 @@ func (v *LivenessChecker) Validate(ctx context.Context, vehicle *pipeline.Vehicl
 	}
 
 	result.Evidence["source_url"] = url
+
+	if err := safeurl.CheckURL(url); err != nil {
+		// SSRF guard: refuse to dereference URLs that target private/loopback
+		// hosts or non-http(s) schemes. Treat as a CRITICAL data-quality issue
+		// because such a URL in the catalogue is almost certainly a poisoned
+		// record from a compromised scraper.
+		result.Pass = false
+		result.Severity = pipeline.SeverityCritical
+		switch {
+		case errors.Is(err, safeurl.ErrBlockedScheme):
+			result.Issue = "source URL uses non-http(s) scheme — refusing to fetch"
+		case errors.Is(err, safeurl.ErrBlockedHost):
+			result.Issue = "source URL points at a reserved/private host — refusing to fetch (SSRF guard)"
+		default:
+			result.Issue = "source URL failed safeurl pre-check"
+		}
+		result.Confidence = 1.0
+		result.Suggested["action"] = "remove this vehicle listing or fix the scraper that produced it"
+		result.Evidence["safeurl_error"] = err.Error()
+		return result, nil
+	}
 
 	status, fromCache := v.probe(ctx, url)
 	result.Evidence["http_status"] = fmt.Sprintf("%d", status)
@@ -184,8 +207,39 @@ func (v *LivenessChecker) probe(ctx context.Context, url string) (status int, fr
 	return resp.StatusCode, false
 }
 
+// maxCacheEntries caps the in-memory probe cache to bound RAM growth. A
+// larger value buys more cache hits at the cost of unbounded memory across
+// long-running validation cycles. When the cap is hit, the oldest entries
+// (by checkedAt) are evicted in a single sweep.
+const maxCacheEntries = 50_000
+
 func (v *LivenessChecker) storeCache(url string, status int) {
 	v.mu.Lock()
+	defer v.mu.Unlock()
+	if len(v.cache) >= maxCacheEntries {
+		v.evictExpiredLocked()
+		if len(v.cache) >= maxCacheEntries {
+			// Still over the cap — drop a quarter of entries deterministically
+			// by iteration order. Map iteration order in Go is randomized, so
+			// this approximates a random eviction without ordering overhead.
+			drop := maxCacheEntries / 4
+			for k := range v.cache {
+				delete(v.cache, k)
+				drop--
+				if drop <= 0 {
+					break
+				}
+			}
+		}
+	}
 	v.cache[url] = &cacheEntry{status: status, checkedAt: v.now()}
-	v.mu.Unlock()
+}
+
+func (v *LivenessChecker) evictExpiredLocked() {
+	cutoff := v.now().Add(-v.cacheTTL)
+	for k, e := range v.cache {
+		if e.checkedAt.Before(cutoff) {
+			delete(v.cache, k)
+		}
+	}
 }

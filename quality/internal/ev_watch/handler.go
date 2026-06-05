@@ -1,6 +1,8 @@
 package ev_watch
 
 import (
+	"crypto/subtle"
+	"os"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -26,9 +28,9 @@ func NewHandler(db *sql.DB, log *slog.Logger) *Handler {
 
 // Register mounts the EV watch routes on mux.
 func (h *Handler) Register(mux *http.ServeMux) {
-	mux.HandleFunc("/ev-watch/anomalies", h.serveAnomalies)
-	mux.HandleFunc("/ev-watch/cohort", h.serveCohort)
-	mux.HandleFunc("/ev-watch/run", h.serveRun)
+	mux.HandleFunc("/ev-watch/anomalies", h.requireAuth(h.serveAnomalies))
+	mux.HandleFunc("/ev-watch/cohort", h.requireAuth(h.serveCohort))
+	mux.HandleFunc("/ev-watch/run", h.requireAuth(h.serveRun))
 }
 
 // ── GET /ev-watch/anomalies ───────────────────────────────────────────────────
@@ -349,4 +351,29 @@ func RunAnalysisWithContext(ctx context.Context, db *sql.DB, log *slog.Logger) e
 		"duration_ms", dur.Milliseconds(),
 	)
 	return nil
+}
+
+// requireAuth gates an ev-watch endpoint behind an opt-in bearer token
+// (CARDEX_EV_WATCH_TOKEN). When the env var is unset the endpoint stays
+// open — this preserves the existing internal-only deployment, but lets
+// any operator close the surface with a single env flip.
+func (h *Handler) requireAuth(next http.HandlerFunc) http.HandlerFunc {
+	expected := os.Getenv("CARDEX_EV_WATCH_TOKEN")
+	if expected == "" {
+		return next
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		auth := r.Header.Get("Authorization")
+		const prefix = "Bearer "
+		if !strings.HasPrefix(auth, prefix) {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		got := strings.TrimPrefix(auth, prefix)
+		if subtle.ConstantTimeCompare([]byte(got), []byte(expected)) != 1 {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		next(w, r)
+	}
 }

@@ -9,6 +9,11 @@ import (
 	"time"
 )
 
+// maxBodyBytes caps the JSON request body decoded by this package's
+// handlers to prevent DoS via oversized payloads.
+const maxBodyBytes = 262144
+
+
 // Server exposes the inbox HTTP API.
 type Server struct {
 	convs     *ConversationStore
@@ -145,6 +150,7 @@ func (s *Server) handleReply(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
 	var req ReplyRequest
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeErr(w, http.StatusBadRequest, err)
 		return
@@ -173,6 +179,7 @@ func (s *Server) handlePatchConversation(w http.ResponseWriter, r *http.Request)
 	id := r.PathValue("id")
 
 	var req PatchConversationRequest
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeErr(w, http.StatusBadRequest, err)
 		return
@@ -204,6 +211,7 @@ func (s *Server) handleCreateTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var t Template
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
 		writeErr(w, http.StatusBadRequest, err)
 		return
@@ -227,6 +235,7 @@ func (s *Server) handleUpdateTemplate(w http.ResponseWriter, r *http.Request) {
 		Subject string `json:"subject"`
 		Body    string `json:"body"`
 	}
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeErr(w, http.StatusBadRequest, err)
 		return
@@ -244,6 +253,7 @@ func (s *Server) handleManualIngest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var raw RawInquiry
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
 		writeErr(w, http.StatusBadRequest, err)
 		return
@@ -322,6 +332,7 @@ func (s *Server) handlePatchDeal(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Stage string `json:"stage"`
 	}
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeErr(w, http.StatusBadRequest, err)
 		return
@@ -343,6 +354,7 @@ func (s *Server) handleCreateDeal(w http.ResponseWriter, r *http.Request) {
 		VehicleID string `json:"vehicle_id"`
 		Stage     string `json:"stage"`
 	}
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeErr(w, http.StatusBadRequest, err)
 		return

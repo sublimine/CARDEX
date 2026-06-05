@@ -48,6 +48,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
@@ -130,7 +131,15 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	})
-	srv := &http.Server{Addr: cfg.MetricsAddr, Handler: mux}
+	srv := &http.Server{
+		Addr:              cfg.MetricsAddr,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    1 << 20,
+	}
 	go func() {
 		log.Info("metrics server listening", "addr", cfg.MetricsAddr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -242,5 +251,9 @@ func main() {
 	}
 
 	log.Info("discovery service shutting down")
-	_ = srv.Shutdown(context.Background())
+	shutCtx, shutCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutCancel()
+	if err := srv.Shutdown(shutCtx); err != nil {
+		log.Warn("metrics server shutdown", "err", err)
+	}
 }

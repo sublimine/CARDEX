@@ -28,6 +28,7 @@ package v17_sold_status
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -35,6 +36,7 @@ import (
 	"time"
 
 	"cardex.eu/quality/internal/pipeline"
+	"cardex.eu/quality/internal/safeurl"
 )
 
 const (
@@ -115,6 +117,26 @@ func (v *SoldDetector) Validate(ctx context.Context, vehicle *pipeline.Vehicle) 
 	}
 
 	result.Evidence["source_url"] = sourceURL
+
+	if err := safeurl.CheckURL(sourceURL); err != nil {
+		// SSRF guard: V17 issues an HTTP GET against a URL stored in the
+		// catalogue. If a poisoned scraper writes a metadata-IP URL into the
+		// SourceURL column, V17 would otherwise exfiltrate cloud credentials.
+		result.Pass = false
+		result.Severity = pipeline.SeverityCritical
+		switch {
+		case errors.Is(err, safeurl.ErrBlockedScheme):
+			result.Issue = "source URL uses non-http(s) scheme — refusing to fetch"
+		case errors.Is(err, safeurl.ErrBlockedHost):
+			result.Issue = "source URL targets a reserved/private host — refusing to fetch (SSRF guard)"
+		default:
+			result.Issue = "source URL failed safeurl pre-check"
+		}
+		result.Confidence = 1.0
+		result.Suggested["action"] = "remove vehicle from catalogue and audit the producing scraper"
+		result.Evidence["safeurl_error"] = err.Error()
+		return result, nil
+	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, sourceURL, nil)
 	if err != nil {
