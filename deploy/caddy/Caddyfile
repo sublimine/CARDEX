@@ -86,6 +86,27 @@
         }
     }
 
+    # ── Cross-Border Price Intelligence API ─────────────────────────
+    # Serves /api/v1/* natively (no prefix strip). Auth via X-API-Key header.
+    handle /api/v1/* {
+        reverse_proxy api:8080 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            health_uri /healthz
+            health_interval 30s
+        }
+    }
+
+    # ── API documentation (OpenAPI spec + Swagger UI) ───────────────
+    handle /openapi.yaml {
+        reverse_proxy api:8080
+    }
+    handle /docs {
+        # Relax the global no-script CSP so Swagger UI can load its CDN assets.
+        header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https://cdn.jsdelivr.net; font-src https://cdn.jsdelivr.net"
+        reverse_proxy api:8080
+    }
+
     # ── Grafana (loopback / SSH tunnel only) ────────────────────────
     handle /grafana/* {
         @notlocal not remote_ip 127.0.0.1 ::1

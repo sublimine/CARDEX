@@ -1,0 +1,397 @@
+openapi: 3.1.0
+info:
+  title: CARDEX Cross-Border Price Intelligence API
+  version: "1.0.0"
+  description: |
+    Real-time cross-border used-vehicle price intelligence across 6 European
+    markets (DE, FR, ES, NL, BE, CH).
+
+    - **/market-price** — per-country price percentiles (P10/P25/P50/P75/P90).
+    - **/arbitrage** — ranked cross-border opportunities with net margin after
+      landed cost (transport + VAT + registration tax + fees).
+    - **/landed-cost** — itemized cross-border acquisition cost between any pair.
+    - **/alerts** — persistent arbitrage alerts delivered by webhook or email.
+
+    All money is in EUR. Authenticate with the `X-API-Key` header. Requests are
+    rate-limited per tier (free 100/min, paid 1000/min).
+  contact:
+    name: CARDEX
+    email: api@cardex.eu
+servers:
+  - url: https://api.cardex.eu
+    description: Production
+  - url: http://localhost:8080
+    description: Local
+security:
+  - ApiKeyAuth: []
+tags:
+  - name: pricing
+  - name: arbitrage
+  - name: alerts
+  - name: ops
+paths:
+  /healthz:
+    get:
+      tags: [ops]
+      summary: Liveness/readiness probe
+      security: []
+      responses:
+        "200": { description: Service healthy }
+        "503": { description: A dependency is unavailable }
+  /metrics:
+    get:
+      tags: [ops]
+      summary: Prometheus metrics
+      security: []
+      responses:
+        "200": { description: Prometheus text exposition }
+  /api/v1/market-price:
+    get:
+      tags: [pricing]
+      summary: Per-country price distribution for a vehicle cohort
+      parameters:
+        - $ref: "#/components/parameters/Make"
+        - $ref: "#/components/parameters/Model"
+        - $ref: "#/components/parameters/Year"
+        - $ref: "#/components/parameters/YearMin"
+        - $ref: "#/components/parameters/YearMax"
+        - $ref: "#/components/parameters/Fuel"
+        - $ref: "#/components/parameters/MileageMin"
+        - $ref: "#/components/parameters/MileageMax"
+        - $ref: "#/components/parameters/Countries"
+      responses:
+        "200":
+          description: Market-price distribution per country
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MarketPriceResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /api/v1/arbitrage:
+    get:
+      tags: [arbitrage]
+      summary: Ranked cross-border arbitrage opportunities
+      parameters:
+        - $ref: "#/components/parameters/Make"
+        - $ref: "#/components/parameters/Model"
+        - $ref: "#/components/parameters/Year"
+        - $ref: "#/components/parameters/YearMin"
+        - $ref: "#/components/parameters/YearMax"
+        - $ref: "#/components/parameters/Fuel"
+        - $ref: "#/components/parameters/MileageMin"
+        - $ref: "#/components/parameters/MileageMax"
+        - name: min_margin_pct
+          in: query
+          schema: { type: number, default: 5 }
+          description: Minimum net-margin percentage to include.
+        - name: max_results
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+        - name: buy_country
+          in: query
+          schema: { type: string }
+          description: Comma-separated source countries to restrict to.
+        - name: sell_country
+          in: query
+          schema: { type: string }
+          description: Comma-separated target countries to restrict to.
+        - name: be_region
+          in: query
+          schema: { type: string, enum: [FLANDERS, WALLONIA, BRUSSELS], default: FLANDERS }
+      responses:
+        "200":
+          description: Ranked opportunities
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArbitrageResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /api/v1/landed-cost:
+    get:
+      tags: [arbitrage]
+      summary: Itemized cross-border landed cost between two countries
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema: { type: string }
+          description: Source country (ISO-3166-1 alpha-2).
+        - name: to
+          in: query
+          required: true
+          schema: { type: string }
+          description: Destination country (ISO-3166-1 alpha-2).
+        - name: price
+          in: query
+          required: true
+          schema: { type: number }
+          description: Vehicle price in EUR.
+        - name: co2
+          in: query
+          schema: { type: integer }
+          description: WLTP CO2 emissions g/km.
+        - name: fuel
+          in: query
+          schema: { type: string }
+        - name: age_months
+          in: query
+          schema: { type: integer }
+        - name: km
+          in: query
+          schema: { type: integer }
+        - name: power_kw
+          in: query
+          schema: { type: integer }
+        - name: be_region
+          in: query
+          schema: { type: string, enum: [FLANDERS, WALLONIA, BRUSSELS] }
+      responses:
+        "200":
+          description: Landed-cost breakdown
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LandedCost" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/v1/alerts:
+    get:
+      tags: [alerts]
+      summary: List your arbitrage alerts
+      responses:
+        "200":
+          description: Alert list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerts: { type: array, items: { $ref: "#/components/schemas/Alert" } }
+                  total: { type: integer }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [alerts]
+      summary: Create an arbitrage alert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateAlert" }
+      responses:
+        "201":
+          description: Alert created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Alert" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/v1/alerts/{id}:
+    get:
+      tags: [alerts]
+      summary: Fetch one alert
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Alert
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Alert" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [alerts]
+      summary: Delete an alert
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/NotFound" }
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  parameters:
+    Make:
+      name: make
+      in: query
+      required: true
+      schema: { type: string }
+      description: Vehicle make (case-insensitive).
+    Model:
+      name: model
+      in: query
+      required: true
+      schema: { type: string }
+      description: Vehicle model (case-insensitive).
+    Year:
+      name: year
+      in: query
+      schema: { type: integer }
+      description: Exact model year (alternative to year_min/year_max).
+    YearMin:
+      name: year_min
+      in: query
+      schema: { type: integer }
+    YearMax:
+      name: year_max
+      in: query
+      schema: { type: integer }
+    Fuel:
+      name: fuel
+      in: query
+      schema: { type: string }
+      description: Fuel type (case-insensitive substring match).
+    MileageMin:
+      name: mileage_min
+      in: query
+      schema: { type: integer }
+    MileageMax:
+      name: mileage_max
+      in: query
+      schema: { type: integer }
+    Countries:
+      name: countries
+      in: query
+      schema: { type: string }
+      description: Comma-separated subset of DE,FR,ES,NL,BE,CH.
+  responses:
+    BadRequest:
+      description: Invalid parameters
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    RateLimited:
+      description: Rate limit exceeded
+      headers:
+        Retry-After: { schema: { type: integer } }
+        X-RateLimit-Limit: { schema: { type: integer } }
+        X-RateLimit-Remaining: { schema: { type: integer } }
+        X-RateLimit-Reset: { schema: { type: integer } }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: { type: string }
+            message: { type: string }
+    CountryStats:
+      type: object
+      properties:
+        country: { type: string }
+        count: { type: integer }
+        p10: { type: number }
+        p25: { type: number }
+        p50: { type: number }
+        p75: { type: number }
+        p90: { type: number }
+        avg: { type: number }
+        min: { type: number }
+        max: { type: number }
+    MarketPriceResponse:
+      type: object
+      properties:
+        query: { type: object }
+        currency: { type: string, example: EUR }
+        countries:
+          type: array
+          items: { $ref: "#/components/schemas/CountryStats" }
+    Listing:
+      type: object
+      properties:
+        id: { type: string }
+        make: { type: string }
+        model: { type: string }
+        year: { type: integer }
+        mileage_km: { type: integer }
+        fuel_type: { type: string }
+        co2_gkm: { type: integer }
+        price_eur: { type: number }
+        source_country: { type: string }
+        source_url: { type: string }
+    LandedCost:
+      type: object
+      properties:
+        from_country: { type: string }
+        to_country: { type: string }
+        vehicle_price_eur: { type: number }
+        transport_eur: { type: number }
+        vat_eur: { type: number }
+        vat_note: { type: string }
+        registration_tax_eur: { type: number }
+        registration_method: { type: string }
+        registration_note: { type: string }
+        admin_fees_eur: { type: number }
+        total_landed_cost_eur: { type: number }
+        is_new_vehicle: { type: boolean }
+    Opportunity:
+      type: object
+      properties:
+        buy_country: { type: string }
+        sell_country: { type: string }
+        listing: { $ref: "#/components/schemas/Listing" }
+        sell_market_p50_eur: { type: number }
+        landed_cost: { $ref: "#/components/schemas/LandedCost" }
+        net_margin_eur: { type: number }
+        margin_pct: { type: number }
+    ArbitrageResponse:
+      type: object
+      properties:
+        query: { type: object }
+        currency: { type: string }
+        market_context:
+          type: array
+          items: { $ref: "#/components/schemas/CountryStats" }
+        opportunities:
+          type: array
+          items: { $ref: "#/components/schemas/Opportunity" }
+        generated_at: { type: string, format: date-time }
+    CreateAlert:
+      type: object
+      required: [make, model]
+      properties:
+        make: { type: string }
+        model: { type: string }
+        year_min: { type: integer }
+        year_max: { type: integer }
+        fuel: { type: string }
+        mileage_min: { type: integer }
+        mileage_max: { type: integer }
+        buy_countries: { type: array, items: { type: string } }
+        sell_countries: { type: array, items: { type: string } }
+        min_margin_pct: { type: number, default: 5 }
+        webhook_url: { type: string }
+        email: { type: string }
+    Alert:
+      allOf:
+        - $ref: "#/components/schemas/CreateAlert"
+        - type: object
+          properties:
+            id: { type: string }
+            owner: { type: string }
+            active: { type: boolean }
+            created_at: { type: string, format: date-time }
+            last_fired_at: { type: string, format: date-time }
