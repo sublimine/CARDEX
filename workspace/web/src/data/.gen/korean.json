@@ -1,0 +1,694 @@
+{
+  "brands": [
+    {
+      "name": "Hyundai",
+      "models": [
+        {
+          "name": "Accent",
+          "submodels": [
+            "1.4 MPI 100cv",
+            "1.4 CRDi 90cv",
+            "1.6 CRDi 128cv",
+            "1.5 MPI 102cv",
+            "1.6 MPI 120cv",
+            "1.4 T-GDI 140cv",
+            "1.6 CRDi 110cv"
+          ]
+        },
+        {
+          "name": "Bayon",
+          "submodels": [
+            "1.0 T-GDI 100cv",
+            "1.0 T-GDI 120cv",
+            "1.2 MPI 84cv",
+            "1.0 T-GDI 100cv 48V Mild Hybrid",
+            "1.0 T-GDI 120cv 48V Mild Hybrid"
+          ]
+        },
+        {
+          "name": "Elantra",
+          "submodels": [
+            "1.6 MPI 122cv",
+            "1.6 CRDi 136cv",
+            "1.4 T-GDI 140cv",
+            "1.6 T-GDI 204cv",
+            "2.0 MPI 152cv",
+            "1.5 T-GDI 160cv",
+            "1.6 CRDi 115cv",
+            "2.0 T-GDI 280cv N",
+            "2.0 T-GDI 300cv N Performance",
+            "Hybrid 1.6 GDI 141cv"
+          ]
+        },
+        {
+          "name": "i10",
+          "submodels": [
+            "1.0 MPI 65cv",
+            "1.0 MPI 67cv",
+            "1.1 CRDi 75cv",
+            "1.2 MPI 86cv",
+            "1.2 MPI 84cv",
+            "1.0 T-GDI 100cv",
+            "1.0 MPI 63cv",
+            "1.0 MPI 72cv",
+            "N Line 1.0 T-GDI 100cv"
+          ]
+        },
+        {
+          "name": "i20",
+          "submodels": [
+            "1.2 MPI 75cv",
+            "1.2 MPI 84cv",
+            "1.4 MPI 100cv",
+            "1.4 CRDi 75cv",
+            "1.4 CRDi 90cv",
+            "1.6 CRDi 115cv",
+            "1.6 CRDi 128cv",
+            "1.0 T-GDI 100cv",
+            "1.0 T-GDI 120cv",
+            "1.4 T-GDI 100cv",
+            "1.0 T-GDI 100cv 48V Mild Hybrid",
+            "1.0 T-GDI 120cv 48V Mild Hybrid",
+            "N Line 1.0 T-GDI 100cv",
+            "N Line 1.0 T-GDI 120cv",
+            "Active 1.0 T-GDI 100cv"
+          ]
+        },
+        {
+          "name": "i20 N",
+          "submodels": [
+            "2.0 T-GDI 204cv",
+            "1.6 T-GDI 204cv"
+          ]
+        },
+        {
+          "name": "i30",
+          "submodels": [
+            "1.0 T-GDI 120cv",
+            "1.4 T-GDI 140cv",
+            "1.5 T-GDI 110cv",
+            "1.5 T-GDI 160cv",
+            "1.6 CRDi 110cv",
+            "1.6 CRDi 136cv",
+            "2.0 T-GDI 275cv N",
+            "2.0 T-GDI 280cv N",
+            "2.0 T-GDI 300cv N Performance",
+            "N Line 1.5 T-GDI 160cv",
+            "1.4 MPI 100cv",
+            "1.6 GDI 135cv",
+            "1.6 CRDi 90cv",
+            "1.6 CRDi 115cv",
+            "2.0 CRDi 136cv",
+            "1.8 MPI 140cv"
+          ]
+        },
+        {
+          "name": "i30 N",
+          "submodels": [
+            "2.0 T-GDI 250cv",
+            "2.0 T-GDI 275cv",
+            "2.0 T-GDI 280cv",
+            "2.0 T-GDI 300cv Performance"
+          ]
+        },
+        {
+          "name": "i30 Wagon",
+          "submodels": [
+            "1.0 T-GDI 120cv",
+            "1.4 T-GDI 140cv",
+            "1.5 T-GDI 110cv",
+            "1.5 T-GDI 160cv",
+            "1.6 CRDi 110cv",
+            "1.6 CRDi 136cv",
+            "N Line 1.5 T-GDI 160cv",
+            "1.4 MPI 100cv",
+            "1.6 GDI 135cv",
+            "2.0 CRDi 136cv",
+            "1.6 CRDi 115cv"
+          ]
+        },
+        {
+          "name": "i40",
+          "submodels": [
+            "1.6 GDI 135cv",
+            "2.0 GDI 177cv",
+            "1.7 CRDi 115cv",
+            "1.7 CRDi 136cv",
+            "2.0 CRDi 136cv",
+            "2.0 CRDi 185cv"
+          ]
+        },
+        {
+          "name": "i40 CW",
+          "submodels": [
+            "1.6 GDI 135cv",
+            "2.0 GDI 177cv",
+            "1.7 CRDi 115cv",
+            "1.7 CRDi 136cv",
+            "2.0 CRDi 136cv",
+            "2.0 CRDi 185cv"
+          ]
+        },
+        {
+          "name": "Ioniq",
+          "submodels": [
+            "Hybrid 1.6 GDI 141cv",
+            "Plug-in Hybrid 1.6 GDI 141cv",
+            "Electric 136cv",
+            "Electric 120cv"
+          ]
+        },
+        {
+          "name": "Ioniq 5",
+          "submodels": [
+            "58kWh 170cv",
+            "72.6kWh RWD 218cv",
+            "72.6kWh AWD 305cv",
+            "Project 45 72.6kWh 218cv",
+            "N 84kWh 650cv",
+            "N Performance 740cv",
+            "58kWh AWD 233cv",
+            "84kWh RWD 225cv",
+            "84kWh AWD 325cv"
+          ]
+        },
+        {
+          "name": "Ioniq 5 N",
+          "submodels": [
+            "84kWh 650cv",
+            "84kWh N Performance 740cv"
+          ]
+        },
+        {
+          "name": "Ioniq 6",
+          "submodels": [
+            "53kWh 151cv",
+            "77.4kWh RWD 228cv",
+            "77.4kWh AWD 325cv",
+            "Techniq 77.4kWh 228cv",
+            "77.4kWh RWD 240cv",
+            "77.4kWh AWD 320cv"
+          ]
+        },
+        {
+          "name": "Kona",
+          "submodels": [
+            "1.0 T-GDI 120cv",
+            "1.6 T-GDI 177cv",
+            "1.6 CRDi 115cv",
+            "1.6 CRDi 136cv",
+            "2.0 MPI 120cv",
+            "1.0 T-GDI 120cv 48V Mild Hybrid",
+            "N Line 1.0 T-GDI 120cv",
+            "N 2.0 T-GDI 280cv",
+            "1.6 T-GDI 198cv",
+            "1.6 HEV 141cv"
+          ]
+        },
+        {
+          "name": "Kona Electric",
+          "submodels": [
+            "39.2kWh 136cv",
+            "64kWh 204cv",
+            "65.4kWh 218cv",
+            "48.4kWh 156cv",
+            "Electric 136cv",
+            "Electric 204cv"
+          ]
+        },
+        {
+          "name": "NEXO",
+          "submodels": [
+            "Fuel Cell 163cv",
+            "Fuel Cell AWD 163cv"
+          ]
+        },
+        {
+          "name": "Santa Fe",
+          "submodels": [
+            "2.0 CRDi 150cv",
+            "2.0 CRDi 185cv",
+            "2.2 CRDi 200cv",
+            "2.4 GDI 185cv",
+            "2.7 V6 189cv",
+            "3.5 V6 GDI 249cv",
+            "2.0 T-GDI 235cv",
+            "2.0 CRDi 4WD 185cv",
+            "2.2 CRDi 4WD 200cv",
+            "1.6 T-GDI Hybrid 230cv",
+            "1.6 T-GDI PHEV 265cv",
+            "2.2 CRDi 4WD 194cv",
+            "2.5 T-GDI 277cv",
+            "2.5 T-GDI PHEV 305cv",
+            "2.5 T-GDI AWD 277cv"
+          ]
+        },
+        {
+          "name": "Staria",
+          "submodels": [
+            "2.2 CRDi 177cv",
+            "2.2 CRDi 4WD 177cv",
+            "3.5 V6 GDI 272cv"
+          ]
+        },
+        {
+          "name": "Tucson",
+          "submodels": [
+            "1.6 CRDi 115cv",
+            "1.6 CRDi 136cv",
+            "1.6 T-GDI 150cv",
+            "2.0 CRDi 186cv",
+            "2.0 CRDi 4WD 186cv",
+            "1.6 T-GDI Hybrid 230cv",
+            "1.6 T-GDI PHEV 265cv",
+            "4WD 2.0 CRDi 185cv",
+            "2.0 MPI 155cv",
+            "1.6 T-GDI 177cv",
+            "2.0 CRDi 136cv",
+            "1.7 CRDi 115cv",
+            "1.7 CRDi 141cv",
+            "2.0 GDI 163cv",
+            "2.4 GDI 185cv",
+            "2.0 CRDi 185cv",
+            "2.0 CRDi AWD 185cv",
+            "1.6 T-GDI AWD 177cv",
+            "N Line 1.6 T-GDI 150cv",
+            "N Line 1.6 CRDi 136cv"
+          ]
+        },
+        {
+          "name": "Veloster",
+          "submodels": [
+            "1.4 T-GDI 140cv",
+            "1.6 T-GDI 186cv",
+            "2.0 T-GDI 275cv N",
+            "2.0 MPI 132cv",
+            "1.6 GDI 140cv"
+          ]
+        },
+        {
+          "name": "Inster",
+          "submodels": [
+            "42kWh 115cv",
+            "49kWh 115cv",
+            "Long Range 49kWh 115cv",
+            "Standard 42kWh 97cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Kia",
+      "models": [
+        {
+          "name": "Carens",
+          "submodels": [
+            "1.6 GDI 135cv",
+            "1.7 CRDi 115cv",
+            "1.7 CRDi 136cv",
+            "2.0 CRDi 136cv",
+            "2.0 MPI 140cv",
+            "1.6 T-GDI 135cv",
+            "1.6 CRDi 115cv",
+            "1.6 CRDi 136cv"
+          ]
+        },
+        {
+          "name": "Carnival",
+          "submodels": [
+            "2.2 CRDi 200cv",
+            "2.2 CRDi 4WD 200cv",
+            "3.5 V6 GDI 272cv",
+            "2.2 CRDi 185cv",
+            "2.9 CRDi 185cv",
+            "2.7 V6 189cv",
+            "3.5 MPi 294cv"
+          ]
+        },
+        {
+          "name": "Ceed",
+          "submodels": [
+            "1.0 T-GDI 100cv",
+            "1.0 T-GDI 120cv",
+            "1.4 T-GDI 140cv",
+            "1.5 T-GDI 160cv",
+            "1.6 CRDi 115cv",
+            "1.6 CRDi 136cv",
+            "1.4 MPI 100cv",
+            "1.6 GDI 135cv",
+            "2.0 CRDi 136cv",
+            "1.6 T-GDI 204cv",
+            "Plug-in Hybrid 1.6 GDI 141cv",
+            "1.6 CRDi 90cv",
+            "1.4 CRDi 90cv",
+            "2.0 MPI 158cv",
+            "GT Line 1.5 T-GDI 160cv",
+            "GT Line 1.0 T-GDI 120cv",
+            "GT 1.6 T-GDI 204cv"
+          ]
+        },
+        {
+          "name": "Ceed GT",
+          "submodels": [
+            "1.6 T-GDI 204cv",
+            "1.6 T-GDI 204cv DCT"
+          ]
+        },
+        {
+          "name": "Ceed SW",
+          "submodels": [
+            "1.0 T-GDI 100cv",
+            "1.0 T-GDI 120cv",
+            "1.4 T-GDI 140cv",
+            "1.5 T-GDI 160cv",
+            "1.6 CRDi 115cv",
+            "1.6 CRDi 136cv",
+            "1.6 GDI 135cv",
+            "Plug-in Hybrid 1.6 GDI 141cv",
+            "GT Line 1.5 T-GDI 160cv",
+            "GT 1.6 T-GDI 204cv"
+          ]
+        },
+        {
+          "name": "EV3",
+          "submodels": [
+            "58.3kWh 204cv",
+            "81.4kWh 204cv",
+            "Long Range 81.4kWh 204cv"
+          ]
+        },
+        {
+          "name": "EV6",
+          "submodels": [
+            "EV6 58kWh 170cv",
+            "EV6 77.4kWh RWD 228cv",
+            "EV6 77.4kWh AWD 325cv",
+            "EV6 GT 4WD 585cv",
+            "EV6 GT-line 77.4kWh 228cv",
+            "EV6 Air 58kWh 170cv",
+            "EV6 77.4kWh RWD 240cv",
+            "EV6 77.4kWh AWD 320cv"
+          ]
+        },
+        {
+          "name": "EV6 GT",
+          "submodels": [
+            "4WD 77.4kWh 585cv",
+            "4WD 77.4kWh 609cv"
+          ]
+        },
+        {
+          "name": "EV9",
+          "submodels": [
+            "77.4kWh RWD 204cv",
+            "99.8kWh RWD 150cv",
+            "99.8kWh AWD 283cv",
+            "99.8kWh AWD 384cv",
+            "GT-line 99.8kWh AWD 283cv",
+            "GT 99.8kWh AWD 501cv"
+          ]
+        },
+        {
+          "name": "K5",
+          "submodels": [
+            "1.6 T-GDI 180cv",
+            "2.0 MPI 160cv",
+            "2.0 T-GDI 245cv",
+            "1.6 T-GDI 180cv AWD",
+            "2.5 T-GDI 290cv",
+            "Hybrid 2.0 GDI 180cv"
+          ]
+        },
+        {
+          "name": "Niro",
+          "submodels": [
+            "Hybrid 1.6 GDI 141cv",
+            "Plug-in Hybrid 1.6 GDI 141cv",
+            "1.6 CRDi 110cv",
+            "HEV 1.6 GDI 141cv",
+            "PHEV 1.6 GDI 183cv"
+          ]
+        },
+        {
+          "name": "Niro EV",
+          "submodels": [
+            "64kWh 204cv",
+            "39.2kWh 136cv",
+            "64.8kWh 204cv"
+          ]
+        },
+        {
+          "name": "Niro Plug-in",
+          "submodels": [
+            "1.6 GDI PHEV 141cv",
+            "1.6 GDI PHEV 183cv"
+          ]
+        },
+        {
+          "name": "Picanto",
+          "submodels": [
+            "1.0 MPI 67cv",
+            "1.0 MPI 69cv",
+            "1.2 MPI 84cv",
+            "1.0 T-GDI 100cv",
+            "1.0 MPI 65cv",
+            "GT 1.0 T-GDI 100cv",
+            "GT-line 1.0 T-GDI 100cv",
+            "1.1 CRDi 75cv"
+          ]
+        },
+        {
+          "name": "ProCeed",
+          "submodels": [
+            "1.5 T-GDI 160cv",
+            "1.4 T-GDI 140cv",
+            "1.6 T-GDI 204cv GT",
+            "GT 1.6 T-GDI 204cv",
+            "GT-line 1.5 T-GDI 160cv",
+            "1.6 CRDi 136cv"
+          ]
+        },
+        {
+          "name": "Rio",
+          "submodels": [
+            "1.2 MPI 84cv",
+            "1.4 MPI 100cv",
+            "1.0 T-GDI 100cv",
+            "1.0 T-GDI 120cv",
+            "1.4 CRDi 90cv",
+            "1.1 CRDi 75cv",
+            "1.6 CRDi 110cv",
+            "1.4 CRDi 75cv",
+            "1.4 CVVT 109cv",
+            "GT-line 1.0 T-GDI 100cv",
+            "GT-line 1.0 T-GDI 120cv"
+          ]
+        },
+        {
+          "name": "Soul",
+          "submodels": [
+            "1.6 GDI 130cv",
+            "1.6 CRDi 128cv",
+            "2.0 MPI 142cv",
+            "1.0 T-GDI 120cv",
+            "1.6 T-GDI 204cv",
+            "1.6 CRDi 136cv"
+          ]
+        },
+        {
+          "name": "Soul EV",
+          "submodels": [
+            "27kWh 109cv",
+            "64kWh 204cv",
+            "39.2kWh 136cv"
+          ]
+        },
+        {
+          "name": "Sportage",
+          "submodels": [
+            "1.6 GDi 132cv",
+            "1.6 CRDi 115cv",
+            "1.6 CRDi 136cv",
+            "2.0 CRDi 185cv",
+            "2.0 CRDi AWD 185cv",
+            "1.6 T-GDI Hybrid 230cv",
+            "1.6 T-GDI PHEV 265cv",
+            "1.6 T-GDI 150cv",
+            "1.6 T-GDI AWD 180cv",
+            "2.0 MPI 163cv",
+            "2.4 GDI 185cv",
+            "1.7 CRDi 115cv",
+            "1.7 CRDi 141cv",
+            "2.0 CRDi 136cv",
+            "2.0 CRDi 4WD 136cv",
+            "2.0 CRDi AWD 136cv",
+            "GT-line 1.6 T-GDI 150cv",
+            "GT-line 1.6 CRDi 136cv"
+          ]
+        },
+        {
+          "name": "Stinger",
+          "submodels": [
+            "2.0 T-GDI 255cv",
+            "2.0 T-GDI AWD 255cv",
+            "3.3 T-GDI AWD 370cv",
+            "GT 3.3 T-GDI AWD 370cv",
+            "GT-S 3.3 T-GDI AWD 370cv",
+            "2.5 T-GDI AWD 304cv"
+          ]
+        },
+        {
+          "name": "Stonic",
+          "submodels": [
+            "1.0 T-GDI 100cv",
+            "1.0 T-GDI 120cv",
+            "1.4 MPI 100cv",
+            "1.6 CRDi 110cv",
+            "1.0 T-GDI 100cv 48V Mild Hybrid",
+            "1.0 T-GDI 120cv 48V Mild Hybrid",
+            "GT-line 1.0 T-GDI 120cv"
+          ]
+        },
+        {
+          "name": "Sorento",
+          "submodels": [
+            "2.0 CRDi 150cv",
+            "2.0 CRDi 185cv",
+            "2.2 CRDi 200cv",
+            "2.4 MPI 175cv",
+            "2.4 GDI 192cv",
+            "3.5 V6 272cv",
+            "2.5 CRDi 170cv",
+            "2.5 CRDi 4WD 170cv",
+            "3.3 V6 GDI 250cv",
+            "1.6 T-GDI Hybrid 230cv",
+            "1.6 T-GDI PHEV 265cv",
+            "2.2 CRDi 4WD 200cv",
+            "2.2 CRDi AWD 194cv",
+            "GT-line 2.2 CRDi AWD 200cv"
+          ]
+        },
+        {
+          "name": "Venga",
+          "submodels": [
+            "1.4 MPI 90cv",
+            "1.6 MPI 125cv",
+            "1.4 CRDi 90cv",
+            "1.6 CRDi 90cv",
+            "1.6 CRDi 128cv"
+          ]
+        },
+        {
+          "name": "XCeed",
+          "submodels": [
+            "1.0 T-GDI 120cv",
+            "1.4 T-GDI 140cv",
+            "1.5 T-GDI 160cv",
+            "1.6 CRDi 115cv",
+            "1.6 CRDi 136cv",
+            "Plug-in Hybrid 1.6 GDI 141cv",
+            "GT-line 1.5 T-GDI 160cv",
+            "GT-line 1.6 CRDi 136cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Genesis",
+      "models": [
+        {
+          "name": "G70",
+          "submodels": [
+            "2.0 T-GDI 252cv",
+            "2.0 T-GDI AWD 252cv",
+            "3.3 T-GDI AWD 370cv",
+            "2.2 CRDi 202cv",
+            "2.2 CRDi AWD 202cv",
+            "2.5 T-GDI 304cv",
+            "2.5 T-GDI AWD 304cv"
+          ]
+        },
+        {
+          "name": "G70 Shooting Brake",
+          "submodels": [
+            "2.0 T-GDI 252cv",
+            "2.0 T-GDI AWD 252cv",
+            "2.2 CRDi 202cv",
+            "2.5 T-GDI 304cv",
+            "2.5 T-GDI AWD 304cv"
+          ]
+        },
+        {
+          "name": "G80",
+          "submodels": [
+            "2.5 T-GDI 304cv",
+            "2.5 T-GDI AWD 304cv",
+            "3.5 T-GDI AWD 375cv",
+            "3.8 GDi AWD 315cv",
+            "3.3 T-GDi AWD 370cv",
+            "Electrified 2WD 272cv",
+            "Electrified AWD 365cv",
+            "3.8 GDi 333cv",
+            "5.0 V8 GDi 425cv"
+          ]
+        },
+        {
+          "name": "G80 Electrified",
+          "submodels": [
+            "2WD 272cv",
+            "AWD 365cv"
+          ]
+        },
+        {
+          "name": "G90",
+          "submodels": [
+            "3.3 T-GDI AWD 370cv",
+            "3.8 GDi AWD 315cv",
+            "5.0 V8 GDi AWD 425cv",
+            "3.5 T-GDI AWD 375cv",
+            "5.0 GDi AWD 425cv"
+          ]
+        },
+        {
+          "name": "GV60",
+          "submodels": [
+            "58kWh 226cv",
+            "77.4kWh RWD 228cv",
+            "77.4kWh AWD 320cv",
+            "Sport AWD 320cv",
+            "Sport Plus AWD 360cv",
+            "Performance AWD 483cv"
+          ]
+        },
+        {
+          "name": "GV70",
+          "submodels": [
+            "2.5 T-GDI 304cv",
+            "2.5 T-GDI AWD 304cv",
+            "3.5 T-GDI AWD 375cv",
+            "2.2 CRDi AWD 210cv",
+            "2.2 CRDi 210cv",
+            "Sport 3.5 T-GDI AWD 375cv"
+          ]
+        },
+        {
+          "name": "GV70 Electrified",
+          "submodels": [
+            "AWD 360cv",
+            "AWD 490cv"
+          ]
+        },
+        {
+          "name": "GV80",
+          "submodels": [
+            "2.5 T-GDI 304cv",
+            "2.5 T-GDI AWD 304cv",
+            "3.5 T-GDI AWD 375cv",
+            "2.2 CRDi AWD 210cv",
+            "3.0 CRDi AWD 278cv"
+          ]
+        }
+      ]
+    }
+  ]
+}

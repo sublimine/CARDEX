@@ -2,6 +2,17 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import { api, setAccessToken, setTenantId, setTokenExpiry, getStoredToken, getStoredTenantId, isTokenValid } from '../api/client'
 import type { User } from '../types'
 
+// DEV BYPASS — set to false to re-enable real auth
+const DEV_BYPASS = true
+
+const DEV_USER: User = {
+  id: 'dev-001',
+  email: 'demo@cardex.dev',
+  name: 'Demo User',
+  tenantId: 'tenant-dev',
+  role: 'admin',
+}
+
 interface AuthState {
   user: User | null
   isLoading: boolean
@@ -19,6 +30,7 @@ interface LoginResponse { token: string; expires_in: number; user: User }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>(() => {
+    if (DEV_BYPASS) return { user: DEV_USER, isLoading: false, isAuthenticated: true }
     // Restore session from localStorage on init
     if (isTokenValid()) {
       const tid = getStoredTenantId()
@@ -30,6 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Hydrate user from /auth/me if we have a stored token
   useEffect(() => {
+    if (DEV_BYPASS) return
     if (!isTokenValid()) return
     api.get<{ user: User }>('/auth/me')
       .then(data => {
@@ -44,12 +57,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
+    if (DEV_BYPASS) return
     setAccessToken(null)
     setTenantId(null)
     setState({ user: null, isLoading: false, isAuthenticated: false })
   }, [])
 
   const login = useCallback(async (email: string, password: string) => {
+    if (DEV_BYPASS) {
+      setState({ user: { ...DEV_USER, email: email || DEV_USER.email }, isLoading: false, isAuthenticated: true })
+      return
+    }
     setState(s => ({ ...s, isLoading: true }))
     try {
       const data = await api.post<LoginResponse>('/auth/login', { email, password })

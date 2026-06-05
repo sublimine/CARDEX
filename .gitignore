@@ -17,3 +17,9 @@ secrets/
 # Python
 **/__pycache__/
 *.pyc
+
+# Local tooling / debug artifacts (Playwright MCP cache, dev scratch, debug screenshots)
+.playwright-mcp/
+dev-log.txt
+identity-section.png
+sidebar-dark.png

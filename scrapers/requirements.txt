@@ -11,4 +11,4 @@ curl_cffi>=0.15.1
 camoufox[geoip]>=0.4.11
 capsolver>=1.1.0
 brotli>=1.1.0
-prometheus_client>=0.20.0
+markitdown[pdf,docx,xlsx]>=0.1.0

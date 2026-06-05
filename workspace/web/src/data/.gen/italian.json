@@ -1,0 +1,1256 @@
+{
+  "brands": [
+    {
+      "name": "Fiat",
+      "models": [
+        {
+          "name": "124 Spider",
+          "submodels": [
+            "1.4 MultiAir Turbo 140cv",
+            "1.4 MultiAir Turbo 140cv Limited Edition",
+            "Lusso 1.4 MultiAir Turbo 140cv",
+            "Lusso Plus 1.4 MultiAir Turbo 140cv",
+            "S-Design 1.4 MultiAir Turbo 140cv",
+            "Abarth 1.4 MultiAir Turbo 170cv",
+            "Abarth Heritage 1.4 MultiAir Turbo 170cv"
+          ]
+        },
+        {
+          "name": "500",
+          "submodels": [
+            "500 1.0 Hybrid 70cv",
+            "500 1.2 69cv",
+            "500 1.2 8v 69cv",
+            "500 1.4 100cv",
+            "500 0.9 TwinAir 80cv",
+            "500 0.9 TwinAir 85cv",
+            "500 0.9 TwinAir 105cv Turbo",
+            "500 Cult 1.2 69cv",
+            "500 S 1.4 100cv",
+            "500 Rockstar 1.2 69cv",
+            "500e 42kWh 118cv",
+            "500 Abarth 595 1.4T 145cv",
+            "500 Abarth 595C Turismo 165cv",
+            "500 Abarth 595 Competizione 180cv",
+            "500 Lounge 1.2 69cv",
+            "500 Sport 1.4 100cv",
+            "500 Pop 1.2 69cv",
+            "500 Star 1.2 69cv",
+            "500 Mirror 1.2 69cv",
+            "500 Collezione 1.2 69cv",
+            "500 60th Anniversary 1.0 Hybrid 70cv",
+            "500 La Prima 1.0 Hybrid 70cv",
+            "500 Icon 1.0 Hybrid 70cv",
+            "500 Dolcevita 1.0 Hybrid 70cv"
+          ]
+        },
+        {
+          "name": "500 Abarth",
+          "submodels": [
+            "500 Abarth 1.4 T-Jet 135cv",
+            "500 Abarth 1.4 T-Jet 145cv",
+            "500 Abarth 1.4 T-Jet 160cv",
+            "500 Abarth Esseesse 1.4 T-Jet 160cv",
+            "595 Abarth 1.4 T-Jet 145cv",
+            "595 Abarth Turismo 1.4 T-Jet 165cv",
+            "595 Abarth Competizione 1.4 T-Jet 180cv"
+          ]
+        },
+        {
+          "name": "500C",
+          "submodels": [
+            "500C 1.2 69cv",
+            "500C 1.4 100cv",
+            "500C 0.9 TwinAir 80cv",
+            "500C 0.9 TwinAir 85cv",
+            "500C 1.0 Hybrid 70cv",
+            "500C Lounge 1.2 69cv",
+            "500C Pop 1.2 69cv",
+            "500C Star 1.2 69cv",
+            "500C Dolcevita 1.0 Hybrid 70cv",
+            "500C La Prima 1.0 Hybrid 70cv"
+          ]
+        },
+        {
+          "name": "500L",
+          "submodels": [
+            "500L 1.3 Multijet 85cv",
+            "500L 1.3 Multijet 95cv",
+            "500L 1.4 95cv",
+            "500L 1.6 Multijet 105cv",
+            "500L 1.6 Multijet 120cv",
+            "500L 0.9 TwinAir 105cv",
+            "500L 1.4 T-Jet 120cv",
+            "500L 1.3 Multijet 16v 95cv",
+            "500L Pop 1.4 95cv",
+            "500L Lounge 1.6 Multijet 120cv",
+            "500L Urban 1.4 95cv",
+            "500L Trekking 1.6 Multijet 120cv",
+            "500L Business 1.3 Multijet 95cv",
+            "500L Mirror 1.4 95cv",
+            "500L S-Design 1.4 T-Jet 120cv"
+          ]
+        },
+        {
+          "name": "500L Cross",
+          "submodels": [
+            "500L Cross 1.3 Multijet 95cv",
+            "500L Cross 1.4 95cv",
+            "500L Cross 1.4 T-Jet 120cv",
+            "500L Cross 1.6 Multijet 120cv"
+          ]
+        },
+        {
+          "name": "500L Wagon",
+          "submodels": [
+            "500L Wagon 1.3 Multijet 95cv",
+            "500L Wagon 1.6 Multijet 105cv",
+            "500L Wagon 1.6 Multijet 120cv",
+            "500L Wagon 0.9 TwinAir 105cv",
+            "500L Wagon 1.4 T-Jet 120cv",
+            "500L Wagon Pop Star 1.6 Multijet 120cv",
+            "500L Wagon Lounge 1.6 Multijet 120cv",
+            "500L Wagon Business 1.6 Multijet 120cv"
+          ]
+        },
+        {
+          "name": "500X",
+          "submodels": [
+            "500X 1.4 MultiAir 140cv",
+            "500X 1.4 T-Jet 120cv",
+            "500X 1.3 Multijet 95cv",
+            "500X 1.6 Multijet 120cv",
+            "500X 2.0 Multijet 140cv",
+            "500X 1.0 FireFly T3 120cv",
+            "500X 1.3 FireFly T4 150cv",
+            "500X 1.5 Hybrid 130cv",
+            "500X Pop 1.0 120cv",
+            "500X Sport 1.3 T4 150cv",
+            "500X City Cross 1.0 FireFly T3 120cv",
+            "500X Trekking 1.4 MultiAir 140cv",
+            "500X Mirror 1.4 T-Jet 120cv",
+            "500X Cross Plus 2.0 Multijet 4x4 140cv",
+            "500X S-Design 1.3 T4 150cv",
+            "500X Club 1.5 Hybrid 130cv",
+            "500X Red 1.5 Hybrid 130cv"
+          ]
+        },
+        {
+          "name": "500e",
+          "submodels": [
+            "500e 42kWh 118cv",
+            "500e Action 23.8kWh 95cv",
+            "500e La Prima 42kWh 118cv",
+            "500e Icon 42kWh 118cv",
+            "500e Cabrio 42kWh 118cv",
+            "500e Cabrio La Prima 42kWh 118cv",
+            "500e Sport 42kWh 118cv",
+            "500e 3+1 42kWh 118cv"
+          ]
+        },
+        {
+          "name": "Bravo",
+          "submodels": [
+            "1.4 90cv",
+            "1.4 T-Jet 120cv",
+            "1.4 T-Jet 150cv",
+            "1.6 Multijet 90cv",
+            "1.6 Multijet 105cv",
+            "1.6 Multijet 120cv",
+            "1.9 Multijet 120cv",
+            "1.9 Multijet 150cv",
+            "2.0 Multijet 165cv",
+            "Active 1.4 90cv",
+            "Dynamic 1.4 T-Jet 120cv",
+            "Sport 1.4 T-Jet 150cv",
+            "Emotion 2.0 Multijet 165cv"
+          ]
+        },
+        {
+          "name": "Doblo",
+          "submodels": [
+            "1.2 65cv",
+            "1.4 95cv",
+            "1.6 Multijet 90cv",
+            "1.6 Multijet 105cv",
+            "1.3 Multijet 85cv",
+            "1.3 Multijet 95cv",
+            "2.0 Multijet 135cv",
+            "1.6 E6d 100cv",
+            "1.5 BlueHDi 100cv",
+            "Active 1.4 95cv",
+            "Lounge 1.6 Multijet 105cv",
+            "Maxi 1.6 Multijet 105cv",
+            "Work Up 1.3 Multijet 85cv",
+            "Cargo 1.3 Multijet 85cv"
+          ]
+        },
+        {
+          "name": "Ducato",
+          "submodels": [
+            "2.3 Multijet 110cv",
+            "2.3 Multijet 120cv",
+            "2.3 Multijet 130cv",
+            "2.3 Multijet 150cv",
+            "2.3 Multijet 160cv",
+            "2.3 Multijet 180cv",
+            "3.0 Multijet 160cv",
+            "3.0 Multijet 180cv",
+            "E-Ducato 79kWh 122cv",
+            "E-Ducato 47kWh 122cv",
+            "Panorama 2.3 Multijet 130cv",
+            "Camper 2.3 Multijet 150cv"
+          ]
+        },
+        {
+          "name": "Freemont",
+          "submodels": [
+            "2.0 Multijet 140cv",
+            "2.0 Multijet 163cv",
+            "2.0 Multijet AWD 170cv",
+            "2.4 170cv",
+            "Adventure 2.0 Multijet 163cv",
+            "Lounge 2.0 Multijet 140cv",
+            "Urban 2.0 Multijet 140cv",
+            "Business 2.0 Multijet 140cv"
+          ]
+        },
+        {
+          "name": "Grande Punto",
+          "submodels": [
+            "1.2 65cv",
+            "1.4 77cv",
+            "1.4 Natural Power 77cv",
+            "1.3 Multijet 75cv",
+            "1.3 Multijet 90cv",
+            "1.9 Multijet 120cv",
+            "1.9 Multijet 130cv",
+            "Active 1.4 77cv",
+            "Actual 1.4 77cv",
+            "Dynamic 1.4 77cv",
+            "Sport 1.9 Multijet 130cv",
+            "Abarth Grande Punto 1.4 T-Jet 155cv",
+            "Abarth Grande Punto esseesse 180cv"
+          ]
+        },
+        {
+          "name": "Panda",
+          "submodels": [
+            "1.1 Fire 54cv",
+            "1.2 60cv",
+            "1.2 Dynamic 60cv",
+            "1.3 Multijet 70cv",
+            "1.3 Multijet 75cv",
+            "1.3 Multijet 4x4 70cv",
+            "0.9 TwinAir 65cv",
+            "0.9 TwinAir 80cv",
+            "0.9 TwinAir 85cv",
+            "1.0 Hybrid 70cv",
+            "1.0 FireFly Hybrid 70cv",
+            "4x4 1.3 Multijet 75cv",
+            "Cross 0.9 TwinAir 90cv",
+            "Cross 1.3 Multijet 95cv",
+            "Cross 1.0 Hybrid 70cv",
+            "Trussardi 0.9 TwinAir 80cv",
+            "Pop 1.2 60cv",
+            "Lounge 0.9 TwinAir 80cv",
+            "Sport 1.0 Hybrid 70cv",
+            "City Life 1.0 Hybrid 70cv",
+            "Panda Young 1.0 Hybrid 70cv",
+            "Waze 0.9 TwinAir 85cv",
+            "Re-Style 1.0 Hybrid 70cv"
+          ]
+        },
+        {
+          "name": "Punto",
+          "submodels": [
+            "1.2 60cv",
+            "1.2 65cv",
+            "1.2 80cv",
+            "1.4 77cv",
+            "1.4 95cv",
+            "1.3 Multijet 75cv",
+            "1.3 Multijet 90cv",
+            "1.3 Multijet 95cv",
+            "1.6 Multijet 120cv",
+            "1.9 JTD 80cv",
+            "1.9 JTD 100cv",
+            "Active 1.2 65cv",
+            "Dynamic 1.4 77cv",
+            "Sporting 1.4 95cv",
+            "Street 1.4 77cv",
+            "Lounge 1.4 77cv",
+            "Easy 1.2 65cv",
+            "Young 1.2 65cv"
+          ]
+        },
+        {
+          "name": "Qubo",
+          "submodels": [
+            "1.3 Multijet 75cv",
+            "1.3 Multijet 80cv",
+            "1.3 Multijet 95cv",
+            "1.4 77cv",
+            "1.4 Natural Power 78cv",
+            "Active 1.4 77cv",
+            "Dynamic 1.3 Multijet 80cv",
+            "Lounge 1.3 Multijet 95cv"
+          ]
+        },
+        {
+          "name": "Tipo",
+          "submodels": [
+            "1.3 Multijet 95cv",
+            "1.4 95cv",
+            "1.4 120cv",
+            "1.4 T-Jet 120cv",
+            "1.6 Multijet 120cv",
+            "2.0 Multijet 170cv",
+            "Tipo S-Design 1.4 T-Jet 120cv",
+            "Tipo Cross 1.5 Hybrid 130cv",
+            "Pop 1.4 95cv",
+            "Easy 1.4 95cv",
+            "Lounge 1.4 T-Jet 120cv",
+            "Business 1.6 Multijet 120cv",
+            "Street 1.4 95cv",
+            "Sport 2.0 Multijet 170cv",
+            "Mirror 1.4 T-Jet 120cv",
+            "Life 1.6 Multijet 120cv"
+          ]
+        },
+        {
+          "name": "Tipo Station Wagon",
+          "submodels": [
+            "1.3 Multijet 95cv",
+            "1.4 95cv",
+            "1.4 T-Jet 120cv",
+            "1.6 Multijet 120cv",
+            "2.0 Multijet 170cv",
+            "Easy 1.4 95cv",
+            "Lounge 1.6 Multijet 120cv",
+            "Business 1.6 Multijet 120cv",
+            "Mirror 1.4 T-Jet 120cv",
+            "Life 1.6 Multijet 120cv",
+            "Sport 2.0 Multijet 170cv",
+            "S-Design 1.4 T-Jet 120cv"
+          ]
+        },
+        {
+          "name": "Stilo",
+          "submodels": [
+            "1.2 16v 80cv",
+            "1.4 16v 95cv",
+            "1.6 16v 103cv",
+            "1.8 16v 133cv",
+            "2.4 20v 170cv",
+            "1.6 JTD 80cv",
+            "1.9 JTD 80cv",
+            "1.9 JTD 100cv",
+            "1.9 JTD Multijet 120cv",
+            "1.9 JTD 140cv",
+            "Active 1.6 16v 103cv",
+            "Dynamic 1.8 16v 133cv",
+            "Abarth 2.4 20v 170cv",
+            "Uptown 1.9 JTD Multijet 120cv",
+            "Multiwagon 1.9 JTD 115cv",
+            "Multiwagon 1.9 JTD Multijet 120cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Alfa Romeo",
+      "models": [
+        {
+          "name": "147",
+          "submodels": [
+            "1.4 TS 90cv",
+            "1.6 TS 105cv",
+            "1.6 TS 120cv",
+            "2.0 TS 150cv",
+            "1.9 JTD 100cv",
+            "1.9 JTD 115cv",
+            "1.9 JTD 140cv",
+            "1.9 JTDm 120cv",
+            "2.0 JTD 150cv",
+            "GTA 3.2 V6 250cv",
+            "Progression 1.6 105cv",
+            "Distinctive 1.9 JTD 115cv",
+            "Lusso 1.9 JTD 115cv",
+            "Ti 1.6 TS 120cv",
+            "Q2 1.9 JTD 140cv"
+          ]
+        },
+        {
+          "name": "156",
+          "submodels": [
+            "1.6 TS 120cv",
+            "1.8 TS 144cv",
+            "2.0 TS 155cv",
+            "2.5 V6 192cv",
+            "3.2 V6 GTA 250cv",
+            "1.9 JTD 105cv",
+            "1.9 JTD 115cv",
+            "1.9 JTD 140cv",
+            "2.4 JTD 140cv",
+            "2.4 JTD 175cv",
+            "Distinctive 1.9 JTD 115cv",
+            "Ti 2.0 TS 155cv",
+            "Sport 2.5 V6 192cv",
+            "Selespeed 2.0 TS 155cv"
+          ]
+        },
+        {
+          "name": "156 Sportwagon",
+          "submodels": [
+            "1.8 TS 144cv",
+            "2.0 TS 155cv",
+            "2.5 V6 192cv",
+            "1.9 JTD 105cv",
+            "1.9 JTD 115cv",
+            "1.9 JTD 140cv",
+            "2.4 JTD 140cv",
+            "2.4 JTD 175cv",
+            "Q4 2.0 TS 165cv",
+            "Q4 2.4 JTD 200cv"
+          ]
+        },
+        {
+          "name": "159",
+          "submodels": [
+            "1.8 MPI 140cv",
+            "2.2 JTS 185cv",
+            "2.4 JTIA 200cv",
+            "3.2 JTS V6 260cv",
+            "1.9 JTDm 115cv",
+            "1.9 JTDm 120cv",
+            "1.9 JTDm 150cv",
+            "2.0 JTDm 136cv",
+            "2.0 JTDm 170cv",
+            "2.4 JTDM 200cv",
+            "1.75 TBi 200cv",
+            "Ti 2.2 JTS 185cv",
+            "Lusso 1.9 JTDm 150cv",
+            "Distinctive 2.4 JTDM 200cv",
+            "Q4 2.4 JTDM 200cv"
+          ]
+        },
+        {
+          "name": "159 Sportwagon",
+          "submodels": [
+            "1.8 MPI 140cv",
+            "2.2 JTS 185cv",
+            "1.9 JTDm 115cv",
+            "1.9 JTDm 120cv",
+            "1.9 JTDm 150cv",
+            "2.0 JTDm 136cv",
+            "2.0 JTDm 170cv",
+            "2.4 JTDM 200cv",
+            "1.75 TBi 200cv",
+            "Q4 2.4 JTDM 200cv",
+            "Ti 2.2 JTS 185cv"
+          ]
+        },
+        {
+          "name": "4C",
+          "submodels": [
+            "4C 1.75 TBi 240cv",
+            "4C Launch Edition 1.75 TBi 240cv",
+            "4C Sprint 1.75 TBi 240cv",
+            "4C Sprint Special Series 1.75 TBi 240cv",
+            "4C Competizione 1.75 TBi 240cv"
+          ]
+        },
+        {
+          "name": "4C Spider",
+          "submodels": [
+            "4C Spider 1.75 TBi 240cv",
+            "4C Spider Italia 1.75 TBi 240cv",
+            "4C Spider 33 Stradale Tributo 1.75 TBi 240cv"
+          ]
+        },
+        {
+          "name": "Brera",
+          "submodels": [
+            "2.2 JTS 185cv",
+            "1.75 TBi 200cv",
+            "2.4 JTDM 200cv",
+            "3.2 JTS V6 260cv",
+            "3.2 JTS V6 Q4 260cv",
+            "Sky Window 2.2 JTS 185cv",
+            "S 2.4 JTDM 210cv"
+          ]
+        },
+        {
+          "name": "Giulia",
+          "submodels": [
+            "2.0 Turbo 147cv",
+            "2.0 Turbo 200cv",
+            "2.0 Turbo 280cv",
+            "2.0 TBi AT8 200cv",
+            "2.2 Diesel 150cv",
+            "2.2 Diesel 180cv",
+            "2.2 Diesel 210cv",
+            "Veloce 2.0 Turbo 280cv",
+            "Quadrifoglio 2.9 V6 Biturbo 510cv",
+            "Quadrifoglio 2.9 V6 100 Aniversario",
+            "Sprint 2.0 Turbo 200cv",
+            "Lusso 2.2 Diesel 150cv",
+            "Super 2.0 Turbo 200cv",
+            "Business 2.2 Diesel 150cv",
+            "Ti 2.0 Turbo 200cv",
+            "Speciale 2.0 Turbo 200cv"
+          ]
+        },
+        {
+          "name": "Giulia Quadrifoglio",
+          "submodels": [
+            "Quadrifoglio 2.9 V6 Biturbo 510cv",
+            "Quadrifoglio 2.9 V6 Biturbo 520cv",
+            "Quadrifoglio 100° Anniversario 2.9 V6 520cv",
+            "Quadrifoglio NRING 2.9 V6 520cv"
+          ]
+        },
+        {
+          "name": "Giulietta",
+          "submodels": [
+            "1.4 TB 105cv",
+            "1.4 TB 120cv",
+            "1.4 TB 170cv",
+            "1.4 TB MultiAir 170cv",
+            "1.6 JTDm 105cv",
+            "1.6 JTDm 120cv",
+            "2.0 JTDm 150cv",
+            "2.0 JTDm 175cv",
+            "Veloce 1.75 TBi 240cv",
+            "Quadrifoglio Verde 2.0 T 325cv",
+            "Sprint 1.4 TB 120cv",
+            "Lusso 1.6 JTDm 120cv",
+            "Super 2.0 JTDm 175cv",
+            "Distinctive 1.6 JTDm 120cv",
+            "Business 1.6 JTDm 120cv",
+            "Ti 1.75 TBi 240cv",
+            "Speciale 2.0 JTDm 175cv"
+          ]
+        },
+        {
+          "name": "GT",
+          "submodels": [
+            "1.8 TS 140cv",
+            "2.0 JTS 165cv",
+            "3.2 V6 240cv",
+            "1.9 JTD Multijet 150cv",
+            "2.4 JTD 175cv",
+            "Selespeed 2.0 JTS 165cv",
+            "Blackline 2.0 JTS 165cv",
+            "Progression 1.9 JTD 150cv"
+          ]
+        },
+        {
+          "name": "GTV",
+          "submodels": [
+            "1.8 TS 144cv",
+            "2.0 TS 150cv",
+            "2.0 TS 155cv",
+            "2.5 V6 192cv",
+            "3.0 V6 218cv",
+            "3.2 V6 GTA 250cv",
+            "Cup 3.2 V6 250cv"
+          ]
+        },
+        {
+          "name": "Mito",
+          "submodels": [
+            "1.4 78cv",
+            "1.4 95cv",
+            "1.4 MultiAir 105cv",
+            "1.4 MultiAir 135cv",
+            "1.4 TB 155cv",
+            "1.3 JTDm 85cv",
+            "1.3 JTDm 90cv",
+            "1.3 JTDm 95cv",
+            "1.6 JTDm 115cv",
+            "1.6 JTDm 120cv",
+            "Veloce 1.4 TB 155cv",
+            "Distinctive 1.6 JTDm 120cv",
+            "Sprint 1.4 MultiAir 105cv",
+            "Quadrifoglio Verde 1.4 TB 170cv",
+            "Junior 1.4 78cv",
+            "Limited 1.4 MultiAir 135cv",
+            "Super 1.4 MultiAir 135cv",
+            "Competizione 1.4 TB 155cv"
+          ]
+        },
+        {
+          "name": "Spider",
+          "submodels": [
+            "1.8 TS 144cv",
+            "2.0 TS 155cv",
+            "2.2 JTS 185cv",
+            "2.4 JTDM 200cv",
+            "3.2 JTS V6 260cv",
+            "S 2.2 JTS 200cv",
+            "Lusso 2.2 JTS 185cv"
+          ]
+        },
+        {
+          "name": "Stelvio",
+          "submodels": [
+            "2.0 Turbo 200cv",
+            "2.0 Turbo 280cv",
+            "2.2 Diesel 160cv",
+            "2.2 Diesel 190cv",
+            "2.2 Diesel 210cv",
+            "2.9 V6 Bi-Turbo Q4 510cv",
+            "Veloce 2.0 Turbo 280cv Q4",
+            "Super 2.2 Diesel 190cv",
+            "Business 2.2 Diesel 160cv",
+            "Sprint 2.0 Turbo 200cv",
+            "Ti 2.0 Turbo 200cv",
+            "Speciale 2.0 Turbo 280cv"
+          ]
+        },
+        {
+          "name": "Stelvio Quadrifoglio",
+          "submodels": [
+            "Quadrifoglio 2.9 V6 Bi-Turbo Q4 510cv",
+            "Quadrifoglio 2.9 V6 Bi-Turbo Q4 520cv",
+            "Quadrifoglio 100° Anniversario 2.9 V6 520cv",
+            "Quadrifoglio NRING 2.9 V6 520cv"
+          ]
+        },
+        {
+          "name": "Tonale",
+          "submodels": [
+            "1.5 Hybrid 130cv",
+            "1.5 Hybrid 160cv",
+            "1.6 Multijet 130cv",
+            "PHEV Q4 1.3 280cv",
+            "Veloce 1.5 Hybrid 160cv",
+            "Sprint 1.5 Hybrid 130cv",
+            "Ti 1.5 Hybrid 160cv",
+            "Super 1.5 Hybrid 160cv",
+            "Speciale 1.5 Hybrid 160cv",
+            "Edizione Speciale 1.5 Hybrid 160cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Abarth",
+      "models": [
+        {
+          "name": "500",
+          "submodels": [
+            "500 1.4 T-Jet 135cv",
+            "500 1.4 T-Jet 145cv",
+            "500 1.4 T-Jet 160cv",
+            "500 esseesse 1.4 T-Jet 160cv",
+            "500 Assetto Corse 1.4 T-Jet 190cv",
+            "500 Yamaha 1.4 T-Jet 180cv",
+            "500 Pista 1.4 T-Jet 180cv",
+            "500 Trofeo 1.4 T-Jet 180cv",
+            "500 Opening Edition 1.4 T-Jet 135cv",
+            "500 Turismo 1.4 T-Jet 165cv",
+            "500 Competizione 1.4 T-Jet 180cv",
+            "500 Biposto 1.4 T-Jet 190cv",
+            "500 595 1.4 T-Jet 145cv",
+            "500 695 1.4 T-Jet 180cv",
+            "500 695 Tributo Ferrari 1.4 T-Jet 180cv",
+            "500 695 Tributo Maserati 1.4 T-Jet 180cv",
+            "500 695 Rivale 1.4 T-Jet 195cv"
+          ]
+        },
+        {
+          "name": "500C",
+          "submodels": [
+            "500C 1.4 T-Jet 135cv",
+            "500C 1.4 T-Jet 145cv",
+            "500C 1.4 T-Jet 160cv",
+            "500C esseesse 1.4 T-Jet 160cv",
+            "500C 595 Turismo 1.4 T-Jet 165cv",
+            "500C 595 Competizione 1.4 T-Jet 180cv",
+            "500C 695 1.4 T-Jet 180cv",
+            "500C 695 Rivale 1.4 T-Jet 195cv"
+          ]
+        },
+        {
+          "name": "595",
+          "submodels": [
+            "595 1.4 T-Jet 145cv",
+            "595 Turismo 1.4 T-Jet 165cv",
+            "595 Competizione 1.4 T-Jet 180cv",
+            "595 Pista 1.4 T-Jet 180cv",
+            "695 1.4 T-Jet 180cv",
+            "695 Biposto 190cv",
+            "695 XSR Yamaha 190cv",
+            "695 Rivale 195cv",
+            "595 esseesse 1.4 T-Jet 180cv",
+            "595 Yamaha 1.4 T-Jet 180cv",
+            "595 50° Anniversario 1.4 T-Jet 180cv"
+          ]
+        },
+        {
+          "name": "595C",
+          "submodels": [
+            "595C 1.4 T-Jet 145cv",
+            "595C Turismo 1.4 T-Jet 165cv",
+            "595C Competizione 1.4 T-Jet 180cv",
+            "595C Pista 1.4 T-Jet 180cv",
+            "695C 1.4 T-Jet 180cv",
+            "695C Rivale 195cv"
+          ]
+        },
+        {
+          "name": "695",
+          "submodels": [
+            "695 1.4 T-Jet 180cv",
+            "695 Biposto 190cv",
+            "695 XSR Yamaha 190cv",
+            "695 Rivale 195cv",
+            "695 Tributo Ferrari 180cv",
+            "695 Tributo Maserati 180cv",
+            "695 Esseesse 180cv",
+            "695 Pista 180cv"
+          ]
+        },
+        {
+          "name": "695C",
+          "submodels": [
+            "695C 1.4 T-Jet 180cv",
+            "695C Rivale 195cv",
+            "695C Tributo Ferrari 180cv",
+            "695C Tributo Maserati 180cv"
+          ]
+        },
+        {
+          "name": "124 Spider",
+          "submodels": [
+            "124 Spider 1.4 MultiAir Turbo 170cv",
+            "124 Spider Rally Tribute 1.4 MultiAir Turbo 170cv",
+            "124 Spider Turismo 1.4 MultiAir Turbo 170cv",
+            "124 GT 1.4 MultiAir Turbo 170cv"
+          ]
+        },
+        {
+          "name": "500e",
+          "submodels": [
+            "500e 42kWh 155cv",
+            "500e Scorpionissima 42kWh 155cv",
+            "500e Turismo 42kWh 155cv",
+            "500e F595 42kWh 155cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Ferrari",
+      "models": [
+        {
+          "name": "296 GTB",
+          "submodels": [
+            "296 GTB 3.0 V6 T 830cv",
+            "296 GTS 3.0 V6 T 830cv",
+            "296 GTB Assetto Fiorano 830cv",
+            "296 GT3 640cv",
+            "296 Challenge 680cv"
+          ]
+        },
+        {
+          "name": "296 GTS",
+          "submodels": [
+            "296 GTS 3.0 V6 T 830cv",
+            "296 GTS Assetto Fiorano 830cv",
+            "296 GTS Spider 3.0 V6 T 830cv"
+          ]
+        },
+        {
+          "name": "458 Italia",
+          "submodels": [
+            "458 Italia 4.5 V8 570cv",
+            "458 Speciale 4.5 V8 597cv",
+            "458 Challenge 570cv"
+          ]
+        },
+        {
+          "name": "458 Spider",
+          "submodels": [
+            "458 Spider 4.5 V8 570cv",
+            "458 Speciale A 4.5 V8 597cv"
+          ]
+        },
+        {
+          "name": "488 GTB",
+          "submodels": [
+            "488 GTB 3.9 V8 T 670cv",
+            "488 Challenge 670cv",
+            "488 GT3 Evo 670cv"
+          ]
+        },
+        {
+          "name": "488 Pista",
+          "submodels": [
+            "488 Pista 3.9 V8 T 720cv",
+            "488 Pista Piloti Ferrari 720cv"
+          ]
+        },
+        {
+          "name": "488 Spider",
+          "submodels": [
+            "488 Spider 3.9 V8 T 670cv",
+            "488 Pista Spider 3.9 V8 T 720cv"
+          ]
+        },
+        {
+          "name": "812 GTS",
+          "submodels": [
+            "812 GTS 6.5 V12 800cv",
+            "812 Competizione A 6.5 V12 830cv"
+          ]
+        },
+        {
+          "name": "812 Superfast",
+          "submodels": [
+            "812 Superfast 6.5 V12 800cv",
+            "812 GTS 6.5 V12 800cv",
+            "812 Competizione 6.5 V12 830cv",
+            "812 Competizione A 830cv"
+          ]
+        },
+        {
+          "name": "California",
+          "submodels": [
+            "California 4.3 V8 460cv",
+            "California 4.3 V8 Handling Speciale 460cv"
+          ]
+        },
+        {
+          "name": "California T",
+          "submodels": [
+            "California T 3.9 V8 T 560cv",
+            "California T Handling Speciale 3.9 V8 T 560cv",
+            "California T HS 3.9 V8 T 560cv"
+          ]
+        },
+        {
+          "name": "F8 Spider",
+          "submodels": [
+            "F8 Spider 3.9 V8 T 720cv",
+            "F8 Spider Tributo 3.9 V8 T 720cv"
+          ]
+        },
+        {
+          "name": "F8 Tributo",
+          "submodels": [
+            "F8 Tributo 3.9 V8 T 720cv",
+            "F8 Tributo Piloti Ferrari 720cv"
+          ]
+        },
+        {
+          "name": "GTC4Lusso",
+          "submodels": [
+            "GTC4Lusso 6.3 V12 680cv",
+            "GTC4Lusso T 3.9 V8 T 610cv"
+          ]
+        },
+        {
+          "name": "Portofino",
+          "submodels": [
+            "Portofino 3.9 V8 T 600cv"
+          ]
+        },
+        {
+          "name": "Portofino M",
+          "submodels": [
+            "Portofino M 3.9 V8 T 620cv"
+          ]
+        },
+        {
+          "name": "Purosangue",
+          "submodels": [
+            "Purosangue 6.5 V12 725cv",
+            "Purosangue 6.5 V12 Active Suspension 725cv"
+          ]
+        },
+        {
+          "name": "Roma",
+          "submodels": [
+            "Roma 3.9 V8 T 620cv"
+          ]
+        },
+        {
+          "name": "Roma Spider",
+          "submodels": [
+            "Roma Spider 3.9 V8 T 620cv"
+          ]
+        },
+        {
+          "name": "SF90 Spider",
+          "submodels": [
+            "SF90 Spider 1000cv",
+            "SF90 Spider Assetto Fiorano 1000cv",
+            "SF90 XX Spider 1030cv"
+          ]
+        },
+        {
+          "name": "SF90 Stradale",
+          "submodels": [
+            "SF90 Stradale 1000cv",
+            "SF90 Stradale Assetto Fiorano 1000cv",
+            "SF90 Spider 1000cv",
+            "SF90 XX Stradale 1030cv",
+            "SF90 XX Spider 1030cv"
+          ]
+        },
+        {
+          "name": "LaFerrari",
+          "submodels": [
+            "LaFerrari 6.3 V12 Hybrid 963cv",
+            "LaFerrari Aperta 6.3 V12 Hybrid 963cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Lamborghini",
+      "models": [
+        {
+          "name": "Aventador",
+          "submodels": [
+            "Aventador LP 700-4 700cv",
+            "Aventador LP 700-4 Roadster 700cv",
+            "Aventador LP 720-4 Anniversario 720cv",
+            "Aventador Pirelli Edition 700cv"
+          ]
+        },
+        {
+          "name": "Aventador S",
+          "submodels": [
+            "Aventador S LP 740-4 740cv",
+            "Aventador S LP 740-4 Roadster 740cv",
+            "Aventador S Los Angeles 740cv"
+          ]
+        },
+        {
+          "name": "Aventador SVJ",
+          "submodels": [
+            "Aventador SVJ 6.5 V12 770cv",
+            "Aventador SVJ Roadster 6.5 V12 770cv",
+            "Aventador SVJ 63 770cv",
+            "Aventador SVJ 63 Roadster 770cv",
+            "Aventador LP 750-4 SuperVeloce 750cv",
+            "Aventador LP 750-4 SV Roadster 750cv",
+            "Aventador Ultimae 6.5 V12 780cv",
+            "Aventador Ultimae Roadster 780cv"
+          ]
+        },
+        {
+          "name": "Huracán",
+          "submodels": [
+            "Huracán LP 580-2 580cv",
+            "Huracán LP 610-4 610cv",
+            "Huracán EVO 640cv",
+            "Huracán EVO RWD 610cv",
+            "Huracán EVO Spyder 640cv",
+            "Huracán STO 640cv",
+            "Huracán Sterrato 610cv",
+            "Huracán Tecnica 640cv",
+            "Huracán LP 610-4 Spyder 610cv",
+            "Huracán LP 580-2 Spyder 580cv",
+            "Huracán Performante 640cv",
+            "Huracán Performante Spyder 640cv",
+            "Huracán Super Trofeo EVO 620cv",
+            "Huracán GT3 Evo2 640cv",
+            "Huracán EVO GT Celebration 640cv"
+          ]
+        },
+        {
+          "name": "Huracán EVO",
+          "submodels": [
+            "Huracán EVO 5.2 V10 640cv",
+            "Huracán EVO RWD 5.2 V10 610cv",
+            "Huracán EVO Spyder 640cv",
+            "Huracán EVO RWD Spyder 610cv",
+            "Huracán EVO GT Celebration 640cv"
+          ]
+        },
+        {
+          "name": "Huracán STO",
+          "submodels": [
+            "Huracán STO 5.2 V10 640cv"
+          ]
+        },
+        {
+          "name": "Revuelto",
+          "submodels": [
+            "Revuelto 6.5 V12 PHEV 1015cv",
+            "Revuelto Opera Unica 1015cv",
+            "Revuelto Arena Ad Personam 1015cv"
+          ]
+        },
+        {
+          "name": "Sterrato",
+          "submodels": [
+            "Huracán Sterrato 5.2 V10 610cv",
+            "Huracán Sterrato Opera Unica 610cv"
+          ]
+        },
+        {
+          "name": "Urus",
+          "submodels": [
+            "Urus 4.0 V8 650cv",
+            "Urus S 4.0 V8 666cv",
+            "Urus Performante 4.0 V8 666cv",
+            "Urus Performante Evo 800cv",
+            "Urus Pearl Capsule 650cv",
+            "Urus Graphite Capsule 650cv",
+            "Urus Mansory 800cv"
+          ]
+        },
+        {
+          "name": "Urus Performante",
+          "submodels": [
+            "Urus Performante 4.0 V8 666cv",
+            "Urus Performante Evo 4.0 V8 800cv"
+          ]
+        },
+        {
+          "name": "Urus S",
+          "submodels": [
+            "Urus S 4.0 V8 666cv",
+            "Urus S Pearl Capsule 666cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Maserati",
+      "models": [
+        {
+          "name": "Ghibli",
+          "submodels": [
+            "2.0 GranSport 330cv",
+            "2.9 V6 BiT 350cv",
+            "3.0 V6 275cv",
+            "3.0 V6 330cv",
+            "GranSport 350cv",
+            "GranLusso 350cv",
+            "Trofeo 3.8 V8 580cv",
+            "Hybrid 330cv",
+            "3.0 V6 Q4 275cv",
+            "3.0 V6 Q4 350cv",
+            "S Q4 3.0 V6 430cv",
+            "Nerissimo 3.0 V6 350cv",
+            "ONE OF ONE 3.0 V6 350cv"
+          ]
+        },
+        {
+          "name": "Ghibli Hybrid",
+          "submodels": [
+            "Ghibli Hybrid 2.0 T 330cv",
+            "Ghibli Hybrid GranLusso 2.0 T 330cv",
+            "Ghibli Hybrid GranSport 2.0 T 330cv"
+          ]
+        },
+        {
+          "name": "GranCabrio",
+          "submodels": [
+            "GranCabrio 4.7 V8 450cv",
+            "GranCabrio Sport 4.7 V8 460cv",
+            "GranCabrio MC 4.7 V8 460cv",
+            "GranCabrio Folgore EV 326kW 450cv",
+            "GranCabrio Modena 3.0 V6 490cv",
+            "GranCabrio Trofeo 3.0 V6 550cv"
+          ]
+        },
+        {
+          "name": "GranTurismo",
+          "submodels": [
+            "GranTurismo 4.2 V8 405cv",
+            "GranTurismo S 4.7 V8 440cv",
+            "GranTurismo S Automatic 4.7 V8 440cv",
+            "GranTurismo MC 4.7 V8 460cv",
+            "GranTurismo Sport 4.7 V8 460cv",
+            "GranTurismo MC Stradale 4.7 V8 460cv",
+            "GranTurismo Modena 3.0 V6 490cv",
+            "GranTurismo Trofeo 3.0 V6 550cv",
+            "GranTurismo Centennial Edition 4.7 V8 460cv"
+          ]
+        },
+        {
+          "name": "GranTurismo Folgore",
+          "submodels": [
+            "GranTurismo Folgore EV 761cv",
+            "GranTurismo Folgore Launch Edition EV 761cv"
+          ]
+        },
+        {
+          "name": "Grecale",
+          "submodels": [
+            "Grecale GT 2.0 T 300cv",
+            "Grecale Modena 2.0 T 330cv",
+            "Grecale Trofeo 3.0 V6 530cv",
+            "Grecale 1.6 MHEV 150cv",
+            "Grecale GT MHEV 300cv"
+          ]
+        },
+        {
+          "name": "Grecale Folgore",
+          "submodels": [
+            "Grecale Folgore EV 410cv",
+            "Grecale Folgore Launch Edition EV 410cv"
+          ]
+        },
+        {
+          "name": "Levante",
+          "submodels": [
+            "3.0 V6 275cv",
+            "3.0 V6 350cv",
+            "S 3.0 V6 430cv",
+            "GTS 3.8 V8 550cv",
+            "Trofeo 3.8 V8 580cv",
+            "Hybrid 330cv",
+            "GranLusso 3.0 V6 350cv",
+            "GranSport 3.0 V6 350cv",
+            "Nerissimo 3.0 V6 350cv",
+            "Royale 3.0 V6 350cv",
+            "3.0 D 250cv",
+            "3.0 D V6 275cv"
+          ]
+        },
+        {
+          "name": "MC20",
+          "submodels": [
+            "MC20 3.0 V6 Nettuno 630cv",
+            "MC20 White Moon 630cv",
+            "MC20 Notte 630cv"
+          ]
+        },
+        {
+          "name": "MC20 Cielo",
+          "submodels": [
+            "MC20 Cielo 3.0 V6 Nettuno 630cv",
+            "MC20 Cielo Open Air 630cv"
+          ]
+        },
+        {
+          "name": "Quattroporte",
+          "submodels": [
+            "3.0 V6 275cv",
+            "3.0 V6 330cv",
+            "S Q4 3.0 V6 430cv",
+            "GTS 3.8 V8 530cv",
+            "Trofeo 3.8 V8 580cv",
+            "GranSport 3.0 V6 350cv",
+            "GranLusso 3.0 V6 350cv",
+            "Nerissimo 3.0 V6 350cv",
+            "Royale 3.0 V6 350cv",
+            "3.0 D V6 250cv",
+            "3.0 D V6 275cv",
+            "4.2 V8 400cv",
+            "4.7 V8 440cv",
+            "Sport GT S 4.7 V8 440cv",
+            "Automatica 4.2 V8 400cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Lancia",
+      "models": [
+        {
+          "name": "Delta",
+          "submodels": [
+            "1.4 T-Jet 120cv",
+            "1.4 T-Jet 140cv",
+            "1.6 Multijet 105cv",
+            "1.6 Multijet 120cv",
+            "2.0 Multijet 165cv",
+            "1.8 TBi 200cv",
+            "Oro 1.4 T-Jet 120cv",
+            "Argento 1.6 Multijet 120cv",
+            "Platino 1.8 TBi 200cv",
+            "Sport 2.0 Multijet 165cv"
+          ]
+        },
+        {
+          "name": "Musa",
+          "submodels": [
+            "1.2 65cv",
+            "1.2 80cv",
+            "1.4 77cv",
+            "1.4 95cv",
+            "1.3 Multijet 70cv",
+            "1.3 Multijet 90cv",
+            "1.9 Multijet 120cv",
+            "Active 1.4 77cv",
+            "Dynamic 1.4 95cv",
+            "Argento 1.4 77cv",
+            "Platino 1.9 Multijet 120cv"
+          ]
+        },
+        {
+          "name": "Phedra",
+          "submodels": [
+            "2.0 16v 136cv",
+            "2.0 Turbo 163cv",
+            "3.0 V6 207cv",
+            "2.0 JTD 110cv",
+            "2.0 Multijet 136cv",
+            "2.2 JTD 128cv",
+            "3.0 V6 JTD 177cv",
+            "Eleganza 2.0 Multijet 136cv",
+            "Executive 3.0 V6 JTD 177cv"
+          ]
+        },
+        {
+          "name": "Thesis",
+          "submodels": [
+            "2.0 Turbo 185cv",
+            "2.4 JTD 150cv",
+            "2.4 JTD 175cv",
+            "3.0 V6 24v 215cv",
+            "3.2 V6 24v 230cv",
+            "2.4 Multijet 185cv",
+            "3.0 V6 JTD 185cv",
+            "Emblema 3.0 V6 215cv"
+          ]
+        },
+        {
+          "name": "Ypsilon",
+          "submodels": [
+            "1.0 FireFly 70cv",
+            "1.2 69cv",
+            "1.2 80cv",
+            "0.9 TwinAir 85cv",
+            "0.9 TwinAir 105cv",
+            "1.3 Multijet 75cv",
+            "1.3 Multijet 95cv",
+            "Hybrid 70cv",
+            "Elefantino 1.2 69cv",
+            "Silver 1.2 69cv",
+            "Gold 1.2 69cv",
+            "Platinum 0.9 TwinAir 85cv",
+            "Momo Design 1.3 Multijet 95cv",
+            "DFN 1.2 69cv",
+            "Black & White 1.2 69cv",
+            "1.0 Hybrid 70cv",
+            "Ecochic 1.2 69cv",
+            "S 1.2 69cv",
+            "Unyca 1.3 Multijet 75cv"
+          ]
+        },
+        {
+          "name": "Voyager",
+          "submodels": [
+            "2.8 CRD 163cv",
+            "2.8 CRD 177cv",
+            "2.8 Multijet 163cv",
+            "Gold 2.8 CRD 163cv",
+            "Platinum 2.8 CRD 177cv"
+          ]
+        }
+      ]
+    }
+  ]
+}

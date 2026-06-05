@@ -14,6 +14,8 @@ import Inbox from './pages/Inbox'
 import Calendar from './pages/Calendar'
 import Finance from './pages/Finance'
 import Settings from './pages/Settings'
+import Market from './pages/Market'
+import Terminal from './pages/Terminal'
 import { useAuthContext } from './auth/AuthContext'
 
 function RootRedirect() {
@@ -105,6 +107,8 @@ export default function App() {
           <Route path="inbox"      element={<Inbox />} />
           <Route path="calendar"   element={<Calendar />} />
           <Route path="finance"    element={<Finance />} />
+          <Route path="market"    element={<Market />} />
+          <Route path="terminal"  element={<Terminal />} />
           <Route path="settings"   element={<Settings />} />
           <Route path="*"          element={<Navigate to="/dashboard" replace />} />
         </Route>

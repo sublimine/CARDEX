@@ -6,6 +6,8 @@ interface AvatarProps {
   src?: string
   size?: 'xs' | 'sm' | 'md' | 'lg'
   status?: 'online' | 'away' | 'offline'
+  /** Force a neutral cyan→slate gradient instead of the name-hashed colour. */
+  mono?: boolean
   className?: string
 }
 
@@ -41,8 +43,9 @@ function initials(name: string) {
   return name.split(' ').slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('')
 }
 
-export default function Avatar({ name, src, size = 'md', status, className }: AvatarProps) {
+export default function Avatar({ name, src, size = 'md', status, mono, className }: AvatarProps) {
   const s = sizeMap[size]
+  const gradient = mono ? 'from-cyan-600 to-slate-700' : gradients[colorIndex(name)]
 
   return (
     <motion.span
@@ -60,7 +63,7 @@ export default function Avatar({ name, src, size = 'md', status, className }: Av
         <span
           className={cn(
             'w-full h-full rounded-full flex items-center justify-center font-semibold text-white bg-gradient-to-br',
-            gradients[colorIndex(name)],
+            gradient,
             s.text
           )}
           aria-label={name}

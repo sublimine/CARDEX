@@ -1,0 +1,513 @@
+{
+  "brands": [
+    {
+      "name": "Dodge",
+      "models": [
+        {
+          "name": "Challenger",
+          "submodels": [
+            "3.6 V6 305cv",
+            "5.7 HEMI V8 375cv",
+            "6.2 V8 SRT Hellcat 717cv",
+            "6.2 V8 SRT Demon 840cv",
+            "6.4 V8 392 HEMI 492cv",
+            "SRT Hellcat Redeye 797cv",
+            "SRT Hellcat Jailbreak 807cv"
+          ]
+        },
+        {
+          "name": "Charger",
+          "submodels": [
+            "2.7 V6 178cv",
+            "3.5 V6 253cv",
+            "3.6 V6 292cv",
+            "5.7 HEMI V8 370cv",
+            "6.1 V8 SRT8 431cv",
+            "6.4 V8 SRT8 470cv",
+            "6.2 V8 SRT Hellcat 707cv",
+            "6.2 V8 SRT Hellcat Redeye 797cv"
+          ]
+        },
+        {
+          "name": "Journey",
+          "submodels": [
+            "2.0 CRD 140cv",
+            "2.4 VVT 170cv",
+            "2.7 V6 185cv",
+            "3.5 V6 235cv",
+            "2.0 CRD 163cv",
+            "2.4 MIVEC 170cv"
+          ]
+        },
+        {
+          "name": "Nitro",
+          "submodels": [
+            "2.8 CRD 177cv",
+            "3.7 V6 210cv",
+            "4.0 V6 260cv",
+            "2.8 CRD 152cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Chrysler",
+      "models": [
+        {
+          "name": "300C",
+          "submodels": [
+            "2.7 V6 193cv",
+            "3.0 CRD 218cv",
+            "3.5 V6 252cv",
+            "5.7 HEMI V8 340cv",
+            "6.4 SRT8 470cv",
+            "3.6 V6 286cv",
+            "3.0 V6 Multijet 190cv",
+            "5.7 HEMI V8 363cv"
+          ]
+        },
+        {
+          "name": "Grand Voyager",
+          "submodels": [
+            "2.4 SE 143cv",
+            "2.5 CRD 141cv",
+            "2.8 CRD 150cv",
+            "2.8 CRD 163cv",
+            "3.3 V6 175cv",
+            "3.8 V6 218cv",
+            "3.6 V6 286cv"
+          ]
+        },
+        {
+          "name": "Pacifica",
+          "submodels": [
+            "3.5 V6 253cv",
+            "3.8 V6 218cv",
+            "Hybrid 3.6 V6 PHEV 260cv",
+            "3.6 V6 287cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Cadillac",
+      "models": [
+        {
+          "name": "CTS",
+          "submodels": [
+            "2.0 Turbo 272cv",
+            "2.8 V6 210cv",
+            "3.0 V6 272cv",
+            "3.6 V6 321cv",
+            "3.6 V6 Biturbo 420cv",
+            "6.2 V8 CTS-V 649cv",
+            "3.0 TT V6 420cv"
+          ]
+        },
+        {
+          "name": "STS",
+          "submodels": [
+            "3.6 V6 258cv",
+            "4.6 V8 Northstar 320cv",
+            "4.4 V8 Supercharged STS-V 469cv"
+          ]
+        },
+        {
+          "name": "Escalade",
+          "submodels": [
+            "5.3 V8 295cv",
+            "6.0 V8 345cv",
+            "6.2 V8 409cv",
+            "6.2 V8 420cv",
+            "ESV 6.2 V8 420cv"
+          ]
+        },
+        {
+          "name": "ATS",
+          "submodels": [
+            "2.0 Turbo 272cv",
+            "2.5 202cv",
+            "3.6 V6 321cv",
+            "2.0 Turbo ATS-V 272cv",
+            "3.6 V6 Biturbo ATS-V 468cv"
+          ]
+        },
+        {
+          "name": "XT5",
+          "submodels": [
+            "2.0 Turbo 237cv",
+            "3.6 V6 314cv",
+            "2.0 Turbo AWD 237cv"
+          ]
+        },
+        {
+          "name": "XT4",
+          "submodels": [
+            "2.0 Turbo 237cv",
+            "2.0 Turbo AWD 237cv"
+          ]
+        },
+        {
+          "name": "XT6",
+          "submodels": [
+            "3.6 V6 314cv",
+            "2.0 Turbo 237cv",
+            "2.0 Turbo AWD 237cv"
+          ]
+        },
+        {
+          "name": "BLS",
+          "submodels": [
+            "2.0 Turbo 175cv",
+            "2.8 Turbo 255cv",
+            "1.9 TiD 150cv",
+            "2.0 TiD 130cv"
+          ]
+        },
+        {
+          "name": "SRX",
+          "submodels": [
+            "3.0 V6 265cv",
+            "3.6 V6 308cv",
+            "2.8 Turbo 300cv",
+            "4.6 V8 Northstar 320cv",
+            "3.0 V6 AWD 265cv"
+          ]
+        },
+        {
+          "name": "CT6",
+          "submodels": [
+            "2.0 Turbo 265cv",
+            "3.0 V6 Biturbo 410cv",
+            "3.6 V6 340cv",
+            "6.2 V8 CT6-V 550cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Chevrolet",
+      "models": [
+        {
+          "name": "Aveo",
+          "submodels": [
+            "1.2 70cv",
+            "1.2 86cv",
+            "1.4 100cv",
+            "1.6 115cv",
+            "1.3 VCDi 95cv"
+          ]
+        },
+        {
+          "name": "Cruze",
+          "submodels": [
+            "1.6 115cv",
+            "1.8 141cv",
+            "2.0 VCDi 163cv",
+            "1.4 Turbo 140cv",
+            "1.6 VCDi 131cv",
+            "2.0 VCDi 150cv"
+          ]
+        },
+        {
+          "name": "Orlando",
+          "submodels": [
+            "1.8 141cv",
+            "2.0 VCDi 163cv",
+            "2.0 VCDi 130cv"
+          ]
+        },
+        {
+          "name": "Captiva",
+          "submodels": [
+            "2.0 VCDi 150cv",
+            "2.0 VCDi 163cv",
+            "2.4 140cv",
+            "3.2 V6 230cv",
+            "2.2 VCDi 184cv",
+            "2.2 VCDi 163cv"
+          ]
+        },
+        {
+          "name": "Spark",
+          "submodels": [
+            "1.0 65cv",
+            "1.0 68cv",
+            "1.2 80cv"
+          ]
+        },
+        {
+          "name": "Trax",
+          "submodels": [
+            "1.4 Turbo 140cv",
+            "1.6 115cv",
+            "1.7 VCDi 130cv",
+            "1.8 140cv"
+          ]
+        },
+        {
+          "name": "Malibu",
+          "submodels": [
+            "1.5 Turbo 165cv",
+            "2.0 Turbo 250cv",
+            "2.4 SIDI 182cv",
+            "2.0 VCDi 163cv"
+          ]
+        },
+        {
+          "name": "Camaro",
+          "submodels": [
+            "3.6 V6 323cv",
+            "6.2 V8 453cv",
+            "2.0 Turbo 275cv",
+            "6.2 V8 ZL1 650cv",
+            "6.2 V8 Z/28 507cv"
+          ]
+        },
+        {
+          "name": "Corvette",
+          "submodels": [
+            "6.0 V8 405cv",
+            "6.2 V8 436cv",
+            "6.2 V8 Z06 512cv",
+            "6.2 V8 Supercharged ZR1 638cv",
+            "6.2 V8 Grand Sport 460cv",
+            "6.2 V8 Stingray 460cv",
+            "5.7 V8 347cv"
+          ]
+        },
+        {
+          "name": "Suburban",
+          "submodels": [
+            "5.3 V8 320cv",
+            "6.0 V8 360cv",
+            "6.2 V8 420cv"
+          ]
+        },
+        {
+          "name": "Tahoe",
+          "submodels": [
+            "5.3 V8 320cv",
+            "6.2 V8 420cv"
+          ]
+        },
+        {
+          "name": "Silverado",
+          "submodels": [
+            "4.3 V6 285cv",
+            "5.3 V8 355cv",
+            "6.2 V8 420cv",
+            "2.8 Duramax 181cv"
+          ]
+        },
+        {
+          "name": "Volt",
+          "submodels": [
+            "PHEV 1.4 + Eléctrico 150cv",
+            "PHEV 1.5 + Eléctrico 150cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "SsangYong",
+      "models": [
+        {
+          "name": "Tivoli",
+          "submodels": [
+            "1.5 GDI-T 163cv",
+            "1.6 GDI 128cv",
+            "1.6 e-XDi 115cv",
+            "1.5 T-GDI 163cv",
+            "ELX 1.6 GDI 128cv",
+            "Grand 1.5 T-GDI 163cv",
+            "Grand 1.6 e-XDi 136cv"
+          ]
+        },
+        {
+          "name": "Korando",
+          "submodels": [
+            "2.0 GDI 149cv",
+            "2.2 e-XDi 220 4WD 178cv",
+            "2.2 e-XDi 200 4WD 175cv",
+            "2.0 e-XDi 155cv",
+            "1.5 T-GDI 163cv",
+            "e-Motion EV 140kW 190cv",
+            "C200 2.0 Xdi 141cv"
+          ]
+        },
+        {
+          "name": "Rexton",
+          "submodels": [
+            "2.2 e-XDi 220 4WD 178cv",
+            "2.0 e-XDi 155cv",
+            "2.7 Xdi 163cv",
+            "2.9 Xdi 120cv",
+            "3.2 V6 220cv",
+            "W 2.2 e-XDi 220 4WD 178cv"
+          ]
+        },
+        {
+          "name": "Musso",
+          "submodels": [
+            "2.2 e-XDi 220 4WD 181cv",
+            "2.2 e-XDi 4WD 181cv",
+            "Grand 2.2 e-XDi 220 4WD 181cv"
+          ]
+        },
+        {
+          "name": "Rodius",
+          "submodels": [
+            "2.7 Xdi 165cv",
+            "2.0 e-XDi 155cv",
+            "Turismo 2.2 e-XDi 220cv"
+          ]
+        },
+        {
+          "name": "XLV",
+          "submodels": [
+            "1.6 GDI 128cv",
+            "1.6 e-XDi 115cv"
+          ]
+        },
+        {
+          "name": "Torres",
+          "submodels": [
+            "1.5 T-GDI 170cv",
+            "EVX 73.4kWh 282cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Seat",
+      "models": [
+        {
+          "name": "Mii Electric",
+          "submodels": [
+            "e-Mii 32.3kWh 83cv",
+            "Electric Plus 32.3kWh 83cv"
+          ]
+        },
+        {
+          "name": "Mii",
+          "submodels": [
+            "1.0 60cv",
+            "1.0 75cv",
+            "1.0 EcoFuel 68cv",
+            "1.0 TSI 95cv",
+            "FR 1.0 75cv",
+            "Chic 1.0 60cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Cupra",
+      "models": [
+        {
+          "name": "Terramar",
+          "submodels": [
+            "1.5 TSI 150cv",
+            "1.5 eTSI 204cv",
+            "2.0 TDI 150cv",
+            "2.0 TSI 272cv",
+            "2.0 TSI 4Drive 272cv",
+            "e-Hybrid 272cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Abarth",
+      "models": [
+        {
+          "name": "500",
+          "submodels": [
+            "1.4 T-Jet 135cv",
+            "1.4 T-Jet 145cv",
+            "1.4 T-Jet 160cv",
+            "595 1.4 T-Jet 145cv",
+            "595 Pista 1.4 T-Jet 165cv"
+          ]
+        },
+        {
+          "name": "500C",
+          "submodels": [
+            "1.4 T-Jet 135cv",
+            "1.4 T-Jet 145cv",
+            "595C 1.4 T-Jet 145cv",
+            "595C Turismo 1.4 T-Jet 165cv"
+          ]
+        },
+        {
+          "name": "595",
+          "submodels": [
+            "1.4 T-Jet 145cv",
+            "Turismo 1.4 T-Jet 165cv",
+            "Competizione 1.4 T-Jet 180cv",
+            "Pista 1.4 T-Jet 180cv"
+          ]
+        },
+        {
+          "name": "595C",
+          "submodels": [
+            "1.4 T-Jet 145cv",
+            "Turismo 1.4 T-Jet 165cv",
+            "Competizione 1.4 T-Jet 180cv",
+            "Pista 1.4 T-Jet 180cv"
+          ]
+        },
+        {
+          "name": "695",
+          "submodels": [
+            "695 Biposto 1.4 T-Jet 190cv",
+            "695 Rivale 1.4 T-Jet 195cv",
+            "695 XSR Yamaha 1.4 T-Jet 190cv",
+            "695 Esseesse 180cv",
+            "695 Tributo Ferrari 180cv",
+            "695 Edizione Maserati 180cv"
+          ]
+        },
+        {
+          "name": "695C",
+          "submodels": [
+            "695 Biposto Record 1.4 T-Jet 190cv",
+            "695C Rivale 1.4 T-Jet 180cv",
+            "695C Turismo 1.4 T-Jet 165cv"
+          ]
+        },
+        {
+          "name": "124 Spider",
+          "submodels": [
+            "1.4 MultiAir Turbo 140cv",
+            "Abarth 1.4 MultiAir Turbo 170cv",
+            "Abarth Italia 1.4 MultiAir Turbo 170cv",
+            "Abarth USA 1.4 MultiAir Turbo 164cv",
+            "Abarth Record Monza 1.4 MultiAir Turbo 170cv"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Volkswagen",
+      "models": [
+        {
+          "name": "Up",
+          "submodels": [
+            "1.0 60cv",
+            "1.0 75cv",
+            "1.0 TSI 90cv",
+            "GTI 1.0 TSI 115cv",
+            "e-Up 32kWh 83cv",
+            "Move Up 1.0 60cv",
+            "High Up 1.0 75cv",
+            "Cross Up 1.0 75cv",
+            "Up Beats 1.0 60cv",
+            "R-Line 1.0 TSI 90cv"
+          ]
+        }
+      ]
+    }
+  ]
+}
