@@ -18,6 +18,7 @@ from scrapers.portals.ch import AutoScout24CH
 from scrapers.portals.coches_net import CochesNetScraper
 from scrapers.portals.de import AutoScout24DE
 from scrapers.portals.es import AutoScout24ES
+from scrapers.portals.es.autocasion import AutocasionES
 from scrapers.portals.fr import AutoScout24FR
 from scrapers.portals.gaspedaal_nl import GaspedaalNLScraper
 from scrapers.portals.kleinanzeigen_de import KleinanzeigenDEScraper
