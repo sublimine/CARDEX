@@ -268,17 +268,18 @@ services:
           memory: 256M
 
   # ---------------------------------------------------------------------------
-  # CARDEX Pipeline (ingest → dedup → normalize → PostgreSQL + stream:meili_sync)
+  # CARDEX Rich Persister A7 (ingestion_raw → dedup → FX → PostgreSQL vehicles
+  #                           + stream:meili_sync / price_events)
   # ---------------------------------------------------------------------------
+  # NOTE: the Go reference at services/pipeline/cmd/pipeline/main.go specifies this
+  # contract but cannot build (no go.mod / pkg{fx,h3,bloom} / Dockerfile — verified
+  # 2026-06-06). The running implementation is the Python A7 (scrapers.rich_consumer),
+  # which honours the SAME stream:ingestion_raw JSON contract, so the Go service stays
+  # a drop-in replacement if it is ever completed. See P0_EXECUTION_REPORT.md §P0-3.
   pipeline:
     <<: *hardening
-    build:
-      context: .
-      dockerfile: services/pipeline/Dockerfile
+    build: { context: scrapers, dockerfile: Dockerfile }
     container_name: cardex-pipeline
-    read_only: true
-    tmpfs:
-      - /tmp:rw,noexec,nosuid,size=64m
     networks:
       - backend
       - data
@@ -287,14 +288,13 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      redis-init:
-        condition: service_completed_successfully
     environment:
       DATABASE_URL: postgres://cardex:${POSTGRES_PASSWORD:-cardex_dev_only}@postgres:5432/cardex
-      REDIS_ADDR: redis:6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-cardex_dev_only}
-      GATEWAY_HMAC_SECRET: ${GATEWAY_HMAC_SECRET:-dev_pipeline_hmac_secret_change_in_prod}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-cardex_dev_only}@redis:6379
+      PIPELINE_BATCH_SIZE: "50"
+      RICH_LIMIT: "${RICH_LIMIT:-0}"
       LOG_LEVEL: ${LOG_LEVEL:-info}
+    command: ["-m", "scrapers.rich_consumer"]
     restart: unless-stopped
     deploy:
       resources:
@@ -805,10 +805,14 @@ services:
     environment:
       DATABASE_URL: postgres://cardex:${POSTGRES_PASSWORD:-cardex_dev_only}@postgres:5432/cardex
       REDIS_URL: redis://:${REDIS_PASSWORD:-cardex_dev_only}@redis:6379
+      ENGINE_DB_PATH: /app/scrapers/engine.db
       ENRICH_BATCH_SIZE: "50"
       ENRICH_CONCURRENCY: "20"
+      ENRICH_LIMIT: "${ENRICH_LIMIT:-0}"
       LOG_LEVEL: ${LOG_LEVEL:-info}
-    command: ["-m", "enrich_worker"]
+    # FIX (P0-3): module was `enrich_worker` (did not exist); the verified entrypoint
+    # is `python -m scrapers.<module>` (PYTHONPATH=/app, code at /app/scrapers).
+    command: ["-m", "scrapers.enrich_worker"]
     restart: unless-stopped
     deploy:
       resources:
