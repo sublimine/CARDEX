@@ -23,6 +23,7 @@ from reference import (
     KNOWN_GIANTS,
     PIPELINE_STAGES,
     SEED_PLATFORMS,
+    STRATEGY_BY_DOMAIN,
 )
 
 
@@ -301,7 +302,7 @@ def render_portal_coverage(data: dict) -> str:
     mx = max((d["n"] for d in domains), default=1)
     out = ['<section class="card"><h2>Cobertura por portal <span class="h2sub">(extraído · estado · cuello de botella)</span></h2>']
     out.append('<p class="card-note">El total de mercado de cada portal no es verificable sin proxies/sondeo de sitemap → se marca "sin estimación". Los topes redondos delatan paginación no batida.</p>')
-    out.append('<table class="ptable"><thead><tr><th>Portal</th><th>País</th><th>Extraído</th><th></th><th>Estado</th></tr></thead><tbody>')
+    out.append('<table class="ptable"><thead><tr><th>Portal</th><th>País</th><th>Estrategia</th><th>Extraído</th><th></th><th>Estado</th></tr></thead><tbody>')
     for d in domains:
         dom = d["domain"]
         cc = d["country"]
@@ -322,6 +323,7 @@ def render_portal_coverage(data: dict) -> str:
     <tr>
       <td class="mono">{esc(dom)}</td>
       <td>{cc_badge(cc)}</td>
+      <td class="strat">{esc(STRATEGY_BY_DOMAIN.get(dom, "—"))}</td>
       <td class="numcell">{num(d['n'])}</td>
       <td class="barcell">{bar(d['n'], mx, bstatus)}</td>
       <td>{''.join(badges)}</td>
@@ -649,6 +651,7 @@ h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.01em}
 table{width:100%;border-collapse:collapse;font-size:.85rem}
 .ptable th,.ptable td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}
 .ptable th{color:var(--muted);font-weight:600;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em}
+.strat{color:var(--muted);font-size:.8rem}
 .numcell{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
 .barcell{width:160px}
 .ptable tr:hover td{background:var(--surface2)}

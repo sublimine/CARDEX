@@ -22,6 +22,31 @@ COUNTRY_NAMES = {
     "CH": "Suiza",
 }
 
+# Extraction strategy per producing portal (AUDIT §2.1, verbatim). Shown in the
+# coverage table. Domains absent here render "—" (strategy not catalogued).
+STRATEGY_BY_DOMAIN = {
+    "autolina.ch": "API-JSON",
+    "tutti.ch": "Next.js embebido",
+    "viabovag.nl": "Next.js/data-route",
+    "truckscout24.com": "sitemap-XML",
+    "gaspedaal.nl": "JSON-LD",
+    "anibis.ch": "Next.js (hereda tutti)",
+    "autohero.com": "API-JSON",
+    "vroom.be": "sitemap",
+    "autotrack.nl": "curl_cffi pager",
+    "ocasionplus.com": "API-JSON",
+    "simplicicar.com": "sitemap",
+    "marktplaats.nl": "API-móvil",
+    "occasions.jeanlain.com": "sitemap",
+    "distinxion.fr": "sitemap",
+    "paruvendu.fr": "HTML",
+    "comparis.ch": "Next.js",
+    "2ememain.be": "API-móvil",
+    "2dehands.be": "API-móvil",
+    "clicars.com": "API-JSON",
+    "gowago.ch": "API-JSON",
+}
+
 # Round counts confirmed as un-broken pagination caps (AUDIT §2.1).
 # Maps source_domain -> the cap value observed. Rendered as an amber warning.
 CAP_SUSPECTS = {
