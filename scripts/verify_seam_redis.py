@@ -19,9 +19,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import redis.asyncio as aioredis  # noqa: E402
 
+from scrapers import db  # noqa: E402
 from scrapers import enrich_worker as a6  # noqa: E402
 from scrapers import rich_consumer as a7  # noqa: E402
 from scrapers.common import indexer  # noqa: E402
+from scrapers.intelligence import drift_gate  # noqa: E402
+from scrapers.portals import config as portal_config  # noqa: E402
 
 _DB_URL = os.environ.get("DATABASE_URL", "postgres://cardex:cardex_dev_only@localhost:5432/cardex")
 _THROWAWAY_REDIS = os.environ.get("THROWAWAY_REDIS_URL", "redis://localhost:56390")
@@ -82,6 +85,26 @@ async def run(domain: str, country: str, limit: int) -> int:
                 print(f"  row: {r['make']} {r['model']} {r['year']} "
                       f"eur={r['gross_physical_cost_eur']} source_id={r['source_id'][:12]}… "
                       f"platform={r['source_platform']}")
+
+            # 4b. DRIFT GATE (anti-breakage hook) — score this harvest against the
+            # source's versioned config baseline; alert by source if it deviates.
+            cfg = portal_config.load(domain)
+            if cfg is not None:
+                records = [
+                    {"make": r["make"], "model": r["model"], "year": r["year"],
+                     "price": r["gross_physical_cost_eur"],
+                     "images": ["x"] if r["make"] else []}
+                    for r in sample
+                ]
+                stats = drift_gate.stats_from_records(records, cfg.drift_baseline.required_fields)
+                eng = db.connect(os.environ.get("ENGINE_DB_PATH", "scrapers/engine.db"))
+                db.migrate(eng)
+                report = drift_gate.evaluate(cfg, stats, conn=eng)
+                eng.commit(); eng.close()
+                print(f"DRIFT GATE [{domain}]: {'OK' if report.ok else 'ALERT'} — {report.reason()}")
+            else:
+                print(f"DRIFT GATE [{domain}]: no config (add configs/portals/{domain}.json)")
+
             deleted = await conn.execute("DELETE FROM vehicles WHERE source_url = ANY($1::text[])", urls)
             final = await conn.fetchval("SELECT count(*) FROM vehicles")
         print(f"PURGED {deleted}; vehicles FINAL = {final} "

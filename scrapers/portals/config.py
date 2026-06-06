@@ -1,0 +1,164 @@
+"""
+Config-driven extraction — the per-portal recipe lives in a versioned store, not code.
+
+Today each portal hardcodes its extraction recipe as class attributes
+(``HOST``/``DETAIL_RE``/``PAGE_SIZE``/``MAX_PAGES`` in ``portals/<x>/__init__.py``).
+That couples "what to extract / how" to a Python edit + redeploy. This module
+externalises that recipe to a **versioned JSON store** (``configs/portals/*.json``,
+tracked in git → every change is a reviewable diff) so the day a portal changes its
+HTML the fix is a config edit on ONE file, not a code change.
+
+An ``ExtractionConfig`` captures the five axes the addendum names:
+  strategy · endpoints · pagination · extraction/normalization · drift baseline.
+
+The ``drift_baseline`` block is the seed of the anti-breakage resilience subsystem
+(see ``scrapers/intelligence/drift_gate.py``): expected volume, required fields, and
+the extraction method whose schema fingerprint (``intelligence/schema.py``) is
+tracked. When a harvest deviates from the baseline, drift is detected, alerted by
+source, and repaired by editing this config — never by silently ingesting garbage.
+
+This is the contract; migrating every portal to *execute* purely from config is a
+follow-up (the classes can ``load(source_key)`` incrementally). The store and the
+drift baseline are live now so the NL pattern is born config-driven.
+"""
+from __future__ import annotations
+
+import json
+import os
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+
+# Versioned store root — git-tracked JSON, one file per source_key.
+# (Path("") is truthy as Path("."), so test the env string explicitly.)
+_ENV_DIR = os.environ.get("CARDEX_PORTAL_CONFIG_DIR", "").strip()
+_CONFIG_DIR = Path(_ENV_DIR) if _ENV_DIR else (
+    Path(__file__).resolve().parents[2] / "configs" / "portals"
+)
+
+# Recognised extraction strategies (how the source exposes its inventory).
+STRATEGIES = (
+    "portal_paginated",   # search/listing pages with N-page pagination (autotrack)
+    "sitemap_listing",    # sitemap-first deep-link discovery (SitemapListingScraper)
+    "jsonld_detail",      # detail pages carry schema.org Car/Vehicle JSON-LD
+    "wp_rest",            # WordPress /wp-json CPT enumeration (dealer long-tail)
+    "socrata",            # open-data Socrata API (discovery, e.g. RDW)
+)
+
+
+@dataclass(frozen=True)
+class Endpoints:
+    """Where to fetch. Only the fields a given strategy needs are set."""
+
+    host: str = ""
+    listing_url_template: str = ""   # e.g. "https://www.autotrack.nl/aanbod?pageNumber={page}"
+    sitemap_url: str = ""
+    detail_url_re: str = ""          # regex isolating a vehicle detail deep-link
+    api_url: str = ""                # socrata / wp-rest / dealer DMS feed
+
+
+@dataclass(frozen=True)
+class Pagination:
+    """How to walk the listing surface."""
+
+    page_size: int = 0
+    max_pages: int = 0
+    page_param: str = "page"
+
+
+@dataclass(frozen=True)
+class Extraction:
+    """How to turn a fetched page into canonical fields (normalization)."""
+
+    method: str = "jsonld"           # jsonld | microdata | og | heuristic | socrata
+    # canonical_field -> source path/selector/key. Empty = use pipeline.parse defaults.
+    field_map: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class DriftBaseline:
+    """
+    The anti-breakage contract for a source — what a healthy harvest looks like.
+
+    A harvest that drops below ``expected_min_volume``, or whose records fall below
+    ``min_nonnull_ratio`` on ``required_fields``, or whose extraction-schema
+    fingerprint shifts, is DRIFT: alert by source, pause, repair this config.
+    """
+
+    extraction_method: str = "jsonld"
+    expected_min_volume: int = 1          # min listings a healthy cycle yields
+    required_fields: tuple[str, ...] = ("make", "model", "year", "price")
+    min_nonnull_ratio: float = 0.7        # fraction of records carrying every required field
+
+
+@dataclass(frozen=True)
+class ExtractionConfig:
+    """The full, versioned extraction recipe for one source_key."""
+
+    source_key: str
+    country: str
+    strategy: str
+    version: int = 1
+    endpoints: Endpoints = field(default_factory=Endpoints)
+    pagination: Pagination = field(default_factory=Pagination)
+    extraction: Extraction = field(default_factory=Extraction)
+    drift_baseline: DriftBaseline = field(default_factory=DriftBaseline)
+
+    def __post_init__(self) -> None:
+        if self.strategy not in STRATEGIES:
+            raise ValueError(f"unknown strategy {self.strategy!r} (one of {STRATEGIES})")
+        if not self.source_key or not self.country:
+            raise ValueError("source_key and country are required")
+
+
+def _config_path(source_key: str) -> Path:
+    # source_key is a domain ("autotrack.nl") → flat file name.
+    safe = source_key.replace("/", "_")
+    return _CONFIG_DIR / f"{safe}.json"
+
+
+def from_dict(d: dict) -> ExtractionConfig:
+    """Build an ExtractionConfig from a parsed JSON dict (tolerant of missing blocks)."""
+    return ExtractionConfig(
+        source_key=d["source_key"],
+        country=d["country"],
+        strategy=d["strategy"],
+        version=int(d.get("version", 1)),
+        endpoints=Endpoints(**d.get("endpoints", {})),
+        pagination=Pagination(**d.get("pagination", {})),
+        extraction=Extraction(**d.get("extraction", {})),
+        drift_baseline=DriftBaseline(**{
+            **d.get("drift_baseline", {}),
+            "required_fields": tuple(d.get("drift_baseline", {}).get(
+                "required_fields", DriftBaseline.required_fields)),
+        }),
+    )
+
+
+def to_dict(cfg: ExtractionConfig) -> dict:
+    """Serialise a config to a JSON-ready dict (tuples → lists)."""
+    d = asdict(cfg)
+    d["drift_baseline"]["required_fields"] = list(cfg.drift_baseline.required_fields)
+    return d
+
+
+def load(source_key: str) -> ExtractionConfig | None:
+    """Load a source's versioned config, or None when no config file exists."""
+    path = _config_path(source_key)
+    if not path.exists():
+        return None
+    return from_dict(json.loads(path.read_text(encoding="utf-8")))
+
+
+def save(cfg: ExtractionConfig) -> Path:
+    """Persist a config to the versioned store (creates the dir on first write)."""
+    path = _config_path(cfg.source_key)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(to_dict(cfg), indent=2, ensure_ascii=False), encoding="utf-8")
+    return path
+
+
+def list_configs() -> list[str]:
+    """Every source_key with a versioned config (sorted)."""
+    if not _CONFIG_DIR.exists():
+        return []
+    return sorted(p.stem for p in _CONFIG_DIR.glob("*.json"))

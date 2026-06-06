@@ -1,0 +1,39 @@
+{
+  "source_key": "viabovag.nl",
+  "country": "NL",
+  "strategy": "sitemap_listing",
+  "version": 1,
+  "endpoints": {
+    "host": "www.viabovag.nl",
+    "listing_url_template": "",
+    "detail_url_re": "",
+    "sitemap_url": "https://www.viabovag.nl/sitemap.xml",
+    "api_url": ""
+  },
+  "pagination": {
+    "page_size": 0,
+    "max_pages": 0,
+    "page_param": ""
+  },
+  "extraction": {
+    "method": "jsonld",
+    "field_map": {
+      "make": "brand.name",
+      "model": "model",
+      "year": "vehicleModelDate",
+      "price": "offers.price",
+      "currency": "offers.priceCurrency",
+      "mileage_km": "mileageFromOdometer.value",
+      "fuel_type": "fuelType",
+      "transmission": "vehicleTransmission",
+      "vin": "vehicleIdentificationNumber",
+      "images": "image"
+    }
+  },
+  "drift_baseline": {
+    "extraction_method": "jsonld",
+    "expected_min_volume": 3,
+    "required_fields": ["make", "model", "year", "price"],
+    "min_nonnull_ratio": 0.7
+  }
+}
