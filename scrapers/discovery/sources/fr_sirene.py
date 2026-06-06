@@ -5,11 +5,17 @@ API: https://recherche-entreprises.api.gouv.fr/search
     — free, no auth, no rate limit beyond politeness
     — filters by NAF activity code, postal department, status
     — hard cap: page × per_page ≤ 10_000 per query
+    — NAF codes MUST be dotted (45.11Z), not bare (4511Z) — bare codes
+      return HTTP 400 ("paramètre activite_principale non valide").
 
-Car dealer NAF codes:
-    4511Z — Commerce de voitures et de véhicules automobiles légers
-    4519Z — Commerce d'autres véhicules automobiles
-    4520A — Entretien et réparation de véhicules automobiles légers
+Automotive NAF codes (full sector net):
+    45.11Z — Commerce de voitures et de véhicules automobiles légers
+    45.19Z — Commerce d'autres véhicules automobiles
+    45.20A — Entretien et réparation de véhicules automobiles légers
+    45.20B — Entretien et réparation d'autres véhicules automobiles
+    45.31Z — Commerce de gros d'équipements automobiles
+    45.32Z — Commerce de détail d'équipements automobiles
+    45.40Z — Commerce et réparation de motocycles
 
 A single unfiltered query hits the 10k cap immediately. We partition by
 `departement` (≈100 French departments) — no department has close to 10k
@@ -36,7 +42,7 @@ _API_URL = "https://recherche-entreprises.api.gouv.fr/search"
 _PAGE_SIZE = 25
 _PAGE_DELAY = 0.25  # polite pacing between API calls
 
-_NAF_CODES = ("4511Z", "4519Z", "4520A")
+_NAF_CODES = ("45.11Z", "45.19Z", "45.20A", "45.20B", "45.31Z", "45.32Z", "45.40Z")
 
 # Metropolitan France departments (96) + overseas (5).
 _DEPARTEMENTS: tuple[str, ...] = (

@@ -27,6 +27,17 @@ _OVERPASS_ENDPOINTS: tuple[str, ...] = (
     "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
 )
 
+# overpass-api.de runs Apache + mod_security which returns HTTP 406 for the
+# default httpx User-Agent. A browser UA passes the WAF. Without this header
+# every request is rejected before reaching the Overpass engine.
+_OVERPASS_HEADERS = {
+    "Accept": "application/json",
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+    ),
+}
+
 # Overpass area id = 3_600_000_000 + OSM relation id for the country boundary.
 _COUNTRY_AREA_IDS: dict[str, int] = {
     "ES": 3_600_000_000 + 1_311_341,  # Spain
@@ -38,18 +49,22 @@ _COUNTRY_AREA_IDS: dict[str, int] = {
 }
 
 _QUERY_TEMPLATE = """
-[out:json][timeout:300];
+[out:json][timeout:600];
 area({area_id})->.searchArea;
 (
-  node["shop"="car"](area.searchArea);
-  node["shop"="car_dealer"](area.searchArea);
-  node["trade"="cars"](area.searchArea);
-  node["shop"="second_hand"]["car"](area.searchArea);
-  way["shop"="car"](area.searchArea);
-  way["shop"="car_dealer"](area.searchArea);
-  way["trade"="cars"](area.searchArea);
-  relation["shop"="car"](area.searchArea);
-  relation["shop"="car_dealer"](area.searchArea);
+  nwr["shop"="car"](area.searchArea);
+  nwr["shop"="car_dealer"](area.searchArea);
+  nwr["trade"="cars"](area.searchArea);
+  nwr["shop"="second_hand"]["car"](area.searchArea);
+  nwr["shop"="car_repair"](area.searchArea);
+  nwr["shop"="car_parts"](area.searchArea);
+  nwr["shop"="tyres"](area.searchArea);
+  nwr["shop"="motorcycle"](area.searchArea);
+  nwr["shop"="truck"](area.searchArea);
+  nwr["shop"="caravan"](area.searchArea);
+  nwr["craft"="car_repair"](area.searchArea);
+  nwr["office"="car_dealer"](area.searchArea);
+  nwr["amenity"="car_rental"](area.searchArea);
 );
 out body center qt;
 """.strip()
@@ -77,7 +92,7 @@ class OSMSource:
                 resp = await self._client.post(
                     endpoint,
                     data={"data": query},
-                    headers={"Accept": "application/json"},
+                    headers=_OVERPASS_HEADERS,
                     timeout=360.0,
                 )
                 if resp.status_code != 200:

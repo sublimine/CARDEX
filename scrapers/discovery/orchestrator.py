@@ -101,7 +101,7 @@ _SOURCES: list[tuple[str, SourceFactory, Callable[[str], bool]]] = [
     ("oem_bmw",       BMWDealerSource,        lambda c: c in _DEFAULT_COUNTRIES),
     # Layer 2 — Portal aggregators (each portal self-filters by country)
     ("portal",        PortalAggregatorSource, lambda c: True),
-    # Layer 3 — Registries
+    # Layer 3 — Registries (national, no-auth open APIs only)
     ("sirene",        SireneSource,           lambda c: c == "FR"),
     ("zefix",         ZefixSource,            lambda c: c == "CH"),
     # Layer 4 — OSM
@@ -109,6 +109,29 @@ _SOURCES: list[tuple[str, SourceFactory, Callable[[str], bool]]] = [
     # Layer 5 — Common Crawl
     ("common_crawl",  CommonCrawlSource,      lambda c: True),
 ]
+
+# Standalone sources self-sink to PG over their own transport (crt.sh
+# Postgres, curl_cffi) instead of yielding to the httpx fan-out, so they
+# cannot use the `discover(country)` contract above. Each iterates its own
+# country set internally and runs once per orchestrator invocation. Set
+# DISCOVERY_STANDALONE=0 to skip them (httpx fan-out only). Imports are lazy
+# so a missing optional dep (e.g. curl_cffi) disables only its own runner.
+_STANDALONE_ENABLED = os.environ.get("DISCOVERY_STANDALONE", "1") != "0"
+
+_STANDALONE_RUNNERS: tuple[str, ...] = ("ct_logs", "trustpilot", "bovag")
+
+
+async def _run_standalone(name: str) -> None:
+    """Import and run a self-sinking standalone source, isolating failures."""
+    try:
+        module = __import__(
+            f"scrapers.discovery.sources.{name}", fromlist=["run"],
+        )
+        await module.run()
+    except Exception as exc:
+        log.warning("discovery: standalone %s errored: %s", name, exc)
+    else:
+        log.info("discovery: standalone %s done", name)
 
 
 # ── Sink ─────────────────────────────────────────────────────────────────────
@@ -217,10 +240,15 @@ async def run(countries: list[str] | None = None) -> dict[str, int]:
                 max_connections=64,
             ),
         ) as client:
-            await asyncio.gather(*[
+            country_tasks = [
                 _run_country(c, client, pool, stats)
                 for c in countries
-            ])
+            ]
+            standalone_tasks = (
+                [_run_standalone(name) for name in _STANDALONE_RUNNERS]
+                if _STANDALONE_ENABLED else []
+            )
+            await asyncio.gather(*country_tasks, *standalone_tasks)
     finally:
         await pool.close()
 
