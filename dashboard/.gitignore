@@ -1,0 +1,7 @@
+# Generated dashboard output (regenerated every 15 min from the live DB).
+# The source that produces it is tracked; the artifact is not.
+cardex_control.html
+last_metrics.json
+server.log
+*.tmp
+__pycache__/
