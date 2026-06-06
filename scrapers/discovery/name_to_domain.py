@@ -155,7 +155,7 @@ async def run() -> None:
     WHERE domain IS NULL
       AND registry_id IS NOT NULL
       AND name IS NOT NULL
-      AND source IN ('sirene_v311','sirene','oem:bmw')
+      AND source IN ('sirene_v311','sirene','oem:bmw','rdw_erkende_bedrijven')
     ORDER BY id
     """
     if _LIMIT > 0:
