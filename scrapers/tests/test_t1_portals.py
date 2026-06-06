@@ -21,6 +21,8 @@ import pytest
 from scrapers.engine.identity import profile, store
 from scrapers.engine.identity.profile import IdentityStatus, ProxyTier
 from scrapers.portals import get_scraper
+from scrapers.portals.autocasion_com import AutocasionESScraper
+from scrapers.portals.autotrack_nl import AutoTrackNLScraper
 from scrapers.portals.es.autocasion import AutocasionES
 from scrapers.portals.html_search_base import HtmlSearchScraper
 from scrapers.portals.nl.autotrack import AutotrackNL
@@ -113,8 +115,10 @@ def test_t1_validate_requires_host_sitemap_detail(conn) -> None:
 
 @pytest.mark.unit
 def test_t1_registry_resolves_both_portals() -> None:
-    assert isinstance(get_scraper("autotrack.nl"), AutotrackNL)
-    assert isinstance(get_scraper("autocasion.com"), AutocasionES)
+    # Both domains are registered to their SSR/BasePortalScraper variants, not the
+    # legacy HtmlSearchScraper classes whose primitives are unit-tested above.
+    assert isinstance(get_scraper("autotrack.nl"), AutoTrackNLScraper)
+    assert isinstance(get_scraper("autocasion.com"), AutocasionESScraper)
 
 
 # --------------------------------------------------------------------------- #
@@ -353,10 +357,15 @@ def test_autotrack_run_ok_with_nl_identity(conn) -> None:
     scraper.SLEEP_JITTER = 0.0
     # One short page (< PAGE_SIZE 30) → segment exhausts after page 1.
     html = '<a href="/a/vw-golf-1234567">a</a><a href="/a/vw-polo-7654321">b</a>'
-    result = _run(scraper.run(conn, _Session([_Resp(200, html)])))
+    received: list[str] = []
+
+    async def sink(urls: list[str]) -> None:
+        received.extend(urls)
+
+    result = _run(scraper.run(conn, _Session([_Resp(200, html)]), on_urls=sink))
     assert result.status.value == "ok"
     assert result.identity_id == idy.id
-    assert set(result.urls) == {
+    assert set(received) == {
         "https://www.autotrack.nl/a/vw-golf-1234567",
         "https://www.autotrack.nl/a/vw-polo-7654321",
     }
@@ -370,8 +379,13 @@ def test_autocasion_run_ok_with_es_identity(conn) -> None:
     scraper.SLEEP_BASE = 0.0
     scraper.SLEEP_JITTER = 0.0
     html = '<a href="/coches-segunda-mano/audi/a3-ref1">a</a>'
-    result = _run(scraper.run(conn, _Session([_Resp(200, html)])))
+    received: list[str] = []
+
+    async def sink(urls: list[str]) -> None:
+        received.extend(urls)
+
+    result = _run(scraper.run(conn, _Session([_Resp(200, html)]), on_urls=sink))
     assert result.status.value == "ok"
     assert result.identity_id == idy.id
-    assert result.urls == ["https://www.autocasion.com/coches-segunda-mano/audi/a3-ref1"]
+    assert received == ["https://www.autocasion.com/coches-segunda-mano/audi/a3-ref1"]
     assert result.tier == "T1"

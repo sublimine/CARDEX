@@ -345,7 +345,7 @@ def test_process_item_no_session_backs_off_without_running_scraper(conn, monkeyp
 def test_process_item_ok_marks_done_records_success_and_closes_session(conn, monkeypatch) -> None:
     _insert_job(conn, job_id="j1", attempts=0)
     item = _row(conn, "j1")
-    fake = _FakeScraper(RunResult(RunStatus.OK, tier="T2", urls=["/u/1"]))
+    fake = _FakeScraper(RunResult(RunStatus.OK, tier="T2", url_count=1))
     monkeypatch.setattr(coordinator, "get_scraper", lambda d: fake)
     session = _AsyncCloseSession()
 
@@ -478,7 +478,7 @@ def test_close_session_noop_when_no_closer() -> None:
 @pytest.mark.unit
 def test_run_processes_due_job_without_sleeping(conn, monkeypatch) -> None:
     _insert_job(conn, job_id="j1", scheduled_at=0)
-    fake = _FakeScraper(RunResult(RunStatus.OK, tier="T2", urls=["/u/1"]))
+    fake = _FakeScraper(RunResult(RunStatus.OK, tier="T2", url_count=1))
     monkeypatch.setattr(coordinator, "get_scraper", lambda d: fake)
     session = _AsyncCloseSession()
     sleeps: list[float] = []

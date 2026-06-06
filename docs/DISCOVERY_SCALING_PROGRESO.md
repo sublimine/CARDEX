@@ -62,10 +62,36 @@
 - Re-run canónico NO ejecutado en sesión para no duplicar el barrido SIRENE en vuelo (riesgo ban).
   Queda cableado: `DISCOVERY_COUNTRIES=DE,ES,FR,NL,BE,CH python -m scrapers.discovery.orchestrator`
 
-## Log de ejecución (running)
-- SIRENE FR: ✅ en vuelo (~24.5K filas a las 07:47, ritmo ~50/s, destino ~150-250K)
-- OSM expandido: ✅ en vuelo (DE: 52K elementos; FR/ES/NL/BE/CH pendientes)
-- ct_logs: ✅ done (367 dominios)
-- name_to_domain (crt.sh): ✅ en vuelo (resolver, bajo rendimiento esperado)
-- trustpilot/bovag: ✅ done (0)
-- DDG: ⛔ detenido (IP bloqueada)
+## RESULTADO FINAL [VERIFICADO contra DB 2026-06-06 ~09:41]
+**Total: 460.078 candidatos** (desde 9.625 = **×48**). 28.570 con dominio (6,2%), 431.508 sin.
+Integridad: 360.162 filas SIRENE = 360.162 SIRET distintos (cero dup); 0 filas basura (todas con name|domain).
+
+### Por país (total | con dominio | sin dominio)
+| País | Total | Con dominio | Sin dominio | Antes |
+|------|------:|------------:|------------:|------:|
+| FR | 388.423 | 5.044 | 383.379 | 7.576 |
+| DE | 45.103 | 16.575 | 28.528 | 475 |
+| ES | 12.818 | 1.463 | 11.355 | 4 |
+| NL | 5.430 | 2.913 | 2.517 | 0 |
+| CH | 4.256 | 1.393 | 2.863 | 1.507 |
+| BE | 4.048 | 1.182 | 2.866 | 63 |
+
+### Por fuente
+| Fuente | Total | Con dominio | Estado |
+|--------|------:|------------:|--------|
+| sirene | 360.162 | 0 | ✅ arreglada (era 0) |
+| osm | 98.865 | 28.124 | ✅ expandida + UA fix (era 9.018) |
+| oem:bmw | 606 | 1 | sin cambio |
+| ct_logs | 367 | 367 | ✅ corrió (crt.sh FTS restrictivo) |
+| name2dom | 78 | 78 | ⛔ detenida (lenta, ~5/min) |
+
+SIRENE por NAF: 45.11Z 152.487 · 45.20A 148.797 · 45.32Z 20.092 · 45.40Z 15.663 · 45.31Z 12.706 · 45.20B 5.813 · 45.19Z 4.604
+
+## Brecha hasta 900K — análisis honesto
+460K es el techo de las fuentes **abiertas sin auth**. Asimetría clave: **Francia es la única con registro
+nacional 100% abierto** (recherche-entreprises) → 360K. Los otros 5 países carecen de equivalente gratis y
+quedan a nivel OSM. Para los +440K restantes (sobre todo DE/ES/NL/BE/CH), las palancas viables son:
+1. **Páginas amarillas nacionales** (gelbeseiten.de, paginasamarillas.es, goudengids.nl/be, local.ch) —
+   gratis pero requieren el stack anti-detección de la fleet (curl_cffi/Camoufox). Mayor palanca libre restante.
+2. **Cuentas gratis con registro**: KBO BE (free), Zefix CH (free) → +30-50K BE/CH si se aportan credenciales.
+3. **APIs de pago**: Google Places (car_dealer nearby) ~100K+, INSEE bulk, KVK NL — descartadas (sin coste).

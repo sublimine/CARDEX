@@ -421,14 +421,22 @@ async def make_live_session(conn: sqlite3.Connection, scraper: Any) -> Any | Non
 
 
 def make_live_sink_factory(pg: Any, rdb: Any) -> SinkFactory:
-    """Build the per-scraper URL sink that runs the PG/Redis delta on collected links."""
+    """
+    Build the per-scraper streaming URL sink.
+
+    Returns a `StreamingDeltaSink` per scraper: each `on_urls` batch is persisted to PG
+    INSERT-only (memory-bounded), and the stale GONE reconciliation runs once via the
+    sink's `finalize` — which `BasePortalScraper.run` calls only on a complete, clean
+    harvest. This replaces the previous per-batch `indexer.delta` wiring, whose set diff
+    would GONE-delete every listing absent from a single incremental batch.
+    """
     from scrapers.common import indexer  # lazy: pulls asyncpg + redis
 
     def factory(scraper: Any) -> UrlSink:
-        async def sink(urls: list[str]) -> None:
-            await indexer.delta(pg, rdb, scraper.DOMAIN, scraper.COUNTRY, scraper.DOMAIN, urls)
-
-        return sink
+        return indexer.StreamingDeltaSink(
+            pg, rdb,
+            source_key=scraper.DOMAIN, country=scraper.COUNTRY, domain=scraper.DOMAIN,
+        )
 
     return factory
 

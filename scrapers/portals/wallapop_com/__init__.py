@@ -57,9 +57,12 @@ import json
 import logging
 import random
 from itertools import product
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from scrapers.portals.base import BasePortalScraper
+
+if TYPE_CHECKING:
+    from scrapers.portals.base import _SinkBuffer
 
 log = logging.getLogger(__name__)
 
@@ -209,22 +212,31 @@ class WallapopComScraper(BasePortalScraper):
         log.warning("all %d attempts failed: wallapop search", self.RETRY_ATTEMPTS)
         return []
 
-    # ── cursor-based pagination override ──────────────────────────────────────
+    # ── cursor-based streaming pagination override ────────────────────────────
     async def _paginate(
-        self, session: Any, params: dict[str, Any], seen: set[str]
-    ) -> tuple[list[str], bool]:
-        """Override base _paginate to use cursor-based pagination.
+        self, session: Any, params: dict[str, Any], seen: set[str],
+        sink: _SinkBuffer, pace: float = 0.0,
+    ) -> tuple[int, bool, bool]:
+        """Cursor-based streaming pagination (overrides the base offset model).
 
-        Wallapop uses an opaque `next_page` cursor instead of offset/limit.
-        Each response includes the cursor for the next page; when absent or
-        null, the segment is exhausted.
+        Wallapop pages with an opaque `next_page` cursor, not page numbers: each
+        response carries the cursor for the next window, and an absent/null cursor
+        means the segment is exhausted. Fresh links are streamed to `sink` in
+        bounded batches (never accumulated in RAM), mirroring the base contract.
 
-        Returns (fresh_urls, hit_ceiling).  hit_ceiling is True when we
-        consumed MAX_PAGES without exhausting the cursor — the structural
-        signal that the segment needs subdivision.
+        Returns (fresh_count, hit_ceiling, incomplete):
+          * hit_ceiling — consumed all MAX_PAGES while the cursor still advanced:
+            the geo-price cell is result-capped, so it is subdivided.
+          * incomplete — a *full* page was followed by a *persistently empty*
+            fetch mid segment. A real end of inventory is a SHORT page or a null
+            cursor, never a sudden zero (a failed fetch returns []), so the empty
+            page is re-fetched; if it stays empty we stop but flag the cycle so
+            the caller skips the stale GONE delete (avoids truncation data loss).
         """
-        out: list[str] = []
+        fresh_count = 0
         hit_ceiling = False
+        incomplete = False
+        prev_full = False
         # Work on a shallow copy so cursor state does not pollute the caller.
         work_params = dict(params)
         work_params.pop("_cursor", None)
@@ -232,9 +244,17 @@ class WallapopComScraper(BasePortalScraper):
 
         for page in range(1, self.MAX_PAGES + 1):
             page_urls = await self.fetch_segment(session, work_params, page)
+            if not page_urls and prev_full:
+                page_urls = await self._refetch_zero_page(session, work_params, page, pace)
+                if not page_urls:
+                    incomplete = True
+                    break
+
             fresh = [u for u in page_urls if u not in seen]
-            seen.update(fresh)
-            out.extend(fresh)
+            if fresh:
+                seen.update(fresh)
+                await sink.add(fresh)
+                fresh_count += len(fresh)
 
             # Short page → segment exhausted.
             if len(page_urls) < self.PAGE_SIZE:
@@ -250,11 +270,12 @@ class WallapopComScraper(BasePortalScraper):
                 hit_ceiling = True
                 break
 
-            # Inject cursor for next iteration.
+            # Inject cursor for the next window.
             work_params["_cursor"] = next_cursor
-            await self._sleep()
+            prev_full = True
+            await self._sleep(pace)
 
-        return out, hit_ceiling
+        return fresh_count, hit_ceiling, incomplete
 
     # ── helpers ────────────────────────────────────────────────────────────────
     def _build_url(self, params: dict[str, Any]) -> str:

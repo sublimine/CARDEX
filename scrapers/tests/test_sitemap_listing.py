@@ -303,11 +303,16 @@ def test_marktplaats_run_ok_harvests_sitemap(conn) -> None:
             ).encode("utf-8")),
         ),
     }
-    result = _run(scraper.run(conn, _MapSession(mapping)))
+    received: list[str] = []
+
+    async def sink(urls: list[str]) -> None:
+        received.extend(urls)
+
+    result = _run(scraper.run(conn, _MapSession(mapping), on_urls=sink))
     assert result.status.value == "ok"
     assert result.identity_id == idy.id
     assert result.tier == "T0"
-    assert set(result.urls) == {
+    assert set(received) == {
         "https://www.marktplaats.nl/v/auto-s/bmw/m1-bmw-1",
         "https://www.marktplaats.nl/v/auto-s/bmw/m2-bmw-2",
     }

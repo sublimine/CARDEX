@@ -66,6 +66,27 @@ class _Session:
         return item
 
 
+class _CollectSink:
+    """Collecting sink that records streamed batches and whether finalize ran.
+
+    Duck-types the production StreamingDeltaSink (callable + finalize), so it drives the
+    exact on_urls/finalize contract BasePortalScraper.run uses live: URLs arrive in
+    batches during the run, and finalize runs once, only on a complete clean cycle.
+    """
+
+    def __init__(self) -> None:
+        self.urls: list[str] = []
+        self.batches: int = 0
+        self.finalized: bool = False
+
+    async def __call__(self, urls: list[str]) -> None:
+        self.batches += 1
+        self.urls.extend(urls)
+
+    async def finalize(self) -> None:
+        self.finalized = True
+
+
 class _FakeScraper(BasePortalScraper):
     """Programmable BasePortalScraper for exercising run() orchestration."""
 
@@ -106,9 +127,10 @@ def test_validate_requires_domain_and_country(conn) -> None:
 
 @pytest.mark.unit
 def test_run_result_url_count() -> None:
-    result = RunResult(RunStatus.OK, tier="T2", urls=["a", "b", "c"])
+    result = RunResult(RunStatus.OK, tier="T2", url_count=3)
     assert result.url_count == 3
     assert RunResult(RunStatus.OK, tier="T2").url_count == 0
+    assert RunResult(RunStatus.OK, tier="T2").incomplete is False
 
 
 # --------------------------------------------------------------------------- #
@@ -145,15 +167,11 @@ def test_run_no_identity_when_pool_empty(conn) -> None:
 # BasePortalScraper.run() — happy path + sink + trust
 # --------------------------------------------------------------------------- #
 @pytest.mark.unit
-def test_run_ok_collects_urls_calls_sink_and_rewards_trust(conn, active_identity) -> None:
+def test_run_ok_streams_urls_to_sink_finalizes_and_rewards_trust(conn, active_identity) -> None:
     seg = {"year": 2020}
-    # One short page (< PAGE_SIZE) → segment exhausts after page 1.
-    scraper = _FakeScraper([seg], lambda p, n: ["/u/a", "/u/b"] if n == 1 else [])
-
-    sink_received: list[str] = []
-
-    async def sink(urls: list[str]) -> None:
-        sink_received.extend(urls)
+    # Page 1 full, page 2 short (< PAGE_SIZE) → segment exhausts cleanly on a short page.
+    scraper = _FakeScraper([seg], lambda p, n: ["/u/a", "/u/b"] if n == 1 else ["/u/c"])
+    sink = _CollectSink()
 
     before = store.get(conn, active_identity.id).trust_score
     result = _run(scraper.run(conn, _Session([]), on_urls=sink))
@@ -161,9 +179,11 @@ def test_run_ok_collects_urls_calls_sink_and_rewards_trust(conn, active_identity
 
     assert result.status is RunStatus.OK
     assert result.identity_id == active_identity.id
-    assert set(result.urls) == {"/u/a", "/u/b"}
+    assert sorted(sink.urls) == ["/u/a", "/u/b", "/u/c"]
+    assert result.url_count == 3
     assert result.segments == 1
-    assert sink_received == result.urls
+    assert result.incomplete is False
+    assert sink.finalized is True  # clean cycle → stale reconciliation ran
     assert after == pytest.approx(before + 0.05)
 
 
@@ -179,10 +199,12 @@ def test_run_ok_dedups_urls_across_pages_and_segments(conn, active_identity) -> 
         return ["/u/3"]  # short page (raw len 1 < PAGE_SIZE 2) → stop
 
     scraper = _FakeScraper([{"s": "a"}, {"s": "b"}], page_fn)
-    result = _run(scraper.run(conn, _Session([])))
+    sink = _CollectSink()
+    result = _run(scraper.run(conn, _Session([]), on_urls=sink))
 
     assert result.status is RunStatus.OK
-    assert sorted(result.urls) == ["/u/1", "/u/2", "/u/3"]  # globally unique
+    assert sorted(sink.urls) == ["/u/1", "/u/2", "/u/3"]  # globally unique
+    assert result.url_count == 3
     assert result.segments == 2
 
 
@@ -212,7 +234,7 @@ def test_run_soft_blocked_after_three_empty_segments(conn, active_identity) -> N
     after = store.get(conn, active_identity.id).trust_score
 
     assert result.status is RunStatus.SOFT_BLOCKED
-    assert result.urls == []
+    assert result.url_count == 0
     assert result.segments == 3  # aborted on the third empty cycle, 4th never run
     assert after == pytest.approx(before - 1.0)
 
@@ -233,13 +255,14 @@ def test_run_subdivides_segment_on_page_ceiling(conn, active_identity) -> None:
         return [{**params, "fuel": "P"}, {**params, "fuel": "D"}]
 
     scraper = _FakeScraper([{"y": 2020}], page_fn, subdivider=subdivider)
-    result = _run(scraper.run(conn, _Session([])))
+    sink = _CollectSink()
+    result = _run(scraper.run(conn, _Session([]), on_urls=sink))
 
     assert result.status is RunStatus.OK
     # Base produced 3 full pages × 2 = 6 urls; each sub produced 1.
     base_urls = {f"/u/base/{n}/{i}" for n in (1, 2, 3) for i in (0, 1)}
-    assert base_urls <= set(result.urls)
-    assert "/u/P/1" in result.urls and "/u/D/1" in result.urls
+    assert base_urls <= set(sink.urls)
+    assert "/u/P/1" in sink.urls and "/u/D/1" in sink.urls
     # Base paginated to the ceiling (3 pages), each sub fetched exactly 1 page.
     base_calls = [c for c in scraper.calls if not c[0].get("fuel")]
     assert len(base_calls) == 3
@@ -255,11 +278,61 @@ def test_run_no_subdivision_when_short_page(conn, active_identity) -> None:
         return [{**params, "fuel": "P"}]
 
     scraper = _FakeScraper([{"y": 2020}], lambda p, n: ["/u/x"], subdivider=subdivider)
-    result = _run(scraper.run(conn, _Session([])))
+    sink = _CollectSink()
+    result = _run(scraper.run(conn, _Session([]), on_urls=sink))
 
     assert result.status is RunStatus.OK
     assert subdiv_called["n"] == 0
-    assert result.urls == ["/u/x"]
+    assert sink.urls == ["/u/x"]
+    assert result.url_count == 1
+
+
+# --------------------------------------------------------------------------- #
+# BasePortalScraper.run() — transient mid-segment truncation resilience
+# --------------------------------------------------------------------------- #
+@pytest.mark.unit
+def test_run_refetches_transient_empty_page_then_recovers(conn, active_identity) -> None:
+    # A full page followed by an empty one mid-segment is a transient block, not the end
+    # of inventory: the paginator re-fetches the empty page and continues instead of
+    # truncating. (A real end is a SHORT page, handled separately.)
+    calls = {"p2": 0}
+
+    def page_fn(params, n):
+        if n == 1:
+            return ["/u/1", "/u/2"]  # full
+        if n == 2:
+            calls["p2"] += 1
+            return [] if calls["p2"] == 1 else ["/u/3", "/u/4"]  # empty once, then recovers
+        return ["/u/5"]  # short → clean end
+
+    scraper = _FakeScraper([{"s": 1}], page_fn)
+    sink = _CollectSink()
+    result = _run(scraper.run(conn, _Session([]), on_urls=sink))
+
+    assert result.status is RunStatus.OK
+    assert result.incomplete is False
+    assert sorted(sink.urls) == ["/u/1", "/u/2", "/u/3", "/u/4", "/u/5"]
+    assert sink.finalized is True
+    assert calls["p2"] == 2  # initial empty fetch + one refetch that recovered
+
+
+@pytest.mark.unit
+def test_run_incomplete_on_persistent_empty_skips_finalize(conn, active_identity) -> None:
+    # A full page followed by a *persistently* empty page → suspected truncation: the
+    # cycle persists what it found (status OK) but skips the stale GONE delete, so live
+    # listings the scrape never reached are not wrongly removed. This is the autotrack
+    # 220k→16.9k truncation in miniature, now contained.
+    def page_fn(params, n):
+        return ["/u/1", "/u/2"] if n == 1 else []  # full, then empty forever
+
+    scraper = _FakeScraper([{"s": 1}], page_fn)
+    sink = _CollectSink()
+    result = _run(scraper.run(conn, _Session([]), on_urls=sink))
+
+    assert result.status is RunStatus.OK
+    assert result.incomplete is True
+    assert sorted(sink.urls) == ["/u/1", "/u/2"]
+    assert sink.finalized is False  # transient truncation → no stale delete
 
 
 # --------------------------------------------------------------------------- #

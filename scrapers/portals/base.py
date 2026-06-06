@@ -32,7 +32,7 @@ import asyncio
 import logging
 import random
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from sqlite3 import Connection
 from typing import Any, Awaitable, Callable
@@ -75,17 +75,55 @@ class RunStatus(str, Enum):
 
 @dataclass(frozen=True)
 class RunResult:
-    """Outcome of one scrape cycle — what the coordinator needs to schedule next."""
+    """
+    Outcome of one scrape cycle — what the coordinator needs to schedule next.
+
+    URLs are streamed to the sink during the run, never accumulated here, so a
+    multi-million-listing portal does not balloon the result object. `url_count` is the
+    total streamed this cycle; `incomplete` flags a harvest that hit a transient
+    mid-segment truncation and therefore did NOT observe the whole inventory (the cycle
+    still persists what it found, but the stale GONE delete is skipped).
+    """
 
     status: RunStatus
     tier: str
     identity_id: str | None = None
-    urls: list[str] = field(default_factory=list)
+    url_count: int = 0
     segments: int = 0
+    incomplete: bool = False
 
-    @property
-    def url_count(self) -> int:
-        return len(self.urls)
+
+class _SinkBuffer:
+    """
+    Buffers fresh deep links and flushes them to the sink in fixed-size batches.
+
+    Keeps at most ~`batch_size` URLs in memory at once (plus the caller's `seen` dedup
+    set), so streaming a multi-million-listing portal never accumulates its whole
+    harvest. `total` is the running count of URLs handed to the sink this cycle. A None
+    sink (unit tests without persistence) still counts, it just does not flush.
+    """
+
+    def __init__(self, on_urls: UrlSink | None, batch_size: int) -> None:
+        self._on_urls = on_urls
+        self._batch = max(1, batch_size)
+        self._buf: list[str] = []
+        self.total = 0
+
+    async def add(self, urls: list[str]) -> None:
+        self.total += len(urls)
+        if self._on_urls is None:
+            return
+        self._buf.extend(urls)
+        while len(self._buf) >= self._batch:
+            chunk = self._buf[: self._batch]
+            del self._buf[: self._batch]
+            await self._on_urls(chunk)
+
+    async def flush(self) -> None:
+        if self._on_urls is None or not self._buf:
+            return
+        chunk, self._buf = self._buf, []
+        await self._on_urls(chunk)
 
 
 class BasePortalScraper(ABC):
@@ -93,9 +131,23 @@ class BasePortalScraper(ABC):
     DOMAIN: str = ""
     COUNTRY: str = ""
 
-    # Pagination shape — overridable per portal. AS24 defaults (20/page, 20 pages).
+    # Pagination shape — overridable per portal. AS24 defaults (20/page).
+    # MAX_PAGES=9999 means "exhaust the portal" — no artificial page ceiling for
+    # global-pager portals. Grid portals (year x price) MUST keep a finite override:
+    # MAX_PAGES is also the structural cap-detection threshold that triggers
+    # subdivide_segment(), so raising it on a result-capped search surface would
+    # defeat cap recovery. Each concrete scraper sets the value its surface needs.
     PAGE_SIZE: int = 20
-    MAX_PAGES: int = 20
+    MAX_PAGES: int = 9999
+
+    # Incremental flush: stream URLs to the sink every FLUSH_BATCH_SIZE so a portal
+    # with millions of listings never holds its whole harvest in memory.
+    FLUSH_BATCH_SIZE: int = 1000
+
+    # Mid-pagination resilience: a full page followed by an empty one is a transient
+    # block, not the end of inventory (a real end is a SHORT page). Re-fetch the empty
+    # page this many times before concluding the segment truncated.
+    ZERO_PAGE_REFETCH: int = 2
 
     # Jittered sleep: uniform timing is a bot signal (§22). Base ± jitter seconds.
     SLEEP_BASE: float = 1.2
@@ -185,18 +237,33 @@ class BasePortalScraper(ABC):
         enforce_no_extraction_before_warming(identity, self.DOMAIN)
 
         pace = self._direct_pace(tier, identity)
-        urls, segments, soft_blocked = await self._scrape_segments(session, pace)
+        total, segments, soft_blocked, incomplete = await self._scrape_segments(
+            session, pace, on_urls,
+        )
         status = RunStatus.SOFT_BLOCKED if soft_blocked else RunStatus.OK
         self._record_outcome(conn, identity, status)
 
-        if on_urls is not None and urls:
-            await on_urls(urls)
+        # Stale GONE reconciliation is valid ONLY for a complete, clean cycle. A soft
+        # block or a transient mid-segment truncation means we did not observe the full
+        # inventory, so deleting "unseen" rows would wrongly GONE-mark live listings.
+        # The INSERTs already streamed incrementally; we just defer the delete to a
+        # later clean cycle rather than corrupt the index on a partial view.
+        if status is RunStatus.OK and not incomplete:
+            await self._finalize_sink(on_urls)
+        elif incomplete:
+            log.warning(
+                "%s/%s incomplete harvest — skipping stale delete (transient truncation)",
+                self.DOMAIN, self.COUNTRY,
+            )
 
         log.info(
-            "%s/%s done status=%s tier=%s segments=%d urls=%d",
-            self.DOMAIN, self.COUNTRY, status.value, tier.value, segments, len(urls),
+            "%s/%s done status=%s tier=%s segments=%d urls=%d incomplete=%s",
+            self.DOMAIN, self.COUNTRY, status.value, tier.value, segments, total, incomplete,
         )
-        return RunResult(status, tier=tier.value, identity_id=identity.id, urls=urls, segments=segments)
+        return RunResult(
+            status, tier=tier.value, identity_id=identity.id,
+            url_count=total, segments=segments, incomplete=incomplete,
+        )
 
     # ── orchestration internals ───────────────────────────────────────────────
     def _validate(self) -> None:
@@ -228,64 +295,116 @@ class BasePortalScraper(ABC):
         return effective_tier(self.DOMAIN, state)
 
     async def _scrape_segments(
-        self, session: Any, pace: float = 0.0
-    ) -> tuple[list[str], int, bool]:
-        """Walk every segment, dedup deep links, abort on a zero-URL soft block."""
+        self, session: Any, pace: float = 0.0,
+        on_urls: UrlSink | None = None,
+    ) -> tuple[int, int, bool, bool]:
+        """
+        Walk every segment, dedup deep links, and STREAM them to the sink in bounded
+        batches so a portal with millions of listings never holds its harvest in RAM.
+
+        Returns (total_urls, segments, soft_blocked, incomplete). `incomplete` is True
+        when any segment hit a transient mid-pagination truncation (see `_paginate`),
+        which tells `run` to skip the stale GONE delete for this cycle.
+        """
         seen: set[str] = set()
-        collected: list[str] = []
+        sink = _SinkBuffer(on_urls, self.FLUSH_BATCH_SIZE)
         zero = ZeroUrlTracker()
         segments = 0
+        incomplete = False
 
         for params in self.partition_params():
-            seg_urls = await self._collect_segment(session, params, seen, pace)
+            seg_count, seg_incomplete = await self._collect_segment(session, params, seen, sink, pace)
             segments += 1
-            collected.extend(seg_urls)
-            metrics.record_urls_collected(self.DOMAIN, self.COUNTRY, len(seg_urls))
+            incomplete = incomplete or seg_incomplete
+            metrics.record_urls_collected(self.DOMAIN, self.COUNTRY, seg_count)
 
-            zero.record(len(seg_urls))
+            zero.record(seg_count)
             if zero.is_soft_blocked:
                 log.warning("%s soft block — %d empty cycles", self.DOMAIN, zero.consecutive_empty)
-                return collected, segments, True
+                await sink.flush()
+                return sink.total, segments, True, incomplete
             await self._sleep(pace)
 
-        return collected, segments, False
+        await sink.flush()
+        return sink.total, segments, False, incomplete
 
     async def _collect_segment(
-        self, session: Any, params: dict[str, Any], seen: set[str], pace: float = 0.0
-    ) -> list[str]:
+        self, session: Any, params: dict[str, Any], seen: set[str],
+        sink: _SinkBuffer, pace: float = 0.0,
+    ) -> tuple[int, bool]:
         """Paginate one segment; subdivide and re-paginate when it hits the page cap."""
-        urls, hit_ceiling = await self._paginate(session, params, seen, pace)
+        count, hit_ceiling, incomplete = await self._paginate(session, params, seen, sink, pace)
         if hit_ceiling:
             for sub in self.subdivide_segment(params):
-                sub_urls, _ = await self._paginate(session, sub, seen, pace)
-                urls.extend(sub_urls)
-        return urls
+                sub_count, _, sub_incomplete = await self._paginate(session, sub, seen, sink, pace)
+                count += sub_count
+                incomplete = incomplete or sub_incomplete
+        return count, incomplete
 
     async def _paginate(
-        self, session: Any, params: dict[str, Any], seen: set[str], pace: float = 0.0
-    ) -> tuple[list[str], bool]:
+        self, session: Any, params: dict[str, Any], seen: set[str],
+        sink: _SinkBuffer, pace: float = 0.0,
+    ) -> tuple[int, bool, bool]:
         """
-        Page through a segment, deduping against `seen`.
+        Page through a segment, deduping against `seen`, streaming fresh links to `sink`.
 
-        Returns (fresh_urls, hit_ceiling). hit_ceiling is True when pagination
-        consumed all MAX_PAGES without ever seeing a short page — the structural
-        signal that the portal capped results and the segment needs subdivision.
-        A page shorter than PAGE_SIZE means the segment is exhausted; we stop.
+        Returns (fresh_count, hit_ceiling, incomplete).
+          * hit_ceiling — consumed all MAX_PAGES without a short page: the portal capped
+            results structurally, so the segment is subdivided.
+          * incomplete — a *full* page was followed by a *persistently empty* page mid
+            segment. A real end of inventory is a SHORT page, never a sudden zero (a
+            single failed fetch returns []), so we re-fetch the empty page; if it stays
+            empty we stop but flag the cycle incomplete. Concluding "inventory ended" on
+            a transient zero is exactly the bug that truncated 7,336-page portals to a
+            few hundred pages.
         """
-        out: list[str] = []
+        fresh_count = 0
         hit_ceiling = False
+        incomplete = False
+        prev_full = False
         for page in range(1, self.MAX_PAGES + 1):
             page_urls = await self.fetch_segment(session, params, page)
+            if not page_urls and prev_full:
+                page_urls = await self._refetch_zero_page(session, params, page, pace)
+                if not page_urls:
+                    incomplete = True
+                    break
             fresh = [u for u in page_urls if u not in seen]
-            seen.update(fresh)
-            out.extend(fresh)
+            if fresh:
+                seen.update(fresh)
+                await sink.add(fresh)
+                fresh_count += len(fresh)
             if len(page_urls) < self.PAGE_SIZE:
                 break
             if page == self.MAX_PAGES:
                 hit_ceiling = True
                 break
+            prev_full = len(page_urls) >= self.PAGE_SIZE
             await self._sleep(pace)
-        return out, hit_ceiling
+        return fresh_count, hit_ceiling, incomplete
+
+    async def _refetch_zero_page(
+        self, session: Any, params: dict[str, Any], page: int, pace: float = 0.0
+    ) -> list[str]:
+        """
+        Re-fetch a page that came back empty straight after a full page.
+
+        ZERO_PAGE_REFETCH extra attempts with a polite delay; the first non-empty result
+        wins. The caller only invokes this on a mid-stream zero (never on page 1 nor
+        after a short page), so an empty cell at the start of a segment costs nothing.
+        """
+        for _ in range(self.ZERO_PAGE_REFETCH):
+            await self._sleep(pace if pace > 0.0 else self.SLEEP_BASE)
+            page_urls = await self.fetch_segment(session, params, page)
+            if page_urls:
+                return page_urls
+        return []
+
+    async def _finalize_sink(self, on_urls: UrlSink | None) -> None:
+        """Run the sink's end-of-cycle reconciliation (stale GONE delete), if it has one."""
+        finalize = getattr(on_urls, "finalize", None)
+        if finalize is not None:
+            await finalize()
 
     def _record_outcome(self, conn: Connection, identity: Identity, status: RunStatus) -> None:
         if status is RunStatus.SOFT_BLOCKED:
