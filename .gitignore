@@ -23,3 +23,20 @@ secrets/
 dev-log.txt
 identity-section.png
 sidebar-dark.png
+
+# SQLite scraper runtime state (work_queue engine DB + WAL/SHM sidecars)
+scrapers/engine.db
+*.db-shm
+*.db-wal
+
+# pytest cache
+pytest-cache-files-*/
+.pytest_cache/
+
+# Machine-specific operational scratch (hardcoded local paths, OOM workarounds,
+# monitor loops that emit the already-ignored *.log files)
+.audit_run.ps1
+fix_oom.ps1
+scrapers/_monitor_loop.ps1
+scrapers/_qstat.py
+scrapers/monitor.sh
