@@ -13,6 +13,58 @@ rather than inventing a denominator.
 
 from __future__ import annotations
 
+# Framing banner. The owner read low/red numbers as dashboard bugs; they are
+# the real, broken state of a system under repair. This makes that explicit.
+READ_ME_TITLE = "Cómo leer este panel"
+READ_ME_BODY = (
+    "Esto muestra el ESTADO REAL del sistema, hoy EN REPARACIÓN (plan de obra P0→P3 "
+    "del blueprint). Una cifra baja, en ámbar o en rojo NO es un fallo del panel: es la "
+    "foto honesta de lo que todavía falta cablear. Donde se conoce, cada número lleva su "
+    "CAUSA y su OBJETIVO. Verde = ya funciona · Ámbar/Rojo = estado real a mejorar · "
+    "Gris = sin datos o trabajo futuro."
+)
+
+# Targets ("objetivo") + root causes for the ugly-but-real metrics, so each red
+# number reads as the real state to improve — never a panel bug. Targets from
+# BLUEPRINT_CARDEX.md §12 (P0→P3); causes from AUDIT §2-4. Keyed by metric.
+GOALS = {
+    "vehicles_l2": {
+        "target": "que `vehicles` crezca desde listings reales (no seed)",
+        "cause": "el enrich_worker (puente P0-3) está cableado pero no se ejecuta en el host → las colas Redis están vacías y solo quedan 30 filas de demo",
+        "ref": "P0-3",
+    },
+    "entities": {
+        "target": "> 0 entidades · dealers multilingües dedupados",
+        "cause": "la resolución de entidades (P0-4) aún no escribe en PostgreSQL",
+        "ref": "P0-4",
+    },
+    "scraping": {
+        "target": "los 71 portales produciendo",
+        "cause": "los gigantes T2/T3 (mobile.de, AutoScout24×6, leboncoin…) parkean sin proxy residencial; es un bloqueo económico por diseño, no un fallo",
+        "ref": "P3",
+    },
+    "disc_web": {
+        "target": "> 15 % de candidatos con dominio web",
+        "cause": "el 84 % son razones sociales del registro SIRENE (sin web) y el resolver razón-social→dominio aún no está orquestado",
+        "ref": "P1-3",
+    },
+    "disc_crawled": {
+        "target": "dealers crawleados > 0",
+        "cause": "los 460 K candidatos siguen en sitemap_status='pending': la cadena de dealers (sitemap_resolver → bridge) no corre sostenida en el host",
+        "ref": "P2-1",
+    },
+    "fr_monoculture": {
+        "target": "FR < 50 % del discovery (los 6 países equilibrados)",
+        "cause": "FR = 84 % por la fuente única SIRENE (360 K); el resto de países necesita OSM exhaustivo / OEM-locators / yellow-pages",
+        "ref": "P1-1",
+    },
+    "giants": {
+        "target": "gigantes > 0 listings",
+        "cause": "sin proxies residenciales parkean en no_identity por diseño — muro económico, no bug del scraper",
+        "ref": "P3-1",
+    },
+}
+
 COUNTRY_NAMES = {
     "DE": "Alemania",
     "FR": "Francia",

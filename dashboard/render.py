@@ -20,8 +20,11 @@ from typing import Any
 from reference import (
     CAP_SUSPECTS,
     COUNTRY_NAMES,
+    GOALS,
     KNOWN_GIANTS,
     PIPELINE_STAGES,
+    READ_ME_BODY,
+    READ_ME_TITLE,
     SEED_PLATFORMS,
     STRATEGY_BY_DOMAIN,
 )
@@ -68,6 +71,25 @@ STATUS_WORD = {OK: "OK", WARN: "ATENCIÓN", CRIT: "CRÍTICO", MUTE: "SIN DATOS"}
 
 def chip(status: str, text: str) -> str:
     return f'<span class="chip {status}">{STATUS_DOT.get(status, "●")} {esc(text)}</span>'
+
+
+def meta_badge(text: str, ref: str | None = None) -> str:
+    """Distinct 'OBJETIVO' badge so a target never reads as current state."""
+    tag = f" · {esc(ref)}" if ref else ""
+    return f'<span class="meta">◎ OBJETIVO{tag}: {esc(text)}</span>'
+
+
+def cause_line(text: str) -> str:
+    """Microcopy anchoring the *why* under an ugly-but-real number."""
+    return f'<div class="cause"><span class="cause-tag">▸ por qué</span> {esc(text)}</div>'
+
+
+def goal_block(key: str) -> str:
+    """Render the cause + target for a known broken metric (estado real, no bug)."""
+    g = GOALS.get(key)
+    if not g:
+        return ""
+    return cause_line(g["cause"]) + f'<div class="metarow">{meta_badge(g["target"], g.get("ref"))}</div>'
 
 
 def bar(value: int, maximum: int, status: str) -> str:
@@ -191,6 +213,24 @@ def render_header(data: dict, gstatus: str, headline: str) -> str:
 """
 
 
+def render_howto() -> str:
+    return f"""
+<section class="howto">
+  <div class="howto-icon">🔧</div>
+  <div class="howto-body">
+    <div class="howto-title">{esc(READ_ME_TITLE)}</div>
+    <p class="howto-text">{esc(READ_ME_BODY)}</p>
+    <div class="legend">
+      <span class="lg"><span class="lgdot ok">●</span> verde · ya funciona</span>
+      <span class="lg"><span class="lgdot warn">●</span> ámbar · parcial, a mejorar</span>
+      <span class="lg"><span class="lgdot crit">●</span> rojo · roto/inerte (estado real)</span>
+      <span class="lg"><span class="lgdot mute">○</span> gris · sin datos o futuro</span>
+      <span class="lg"><span class="meta inline">◎ OBJETIVO</span> meta del blueprint</span>
+    </div>
+  </div>
+</section>"""
+
+
 def render_kpis(data: dict) -> str:
     pg = data.get("pg", {})
     counts = pg.get("counts", {}) if pg.get("available") else {}
@@ -200,20 +240,27 @@ def render_kpis(data: dict) -> str:
     wq = engine.get("work_queue", {}).get("by_status", {}) if engine.get("available") else {}
     producing = pg.get("distinct_domains")
 
+    l2_broken = counts.get("vehicles", 0) == 0 or _all_seed(pg.get("vehicles_by_platform", []))
+    # (label, value, sub, status, goal_key|None)
     cards = [
-        ("Punteros de coches (L1)", num(counts.get("vehicle_index")), "vehicle_index · cobertura barata", OK if counts.get("vehicle_index") else MUTE),
-        ("Coches ricos (L2)", num(counts.get("vehicles")), "vehicles · solo datos seed todavía", CRIT if (counts.get("vehicles", 0) == 0 or _all_seed(pg.get("vehicles_by_platform", []))) else OK),
-        ("Dealers descubiertos", num(counts.get("discovery_candidates")), "discovery_candidates", OK if counts.get("discovery_candidates") else MUTE),
-        ("Portales que producen", num(producing), f"de 71 registrados · {wq.get('done','—')} done", WARN if (producing or 0) < 30 else OK),
-        ("Contenedores vivos", f"{docker.get('up','—')}/{docker.get('total','—')}" if docker.get("available") else "sin datos", "infraestructura Docker", OK if docker.get("available") and docker.get("up") == docker.get("total") else (MUTE if not docker.get("available") else WARN)),
+        ("Punteros de coches (L1)", num(counts.get("vehicle_index")), "vehicle_index · cobertura barata · funciona", OK if counts.get("vehicle_index") else MUTE, None),
+        ("Coches ricos (L2)", num(counts.get("vehicles")), "vehicles · solo datos de demo", CRIT if l2_broken else OK, "vehicles_l2" if l2_broken else None),
+        ("Dealers descubiertos", num(counts.get("discovery_candidates")), "discovery_candidates · funciona", OK if counts.get("discovery_candidates") else MUTE, None),
+        ("Portales que producen", num(producing), f"de 71 registrados · {wq.get('done','—')} done · {wq.get('pending','—')} en cola", WARN if (producing or 0) < 30 else OK, "scraping" if (producing or 0) < 71 else None),
+        ("Contenedores vivos", f"{docker.get('up','—')}/{docker.get('total','—')}" if docker.get("available") else "sin datos", "infraestructura Docker", OK if docker.get("available") and docker.get("up") == docker.get("total") else (MUTE if not docker.get("available") else WARN), None),
     ]
     out = ['<section class="kpis">']
-    for label, value, sub, status in cards:
+    for label, value, sub, status, gkey in cards:
+        meta = ""
+        if gkey and gkey in GOALS:
+            g = GOALS[gkey]
+            meta = f'<div class="kpi-meta">{meta_badge(g["target"], g.get("ref"))}</div>'
         out.append(f"""
   <article class="kpi {status}">
     <div class="kpi-value">{value}</div>
     <div class="kpi-label">{esc(label)}</div>
     <div class="kpi-sub">{esc(sub)}</div>
+    {meta}
   </article>""")
     out.append("</section>")
     return "".join(out)
@@ -265,11 +312,11 @@ def render_country_listings(data: dict) -> str:
     top = rows[0]
     bottom = rows[-1]
     insight = (
-        f"Concentración real en {COUNTRY_NAMES.get(top['country'], top['country'])} "
-        f"({pct(100.0*top['n']/total)} del total). "
+        f"Estado actual: concentración en {COUNTRY_NAMES.get(top['country'], top['country'])} "
+        f"({pct(100.0*top['n']/total)} del total); "
         f"{COUNTRY_NAMES.get(bottom['country'], bottom['country'])} es el más débil "
-        f"({pct(100.0*bottom['n']/total)}). El monocultivo francés NO está aquí, "
-        f"está en el descubrimiento de dealers (ver abajo)."
+        f"({pct(100.0*bottom['n']/total)}). Ojo: el monocultivo francés NO está aquí "
+        f"(en listings FR es el menor) — está en el descubrimiento de dealers (sección siguiente)."
     )
     out = ['<section class="card"><h2>Listings por país <span class="h2sub">(vehicle_index · 6 mercados)</span></h2>']
     out.append(f'<p class="insight">{esc(insight)}</p>')
@@ -339,8 +386,9 @@ def render_giants(data: dict) -> str:
     if pg.get("available"):
         producing = {d["domain"] for d in pg.get("index_by_domain", [])}
     zero_giants = [g for g in KNOWN_GIANTS if g["portal"] not in producing]
-    out = ['<section class="card crit-card"><h2>Gigantes en cero <span class="h2sub">(0 % del mercado real)</span></h2>']
-    out.append('<p class="card-note">Los líderes del mercado europeo. Bloqueados por el muro económico: sin proxies residenciales parkean por diseño. Desbloqueo = P3 (presupuesto). <span class="src">[VERIFICADO audit §2.2]</span></p>')
+    out = ['<section class="card crit-card"><h2>Gigantes en cero <span class="statebadge">ESTADO ACTUAL · bloqueado</span></h2>']
+    out.append('<p class="card-note">Los líderes del mercado europeo en 0 listings. No es un fallo del scraper: es el muro económico. <span class="src">[VERIFICADO audit §2.2]</span></p>')
+    out.append(goal_block("giants"))
     out.append('<div class="giantgrid">')
     for g in zero_giants:
         out.append(f"""
@@ -366,18 +414,19 @@ def render_discovery(data: dict) -> str:
     crawled = sum(s["n"] for s in sitemap if s["status"] not in ("pending", "(null)"))
     mx = max((r["total"] for r in by_country), default=1)
 
-    out = ['<section class="card"><h2>Discovery de dealers <span class="h2sub">(candidatos · % con web · % crawleado)</span></h2>']
-    insights = []
-    if fr:
-        insights.append(
-            f"Monocultivo francés: FR = {pct(100.0*fr['total']/total)} de los candidatos "
-            f"(fuente única SIRENE, sin web)."
-        )
-    insights.append(
-        f"Solo {num(total_dom)} ({pct(100.0*total_dom/total)}) tienen dominio web → crawleables. "
-        f"Crawleados de verdad: {num(crawled)} ({pct(100.0*crawled/total)}) — la cadena de dealers aún no ha arrancado."
+    out = ['<section class="card"><h2>Discovery de dealers '
+           '<span class="statebadge">ESTADO ACTUAL · en reparación</span></h2>']
+    out.append('<p class="card-note">Las cifras bajas de abajo son el estado real del descubrimiento, '
+               'no errores del panel. Cada una lleva su causa y su objetivo.</p>')
+    fr_share = (100.0 * fr["total"] / total) if fr else 0
+    web_share = 100.0 * total_dom / total
+    crawled_share = 100.0 * crawled / total
+    out.append(
+        f'<p class="insight">Estado actual: {num(fr["total"]) if fr else "—"} candidatos en FR = '
+        f'{pct(fr_share)} del total (monocultivo de la fuente SIRENE). '
+        f'Solo {num(total_dom)} ({pct(web_share)}) tienen web; crawleados de verdad: '
+        f'{num(crawled)} ({pct(crawled_share)}).</p>'
     )
-    out.append(f'<p class="insight">{esc(" ".join(insights))}</p>')
 
     out.append('<div class="disc-cols">')
     # by country
@@ -406,13 +455,20 @@ def render_discovery(data: dict) -> str:
     out.append("</div></div>")
     out.append("</div>")
 
-    # crawl funnel
+    # crawl funnel — the headline "ugly" path, each step framed
     out.append('<div class="funnel">')
-    out.append(f'<div class="funnelstep ok"><div class="fnum">{num(total)}</div><div class="flabel">candidatos</div></div>')
+    out.append(f'<div class="funnelstep ok"><div class="fnum">{num(total)}</div><div class="flabel">candidatos descubiertos</div></div>')
     out.append('<div class="pipe-arrow">→</div>')
-    out.append(f'<div class="funnelstep warn"><div class="fnum">{num(total_dom)}</div><div class="flabel">con dominio web</div></div>')
+    out.append(f'<div class="funnelstep warn"><div class="fnum">{num(total_dom)}</div><div class="flabel">con dominio web ({pct(web_share)})</div></div>')
     out.append('<div class="pipe-arrow">→</div>')
-    out.append(f'<div class="funnelstep crit"><div class="fnum">{num(crawled)}</div><div class="flabel">crawleados</div></div>')
+    out.append(f'<div class="funnelstep crit"><div class="fnum">{num(crawled)}</div><div class="flabel">crawleados ({pct(crawled_share)})</div></div>')
+    out.append("</div>")
+
+    # cause + target for each broken metric (so no red number reads as a bug)
+    out.append('<div class="goalgrid">')
+    out.append(f'<div class="goalcard"><div class="goalhead">{pct(web_share)} con web</div>{goal_block("disc_web")}</div>')
+    out.append(f'<div class="goalcard"><div class="goalhead">{num(crawled)} crawleados</div>{goal_block("disc_crawled")}</div>')
+    out.append(f'<div class="goalcard"><div class="goalhead">FR {pct(fr_share)} del discovery</div>{goal_block("fr_monoculture")}</div>')
     out.append("</div>")
     out.append("</section>")
     return "".join(out)
@@ -528,6 +584,7 @@ def render_html(data: dict) -> str:
     gstatus, headline = global_status(stages, data)
     body = "".join([
         render_header(data, gstatus, headline),
+        render_howto(),
         render_kpis(data),
         render_pipeline(data, stages),
         render_country_listings(data),
@@ -622,6 +679,41 @@ h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.01em}
 .nodata,.kpi.mute .kpi-value{color:var(--muted)}
 .nodata{font-style:italic;padding:10px 0}
 
+/* how-to / framing banner */
+.howto{display:flex;gap:16px;align-items:flex-start;background:linear-gradient(180deg,#1b232f,#141b26);
+  border:1px solid #2c3a4f;border-left:4px solid var(--warn);border-radius:var(--r);
+  padding:16px 20px;margin-bottom:24px}
+.howto-icon{font-size:1.5rem;line-height:1.2;flex:none}
+.howto-title{font-weight:700;font-size:1rem;margin-bottom:4px}
+.howto-text{margin:0;color:#cdd9e8;font-size:.88rem;max-width:95ch}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:12px;font-size:.78rem;color:var(--muted)}
+.lg{display:inline-flex;align-items:center;gap:6px}
+.lgdot{font-size:.7rem}
+.lgdot.ok{color:var(--ok)} .lgdot.warn{color:var(--warn)} .lgdot.crit{color:var(--crit)} .lgdot.mute{color:var(--mute)}
+
+/* OBJETIVO (target) badge — visually distinct from status chips */
+.meta{display:inline-flex;align-items:center;font-size:.74rem;font-weight:600;color:#7dd3fc;
+  background:transparent;border:1px dashed #2f6d8a;border-radius:999px;padding:3px 10px}
+.meta.inline{padding:1px 8px}
+.metarow{margin-top:6px}
+.kpi-meta{margin-top:8px}
+.kpi-meta .meta{font-size:.68rem;padding:2px 8px}
+
+/* "estado actual" header badge */
+.statebadge{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.05em;
+  color:var(--warn);background:var(--warnbg);border:1px solid #5a4410;border-radius:6px;
+  padding:2px 9px;vertical-align:middle;margin-left:8px;text-transform:uppercase}
+
+/* cause microcopy */
+.cause{font-size:.82rem;color:#b6c2d4;margin-top:6px;line-height:1.45}
+.cause-tag{display:inline-block;font-size:.68rem;font-weight:700;color:var(--faint);
+  text-transform:uppercase;letter-spacing:.04em;margin-right:6px}
+
+/* goal grid (cause + target per broken metric) */
+.goalgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}
+.goalcard{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r2);padding:13px 14px}
+.goalhead{font-weight:700;font-size:.92rem;color:#fff;margin-bottom:2px}
+
 /* pipeline */
 .pipeline{display:flex;align-items:stretch;gap:6px;flex-wrap:wrap}
 .pipe-stage{flex:1 1 140px;min-width:130px;background:var(--bg2);border:1px solid var(--line);
@@ -708,6 +800,7 @@ table{width:100%;border-collapse:collapse;font-size:.85rem}
 @media (max-width:880px){
   .kpis{grid-template-columns:repeat(2,1fr)}
   .disc-cols{grid-template-columns:1fr}
+  .goalgrid{grid-template-columns:1fr}
   .barrow{grid-template-columns:96px 1fr;}
   .barval{grid-column:2;text-align:left;min-width:0}
 }
