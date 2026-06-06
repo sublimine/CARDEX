@@ -32,7 +32,7 @@
   },
   "drift_baseline": {
     "extraction_method": "jsonld",
-    "expected_min_volume": 3,
+    "expected_min_volume": 1000,
     "required_fields": ["make", "model", "year", "price", "images"],
     "min_nonnull_ratio": 0.7
   }

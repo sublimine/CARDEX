@@ -43,11 +43,13 @@ from scrapers.db import connect, migrate
 from scrapers.engine.identity import store as identity_store
 from scrapers.engine.identity.aging import release_quarantine
 from scrapers.engine.monitoring import metrics
+from scrapers.intelligence import drift_gate
+from scrapers.portals import config as portal_config
 from scrapers.engine.proxy import tiers as proxy_tiers
 from scrapers.engine.router import circuit, escalator
 from scrapers.engine.router.domain_map import Tier
 from scrapers.pipeline import dlq
-from scrapers.portals import get_scraper
+from scrapers.portals import get_scraper, is_car_portal
 from scrapers.portals.base import RunStatus, UrlSink
 
 log = logging.getLogger(__name__)
@@ -105,6 +107,22 @@ class CoordinatorConfig:
 # ── pure decisions (no I/O) ───────────────────────────────────────────────────
 def is_success(status: RunStatus) -> bool:
     return status is RunStatus.OK
+
+
+def check_volume_drift(domain: str, url_count: int) -> drift_gate.DriftReport | None:
+    """
+    Score one harvest's deep-link volume against the source's versioned baseline.
+
+    Returns None when the portal has no ``configs/portals/<domain>.json`` (drift
+    detection is opt-in per portal). Otherwise a ``DriftReport`` whose ``alert`` is
+    True when the harvest fell below ``expected_min_volume`` — the live signal that
+    a portal changed its listing structure and the selector is now under-harvesting.
+    Pure (file read only), so it stays inside the coordinator's no-network contract.
+    """
+    cfg = portal_config.load(domain)
+    if cfg is None:
+        return None
+    return drift_gate.evaluate_volume(cfg, url_count)
 
 
 def circuit_action_for(status: RunStatus) -> str:
@@ -277,6 +295,13 @@ async def _process_item(
 ) -> None:
     """Run one claimed job and persist its circuit + queue consequences."""
     domain = item["portal"]
+    if not is_car_portal(domain):
+        # Scope guard (P1.5): the portal is a non-car vertical (e.g. truckscout24's
+        # trucks). Mark done without harvesting so its listings never re-contaminate
+        # the car vehicle_index. Re-include by removing it from NON_CAR_PORTALS.
+        log.info("skipping non-car portal %s (out of car scope)", domain)
+        mark_done(conn, item["id"], now=now)
+        return
     scraper = get_scraper(domain)
     if scraper is None:
         log.error("no scraper registered for portal %s — failing terminally", domain)
@@ -303,6 +328,18 @@ async def _process_item(
 
     outcome = next_queue_state(result.status, item["attempts"], max_attempts=MAX_ATTEMPTS)
     _apply_queue_outcome(conn, item["id"], outcome, now=now)
+
+    # Live drift detection (resilience): a completed harvest whose deep-link volume
+    # fell below the source's versioned baseline signals a portal change (selector
+    # under-harvesting). Alert is by-source; the repair is a single edit to
+    # configs/portals/<domain>.json. Opt-in per portal (None when no config).
+    if result.status is RunStatus.OK:
+        report = check_volume_drift(domain, result.url_count)
+        if report is not None and report.alert:
+            log.warning(
+                "DRIFT [%s]: %s — harvest below baseline; portal may have changed, "
+                "repair configs/portals/%s.json", domain, report.reason(), domain,
+            )
 
 
 async def _safe_process_item(

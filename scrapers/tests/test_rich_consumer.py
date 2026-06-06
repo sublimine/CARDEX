@@ -124,6 +124,29 @@ def test_build_insert_args_unknown_fx_leaves_eur_none():
     assert args[22] is None            # stored with NULL EUR, not dropped
 
 
+@pytest.mark.unit
+def test_ch_listing_without_currency_defaults_to_chf_not_eur():
+    # The 41.8% fix: a CH payload whose parser yielded no currency must NOT fall to
+    # the EUR table-default — it defaults to CHF, and converts when FX_RATE_CHF is set.
+    args, eur, _ = build_insert_args(
+        _payload(source_country="CH", currency_raw="", price_raw=20000.0),
+        source="autolina.ch", channel="SCRAPER",
+        rates={"EUR": Decimal(1), "CHF": Decimal("1.05")},
+    )
+    assert args[21] == "CHF"                       # $22 currency_raw → country default
+    assert eur == Decimal("21000.00")              # 20000 CHF * 1.05
+
+
+@pytest.mark.unit
+def test_nl_listing_without_currency_defaults_to_eur():
+    args, eur, _ = build_insert_args(
+        _payload(source_country="NL", currency_raw="", price_raw=15000.0),
+        source="autotrack.nl", channel="SCRAPER", rates={"EUR": Decimal(1)},
+    )
+    assert args[21] == "EUR"
+    assert eur == Decimal("15000")
+
+
 # ── process_message routing (in-memory doubles) ──────────────────────────────────
 class FakePool:
     """asyncpg pool double — captures the INSERT and returns a synthetic row."""
@@ -172,6 +195,36 @@ class FakeRedis:
 
     async def xack(self, stream, group, msg_id):
         self.acked.append(msg_id)
+
+    def seed_pending(self, batch):
+        self._pending = list(batch)
+
+    async def xautoclaim(self, stream, group, consumer, min_idle_time, start_id, count):
+        batch = getattr(self, "_pending", [])
+        self._pending = []
+        return ["0-0", batch, []]
+
+
+@pytest.mark.unit
+def test_reclaim_pending_reprocesses_stranded_entry():
+    # A message A7 read but left un-ACKed (persist raised) must be reclaimed and
+    # re-persisted — idempotent ON CONFLICT means re-processing never duplicates.
+    pool, rdb, stats = FakePool(), FakeRedis(), RichStats()
+    env = {"payload": json.dumps(_payload()), "source": "viabovag.nl", "channel": "SCRAPER"}
+    rdb.seed_pending([("9-0", env)])
+    n = _run(rc.reclaim_pending(pool, rdb, stats, consumer="c", idle_ms=60000, count=10,
+                                rates={"EUR": Decimal(1)}))
+    assert n == 1 and stats.persisted == 1
+    assert rdb.acked == ["9-0"]
+    assert rc.MEILI_SYNC_STREAM in rdb.streams
+
+
+@pytest.mark.unit
+def test_reclaim_tombstone_is_acked():
+    pool, rdb, stats = FakePool(), FakeRedis(), RichStats()
+    rdb.seed_pending([("10-0", {})])
+    n = _run(rc.reclaim_pending(pool, rdb, stats, consumer="c", idle_ms=60000, count=10))
+    assert n == 0 and rdb.acked == ["10-0"] and stats.persisted == 0
 
 
 @pytest.mark.unit

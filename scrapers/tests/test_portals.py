@@ -553,3 +553,16 @@ def test_all_country_variants_resolve_to_tier_t2(conn) -> None:
     for cls in (AutoScout24DE, AutoScout24FR, AutoScout24ES, AutoScout24NL, AutoScout24BE, AutoScout24CH):
         scraper = cls()
         assert scraper._select_tier(conn) is Tier.T2
+
+
+# ── P1.5 non-car scope guard ───────────────────────────────────────────────────
+@pytest.mark.unit
+def test_non_car_portals_excludes_trucks() -> None:
+    from scrapers.portals import NON_CAR_PORTALS, PORTAL_REGISTRY, is_car_portal
+    # truckscout24 is a TRUCK marketplace → excluded from the car vertical...
+    assert "truckscout24.com" in NON_CAR_PORTALS
+    assert is_car_portal("truckscout24.com") is False
+    # ...but it stays REGISTERED (valid scraper, future truck vertical).
+    assert "truckscout24.com" in PORTAL_REGISTRY
+    # a real car portal is in scope
+    assert is_car_portal("autotrack.nl") is True

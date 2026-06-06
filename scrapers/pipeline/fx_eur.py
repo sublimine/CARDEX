@@ -25,6 +25,17 @@ from decimal import Decimal
 # argument — never a hardcoded approximation.
 _BASE_RATES: dict[str, Decimal] = {"EUR": Decimal(1)}
 
+# ISO-2 country → default listing currency. The 6-country fleet prices in EUR
+# except Switzerland (CHF). This is the fix for the 41.8% mislabel: a CH listing
+# whose parser yields no explicit currency must default to CHF, never the EUR
+# table-default. Add a row here only for a genuinely non-EUR market.
+_COUNTRY_CURRENCY: dict[str, str] = {"CH": "CHF"}
+
+
+def country_currency(country: str | None) -> str:
+    """Default listing currency for a country (CH→CHF, every other fleet market→EUR)."""
+    return _COUNTRY_CURRENCY.get((country or "").strip().upper(), "EUR")
+
 
 def load_rates_from_env() -> dict[str, Decimal]:
     """Collect ``FX_RATE_<CCY>`` env vars into a {CCY: Decimal} table (+ EUR=1)."""

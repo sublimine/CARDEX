@@ -134,6 +134,26 @@ def evaluate(
     )
 
 
+def evaluate_volume(cfg: ExtractionConfig, volume: int) -> DriftReport:
+    """
+    Volume-only drift verdict for callers that have just the harvest count.
+
+    The coordinator harvests L1 deep-link POINTERS — it has the cycle's URL count
+    but no per-field data and no parsed record shape. It can still catch the most
+    common breakage (a selector change that collapses the harvest) by checking the
+    count against the source's ``expected_min_volume`` floor. FIELD/SCHEMA drift is
+    left to the L2 path (A6/verify) which has the records. ``fields_ok``/``schema``
+    are reported True here because this caller cannot observe them — never as a
+    false alarm.
+    """
+    volume_ok = volume >= cfg.drift_baseline.expected_min_volume
+    return DriftReport(
+        source_key=cfg.source_key, ok=volume_ok, volume_ok=volume_ok,
+        fields_ok=True, schema_changed=False,
+        details={"volume": volume, "expected_min": cfg.drift_baseline.expected_min_volume},
+    )
+
+
 def stats_from_records(
     records: Sequence[Mapping[str, Any]],
     required_fields: Sequence[str],

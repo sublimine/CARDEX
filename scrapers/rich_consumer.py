@@ -48,6 +48,9 @@ MEILI_SYNC_STREAM = "stream:meili_sync"
 PRICE_EVENTS_STREAM = "stream:price_events"
 CONSUMER_GROUP = "cg_pipeline"
 _REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
+# Reclaim PEL entries idle > this (ms). A7 leaves a message un-ACKed when persist
+# raises (DB fault) — without reclaim it strands in the PEL forever (H1).
+RECLAIM_IDLE_MS = int(os.environ.get("RICH_RECLAIM_IDLE_MS", "60000"))
 
 _PRICE_FLOOR_EUR = Decimal(500)
 _PRICE_CEIL_EUR = Decimal(2_000_000)
@@ -170,8 +173,11 @@ def build_insert_args(
     Returns (args, eur, fingerprint). ``eur`` is None when no FX rate is known.
     Pure and deterministic — the testable core of persistence.
     """
+    country = (p.get("source_country") or "").upper()[:2] or None
+    # Currency: trust an explicitly-extracted currency; otherwise default by country
+    # (CH→CHF), NEVER the bare EUR table-default — that mislabels the 41.8% CH share.
     price_raw = _num(p.get("price_raw"))
-    currency = (p.get("currency_raw") or "").upper()
+    currency = (p.get("currency_raw") or fx_eur.country_currency(country)).upper()
     eur = fx_eur.to_eur(price_raw, currency, rates) if price_raw is not None else None
 
     vin = (p.get("vin") or "").strip()
@@ -179,7 +185,6 @@ def build_insert_args(
     mileage = int(p.get("mileage_km") or 0)
     fingerprint = compute_fingerprint(vin, p.get("source_url") or "", color, mileage)
 
-    country = (p.get("source_country") or "").upper()[:2] or None
     photos = list(p.get("photo_urls") or [])
 
     args = [
@@ -396,6 +401,43 @@ async def ensure_group(rdb, stream: str, group: str) -> None:
             raise
 
 
+async def reclaim_pending(
+    pool, rdb, stats: RichStats, *, consumer: str, idle_ms: int, count: int,
+    rates: dict[str, Decimal] | None = None,
+) -> int:
+    """
+    XAUTOCLAIM one batch of PEL entries idle > ``idle_ms`` and reprocess them.
+
+    A7 leaves a message un-ACKed when ``persist_one`` raises (DB/transport fault);
+    XREADGROUP '>' never re-delivers it, so without reclaim the work strands in the
+    group PEL forever (H1). Persistence is idempotent (``ON CONFLICT`` on the
+    fingerprint), so reprocessing a reclaimed message never double-inserts.
+    Tombstones (deleted entries) come back empty → ACK to clear them.
+    """
+    try:
+        res = await rdb.xautoclaim(
+            INGESTION_STREAM, CONSUMER_GROUP, consumer,
+            min_idle_time=idle_ms, start_id="0-0", count=count,
+        )
+    except aioredis.ResponseError:  # pragma: no cover - group/stream gone
+        return 0
+    messages = res[1] if isinstance(res, (list, tuple)) and len(res) >= 2 else []
+    n = 0
+    for mid, flds in messages:
+        if not flds:
+            await rdb.xack(INGESTION_STREAM, CONSUMER_GROUP, mid)
+            continue
+        try:
+            await process_message(pool, rdb, mid, flds, stats, rates=rates)
+        except Exception:  # noqa: BLE001 — a still-bad reclaimed row must not kill the loop
+            stats.errors += 1
+            log.exception("rich_consumer reclaimed message failed id=%s", mid)
+        n += 1
+    if n:
+        log.info("rich_consumer reclaimed %d stranded PEL entries", n)
+    return n
+
+
 async def run(
     *,
     database_url: str | None = None,
@@ -403,6 +445,7 @@ async def run(
     batch_size: int = 50,
     block_ms: int = 5_000,
     limit: int = 0,
+    reclaim_idle_ms: int = RECLAIM_IDLE_MS,
 ) -> RichStats:
     """Consume ``stream:ingestion_raw`` and persist rich vehicle records to PG."""
     pool = await indexer.make_pg(database_url)
@@ -415,6 +458,13 @@ async def run(
     log.info("rich_consumer start group=%s consumer=%s limit=%d", CONSUMER_GROUP, consumer, limit)
     try:
         while limit == 0 or stats.persisted < limit:
+            # Durability: reclaim stranded PEL entries before reading new ones.
+            await reclaim_pending(
+                pool, rdb, stats, consumer=consumer,
+                idle_ms=reclaim_idle_ms, count=batch_size, rates=rates,
+            )
+            if limit and stats.persisted >= limit:
+                break
             resp = await rdb.xreadgroup(
                 CONSUMER_GROUP, consumer, {INGESTION_STREAM: ">"},
                 count=batch_size, block=block_ms,

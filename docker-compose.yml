@@ -293,6 +293,9 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD:-cardex_dev_only}@redis:6379
       PIPELINE_BATCH_SIZE: "50"
       RICH_LIMIT: "${RICH_LIMIT:-0}"
+      # CHF→EUR rate (placeholder mid; override with today's ECB rate). Without it
+      # CH listings persist with a NULL EUR price. fx_eur reads FX_RATE_<CCY>.
+      FX_RATE_CHF: "${FX_RATE_CHF:-1.05}"
       LOG_LEVEL: ${LOG_LEVEL:-info}
     command: ["-m", "scrapers.rich_consumer"]
     restart: unless-stopped

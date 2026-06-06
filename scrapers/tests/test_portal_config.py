@@ -16,7 +16,7 @@ def test_load_reference_config_autotrack():
     assert cfg.pagination.page_size == 30 and cfg.pagination.max_pages == 7500
     assert cfg.extraction.method == "jsonld"
     assert cfg.extraction.field_map["make"] == "brand.name"
-    assert cfg.drift_baseline.expected_min_volume == 3
+    assert cfg.drift_baseline.expected_min_volume == 1000   # production full-harvest floor
     assert "price" in cfg.drift_baseline.required_fields
 
 

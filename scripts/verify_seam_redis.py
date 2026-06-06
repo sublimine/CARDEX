@@ -90,18 +90,26 @@ async def run(domain: str, country: str, limit: int) -> int:
             # source's versioned config baseline; alert by source if it deviates.
             cfg = portal_config.load(domain)
             if cfg is not None:
+                from dataclasses import replace as _replace
                 records = [
                     {"make": r["make"], "model": r["model"], "year": r["year"],
                      "price": r["gross_physical_cost_eur"],
                      "images": ["x"] if r["make"] else []}
                     for r in sample
                 ]
+                # This is a BOUNDED sample (limit N), so the production volume floor
+                # doesn't apply — scope the baseline to the sample size and let the
+                # gate check the meaningful sample dims: FIELD presence + SCHEMA fp.
+                sample_cfg = _replace(
+                    cfg, drift_baseline=_replace(cfg.drift_baseline, expected_min_volume=len(records)),
+                )
                 stats = drift_gate.stats_from_records(records, cfg.drift_baseline.required_fields)
                 eng = db.connect(os.environ.get("ENGINE_DB_PATH", "scrapers/engine.db"))
                 db.migrate(eng)
-                report = drift_gate.evaluate(cfg, stats, conn=eng)
+                report = drift_gate.evaluate(sample_cfg, stats, conn=eng)
                 eng.commit(); eng.close()
-                print(f"DRIFT GATE [{domain}]: {'OK' if report.ok else 'ALERT'} — {report.reason()}")
+                print(f"DRIFT GATE [{domain}] (sample n={len(records)}): "
+                      f"{'OK' if report.ok else 'ALERT'} — {report.reason()}")
             else:
                 print(f"DRIFT GATE [{domain}]: no config (add configs/portals/{domain}.json)")
 

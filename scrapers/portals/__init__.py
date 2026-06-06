@@ -178,6 +178,19 @@ PORTAL_REGISTRY: dict[str, type[BasePortalScraper]] = {
     cls.DOMAIN: cls for cls in _PORTAL_CLASSES
 }
 
+# Registered scrapers whose inventory is NOT passenger cars (trucks / commercial /
+# other verticals). They stay registered (the scraper is valid and could feed a
+# future non-car vertical) but the coordinator MUST NOT harvest them into the car
+# `vehicle_index` — truckscout24's 72,225 `/tsp/ts-*` truck listings contaminated
+# the car vertical and scoring (P1.5). Adding a portal here excludes it from the
+# car harvest; removing it (or a future vertical-aware router) re-includes it.
+NON_CAR_PORTALS: frozenset[str] = frozenset({"truckscout24.com"})
+
+
+def is_car_portal(domain: str) -> bool:
+    """True unless the portal is flagged as a non-car vertical (trucks/commercial)."""
+    return domain not in NON_CAR_PORTALS
+
 
 def get_scraper(domain: str) -> BasePortalScraper | None:
     """Return a fresh scraper instance for domain, or None if unregistered."""

@@ -51,6 +51,11 @@ DLQ_STREAM = "stream:dlq"                     # irreparable parses
 CONSUMER_GROUP = "cg_enrich"
 INGESTION_MAXLEN = 5_000_000
 DEFAULT_CHANNEL = "SCRAPER"                   # vehicles.ingestion_channel CHECK value
+# Reclaim entries idle longer than this from the group PEL. A transient failure
+# leaves a message un-ACKed; without reclaim XREADGROUP '>' never re-delivers it
+# and the work is lost at scale. 60s is well above a healthy in-flight time, so
+# reclaim never steals a message another consumer is actively processing.
+RECLAIM_IDLE_MS = int(os.environ.get("ENRICH_RECLAIM_IDLE_MS", "60000"))
 
 _REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
 
@@ -286,6 +291,47 @@ async def process_message(
     log.warning("enrich transient url=%s reason=%s (no ack)", decoded.get("u"), reason)
 
 
+async def reclaim_pending(
+    rdb: aioredis.Redis,
+    fetcher: Fetcher,
+    stats: EnrichStats,
+    *,
+    consumer: str,
+    idle_ms: int,
+    count: int,
+    default_country: str = "",
+) -> int:
+    """
+    XAUTOCLAIM one batch of PEL entries idle > ``idle_ms`` and reprocess them.
+
+    XREADGROUP '>' only ever delivers brand-new ids, so a message a consumer read
+    but never ACKed (transient fetch fault, crash) sits in the group's pending list
+    forever — silent loss at scale (H1). This reclaims the genuinely-stranded ones
+    so at-least-once actually holds. Tombstones (entry deleted from the stream after
+    being read) come back with empty fields → ACK to clear them from the PEL.
+    Returns the number of live messages reprocessed.
+    """
+    try:
+        res = await rdb.xautoclaim(
+            ENRICH_STREAM, CONSUMER_GROUP, consumer,
+            min_idle_time=idle_ms, start_id="0-0", count=count,
+        )
+    except aioredis.ResponseError:  # pragma: no cover - group/stream gone
+        return 0
+    # redis-py shape: [next_cursor, [(id, fields), ...], <deleted_ids?>]. Slice safely.
+    messages = res[1] if isinstance(res, (list, tuple)) and len(res) >= 2 else []
+    n = 0
+    for mid, flds in messages:
+        if not flds:  # tombstone → just clear from PEL
+            await rdb.xack(ENRICH_STREAM, CONSUMER_GROUP, mid)
+            continue
+        await process_message(rdb, fetcher, mid, flds, stats, default_country=default_country)
+        n += 1
+    if n:
+        log.info("enrich_worker reclaimed %d stranded PEL entries", n)
+    return n
+
+
 async def run(
     *,
     redis_url: str | None = None,
@@ -295,6 +341,7 @@ async def run(
     concurrency: int = 20,
     limit: int = 0,
     default_country: str = "",
+    reclaim_idle_ms: int = RECLAIM_IDLE_MS,
 ) -> EnrichStats:
     """
     Consume ``stream:enrich_pending`` and bridge to ``stream:ingestion_raw``.
@@ -314,6 +361,14 @@ async def run(
     log.info("enrich_worker start group=%s consumer=%s limit=%d", CONSUMER_GROUP, consumer, limit)
     try:
         while limit == 0 or stats.emitted < limit:
+            # Durability: first reclaim any stranded PEL entries (un-ACKed by a
+            # crashed/transient prior attempt), then read new messages.
+            await reclaim_pending(
+                rdb, fetcher, stats, consumer=consumer,
+                idle_ms=reclaim_idle_ms, count=batch_size, default_country=default_country,
+            )
+            if limit and stats.emitted >= limit:
+                break
             resp = await rdb.xreadgroup(
                 CONSUMER_GROUP, consumer, {ENRICH_STREAM: ">"},
                 count=batch_size, block=block_ms,

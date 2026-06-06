@@ -341,6 +341,23 @@ def test_process_item_unregistered_portal_fails_terminally(conn) -> None:
 
 
 @pytest.mark.unit
+def test_process_item_non_car_portal_skipped_without_harvest(conn) -> None:
+    # P1.5 scope guard: a non-car portal (truckscout24 trucks) is marked done
+    # WITHOUT building a session / harvesting, so it never re-pollutes the car index.
+    _insert_job(conn, job_id="jtruck", portal="truckscout24.com", country="DE")
+    item = _row(conn, "jtruck")
+
+    async def session_factory(c, s):  # must never be reached
+        raise AssertionError("session_factory called for non-car portal")
+
+    _process(conn, item, session_factory=session_factory)
+
+    row = _row(conn, "jtruck")
+    assert row["status"] == "done"
+    assert row["attempts"] == 0
+
+
+@pytest.mark.unit
 def test_process_item_no_session_backs_off_without_running_scraper(conn, monkeypatch) -> None:
     _insert_job(conn, job_id="j1", attempts=0)
     item = _row(conn, "j1")
@@ -541,3 +558,23 @@ def test_run_sleeps_when_queue_idle(conn) -> None:
     )
 
     assert sleeps == [7.0, 7.0]
+
+
+# ── drift gate wiring (resilience: live volume-drift detection) ────────────────
+@pytest.mark.unit
+def test_check_volume_drift_alerts_below_baseline():
+    # autotrack.nl config baseline is a 1000 full-harvest floor.
+    report = coordinator.check_volume_drift("autotrack.nl", 50)
+    assert report is not None and report.alert and not report.volume_ok
+
+
+@pytest.mark.unit
+def test_check_volume_drift_ok_above_baseline():
+    report = coordinator.check_volume_drift("autotrack.nl", 50_000)
+    assert report is not None and report.ok
+
+
+@pytest.mark.unit
+def test_check_volume_drift_none_when_no_config():
+    # drift detection is opt-in per portal: no config → no baseline → None.
+    assert coordinator.check_volume_drift("no-such-portal.invalid", 0) is None

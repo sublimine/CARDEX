@@ -100,6 +100,19 @@ def test_schema_fingerprint_drift_via_registry():
 
 
 @pytest.mark.unit
+def test_evaluate_volume_only_for_coordinator():
+    from scrapers.intelligence.drift_gate import evaluate_volume
+    cfg = _cfg(expected_min_volume=1000)
+    # healthy full harvest clears the floor
+    ok = evaluate_volume(cfg, 5000)
+    assert ok.ok and ok.volume_ok and ok.fields_ok and not ok.schema_changed
+    # collapsed harvest (selector broke) trips volume only — never a false field alarm
+    bad = evaluate_volume(cfg, 12)
+    assert bad.alert and not bad.volume_ok and bad.fields_ok
+    assert "volume(12<1000)" in bad.reason()
+
+
+@pytest.mark.unit
 def test_stats_from_records_helper():
     records = [
         {"make": "Audi", "model": "A3", "year": 2020, "price": 21950},

@@ -65,6 +65,15 @@ class FakeRedis:
     async def xack(self, stream, group, msg_id):
         self.acked.append(msg_id)
 
+    # XAUTOCLAIM double: returns the seeded stranded batch once, then drains.
+    def seed_pending(self, batch):
+        self._pending = list(batch)
+
+    async def xautoclaim(self, stream, group, consumer, min_idle_time, start_id, count):
+        batch = getattr(self, "_pending", [])
+        self._pending = []
+        return ["0-0", batch, []]
+
 
 _PAD = "<div class='spec'><span></span></div>" * 600
 
@@ -270,3 +279,29 @@ def test_process_message_decodes_byte_fields():
     assert stats.emitted == 1
     payload = json.loads(rdb.ingestion[0]["payload"])
     assert payload["make"] == "BMW"
+
+
+# ── reclaim (XAUTOCLAIM) — H1 durability ───────────────────────────────────────
+@pytest.mark.unit
+def test_reclaim_pending_reprocesses_stranded_entry():
+    # A message a prior consumer read but never ACKed (transient fault) must be
+    # reclaimed from the PEL and re-enriched — not lost.
+    url = "https://dealer.de/vehicles/audi-a4-99"
+    fetcher = MapFetcher({url: (200, _detail_html(make="Audi", model="A4"))})
+    rdb, stats = FakeRedis(), EnrichStats()
+    rdb.seed_pending([("7-0", {"h": "STRAND1", "u": url, "s": "dealer.de", "c": "DE"})])
+
+    n = _run(ew.reclaim_pending(rdb, fetcher, stats, consumer="c", idle_ms=60000, count=10))
+
+    assert n == 1 and stats.emitted == 1
+    assert len(rdb.ingestion) == 1 and rdb.acked == ["7-0"]
+
+
+@pytest.mark.unit
+def test_reclaim_tombstone_is_acked_not_processed():
+    # An entry deleted from the stream after being read comes back with empty
+    # fields → ACK to clear it from the PEL, never reprocess.
+    rdb, stats = FakeRedis(), EnrichStats()
+    rdb.seed_pending([("8-0", {})])
+    n = _run(ew.reclaim_pending(rdb, MapFetcher({}), stats, consumer="c", idle_ms=60000, count=10))
+    assert n == 0 and rdb.acked == ["8-0"] and stats.emitted == 0

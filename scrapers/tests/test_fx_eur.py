@@ -43,3 +43,13 @@ def test_load_rates_from_env(monkeypatch):
     assert rates["EUR"] == Decimal(1)
     assert rates["CHF"] == Decimal("1.07")
     assert "GARBAGE" not in rates  # invalid value skipped, not crashed
+
+
+@pytest.mark.unit
+def test_country_currency_ch_is_chf_rest_eur():
+    assert fx_eur.country_currency("CH") == "CHF"
+    assert fx_eur.country_currency("ch") == "CHF"      # case-insensitive
+    for c in ("NL", "DE", "ES", "FR", "BE"):
+        assert fx_eur.country_currency(c) == "EUR"
+    assert fx_eur.country_currency("") == "EUR"        # safe default
+    assert fx_eur.country_currency(None) == "EUR"
