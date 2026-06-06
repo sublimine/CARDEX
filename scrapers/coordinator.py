@@ -32,6 +32,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import logging
+import os
 import sqlite3
 import time
 from collections.abc import Awaitable, Callable
@@ -76,6 +77,29 @@ class CoordinatorConfig:
     camoufox_t3_pool_size: int = 3   # T3 concurrent browsers (behavioral)
     prometheus_port: int = 9090
     work_poll_interval_s: float = 5.0
+
+    @classmethod
+    def from_env(cls) -> "CoordinatorConfig":
+        """
+        Build config from the documented env vars, keeping each default when the
+        var is unset. Honors the module-header contract (DATABASE_URL, REDIS_URL,
+        ENGINE_DB_PATH, PROMETHEUS_PORT): without this, `python -m
+        scrapers.coordinator` silently ignored those overrides and always bound the
+        hardcoded localhost:6379 / :9090 — so a host where the Docker Redis isn't
+        published, or where Prometheus already holds :9090, could never run the
+        live loop. PROMETHEUS_PORT=0 disables the exporter (run() skips a falsy
+        port), which is the clean way to avoid a bind clash on a busy host.
+        """
+        overrides: dict[str, Any] = {}
+        if db_path := os.environ.get("ENGINE_DB_PATH"):
+            overrides["db_path"] = db_path
+        if database_url := os.environ.get("DATABASE_URL"):
+            overrides["database_url"] = database_url
+        if redis_url := os.environ.get("REDIS_URL"):
+            overrides["redis_url"] = redis_url
+        if (prometheus_port := os.environ.get("PROMETHEUS_PORT")) is not None:
+            overrides["prometheus_port"] = int(prometheus_port)
+        return cls(**overrides)
 
 
 # ── pure decisions (no I/O) ───────────────────────────────────────────────────
@@ -270,6 +294,47 @@ async def _process_item(
     _apply_queue_outcome(conn, item["id"], outcome, now=now)
 
 
+async def _safe_process_item(
+    conn: sqlite3.Connection,
+    item: sqlite3.Row,
+    *,
+    session_factory: SessionFactory,
+    sink_factory: SinkFactory | None,
+    now: int,
+) -> None:
+    """
+    Run one job, isolating any unhandled scraper error from the engine loop.
+
+    BasePortalScraper.run does not wrap its live fetch, so a network/parse error
+    in a single portal propagates. Without this guard it would unwind the whole
+    coordinator loop, taking the other 70 portals down with it — and the job,
+    already flipped pending->running by claim_next, would be stranded in 'running'
+    forever (claim_next only re-picks 'pending'). Here a crash is treated like a
+    consumed-attempt transient fault: log it, back the job off for a retry, and let
+    it go terminal after MAX_ATTEMPTS so a deterministically broken portal can't
+    hot-loop. The loop then advances to the next job.
+    """
+    try:
+        await _process_item(
+            conn, item, session_factory=session_factory, sink_factory=sink_factory, now=now
+        )
+    except Exception:  # noqa: BLE001 — one portal must never crash the engine
+        log.exception("unhandled error scraping %s — isolating, requeueing", item["portal"])
+        try:
+            if item["attempts"] + 1 >= MAX_ATTEMPTS:
+                mark_failed(conn, item["id"], "unhandled_exception", increment_attempt=True, now=now)
+            else:
+                requeue(
+                    conn,
+                    item["id"],
+                    scheduled_at=now + _SOFT_BLOCK_BACKOFF_S,
+                    error="unhandled_exception",
+                    increment_attempt=True,
+                )
+        except Exception:  # noqa: BLE001 — never let cleanup bookkeeping crash the loop
+            log.exception("failed to requeue %s after crash; leaving for recovery", item["portal"])
+
+
 async def _close_session(session: Any) -> None:
     """Close an injected session, awaiting an async closer when there is one."""
     closer = getattr(session, "aclose", None) or getattr(session, "close", None)
@@ -316,7 +381,7 @@ async def run(
             if item is None:
                 await sleep(config.work_poll_interval_s)
             else:
-                await _process_item(
+                await _safe_process_item(
                     conn, item, session_factory=factory, sink_factory=sink_factory, now=now
                 )
             cycles += 1
@@ -370,7 +435,7 @@ def make_live_sink_factory(pg: Any, rdb: Any) -> SinkFactory:
 
 async def main(config: CoordinatorConfig | None = None) -> None:
     """Production entrypoint: wire the live PG/Redis seams and run the loop."""
-    config = config or CoordinatorConfig()
+    config = config or CoordinatorConfig.from_env()
     from scrapers.common import indexer  # lazy: pulls asyncpg + redis
 
     pg = await indexer.make_pg(config.database_url)
