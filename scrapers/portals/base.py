@@ -71,6 +71,15 @@ class RunStatus(str, Enum):
     CIRCUIT_OPEN = "circuit_open"
     NO_IDENTITY = "no_identity"
     SOFT_BLOCKED = "soft_blocked"
+    # A COMPLETE, non-soft-blocked cycle that harvested ZERO deep links. A
+    # single-segment portal (partition_params() == [{}], i.e. every
+    # SitemapListingScraper) yields exactly one empty cycle, which is < the 3
+    # consecutive empties ZeroUrlTracker needs to trip — so harvest-0 would
+    # otherwise pass as OK and be marked `done`, AND the clean-cycle stale GONE
+    # delete would wipe the portal's entire existing index. EMPTY_SUSPECT is the
+    # third state (neither clean-OK nor soft-block): it skips finalize and is
+    # re-evaluated by the coordinator instead of silently succeeding.
+    EMPTY_SUSPECT = "empty_suspect"
 
 
 @dataclass(frozen=True)
@@ -241,13 +250,21 @@ class BasePortalScraper(ABC):
             session, pace, on_urls,
         )
         status = RunStatus.SOFT_BLOCKED if soft_blocked else RunStatus.OK
+        # Harvest-0 on a complete, non-soft-blocked cycle is NOT a success: a
+        # single-segment portal never reaches ZeroUrlTracker's 3-empty threshold,
+        # so a transient block / broken selector would pass as OK→done. Demote it
+        # to EMPTY_SUSPECT so the coordinator re-evaluates it AND — critically —
+        # the stale GONE delete below is skipped (a zero harvest must never wipe
+        # the portal's whole existing index).
+        if status is RunStatus.OK and total == 0:
+            status = RunStatus.EMPTY_SUSPECT
         self._record_outcome(conn, identity, status)
 
         # Stale GONE reconciliation is valid ONLY for a complete, clean cycle. A soft
-        # block or a transient mid-segment truncation means we did not observe the full
-        # inventory, so deleting "unseen" rows would wrongly GONE-mark live listings.
-        # The INSERTs already streamed incrementally; we just defer the delete to a
-        # later clean cycle rather than corrupt the index on a partial view.
+        # block, an EMPTY_SUSPECT harvest-0, or a transient mid-segment truncation means
+        # we did not observe the full inventory, so deleting "unseen" rows would wrongly
+        # GONE-mark live listings. The INSERTs already streamed incrementally; we just
+        # defer the delete to a later clean cycle rather than corrupt the index.
         if status is RunStatus.OK and not incomplete:
             await self._finalize_sink(on_urls)
         elif incomplete:
@@ -409,9 +426,13 @@ class BasePortalScraper(ABC):
     def _record_outcome(self, conn: Connection, identity: Identity, status: RunStatus) -> None:
         if status is RunStatus.SOFT_BLOCKED:
             store.update_trust(conn, identity.id, _TRUST_SOFTBLOCK)
-        else:
+        elif status is RunStatus.OK:
             store.update_trust(conn, identity.id, _TRUST_SUCCESS)
             metrics.record_success(self.DOMAIN)
+        # EMPTY_SUSPECT is neutral: harvest-0 is neither a confirmed success
+        # (no reward) nor a confirmed block (no -1.0 penalty / no quarantine).
+        # A genuinely empty portal must not be punished; a transient block is
+        # caught by the coordinator's retry, not by trust accounting here.
 
     async def _sleep(self, pace: float = 0.0) -> None:
         """

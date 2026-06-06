@@ -118,7 +118,10 @@ def _process(conn, item, *, session_factory, sink_factory=None, now=_NOW) -> Non
 @pytest.mark.unit
 def test_is_success_only_for_ok() -> None:
     assert is_success(RunStatus.OK) is True
-    for s in (RunStatus.CIRCUIT_OPEN, RunStatus.NO_IDENTITY, RunStatus.SOFT_BLOCKED):
+    for s in (
+        RunStatus.CIRCUIT_OPEN, RunStatus.NO_IDENTITY,
+        RunStatus.SOFT_BLOCKED, RunStatus.EMPTY_SUSPECT,
+    ):
         assert is_success(s) is False
 
 
@@ -128,6 +131,9 @@ def test_circuit_action_for_each_status() -> None:
     assert circuit_action_for(RunStatus.SOFT_BLOCKED) == "failure"
     assert circuit_action_for(RunStatus.CIRCUIT_OPEN) == "none"
     assert circuit_action_for(RunStatus.NO_IDENTITY) == "none"
+    # Harvest-0 leaves the breaker untouched: it may be a genuinely empty portal,
+    # not a tier failure, so it must not escalate the circuit.
+    assert circuit_action_for(RunStatus.EMPTY_SUSPECT) == "none"
 
 
 @pytest.mark.unit
@@ -150,6 +156,20 @@ def test_next_queue_state_soft_block_becomes_terminal_at_max() -> None:
     # attempts already 2; this run makes the 3rd → terminal failure.
     out = next_queue_state(RunStatus.SOFT_BLOCKED, MAX_ATTEMPTS - 1, max_attempts=MAX_ATTEMPTS)
     assert out == QueueOutcome(action="failed", increment_attempt=True, error="soft_block")
+
+
+@pytest.mark.unit
+def test_next_queue_state_empty_suspect_retries_then_consumes_attempt() -> None:
+    out = next_queue_state(RunStatus.EMPTY_SUSPECT, 0, max_attempts=MAX_ATTEMPTS)
+    assert out == QueueOutcome(
+        action="retry", increment_attempt=True, backoff_s=_SOFT_BLOCK_BACKOFF_S, error="empty_harvest"
+    )
+
+
+@pytest.mark.unit
+def test_next_queue_state_empty_suspect_becomes_terminal_at_max() -> None:
+    out = next_queue_state(RunStatus.EMPTY_SUSPECT, MAX_ATTEMPTS - 1, max_attempts=MAX_ATTEMPTS)
+    assert out == QueueOutcome(action="failed", increment_attempt=True, error="empty_harvest")
 
 
 @pytest.mark.unit

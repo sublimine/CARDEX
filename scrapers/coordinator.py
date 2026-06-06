@@ -149,6 +149,17 @@ def next_queue_state(status: RunStatus, attempts: int, *, max_attempts: int) -> 
         return QueueOutcome(
             action="retry", increment_attempt=True, backoff_s=_SOFT_BLOCK_BACKOFF_S, error="soft_block"
         )
+    if status is RunStatus.EMPTY_SUSPECT:
+        # Harvest-0 on a complete cycle: never `done`. Retry like a soft block
+        # (a zero harvest is often a 200-OK soft block a single-segment portal
+        # cannot otherwise detect) so a transient block recovers; once attempts
+        # are spent it lands in `failed` with a distinct `empty_harvest` cause for
+        # re-evaluation instead of masquerading as a clean `done`.
+        if attempts + 1 >= max_attempts:
+            return QueueOutcome(action="failed", increment_attempt=True, error="empty_harvest")
+        return QueueOutcome(
+            action="retry", increment_attempt=True, backoff_s=_SOFT_BLOCK_BACKOFF_S, error="empty_harvest"
+        )
     if status is RunStatus.CIRCUIT_OPEN:
         return QueueOutcome(
             action="retry", increment_attempt=False, backoff_s=_CIRCUIT_OPEN_BACKOFF_S, error="circuit_open"

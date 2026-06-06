@@ -209,17 +209,39 @@ def test_run_ok_dedups_urls_across_pages_and_segments(conn, active_identity) -> 
 
 
 @pytest.mark.unit
-def test_run_does_not_call_sink_when_no_urls(conn, active_identity) -> None:
+def test_run_empty_harvest_is_empty_suspect_not_ok(conn, active_identity) -> None:
+    # A single-segment portal that harvested ZERO deep links. It is NOT a soft block
+    # (one empty cycle < the 3 ZeroUrlTracker needs), but it is ALSO not a clean
+    # success: harvest-0 must demote to EMPTY_SUSPECT so the coordinator re-evaluates
+    # it instead of marking it `done`, and trust stays neutral (no reward, no penalty).
     scraper = _FakeScraper([{"s": "a"}], lambda p, n: [])
     calls = {"n": 0}
 
     async def sink(urls):
         calls["n"] += 1
 
+    before = store.get(conn, active_identity.id).trust_score
     result = _run(scraper.run(conn, _Session([]), on_urls=sink))
-    # Single empty segment is not yet a soft block (needs 3 consecutive).
-    assert result.status is RunStatus.OK
+    after = store.get(conn, active_identity.id).trust_score
+
+    assert result.status is RunStatus.EMPTY_SUSPECT
+    assert result.url_count == 0
     assert calls["n"] == 0
+    assert after == pytest.approx(before)  # neutral: no +0.05 reward, no -1.0 penalty
+
+
+@pytest.mark.unit
+def test_run_empty_harvest_skips_finalize(conn, active_identity) -> None:
+    # The critical data-integrity guard: a zero harvest must NEVER run the stale GONE
+    # delete, which would wipe the portal's entire existing index on a transient block.
+    scraper = _FakeScraper([{"s": "a"}], lambda p, n: [])
+    sink = _CollectSink()
+
+    result = _run(scraper.run(conn, _Session([]), on_urls=sink))
+
+    assert result.status is RunStatus.EMPTY_SUSPECT
+    assert sink.urls == []
+    assert sink.finalized is False  # harvest-0 → no stale delete, index preserved
 
 
 # --------------------------------------------------------------------------- #
