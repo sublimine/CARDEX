@@ -14,8 +14,6 @@ fetch_segment tests stub `_retry_backoff` a no-op para que la suite nunca duerma
 from __future__ import annotations
 
 import asyncio
-import json as _json
-from itertools import product
 from typing import Any
 
 import pytest
@@ -27,6 +25,7 @@ from scrapers.portals.base import BasePortalScraper
 from scrapers.portals.ocasionplus_es import OcasionPlusESScraper
 from scrapers.portals.autokopen_nl import AutoKopenNLScraper
 from scrapers.portals.nederlandmobiel_nl import NederlandMobielNLScraper
+from scrapers.portals.sitemap_listing_base import SitemapListingScraper
 
 
 def _run(coro: Any) -> Any:
@@ -80,214 +79,17 @@ def _no_backoff(scraper: BasePortalScraper) -> None:
 
 
 # =========================================================================== #
-# ocasionplus.com — Next.js data route (T1, single segment)
+# ocasionplus.com — migrado al sitemap de fichas (multi-strategy 2026-06)
 # =========================================================================== #
-
-# HTML stub con __NEXT_DATA__ conteniendo buildId
-_OCASION_HTML = (
-    '<html><head><script id="__NEXT_DATA__" type="application/json">'
-    '{"props":{"pageProps":{}},"page":"/coches-segunda-mano",'
-    '"buildId":"ocasionBuild789","isFallback":false}'
-    '</script></head></html>'
-)
-
-# JSON stub de la data route — pageProps.results array
-_OCASION_DATA_JSON = _json.dumps({
-    "pageProps": {
-        "results": [
-            {"url": "/coches-segunda-mano/seat-leon-2020/12345"},
-            {"url": "/coches-segunda-mano/volkswagen-golf-2019/67890"},
-            {"url": "/coches-segunda-mano/seat-leon-2020/12345"},  # dup
-        ]
-    }
-})
-
-_OCASION_EXPECTED = [
-    "https://www.ocasionplus.com/coches-segunda-mano/seat-leon-2020/12345",
-    "https://www.ocasionplus.com/coches-segunda-mano/volkswagen-golf-2019/67890",
-]
-
-# JSON stub — pageProps.searchResults.vehicles (one level deeper)
-_OCASION_DATA_NESTED_JSON = _json.dumps({
-    "pageProps": {
-        "searchResults": {
-            "vehicles": [
-                {"href": "/coches-segunda-mano/bmw-x3/11111"},
-                {"link": "https://www.ocasionplus.com/coches-segunda-mano/audi-a4/22222"},
-            ]
-        }
-    }
-})
-
-_OCASION_NESTED_EXPECTED = [
-    "https://www.ocasionplus.com/coches-segunda-mano/bmw-x3/11111",
-    "https://www.ocasionplus.com/coches-segunda-mano/audi-a4/22222",
-]
-
-# JSON stub — slug + id composition
-_OCASION_DATA_SLUG_JSON = _json.dumps({
-    "pageProps": {
-        "listings": [
-            {"slug": "toyota-yaris-2021", "id": 33333},
-            {"slug": "ford-focus-2020", "vehicleId": 44444},
-        ]
-    }
-})
-
-_OCASION_SLUG_EXPECTED = [
-    "https://www.ocasionplus.com/coches-segunda-mano/toyota-yaris-2021/33333",
-    "https://www.ocasionplus.com/coches-segunda-mano/ford-focus-2020/44444",
-]
-
-
-# -- partition -----------------------------------------------------------------
 @pytest.mark.unit
-def test_ocasion_partition_single_segment() -> None:
-    scraper = OcasionPlusESScraper()
-    segments = scraper.partition_params()
-    assert segments == [{}]
-
-
-# -- buildId regex -------------------------------------------------------------
-@pytest.mark.unit
-def test_ocasion_build_id_regex() -> None:
-    from scrapers.portals.ocasionplus_es import _BUILD_ID_RE
-    match = _BUILD_ID_RE.search(_OCASION_HTML)
-    assert match is not None
-    assert match.group(1) == "ocasionBuild789"
-
-
-# -- _extract ------------------------------------------------------------------
-@pytest.mark.unit
-def test_ocasion_extract_direct_url_field() -> None:
-    scraper = OcasionPlusESScraper()
-    urls = scraper._extract(_OCASION_DATA_JSON)
-    assert urls == _OCASION_EXPECTED
-
-
-@pytest.mark.unit
-def test_ocasion_extract_nested_listing_array() -> None:
-    scraper = OcasionPlusESScraper()
-    urls = scraper._extract(_OCASION_DATA_NESTED_JSON)
-    assert urls == _OCASION_NESTED_EXPECTED
-
-
-@pytest.mark.unit
-def test_ocasion_extract_slug_id_composition() -> None:
-    scraper = OcasionPlusESScraper()
-    urls = scraper._extract(_OCASION_DATA_SLUG_JSON)
-    assert urls == _OCASION_SLUG_EXPECTED
-
-
-@pytest.mark.unit
-def test_ocasion_extract_dedups() -> None:
-    scraper = OcasionPlusESScraper()
-    urls = scraper._extract(_OCASION_DATA_JSON)
-    assert len(urls) == 2  # 3 items, 1 dup -> 2 unique
-
-
-@pytest.mark.unit
-def test_ocasion_extract_returns_empty_on_garbage() -> None:
-    scraper = OcasionPlusESScraper()
-    assert scraper._extract("") == []
-    assert scraper._extract("not json") == []
-    assert scraper._extract('{"pageProps": "bad"}') == []
-    assert scraper._extract('{"pageProps": {}}') == []
-
-
-# -- _build_data_url -----------------------------------------------------------
-@pytest.mark.unit
-def test_ocasion_build_data_url() -> None:
-    scraper = OcasionPlusESScraper()
-    scraper._build_id = "testBuild123"
-    url = scraper._build_data_url(1)
-    assert url == (
-        "https://www.ocasionplus.com/_next/data/testBuild123/"
-        "coches-segunda-mano.json?page=1"
-    )
-
-
-# -- fetch_segment behavioural matrix -----------------------------------------
-@pytest.mark.unit
-def test_ocasion_fetch_segment_resolves_build_id_and_extracts() -> None:
-    scraper = OcasionPlusESScraper()
-    _no_backoff(scraper)
-    session = _Session([
-        _Resp(200, _OCASION_HTML),         # buildId resolution
-        _Resp(200, _OCASION_DATA_JSON),    # data route
-    ])
-    urls = _run(scraper.fetch_segment(session, {}, 1))
-    assert urls == _OCASION_EXPECTED
-    assert scraper._build_id == "ocasionBuild789"
-    assert len(session.calls) == 2
-
-
-@pytest.mark.unit
-def test_ocasion_fetch_segment_uses_cached_build_id() -> None:
-    scraper = OcasionPlusESScraper()
-    scraper._build_id = "cached"
-    session = _Session([_Resp(200, _OCASION_DATA_JSON)])
-    urls = _run(scraper.fetch_segment(session, {}, 1))
-    assert urls == _OCASION_EXPECTED
-    assert len(session.calls) == 1  # no resolution call
-
-
-@pytest.mark.unit
-def test_ocasion_fetch_segment_retries_block_then_gives_up() -> None:
-    scraper = OcasionPlusESScraper()
-    scraper._build_id = "cached"
-    _no_backoff(scraper)
-    session = _Session([_Resp(429), _Resp(503), _Resp(403)])
-    assert _run(scraper.fetch_segment(session, {}, 1)) == []
-    assert len(session.calls) == scraper.RETRY_ATTEMPTS
-
-
-@pytest.mark.unit
-def test_ocasion_fetch_segment_recovers_after_block() -> None:
-    scraper = OcasionPlusESScraper()
-    scraper._build_id = "cached"
-    _no_backoff(scraper)
-    session = _Session([_Resp(503), _Resp(200, _OCASION_DATA_JSON)])
-    assert _run(scraper.fetch_segment(session, {}, 1)) == _OCASION_EXPECTED
-    assert len(session.calls) == 2
-
-
-@pytest.mark.unit
-def test_ocasion_fetch_segment_404_re_resolves_build_id() -> None:
-    """404 en la data route => re-resolver buildId (nuevo deploy)."""
-    scraper = OcasionPlusESScraper()
-    scraper._build_id = "stale"
-    _no_backoff(scraper)
-    session = _Session([
-        _Resp(404),                        # stale buildId
-        _Resp(200, _OCASION_HTML),         # re-resolve
-        _Resp(200, _OCASION_DATA_JSON),    # retry con nuevo buildId
-    ])
-    urls = _run(scraper.fetch_segment(session, {}, 1))
-    assert urls == _OCASION_EXPECTED
-    assert scraper._build_id == "ocasionBuild789"
-
-
-@pytest.mark.unit
-def test_ocasion_fetch_segment_transport_error_retries() -> None:
-    scraper = OcasionPlusESScraper()
-    scraper._build_id = "cached"
-    _no_backoff(scraper)
-    session = _Session([ConnectionError("reset"), _Resp(200, _OCASION_DATA_JSON)])
-    assert _run(scraper.fetch_segment(session, {}, 1)) == _OCASION_EXPECTED
-    assert len(session.calls) == 2
-
-
-@pytest.mark.unit
-def test_ocasion_fetch_segment_build_id_resolve_failure() -> None:
-    """Si no se puede resolver buildId, retorna vacío sin crash."""
-    scraper = OcasionPlusESScraper()
-    _no_backoff(scraper)
-    session = _Session([
-        _Resp(200, "<html>no next data here</html>"),  # no buildId
-    ])
-    urls = _run(scraper.fetch_segment(session, {}, 1))
-    assert urls == []
+def test_ocasion_is_sitemap_based() -> None:
+    s = OcasionPlusESScraper()
+    assert isinstance(s, SitemapListingScraper)
+    assert s.SITEMAP_URL == "https://www.ocasionplus.com/sitemap.xml"
+    assert s.CHILD_RE.search("/sitemap.fichas-coches.xml")
+    assert not s.CHILD_RE.search("/sitemap.coches_audi.xml")  # per-brand SRP shards skipped
+    assert s.DETAIL_RE.search("/coches-segunda-mano/skoda-karoq-10-tsi-2024-hs0htqaz")
+    s._validate()
 
 
 # -- wiring -------------------------------------------------------------------
@@ -308,243 +110,19 @@ def test_ocasion_domain_map_baseline() -> None:
 
 
 # =========================================================================== #
-# autokopen.nl — Next.js data route (T1, year x price grid)
+# autokopen.nl — migrado a los sitemaps de listings 100/101/102 (multi-strategy 2026-06)
 # =========================================================================== #
-
-# HTML stub con __NEXT_DATA__ conteniendo buildId
-_AUTOKOPEN_HTML = (
-    '<html><head><script id="__NEXT_DATA__" type="application/json">'
-    '{"props":{"pageProps":{}},"page":"/auto",'
-    '"buildId":"autokopenBuild456","isFallback":false}'
-    '</script></head></html>'
-)
-
-# JSON stub de la data route — pageProps.results array
-_AUTOKOPEN_DATA_JSON = _json.dumps({
-    "pageProps": {
-        "results": [
-            {"url": "/auto/detail/bmw-x5-2020-sc-autounit_52420900"},
-            {"url": "/auto/detail/volkswagen-golf-2021-dealer_123456"},
-            {"url": "/auto/detail/bmw-x5-2020-sc-autounit_52420900"},  # dup
-        ]
-    }
-})
-
-_AUTOKOPEN_EXPECTED = [
-    "https://autokopen.nl/auto/detail/bmw-x5-2020-sc-autounit_52420900",
-    "https://autokopen.nl/auto/detail/volkswagen-golf-2021-dealer_123456",
-]
-
-# JSON stub — slug composition fallback
-_AUTOKOPEN_DATA_SLUG_JSON = _json.dumps({
-    "pageProps": {
-        "items": [
-            {"slug": "audi-a3-sportback-2022"},
-            {"friendlyUrl": "opel-corsa-2019"},
-        ]
-    }
-})
-
-_AUTOKOPEN_SLUG_EXPECTED = [
-    "https://autokopen.nl/auto/detail/audi-a3-sportback-2022",
-    "https://autokopen.nl/auto/detail/opel-corsa-2019",
-]
-
-_YP = {"year_min": 2018, "year_max": 2020, "price_min": 10_000, "price_max": 20_000}
-_YP_OPEN = {"year_min": 2024, "year_max": 2026, "price_min": 100_000, "price_max": None}
-
-
-# -- partition -----------------------------------------------------------------
 @pytest.mark.unit
-def test_autokopen_partition_shape() -> None:
-    scraper = AutoKopenNLScraper()
-    segments = scraper.partition_params()
-    assert len(segments) == len(scraper.YEAR_BANDS) * len(scraper.PRICE_BANDS)
-    keys = {(s["year_min"], s["year_max"], s["price_min"], s["price_max"]) for s in segments}
-    assert len(keys) == len(segments)
-    assert not any("_fine" in s for s in segments)
-
-
-# -- subdivide_segment --------------------------------------------------------
-@pytest.mark.unit
-def test_autokopen_subdivide_then_stops() -> None:
-    scraper = AutoKopenNLScraper()
-    subs = scraper.subdivide_segment(dict(_YP))
-    assert subs
-    for s in subs:
-        assert s["year_min"] == s["year_max"]
-        assert s["_fine"] is True
-    assert {s["year_min"] for s in subs} == {2018, 2019, 2020}
-    assert scraper.subdivide_segment(subs[0]) == []
-
-
-@pytest.mark.unit
-def test_autokopen_subdivide_open_top_band_reopens_final_subband() -> None:
-    subs = AutoKopenNLScraper().subdivide_segment(dict(_YP_OPEN))
-    assert subs
-    by_year: dict[int, list[Any]] = {}
-    for s in subs:
-        by_year.setdefault(s["year_min"], []).append(s["price_max"])
-    for tops in by_year.values():
-        assert tops[-1] is None
-        assert all(t is not None for t in tops[:-1])
-
-
-# -- _split_price --------------------------------------------------------------
-@pytest.mark.unit
-def test_autokopen_split_price_closed_band() -> None:
-    bands = AutoKopenNLScraper._split_price(10_000, 20_000)
-    assert bands[0][0] == 10_000
-    assert bands[-1][1] == 20_000
-    assert all(b[0] < b[1] for b in bands)
-    # contiguous
-    for i in range(len(bands) - 1):
-        assert bands[i][1] == bands[i + 1][0]
-
-
-@pytest.mark.unit
-def test_autokopen_split_price_open_band() -> None:
-    bands = AutoKopenNLScraper._split_price(100_000, None)
-    assert bands[0][0] == 100_000
-    assert bands[-1][1] is None
-
-
-# -- buildId regex -------------------------------------------------------------
-@pytest.mark.unit
-def test_autokopen_build_id_regex() -> None:
-    from scrapers.portals.autokopen_nl import _BUILD_ID_RE
-    match = _BUILD_ID_RE.search(_AUTOKOPEN_HTML)
-    assert match is not None
-    assert match.group(1) == "autokopenBuild456"
-
-
-# -- _extract ------------------------------------------------------------------
-@pytest.mark.unit
-def test_autokopen_extract_direct_url_field() -> None:
-    scraper = AutoKopenNLScraper()
-    urls = scraper._extract(_AUTOKOPEN_DATA_JSON)
-    assert urls == _AUTOKOPEN_EXPECTED
-
-
-@pytest.mark.unit
-def test_autokopen_extract_slug_composition() -> None:
-    scraper = AutoKopenNLScraper()
-    urls = scraper._extract(_AUTOKOPEN_DATA_SLUG_JSON)
-    assert urls == _AUTOKOPEN_SLUG_EXPECTED
-
-
-@pytest.mark.unit
-def test_autokopen_extract_dedups() -> None:
-    scraper = AutoKopenNLScraper()
-    urls = scraper._extract(_AUTOKOPEN_DATA_JSON)
-    assert len(urls) == 2  # 3 items, 1 dup -> 2 unique
-
-
-@pytest.mark.unit
-def test_autokopen_extract_returns_empty_on_garbage() -> None:
-    scraper = AutoKopenNLScraper()
-    assert scraper._extract("") == []
-    assert scraper._extract("not json") == []
-    assert scraper._extract('{"pageProps": "bad"}') == []
-    assert scraper._extract('{"pageProps": {}}') == []
-
-
-# -- _build_data_url -----------------------------------------------------------
-@pytest.mark.unit
-def test_autokopen_build_data_url_with_params() -> None:
-    scraper = AutoKopenNLScraper()
-    scraper._build_id = "testBuild"
-    url = scraper._build_data_url(
-        {"year_min": 2020, "year_max": 2022, "price_min": 5000, "price_max": 15000},
-        3,
+def test_autokopen_is_sitemap_based() -> None:
+    s = AutoKopenNLScraper()
+    assert isinstance(s, SitemapListingScraper)
+    assert s.SITEMAP_URLS == (
+        "https://autokopen.nl/sitemap/100.xml",
+        "https://autokopen.nl/sitemap/101.xml",
+        "https://autokopen.nl/sitemap/102.xml",
     )
-    assert url == (
-        "https://autokopen.nl/_next/data/testBuild/auto.json?"
-        "page=3&year_min=2020&year_max=2022&price_min=5000&price_max=15000"
-    )
-
-
-@pytest.mark.unit
-def test_autokopen_build_data_url_open_price() -> None:
-    scraper = AutoKopenNLScraper()
-    scraper._build_id = "testBuild"
-    url = scraper._build_data_url(
-        {"year_min": 2024, "year_max": 2026, "price_min": 100_000, "price_max": None},
-        1,
-    )
-    assert "price_max" not in url
-    assert "price_min=100000" in url
-
-
-# -- fetch_segment behavioural matrix -----------------------------------------
-@pytest.mark.unit
-def test_autokopen_fetch_segment_resolves_build_id_and_extracts() -> None:
-    scraper = AutoKopenNLScraper()
-    _no_backoff(scraper)
-    session = _Session([
-        _Resp(200, _AUTOKOPEN_HTML),          # buildId resolution
-        _Resp(200, _AUTOKOPEN_DATA_JSON),     # data route
-    ])
-    urls = _run(scraper.fetch_segment(session, _YP, 1))
-    assert urls == _AUTOKOPEN_EXPECTED
-    assert scraper._build_id == "autokopenBuild456"
-    assert len(session.calls) == 2
-
-
-@pytest.mark.unit
-def test_autokopen_fetch_segment_uses_cached_build_id() -> None:
-    scraper = AutoKopenNLScraper()
-    scraper._build_id = "cached"
-    session = _Session([_Resp(200, _AUTOKOPEN_DATA_JSON)])
-    urls = _run(scraper.fetch_segment(session, _YP, 1))
-    assert urls == _AUTOKOPEN_EXPECTED
-    assert len(session.calls) == 1
-
-
-@pytest.mark.unit
-def test_autokopen_fetch_segment_retries_block_then_gives_up() -> None:
-    scraper = AutoKopenNLScraper()
-    scraper._build_id = "cached"
-    _no_backoff(scraper)
-    session = _Session([_Resp(429), _Resp(503), _Resp(403)])
-    assert _run(scraper.fetch_segment(session, _YP, 1)) == []
-    assert len(session.calls) == scraper.RETRY_ATTEMPTS
-
-
-@pytest.mark.unit
-def test_autokopen_fetch_segment_recovers_after_block() -> None:
-    scraper = AutoKopenNLScraper()
-    scraper._build_id = "cached"
-    _no_backoff(scraper)
-    session = _Session([_Resp(503), _Resp(200, _AUTOKOPEN_DATA_JSON)])
-    assert _run(scraper.fetch_segment(session, _YP, 1)) == _AUTOKOPEN_EXPECTED
-    assert len(session.calls) == 2
-
-
-@pytest.mark.unit
-def test_autokopen_fetch_segment_404_re_resolves_build_id() -> None:
-    """404 en la data route => re-resolver buildId (nuevo deploy)."""
-    scraper = AutoKopenNLScraper()
-    scraper._build_id = "stale"
-    _no_backoff(scraper)
-    session = _Session([
-        _Resp(404),                           # stale buildId
-        _Resp(200, _AUTOKOPEN_HTML),          # re-resolve
-        _Resp(200, _AUTOKOPEN_DATA_JSON),     # retry con nuevo buildId
-    ])
-    urls = _run(scraper.fetch_segment(session, _YP, 1))
-    assert urls == _AUTOKOPEN_EXPECTED
-    assert scraper._build_id == "autokopenBuild456"
-
-
-@pytest.mark.unit
-def test_autokopen_fetch_segment_transport_error_retries() -> None:
-    scraper = AutoKopenNLScraper()
-    scraper._build_id = "cached"
-    _no_backoff(scraper)
-    session = _Session([ConnectionError("reset"), _Resp(200, _AUTOKOPEN_DATA_JSON)])
-    assert _run(scraper.fetch_segment(session, _YP, 1)) == _AUTOKOPEN_EXPECTED
-    assert len(session.calls) == 2
+    assert s.DETAIL_RE.search("/auto/detail/mercedes-benz-c-klasse-2026-10999")
+    s._validate()
 
 
 # -- wiring -------------------------------------------------------------------

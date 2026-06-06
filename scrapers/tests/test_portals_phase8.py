@@ -377,52 +377,29 @@ class TestBelgieMobielBE:
 # =========================================================================== #
 # vroom.be — SSR HTML, Belgian mobility platform (T1)
 # =========================================================================== #
+from scrapers.portals.sitemap_listing_base import SitemapListingScraper
 from scrapers.portals.vroom_be import VroomBEScraper
-
-_VROOM_HTML = """
-<html><body>
-<a href="/fr/voitures-occasion/audi/a3/audi-a3-sportback-tfsi-bruxelles-112233">Audi A3</a>
-<a href="/fr/voitures-occasion/bmw/x1/bmw-x1-sdrive-liege-445566">BMW X1</a>
-<a href="/fr/annonce/seat-leon-fr-gent-778899">Seat León</a>
-</body></html>
-"""
 
 
 class TestVroomBE:
+    """vroom.be migrated to the FR listing sitemap (multi-strategy 2026-06)."""
+
     def test_registry(self) -> None:
         s = get_scraper("vroom.be")
-        assert s is not None
         assert isinstance(s, VroomBEScraper)
+        assert isinstance(s, SitemapListingScraper)
 
     def test_domain_map(self) -> None:
-        spec = domain_get("vroom.be")
-        assert spec is not None
-        assert spec.tier is Tier.T1
+        assert domain_get("vroom.be").tier is Tier.T1
 
-    def test_partition_params(self) -> None:
+    def test_sitemap_config(self) -> None:
         s = VroomBEScraper()
-        params = s.partition_params()
-        assert len(params) == len(s.BRANDS)
-
-    def test_build_url(self) -> None:
-        s = VroomBEScraper()
-        url = s._build_url({"brand": "audi"}, 1)
-        assert "/fr/voitures-occasion/audi" in url
-        url2 = s._build_url({"brand": "audi"}, 2)
-        assert "page=2" in url2
-
-    def test_extract(self) -> None:
-        s = VroomBEScraper()
-        urls = s._extract(_VROOM_HTML)
-        assert len(urls) >= 2
-        assert any("audi-a3" in u for u in urls)
-
-    def test_fetch_segment_200(self) -> None:
-        s = VroomBEScraper()
-        _no_backoff(s)
-        sess = _Session([_Resp(200, _VROOM_HTML)])
-        urls = _run(s.fetch_segment(sess, {"brand": "audi"}, 1))
-        assert len(urls) >= 2
+        assert s.SITEMAP_URL == "https://www.vroom.be/sitemap_index.xml"
+        assert s.CHILD_RE.search("/sitemaps/listings-fr-0001.xml")
+        assert not s.CHILD_RE.search("/sitemaps/listings-nl-0001.xml")  # FR only
+        assert not s.CHILD_RE.search("/sitemaps/media-0001.xml")
+        assert s.DETAIL_RE.search("/fr/voitures-occasion/volkswagen-t-cross-2817040372")
+        s._validate()
 
 
 # =========================================================================== #
@@ -481,62 +458,24 @@ class TestCarForYouCH:
 # =========================================================================== #
 from scrapers.portals.jeanlain_fr import JeanLainFRScraper
 
-_JL_HTML = """
-<html><body>
-<a href="/voiture/audi/a3/audi-a3-sportback-tfsi-grenoble-998877">Audi A3</a>
-<a href="/voiture/toyota/yaris/toyota-yaris-hybrid-lyon-665544">Toyota Yaris</a>
-<a href="/voiture/occasion">Occasion index</a>
-<a href="/voiture/ville-valence-26">City page</a>
-</body></html>
-"""
-
 
 class TestJeanLainFR:
+    """occasions.jeanlain.com migrated to the vehicle sitemap (multi-strategy 2026-06)."""
+
     def test_registry(self) -> None:
         s = get_scraper("occasions.jeanlain.com")
-        assert s is not None
         assert isinstance(s, JeanLainFRScraper)
+        assert isinstance(s, SitemapListingScraper)
 
     def test_domain_map(self) -> None:
-        spec = domain_get("occasions.jeanlain.com")
-        assert spec is not None
-        assert spec.tier is Tier.T1
+        assert domain_get("occasions.jeanlain.com").tier is Tier.T1
 
-    def test_partition_params(self) -> None:
+    def test_sitemap_config(self) -> None:
         s = JeanLainFRScraper()
-        params = s.partition_params()
-        assert len(params) == len(s.PRICE_BANDS)
-        assert all("price_min" in p for p in params)
-
-    def test_subdivide_segment(self) -> None:
-        s = JeanLainFRScraper()
-        subs = s.subdivide_segment({"price_min": 10000, "price_max": 15000})
-        assert len(subs) == 3
-        # Open-ended should not subdivide
-        subs_open = s.subdivide_segment({"price_min": 60000, "price_max": None})
-        assert subs_open == []
-
-    def test_build_url(self) -> None:
-        s = JeanLainFRScraper()
-        url = s._build_url({"price_min": 10000, "price_max": 15000}, 1)
-        assert "budgetLower=10000" in url
-        assert "budgetUpper=15000" in url
-        url2 = s._build_url({"price_min": 10000, "price_max": 15000}, 2)
-        assert "page=2" in url2
-
-    def test_extract_skips_category(self) -> None:
-        s = JeanLainFRScraper()
-        urls = s._extract(_JL_HTML)
-        assert len(urls) == 2  # skips /voiture/occasion and /ville-*
-        assert not any("occasion" == u.split("/")[-1] for u in urls)
-        assert not any("/ville-" in u for u in urls)
-
-    def test_fetch_segment_200(self) -> None:
-        s = JeanLainFRScraper()
-        _no_backoff(s)
-        sess = _Session([_Resp(200, _JL_HTML)])
-        urls = _run(s.fetch_segment(sess, {"price_min": 0, "price_max": 10000}, 1))
-        assert len(urls) == 2
+        assert s.SITEMAP_URL == "https://occasions.jeanlain.com/sitemap.xml"
+        assert s.CHILD_RE.search("/vehicle-sitemap.xml")
+        assert s.DETAIL_RE.search("/voiture/volkswagen/modele-t-roc/t-roc-398113")
+        s._validate()
 
 
 # =========================================================================== #

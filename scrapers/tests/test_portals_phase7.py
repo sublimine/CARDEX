@@ -594,76 +594,22 @@ def test_myway_domain_map() -> None:
 
 
 # =========================================================================== #
-# capcar.fr — SSR HTML, French P2P platform (T1)
+# capcar.fr — migrado al sitemap de productos (multi-strategy 2026-06)
 # =========================================================================== #
 from scrapers.portals.capcar_fr import CapCarFRScraper
-
-_CAPCAR_HTML = """
-<html><body>
-<a href="/voiture-occasion/peugeot-308-gt-r0012345">Peugeot 308 GT</a>
-<a href="/voiture-occasion/renault-clio-tce-r0067890">Renault Clio</a>
-<a href="/voiture-occasion/peugeot-308-gt-r0012345">Peugeot 308 dup</a>
-<a href="/voiture-occasion">Search page root</a>
-<a href="/blog/top-20-des-voitures">Blog link</a>
-</body></html>
-"""
-
-_CAPCAR_EXPECTED = [
-    "https://www.capcar.fr/voiture-occasion/peugeot-308-gt-r0012345",
-    "https://www.capcar.fr/voiture-occasion/renault-clio-tce-r0067890",
-]
+from scrapers.portals.sitemap_listing_base import SitemapListingScraper
 
 
 @pytest.mark.unit
-def test_capcar_partition_is_single_segment() -> None:
-    scraper = CapCarFRScraper()
-    assert scraper.partition_params() == [{}]
-
-
-@pytest.mark.unit
-def test_capcar_domain_and_country() -> None:
-    scraper = CapCarFRScraper()
-    assert scraper.DOMAIN == "capcar.fr"
-    assert scraper.COUNTRY == "FR"
-
-
-@pytest.mark.unit
-def test_capcar_build_url_page1() -> None:
-    scraper = CapCarFRScraper()
-    url = scraper._build_url({}, 1)
-    assert url == "https://www.capcar.fr/voiture-occasion"
-
-
-@pytest.mark.unit
-def test_capcar_build_url_page2() -> None:
-    scraper = CapCarFRScraper()
-    url = scraper._build_url({}, 2)
-    assert url == "https://www.capcar.fr/voiture-occasion?page=2"
-
-
-@pytest.mark.unit
-def test_capcar_extract_dedup() -> None:
-    scraper = CapCarFRScraper()
-    urls = scraper._extract(_CAPCAR_HTML)
-    assert urls == _CAPCAR_EXPECTED
-
-
-@pytest.mark.unit
-def test_capcar_fetch_200() -> None:
-    scraper = CapCarFRScraper()
-    _no_backoff(scraper)
-    session = _Session([_Resp(200, _CAPCAR_HTML)])
-    urls = _run(scraper.fetch_segment(session, {}, 1))
-    assert urls == _CAPCAR_EXPECTED
-
-
-@pytest.mark.unit
-def test_capcar_fetch_transport_error() -> None:
-    scraper = CapCarFRScraper()
-    _no_backoff(scraper)
-    session = _Session([ConnectionError("timeout")] * 3)
-    urls = _run(scraper.fetch_segment(session, {}, 1))
-    assert urls == []
+def test_capcar_is_sitemap_based() -> None:
+    s = CapCarFRScraper()
+    assert isinstance(s, SitemapListingScraper)
+    assert s.DOMAIN == "capcar.fr"
+    assert s.COUNTRY == "FR"
+    assert s.SITEMAP_URL == "https://www.capcar.fr/sitemap/products.xml"
+    assert s.DETAIL_RE.search("/voiture-occasion/peugeot-308-r0107248")
+    assert not s.DETAIL_RE.search("/voiture-occasion")  # bare search root excluded
+    s._validate()
 
 
 @pytest.mark.unit

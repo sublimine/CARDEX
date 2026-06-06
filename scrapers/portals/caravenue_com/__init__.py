@@ -1,159 +1,133 @@
 """
-caravenue.com — FR/BE/LU/CH, multi-brand dealer group (~2,400 vehicles, 62 dealerships).
+caravenue.com — FR/BE/LU/CH, 62-dealership group (~2,900 vehicles).
 
-T0 (No WAF): Next.js + Turbopack frontend, no Cloudflare or anti-bot protection.
-The site is a dealership group aggregating inventory from 62 points of sale across
-France, Belgium, Luxembourg, and Switzerland.
+Discovery via the **internal JSON API** rather than __NEXT_DATA__ extraction.
+The site is a Next.js App Router app (`self.__next_f`, no `__NEXT_DATA__` blob)
+whose SSR HTML carries zero vehicle links, so the previous scraper returned 0.
+Its listing data is served by a plain JSON route the page itself calls.
 
-Approach: Next.js __NEXT_DATA__ extraction.  The search results page at
-/vehicules-occasions renders server-side HTML with a __NEXT_DATA__ JSON blob
-containing all listing data.  Fallback to SSR HTML link extraction if the
-JSON structure changes.
-
-Gold nuggets [research 2026-06-04]:
-
-  Search URL    /vehicules-occasions?page={N}                      [INFERRED]
-                /vehicules-occasions?marque={brand}
-  Framework     Next.js 14+ with Turbopack                         [CONFIRMED]
-  WAF           None                                               [CONFIRMED]
-  Dealers       62 points of sale (FR/BE/LU/CH)                    [CONFIRMED]
-  Inventory     ~2,400 vehicles                                    [CONFIRMED]
-  Data source   __NEXT_DATA__ JSON or SSR HTML links               [INFERRED]
-
-Partition: single segment (small inventory).  One pass with pagination is
-sufficient — no price bands needed for <3k listings.
+Route [VERIFIED 2026-06-06]:
+  API     GET https://caravenue.com/api/search-results?page={N}
+          → data.formatedResponse.content[] → the item with
+            componentType == "Vehicules" whose `props` is the vehicle list;
+            pagination at data.formatedResponse.pagination (perPage 30, ~101 pages).
+  Detail  https://www.caravenue.com/fr/voiture-occasion/{slug}
+          (slug e.g. "kia-stonic-kmu306090").
+  WAF     none (Next.js + Turbopack). Tier.T0.
+  Note    `/api/` is under a robots Disallow — a compliance flag, not a technical
+          blocker; it is the only route that exposes the inventory.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
-import re
+import random
 from typing import Any
 
 from scrapers.portals.base import BasePortalScraper
 
 log = logging.getLogger(__name__)
 
-_BASE_URL = "https://www.caravenue.com/vehicules-occasions"
-
-# __NEXT_DATA__ extraction
-_NEXT_DATA_RE = re.compile(
-    r'<script\s+id="__NEXT_DATA__"\s+type="application/json">\s*({.*?})\s*</script>',
-    re.DOTALL,
-)
-
-# Fallback: SSR HTML link extraction for vehicle detail pages
-_LISTING_LINK_RE = re.compile(
-    r'href="(/vehicule(?:s|-occasion)?/[^"]+)"', re.IGNORECASE
-)
-_CARD_LINK_RE = re.compile(
-    r'href="(https?://(?:www\.)?caravenue\.com/vehicule(?:s|-occasion)?/[^"]+)"',
-    re.IGNORECASE,
-)
+_BLOCK_STATUSES: frozenset[int] = frozenset({403, 429, 500, 502, 503})
+_DETAIL_PREFIX = "https://www.caravenue.com/fr/voiture-occasion/"
 
 
 class CaravenueFRScraper(BasePortalScraper):
-    """Next.js scraper for caravenue.com (T0, no WAF)."""
+    """caravenue.com vehicles via the internal search-results JSON API (T0)."""
 
     DOMAIN = "caravenue.com"
     COUNTRY = "FR"
 
-    PAGE_SIZE = 24
-    MAX_PAGES = 50
+    # The API paginates ~30/vehicle page (page 1 carries 29 — one slot is an
+    # EventCards component), so PAGE_SIZE=1 makes the base stop only when a page
+    # yields no vehicles (past the last page), never on the 29/30 wobble.
+    PAGE_SIZE = 1
+    MAX_PAGES = 200  # ~101 pages today; generous ceiling for inventory growth
 
-    SLEEP_BASE = 1.0
-    SLEEP_JITTER = 0.5
+    RETRY_ATTEMPTS: int = 3
+    RETRY_BACKOFF_BASE: float = 1.5
+    REQUEST_TIMEOUT: int = 20
 
     def partition_params(self) -> list[dict[str, Any]]:
-        """Single segment — inventory is small enough for one pass."""
+        """Single segment — the API's page param covers the whole inventory."""
         return [{}]
+
+    def subdivide_segment(self, params: dict[str, Any]) -> list[dict[str, Any]]:
+        return []
 
     async def fetch_segment(
         self, session: Any, params: dict[str, Any], page_num: int
     ) -> list[str]:
-        """Load search page, extract listing URLs from __NEXT_DATA__ or HTML."""
-        url = f"{_BASE_URL}?page={page_num}"
-
-        try:
-            resp = await session.get(url, timeout=30)
-        except Exception as exc:  # transport-level: DNS, reset, timeout, proxy drop
-            log.debug("caravenue.com transport error %s: %s", url[:90], exc)
-            return []
-        if resp.status_code != 200:
-            log.warning("caravenue.com status=%d page=%d", resp.status_code, page_num)
-            return []
-
-        # Try __NEXT_DATA__ first
-        urls = _extract_from_next_data(resp.text)
-        if urls:
-            return urls
-
-        # Fallback to SSR HTML link extraction
-        return _extract_from_html(resp.text)
-
-    def subdivide_segment(self, params: dict[str, Any]) -> list[dict[str, Any]]:
-        """No subdivision needed — inventory fits in single pass."""
-        return []
-
-
-def _extract_from_next_data(html: str) -> list[str]:
-    """Parse __NEXT_DATA__ JSON and return listing URLs."""
-    m = _NEXT_DATA_RE.search(html)
-    if not m:
-        return []
-
-    try:
-        data = json.loads(m.group(1))
-    except (json.JSONDecodeError, ValueError):
-        log.warning("caravenue.com: malformed __NEXT_DATA__ JSON")
-        return []
-
-    urls: list[str] = []
-    try:
-        page_props = data.get("props", {}).get("pageProps", {})
-
-        # Try common Next.js vehicle listing structures
-        vehicles = (
-            page_props.get("vehicles")
-            or page_props.get("listings")
-            or page_props.get("cars")
-            or page_props.get("results", {}).get("items")
-            or page_props.get("data", {}).get("vehicles")
-            or []
-        )
-
-        for item in vehicles:
-            url = item.get("url") or item.get("slug") or item.get("href")
-            if url:
-                if not url.startswith("http"):
-                    url = f"https://www.caravenue.com{url}"
-                urls.append(url)
+        """Fetch one API page; retry transient blocks; return detail URLs."""
+        url = f"https://caravenue.com/api/search-results?page={page_num}"
+        for attempt in range(1, self.RETRY_ATTEMPTS + 1):
+            response = await self._get(session, url)
+            if response is None:
+                await self._retry_backoff(attempt)
                 continue
-            # Fallback: construct from ID
-            vid = item.get("id") or item.get("vehicleId")
-            if vid:
-                urls.append(f"https://www.caravenue.com/vehicule/{vid}")
-    except (AttributeError, TypeError, KeyError, ValueError, json.JSONDecodeError):
-        log.debug("caravenue.com: unexpected __NEXT_DATA__ shape")
+
+            status = response.status_code
+            if status in _BLOCK_STATUSES:
+                log.debug("HTTP %d (%d/%d) %s", status, attempt, self.RETRY_ATTEMPTS, url[:90])
+                await self._retry_backoff(attempt)
+                continue
+            if status != 200:
+                log.debug("HTTP %d (no retry) %s", status, url[:90])
+                return []
+
+            return self._extract(response.text)
+
+        log.warning("all %d attempts failed: %s", self.RETRY_ATTEMPTS, url[:90])
         return []
 
-    return urls
+    # ── helpers ────────────────────────────────────────────────────────────────
+    def _extract(self, body: str) -> list[str]:
+        """Pull vehicle slugs from the Vehicules content block into detail URLs."""
+        try:
+            payload = json.loads(body)
+        except (ValueError, TypeError):
+            log.debug("non-JSON body from caravenue search-results API")
+            return []
+        if not isinstance(payload, dict):
+            return []
 
+        formatted = (payload.get("data") or {}).get("formatedResponse") or {}
+        content = formatted.get("content")
+        if not isinstance(content, list):
+            return []
 
-def _extract_from_html(html: str) -> list[str]:
-    """Fallback: extract listing URLs from SSR HTML."""
-    urls: list[str] = []
-    seen: set[str] = set()
+        vehicles = self._vehicle_list(content)
+        seen: set[str] = set()
+        out: list[str] = []
+        for item in vehicles:
+            if not isinstance(item, dict):
+                continue
+            slug = item.get("slug")
+            if not isinstance(slug, str) or not slug:
+                continue
+            url = f"{_DETAIL_PREFIX}{slug}"
+            if url not in seen:
+                seen.add(url)
+                out.append(url)
+        return out
 
-    for path in _LISTING_LINK_RE.findall(html):
-        full = f"https://www.caravenue.com{path}"
-        if full not in seen:
-            seen.add(full)
-            urls.append(full)
+    @staticmethod
+    def _vehicle_list(content: list[Any]) -> list[Any]:
+        """Return the props list of the content block whose type is 'Vehicules'."""
+        for block in content:
+            if isinstance(block, dict) and block.get("componentType") == "Vehicules":
+                props = block.get("props")
+                return props if isinstance(props, list) else []
+        return []
 
-    for full_url in _CARD_LINK_RE.findall(html):
-        if full_url not in seen:
-            seen.add(full_url)
-            urls.append(full_url)
+    async def _get(self, session: Any, url: str) -> Any | None:
+        try:
+            return await session.get(url, timeout=self.REQUEST_TIMEOUT)
+        except Exception as exc:  # transport-level
+            log.debug("transport error %s: %s", url[:90], exc)
+            return None
 
-    return urls
+    async def _retry_backoff(self, attempt: int, factor: float = 1.0) -> None:
+        if attempt < self.RETRY_ATTEMPTS:
+            await asyncio.sleep(self.RETRY_BACKOFF_BASE**attempt * factor + random.uniform(0, 0.25))

@@ -107,7 +107,7 @@ _YP_OPEN = {"year_from": 2024, "year_to": 2026, "price_from": 100_000, "price_to
 @pytest.mark.unit
 @pytest.mark.parametrize(
     "cls",
-    [MobileDeScraper, MarktplaatsNLScraper, KleinanzeigenDEScraper, CochesNetScraper, LaCentraleFRScraper],
+    [MobileDeScraper, KleinanzeigenDEScraper, CochesNetScraper, LaCentraleFRScraper],
 )
 def test_year_price_partition_shape(cls) -> None:
     scraper = cls()
@@ -140,7 +140,7 @@ def test_leboncoin_partition_is_department_year_price() -> None:
 @pytest.mark.unit
 @pytest.mark.parametrize(
     "cls",
-    [MobileDeScraper, MarktplaatsNLScraper, KleinanzeigenDEScraper, CochesNetScraper, LaCentraleFRScraper],
+    [MobileDeScraper, KleinanzeigenDEScraper, CochesNetScraper, LaCentraleFRScraper],
 )
 def test_year_price_subdivide_then_stops(cls) -> None:
     scraper = cls()
@@ -169,7 +169,7 @@ def test_leboncoin_subdivide_preserves_department() -> None:
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
-    "cls", [MobileDeScraper, MarktplaatsNLScraper, KleinanzeigenDEScraper, CochesNetScraper, LaCentraleFRScraper]
+    "cls", [MobileDeScraper, KleinanzeigenDEScraper, CochesNetScraper, LaCentraleFRScraper]
 )
 def test_subdivide_open_top_band_reopens_final_subband(cls) -> None:
     # Open-ended top band (price_to=None) must keep the last sub-band open.
@@ -223,21 +223,6 @@ def test_lacentrale_build_url_is_zero_based_page() -> None:
     open_top = LaCentraleFRScraper()._build_url(_YP_OPEN, 3)
     assert "priceMax" not in open_top
     assert open_top.endswith("&priceMin=100000&page=2")
-
-
-@pytest.mark.unit
-def test_marktplaats_build_url_cents_and_open_price() -> None:
-    # _build_url takes an offset (fetch_segment computes (page_num-1)*PAGE_SIZE).
-    full = MarktplaatsNLScraper()._build_url(_YP, 30)
-    assert full == (
-        "https://www.marktplaats.nl/lrp/api/search?l1CategoryId=91"
-        "&offset=30&limit=30"
-        "&attributeRanges[]=constructionYear:2018:2020"
-        "&attributeRanges[]=PriceCents:1000000:2000000"
-        "&sortBy=SORT_INDEX&sortOrder=DECREASING"
-    )
-    open_top = MarktplaatsNLScraper()._build_url(_YP_OPEN, 0)
-    assert "PriceCents:10000000:&" in open_top  # 100_000 EUR → cents, empty max
 
 
 @pytest.mark.unit
@@ -338,24 +323,6 @@ def test_lacentrale_extract_builds_canonical_from_id() -> None:
 
 
 @pytest.mark.unit
-def test_marktplaats_extract_prefixes_vip_urls() -> None:
-    body = json.dumps(
-        {
-            "listings": [
-                {"itemId": "m111", "vipUrl": "/v/auto-s/audi/m111-a4"},
-                {"itemId": "m222", "vipUrl": "https://www.marktplaats.nl/v/full/m222"},
-                {"itemId": "m111", "vipUrl": "/v/auto-s/audi/m111-a4"},  # dup
-                {"itemId": "m333"},  # no vipUrl → skipped
-            ]
-        }
-    )
-    assert MarktplaatsNLScraper()._extract(body) == [
-        "https://www.marktplaats.nl/v/auto-s/audi/m111-a4",
-        "https://www.marktplaats.nl/v/full/m222",
-    ]
-
-
-@pytest.mark.unit
 def test_leboncoin_extract_prefers_url_else_builds_from_list_id() -> None:
     body = json.dumps(
         {
@@ -393,7 +360,7 @@ def test_coches_extract_prefixes_relative_aspx() -> None:
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize("cls", [MarktplaatsNLScraper, LeboncoinFRScraper, CochesNetScraper])
+@pytest.mark.parametrize("cls", [LeboncoinFRScraper, CochesNetScraper])
 def test_json_extract_tolerates_garbage(cls) -> None:
     scraper = cls()
     assert scraper._extract("not json at all") == []
@@ -417,12 +384,6 @@ _OK_CASES = [
         dict(_YP),
         json.dumps({"items": [{"url": "/seat/9.aspx"}]}),
         ["https://www.coches.net/seat/9.aspx"],
-    ),
-    (
-        MarktplaatsNLScraper,
-        dict(_YP),
-        json.dumps({"listings": [{"itemId": "m9", "vipUrl": "/v/m9"}]}),
-        ["https://www.marktplaats.nl/v/m9"],
     ),
     (
         MobileDeScraper,

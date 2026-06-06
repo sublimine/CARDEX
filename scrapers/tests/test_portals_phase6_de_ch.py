@@ -70,152 +70,21 @@ def _no_backoff(scraper: BasePortalScraper) -> None:
 
 
 # =========================================================================== #
-# autoboerse.de — SSR HTML, Santander dealer marketplace (T1)
+# autoboerse.de — migrado al sitemap de listings (multi-strategy 2026-06)
 # =========================================================================== #
 from scrapers.portals.autoboerse_de import AutoboerseDEScraper
-
-# HTML stub with realistic listing hrefs
-_AB_HTML = """
-<html><body>
-<a href="/fahrzeugsuche/volkswagen-tiguan-sachsen/6HnWkn7oOKSe">VW Tiguan</a>
-<a href="/fahrzeugsuche/renault-arkana-hybrid-benzin-sachsen/UIkOvSM-iXBW">Renault Arkana</a>
-<a href="/fahrzeugsuche/volkswagen-tiguan-sachsen/6HnWkn7oOKSe">VW Tiguan dup</a>
-<a href="/fahrzeugsuche/dacia-bigster-hybrid-benzin-thueringen/XE6fxhxZmh-_">Dacia Bigster</a>
-<a href="/fahrzeugsuche/audi/">Brand filter link, not a listing</a>
-<a href="/fahrzeugsuche?page=2">Pagination link, not a listing</a>
-</body></html>
-"""
-
-_AB_EXPECTED = [
-    "https://autoboerse.de/fahrzeugsuche/volkswagen-tiguan-sachsen/6HnWkn7oOKSe",
-    "https://autoboerse.de/fahrzeugsuche/renault-arkana-hybrid-benzin-sachsen/UIkOvSM-iXBW",
-    "https://autoboerse.de/fahrzeugsuche/dacia-bigster-hybrid-benzin-thueringen/XE6fxhxZmh-_",
-]
-
-
-# -- partition_params ----------------------------------------------------------
-@pytest.mark.unit
-def test_autoboerse_partition_shape() -> None:
-    scraper = AutoboerseDEScraper()
-    segments = scraper.partition_params()
-    assert len(segments) == len(scraper.BRANDS)
-    brands = [s["brand"] for s in segments]
-    assert len(set(brands)) == len(brands), "duplicates in brand partition"
-    assert "volkswagen" in brands
-    assert "bmw" in brands
-    assert "mercedes-benz" in brands
-    assert not any("_fine" in s for s in segments)
-
-
-# -- subdivide_segment --------------------------------------------------------
-@pytest.mark.unit
-def test_autoboerse_subdivide_then_stops() -> None:
-    scraper = AutoboerseDEScraper()
-    subs = scraper.subdivide_segment({"brand": "audi"})
-    assert subs
-    assert len(subs) == len(scraper.PRICE_BANDS)
-    for s in subs:
-        assert s["brand"] == "audi"
-        assert s["_fine"] is True
-        assert "preis_ab" in s
-    # Fine segments produce no further subdivision
-    assert scraper.subdivide_segment(subs[0]) == []
-
-
-# -- _build_url ----------------------------------------------------------------
-@pytest.mark.unit
-def test_autoboerse_build_url_brand_only() -> None:
-    scraper = AutoboerseDEScraper()
-    url = scraper._build_url({"brand": "bmw"}, 1)
-    assert url == "https://autoboerse.de/fahrzeugsuche/bmw/?page=1"
+from scrapers.portals.sitemap_listing_base import SitemapListingScraper
 
 
 @pytest.mark.unit
-def test_autoboerse_build_url_brand_with_price() -> None:
-    scraper = AutoboerseDEScraper()
-    params = {"brand": "audi", "preis_ab": 10_000, "preis_bis": 20_000, "_fine": True}
-    url = scraper._build_url(params, 3)
-    assert url == "https://autoboerse.de/fahrzeugsuche/audi/?preis_ab=10000&preis_bis=20000&page=3"
-
-
-@pytest.mark.unit
-def test_autoboerse_build_url_open_price_band() -> None:
-    scraper = AutoboerseDEScraper()
-    params = {"brand": "porsche", "preis_ab": 100_000, "preis_bis": None, "_fine": True}
-    url = scraper._build_url(params, 1)
-    # preis_bis=None → omitted from URL
-    assert url == "https://autoboerse.de/fahrzeugsuche/porsche/?preis_ab=100000&page=1"
-
-
-# -- _extract ------------------------------------------------------------------
-@pytest.mark.unit
-def test_autoboerse_extract_pulls_urls_and_dedups() -> None:
-    urls = AutoboerseDEScraper()._extract(_AB_HTML)
-    assert urls == _AB_EXPECTED
-
-
-@pytest.mark.unit
-def test_autoboerse_extract_returns_empty_on_garbage() -> None:
-    assert AutoboerseDEScraper()._extract("") == []
-    assert AutoboerseDEScraper()._extract("<html><body>no listings</body></html>") == []
-    assert AutoboerseDEScraper()._extract("not html at all") == []
-
-
-@pytest.mark.unit
-def test_autoboerse_extract_handles_special_brand_slugs() -> None:
-    """Brands with underscores and double-hyphens are matched correctly."""
-    html = """
-    <a href="/fahrzeugsuche/lynk-_-co-01-benzin-berlin/aBcDeFgHiJkL">Lynk & Co</a>
-    <a href="/fahrzeugsuche/kgm--ssangyong-rexton-diesel-bayern/mNoPqRsTuVwX">KGM</a>
-    """
-    urls = AutoboerseDEScraper()._extract(html)
-    assert len(urls) == 2
-    assert all("autoboerse.de" in u for u in urls)
-
-
-# -- fetch_segment behavioural matrix -----------------------------------------
-@pytest.mark.unit
-def test_autoboerse_fetch_segment_extracts_on_200() -> None:
-    scraper = AutoboerseDEScraper()
-    session = _Session([_Resp(200, _AB_HTML)])
-    urls = _run(scraper.fetch_segment(session, {"brand": "volkswagen"}, 1))
-    assert urls == _AB_EXPECTED
-    assert len(session.calls) == 1
-    assert "volkswagen" in session.urls[0]
-
-
-@pytest.mark.unit
-def test_autoboerse_fetch_segment_retries_block_then_gives_up() -> None:
-    scraper = AutoboerseDEScraper()
-    _no_backoff(scraper)
-    session = _Session([_Resp(429), _Resp(503), _Resp(403)])
-    assert _run(scraper.fetch_segment(session, {"brand": "audi"}, 1)) == []
-    assert len(session.calls) == scraper.RETRY_ATTEMPTS
-
-
-@pytest.mark.unit
-def test_autoboerse_fetch_segment_recovers_after_block() -> None:
-    scraper = AutoboerseDEScraper()
-    _no_backoff(scraper)
-    session = _Session([_Resp(503), _Resp(200, _AB_HTML)])
-    assert _run(scraper.fetch_segment(session, {"brand": "bmw"}, 1)) == _AB_EXPECTED
-
-
-@pytest.mark.unit
-def test_autoboerse_fetch_segment_non_retryable_status() -> None:
-    scraper = AutoboerseDEScraper()
-    session = _Session([_Resp(404)])
-    assert _run(scraper.fetch_segment(session, {"brand": "fiat"}, 1)) == []
-    assert len(session.calls) == 1
-
-
-@pytest.mark.unit
-def test_autoboerse_fetch_segment_transport_error_retries() -> None:
-    scraper = AutoboerseDEScraper()
-    _no_backoff(scraper)
-    session = _Session([ConnectionError("reset"), _Resp(200, _AB_HTML)])
-    assert _run(scraper.fetch_segment(session, {"brand": "ford"}, 1)) == _AB_EXPECTED
-    assert len(session.calls) == 2
+def test_autoboerse_is_sitemap_based() -> None:
+    s = AutoboerseDEScraper()
+    assert isinstance(s, SitemapListingScraper)
+    assert s.SITEMAP_URL == "https://www.autoboerse.de/sitemap.xml"
+    # detail = /fahrzeugsuche/{slug}/{id}; the 1-segment search page is excluded
+    assert s.DETAIL_RE.search("/fahrzeugsuche/citroen-c3-benzin-sachsen-anhalt/rYP87WWOxJEo")
+    assert not s.DETAIL_RE.search("/fahrzeugsuche/audi/")
+    s._validate()
 
 
 # -- wiring --------------------------------------------------------------------

@@ -571,112 +571,18 @@ def test_leparking_domain_map_baseline() -> None:
 # annonces-automobile.com — SSR HTML portail premium (T1)
 # =========================================================================== #
 from scrapers.portals.annonces_automobile_com import AnnoncesAutomobileFRScraper
-
-_ANNONCES_HTML = (
-    '<div class="listing">'
-    '<a href="https://www.annonces-automobile.com/acheter/bmw-serie-3-320d-12345">'
-    '<span>BMW Série 3</span></a>'
-    '<a href="https://www.annonces-automobile.com/acheter/audi-a4-avant-67890">'
-    '<span>Audi A4</span></a>'
-    '<a href="https://www.annonces-automobile.com/acheter/bmw-serie-3-320d-12345">'
-    '<span>dup</span></a>'
-    '<a href="https://www.annonces-automobile.com/acheter?pg=2">next page</a>'
-    '</div>'
-)
-
-_ANNONCES_EXPECTED = [
-    "https://www.annonces-automobile.com/acheter/bmw-serie-3-320d-12345",
-    "https://www.annonces-automobile.com/acheter/audi-a4-avant-67890",
-]
+from scrapers.portals.sitemap_listing_base import SitemapListingScraper
 
 
 @pytest.mark.unit
-def test_annonces_partition_is_single_occasion() -> None:
-    segs = AnnoncesAutomobileFRScraper().partition_params()
-    assert segs == [{"segment": "occasion"}]
-
-
-@pytest.mark.unit
-def test_annonces_subdivide_is_noop() -> None:
-    assert AnnoncesAutomobileFRScraper().subdivide_segment({"segment": "occasion"}) == []
-
-
-@pytest.mark.unit
-def test_annonces_build_url() -> None:
-    scraper = AnnoncesAutomobileFRScraper()
-    assert scraper._build_url({"segment": "occasion"}, 5) == (
-        "https://www.annonces-automobile.com/l-s/occasion?pg=5"
-    )
-
-
-@pytest.mark.unit
-def test_annonces_extract_pulls_urls_and_dedups() -> None:
-    urls = AnnoncesAutomobileFRScraper()._extract(_ANNONCES_HTML)
-    assert urls == _ANNONCES_EXPECTED
-
-
-@pytest.mark.unit
-def test_annonces_extract_filters_navigation_links() -> None:
-    """Links con ?pg= (paginación) y /acheter/ desnudo se filtran."""
-    html = (
-        '<a href="https://www.annonces-automobile.com/acheter?pg=2">next</a>'
-        '<a href="https://www.annonces-automobile.com/acheter/">browse</a>'
-        '<a href="https://www.annonces-automobile.com/acheter">browse2</a>'
-    )
-    assert AnnoncesAutomobileFRScraper()._extract(html) == []
-
-
-@pytest.mark.unit
-def test_annonces_extract_returns_empty_on_garbage() -> None:
-    assert AnnoncesAutomobileFRScraper()._extract("") == []
-    assert AnnoncesAutomobileFRScraper()._extract("<html></html>") == []
-    assert AnnoncesAutomobileFRScraper()._extract("not html") == []
-
-
-# -- fetch_segment behavioural matrix ------------------------------------------
-@pytest.mark.unit
-def test_annonces_fetch_segment_extracts_on_200() -> None:
-    scraper = AnnoncesAutomobileFRScraper()
-    session = _Session([_Resp(200, _ANNONCES_HTML)])
-    urls = _run(scraper.fetch_segment(session, {"segment": "occasion"}, 1))
-    assert urls == _ANNONCES_EXPECTED
-    assert len(session.calls) == 1
-    assert "l-s/occasion?pg=1" in session.urls[0]
-
-
-@pytest.mark.unit
-def test_annonces_fetch_segment_retries_block_then_gives_up() -> None:
-    scraper = AnnoncesAutomobileFRScraper()
-    _no_backoff(scraper)
-    session = _Session([_Resp(429), _Resp(503), _Resp(403)])
-    assert _run(scraper.fetch_segment(session, {"segment": "occasion"}, 1)) == []
-    assert len(session.calls) == scraper.RETRY_ATTEMPTS
-
-
-@pytest.mark.unit
-def test_annonces_fetch_segment_recovers_after_block() -> None:
-    scraper = AnnoncesAutomobileFRScraper()
-    _no_backoff(scraper)
-    session = _Session([_Resp(503), _Resp(200, _ANNONCES_HTML)])
-    assert _run(scraper.fetch_segment(session, {"segment": "occasion"}, 1)) == _ANNONCES_EXPECTED
-    assert len(session.calls) == 2
-
-
-@pytest.mark.unit
-def test_annonces_fetch_segment_non_retryable_status() -> None:
-    scraper = AnnoncesAutomobileFRScraper()
-    session = _Session([_Resp(404)])
-    assert _run(scraper.fetch_segment(session, {"segment": "occasion"}, 1)) == []
-    assert len(session.calls) == 1
-
-
-@pytest.mark.unit
-def test_annonces_fetch_segment_transport_error_retries() -> None:
-    scraper = AnnoncesAutomobileFRScraper()
-    _no_backoff(scraper)
-    session = _Session([ConnectionError("reset"), _Resp(200, _ANNONCES_HTML)])
-    assert _run(scraper.fetch_segment(session, {"segment": "occasion"}, 1)) == _ANNONCES_EXPECTED
-    assert len(session.calls) == 2
+def test_annonces_is_sitemap_based() -> None:
+    s = AnnoncesAutomobileFRScraper()
+    assert isinstance(s, SitemapListingScraper)
+    assert s.SITEMAP_URL == "https://www.annonces-automobile.com/sitemap.xml"
+    assert s.CHILD_RE.search("/sitemap_detail.xml")
+    assert not s.CHILD_RE.search("/sitemap_list.xml")  # segment/SRP child skipped
+    assert s.DETAIL_RE.search("/d/4563550")
+    s._validate()
 
 
 # -- wiring --------------------------------------------------------------------
@@ -812,100 +718,16 @@ def test_starterre_domain_map_baseline() -> None:
 # =========================================================================== #
 from scrapers.portals.carizy_com import CarizyFRScraper
 
-_CARIZY_HTML = (
-    '<div class="listings">'
-    '<a href="/voiture-occasion/peugeot-208-essence-12345">Peugeot 208</a>'
-    '<a href="/voiture-occasion/renault-captur-diesel-67890">Renault Captur</a>'
-    '<a href="/voiture-occasion/peugeot-208-essence-12345">dup</a>'
-    '</div>'
-)
-
-_CARIZY_EXPECTED = [
-    "https://www.carizy.com/voiture-occasion/peugeot-208-essence-12345",
-    "https://www.carizy.com/voiture-occasion/renault-captur-diesel-67890",
-]
-
 
 @pytest.mark.unit
-def test_carizy_partition_is_single_empty_segment() -> None:
-    assert CarizyFRScraper().partition_params() == [{}]
-
-
-@pytest.mark.unit
-def test_carizy_subdivide_is_noop() -> None:
-    assert CarizyFRScraper().subdivide_segment({}) == []
-
-
-@pytest.mark.unit
-def test_carizy_build_url() -> None:
-    scraper = CarizyFRScraper()
-    assert scraper._build_url(1) == "https://www.carizy.com/voiture-occasion?page=1"
-    assert scraper._build_url(5) == "https://www.carizy.com/voiture-occasion?page=5"
-
-
-@pytest.mark.unit
-def test_carizy_extract_pulls_links_and_dedups() -> None:
-    assert CarizyFRScraper()._extract(_CARIZY_HTML) == _CARIZY_EXPECTED
-
-
-@pytest.mark.unit
-def test_carizy_extract_skips_category_paths() -> None:
-    """Paths with only one segment (no slug after /voiture-occasion/) are skipped."""
-    html = '<a href="/voiture-occasion/">browse</a>'
-    assert CarizyFRScraper()._extract(html) == []
-
-
-@pytest.mark.unit
-def test_carizy_extract_returns_empty_on_garbage() -> None:
-    assert CarizyFRScraper()._extract("") == []
-    assert CarizyFRScraper()._extract("<html></html>") == []
-    assert CarizyFRScraper()._extract("not html") == []
-
-
-# -- fetch_segment behavioural matrix ------------------------------------------
-@pytest.mark.unit
-def test_carizy_fetch_segment_extracts_on_200() -> None:
-    scraper = CarizyFRScraper()
-    session = _Session([_Resp(200, _CARIZY_HTML)])
-    urls = _run(scraper.fetch_segment(session, {}, 1))
-    assert urls == _CARIZY_EXPECTED
-    assert len(session.calls) == 1
-    assert "voiture-occasion?page=1" in session.urls[0]
-
-
-@pytest.mark.unit
-def test_carizy_fetch_segment_retries_block_then_gives_up() -> None:
-    scraper = CarizyFRScraper()
-    _no_backoff(scraper)
-    session = _Session([_Resp(429), _Resp(503), _Resp(403)])
-    assert _run(scraper.fetch_segment(session, {}, 1)) == []
-    assert len(session.calls) == scraper.RETRY_ATTEMPTS
-
-
-@pytest.mark.unit
-def test_carizy_fetch_segment_recovers_after_block() -> None:
-    scraper = CarizyFRScraper()
-    _no_backoff(scraper)
-    session = _Session([_Resp(503), _Resp(200, _CARIZY_HTML)])
-    assert _run(scraper.fetch_segment(session, {}, 1)) == _CARIZY_EXPECTED
-    assert len(session.calls) == 2
-
-
-@pytest.mark.unit
-def test_carizy_fetch_segment_non_retryable_status() -> None:
-    scraper = CarizyFRScraper()
-    session = _Session([_Resp(404)])
-    assert _run(scraper.fetch_segment(session, {}, 1)) == []
-    assert len(session.calls) == 1
-
-
-@pytest.mark.unit
-def test_carizy_fetch_segment_transport_error_retries() -> None:
-    scraper = CarizyFRScraper()
-    _no_backoff(scraper)
-    session = _Session([ConnectionError("reset"), _Resp(200, _CARIZY_HTML)])
-    assert _run(scraper.fetch_segment(session, {}, 1)) == _CARIZY_EXPECTED
-    assert len(session.calls) == 2
+def test_carizy_is_sitemap_based() -> None:
+    s = CarizyFRScraper()
+    assert isinstance(s, SitemapListingScraper)
+    assert s.SITEMAP_URL == "https://www.carizy.com/sitemap.xml"
+    assert s.CHILD_RE.search("/voiture-occasion/sitemap.xml")
+    assert s.DETAIL_RE.search("/voiture-occasion/annonce/MERCEDES/GLB/2022/83041")
+    assert not s.DETAIL_RE.search("/voiture-occasion/mercedes")  # bare segment skipped
+    s._validate()
 
 
 # -- wiring --------------------------------------------------------------------
@@ -930,106 +752,16 @@ def test_carizy_domain_map_baseline() -> None:
 # =========================================================================== #
 from scrapers.portals.cardoen_be import CardoenBEScraper
 
-_CARDOEN_HTML = (
-    '<div class="grid">'
-    '<a href="/fr/achat/renault-clio-tce-12345/">Renault Clio</a>'
-    '<a href="/fr/achat/volkswagen-golf-tdi-67890/">VW Golf</a>'
-    '<a href="/fr/achat/renault-clio-tce-12345/">dup</a>'
-    '<a href="/fr/achat/occasions/">catégorie</a>'
-    '</div>'
-)
-
-_CARDOEN_EXPECTED = [
-    "https://www.cardoen.be/fr/achat/renault-clio-tce-12345/",
-    "https://www.cardoen.be/fr/achat/volkswagen-golf-tdi-67890/",
-]
-
 
 @pytest.mark.unit
-def test_cardoen_partition_is_single_occasions() -> None:
-    segs = CardoenBEScraper().partition_params()
-    assert segs == [{"type": "occasions"}]
-
-
-@pytest.mark.unit
-def test_cardoen_subdivide_is_noop() -> None:
-    assert CardoenBEScraper().subdivide_segment({"type": "occasions"}) == []
-
-
-@pytest.mark.unit
-def test_cardoen_build_url() -> None:
-    scraper = CardoenBEScraper()
-    assert scraper._build_url(1) == "https://www.cardoen.be/fr/achat/occasions/?page=1"
-    assert scraper._build_url(10) == "https://www.cardoen.be/fr/achat/occasions/?page=10"
-
-
-@pytest.mark.unit
-def test_cardoen_extract_pulls_links_and_dedups() -> None:
-    assert CardoenBEScraper()._extract(_CARDOEN_HTML) == _CARDOEN_EXPECTED
-
-
-@pytest.mark.unit
-def test_cardoen_extract_filters_category_pages() -> None:
-    """Les liens de catégorie (/fr/achat/occasions/, /neuves/, /automatique/) sont filtrés."""
-    html = (
-        '<a href="/fr/achat/occasions/">Occasions</a>'
-        '<a href="/fr/achat/neuves/">Neuves</a>'
-        '<a href="/fr/achat/automatique/">Automatique</a>'
-    )
-    assert CardoenBEScraper()._extract(html) == []
-
-
-@pytest.mark.unit
-def test_cardoen_extract_returns_empty_on_garbage() -> None:
-    assert CardoenBEScraper()._extract("") == []
-    assert CardoenBEScraper()._extract("<html></html>") == []
-    assert CardoenBEScraper()._extract("not html") == []
-
-
-# -- fetch_segment behavioural matrix ------------------------------------------
-@pytest.mark.unit
-def test_cardoen_fetch_segment_extracts_on_200() -> None:
-    scraper = CardoenBEScraper()
-    session = _Session([_Resp(200, _CARDOEN_HTML)])
-    urls = _run(scraper.fetch_segment(session, {"type": "occasions"}, 1))
-    assert urls == _CARDOEN_EXPECTED
-    assert len(session.calls) == 1
-    assert "occasions/?page=1" in session.urls[0]
-
-
-@pytest.mark.unit
-def test_cardoen_fetch_segment_retries_block_then_gives_up() -> None:
-    scraper = CardoenBEScraper()
-    _no_backoff(scraper)
-    session = _Session([_Resp(429), _Resp(503), _Resp(403)])
-    assert _run(scraper.fetch_segment(session, {"type": "occasions"}, 1)) == []
-    assert len(session.calls) == scraper.RETRY_ATTEMPTS
-
-
-@pytest.mark.unit
-def test_cardoen_fetch_segment_recovers_after_block() -> None:
-    scraper = CardoenBEScraper()
-    _no_backoff(scraper)
-    session = _Session([_Resp(503), _Resp(200, _CARDOEN_HTML)])
-    assert _run(scraper.fetch_segment(session, {"type": "occasions"}, 1)) == _CARDOEN_EXPECTED
-    assert len(session.calls) == 2
-
-
-@pytest.mark.unit
-def test_cardoen_fetch_segment_non_retryable_status() -> None:
-    scraper = CardoenBEScraper()
-    session = _Session([_Resp(404)])
-    assert _run(scraper.fetch_segment(session, {"type": "occasions"}, 1)) == []
-    assert len(session.calls) == 1
-
-
-@pytest.mark.unit
-def test_cardoen_fetch_segment_transport_error_retries() -> None:
-    scraper = CardoenBEScraper()
-    _no_backoff(scraper)
-    session = _Session([ConnectionError("reset"), _Resp(200, _CARDOEN_HTML)])
-    assert _run(scraper.fetch_segment(session, {"type": "occasions"}, 1)) == _CARDOEN_EXPECTED
-    assert len(session.calls) == 2
+def test_cardoen_is_sitemap_based() -> None:
+    s = CardoenBEScraper()
+    assert isinstance(s, SitemapListingScraper)
+    assert s.SITEMAP_URL == "https://www.cardoen.be/sitemap-product.xml"
+    # real detail form is /fr/auto/... (the old /fr/achat/ scraper matched 0)
+    assert s.DETAIL_RE.search("/fr/auto/toyota/yaris-hybrid-hev/120h-1-5-style-75-at/331355/")
+    assert not s.DETAIL_RE.search("/fr/achat/occasions/")
+    s._validate()
 
 
 # -- wiring --------------------------------------------------------------------
