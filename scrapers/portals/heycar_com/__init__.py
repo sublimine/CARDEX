@@ -149,7 +149,7 @@ class HeycarFRScraper(BasePortalScraper):
                 log.debug("HTTP %d (no retry) %s", status, url[:120])
                 return []
 
-            return self._extract(response.text)
+            return self._extract(self._read_body(response))
 
         log.warning(
             "all %d attempts failed: %s",

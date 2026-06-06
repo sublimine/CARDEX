@@ -149,7 +149,7 @@ class LargusFRScraper(BasePortalScraper):
                 log.debug("HTTP %d (no retry) %s", status, url[:90])
                 return []
 
-            return self._extract(response.text)
+            return self._extract(self._read_body(response))
 
         log.warning("all %d attempts failed: %s", self.RETRY_ATTEMPTS, url[:90])
         return []

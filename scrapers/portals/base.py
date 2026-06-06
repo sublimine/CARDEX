@@ -123,6 +123,32 @@ class BasePortalScraper(ABC):
         """Finer sub-segments for a capped segment. Default: no further split."""
         return []
 
+    # ── shared transport helper for concrete scrapers ──────────────────────────
+    @staticmethod
+    def _read_body(response: Any) -> str:
+        """
+        Materialize a response body as text, tolerating a memory-starved host.
+
+        Reading `.text` decodes the whole body into a str; on a RAM-constrained host
+        a large page can raise MemoryError (or a decode error) mid-allocation. That
+        is a failed fetch, not an engine crash: returning "" lets the extractor yield
+        no URLs and the pagination / soft-block machinery treat it like any empty
+        page, instead of the exception unwinding all the way to the coordinator and
+        aborting the whole portal harvest as `unhandled_exception`. The partial
+        allocation is freed as the exception unwinds, so the next attempt — or the
+        supervisor's memory-triggered restart — runs with reclaimed headroom.
+        """
+        try:
+            text = response.text
+        except (MemoryError, LookupError, UnicodeError, ValueError):
+            log.warning(
+                "%s response body unreadable (oversized / decode failure) — "
+                "treating page as empty",
+                getattr(type(response), "__name__", "response"),
+            )
+            return ""
+        return text if isinstance(text, str) else ""
+
     # ── template method ───────────────────────────────────────────────────────
     async def run(
         self,

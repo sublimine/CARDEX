@@ -208,7 +208,7 @@ class TuttiCHScraper(BasePortalScraper):
                 log.debug("HTTP %d (no retry) %s", status, url[:90])
                 return []
 
-            return self._extract(response.text)
+            return self._extract(self._read_body(response))
 
         log.warning("los %d intentos fallaron: %s", self.RETRY_ATTEMPTS, url[:90])
         return []
@@ -265,7 +265,7 @@ class TuttiCHScraper(BasePortalScraper):
         if response is None or response.status_code != 200:
             log.error("no se pudo resolver buildId de tutti.ch")
             return None
-        match = _BUILD_ID_RE.search(response.text)
+        match = _BUILD_ID_RE.search(self._read_body(response))
         if not match:
             log.error("buildId no encontrado en HTML de tutti.ch")
             return None

@@ -97,7 +97,7 @@ class AnibisCHScraper(TuttiCHScraper):
         if response is None or response.status_code != 200:
             log.error("no se pudo resolver buildId de anibis.ch")
             return None
-        match = _BUILD_ID_RE.search(response.text)
+        match = _BUILD_ID_RE.search(self._read_body(response))
         if not match:
             log.error("buildId no encontrado en HTML de anibis.ch")
             return None

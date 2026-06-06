@@ -215,7 +215,14 @@ class SitemapListingScraper(BasePortalScraper):
                 return gzip.decompress(bytes(content)).decode("utf-8", "replace")
             except (OSError, EOFError):
                 pass
-        text = getattr(response, "text", "")
+            except MemoryError:
+                log.warning("sitemap gunzip exhausted memory — treating shard as empty")
+                return ""
+        try:
+            text = getattr(response, "text", "")
+        except (MemoryError, LookupError, UnicodeError, ValueError):
+            log.warning("sitemap body unreadable (oversized / decode failure) — treating shard as empty")
+            return ""
         return text if isinstance(text, str) else ""
 
     async def _retry_backoff(self, attempt: int, factor: float = 1.0) -> None:
