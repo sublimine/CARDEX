@@ -55,7 +55,7 @@ Justification per three-part test:
 
 ### 2.3 robots.txt Compliance
 
-CARDEX respects robots.txt on all scraped domains as a technical and legal safeguard. This is enforced at the scraper level (non-negotiable constraint, see `CONTEXT_FOR_AI.md` §"Non-negotiable constraints"). robots.txt compliance supports the legitimate interest balancing test by demonstrating that CARDEX honors publisher preferences.
+CARDEX respects robots.txt on all scraped domains as a technical and legal safeguard. This is enforced at the scraper level (non-negotiable constraint). robots.txt compliance supports the legitimate interest balancing test by demonstrating that CARDEX honors publisher preferences.
 
 ### 2.4 Swiss Data (CH — non-EU)
 
@@ -214,7 +214,7 @@ Because CARDEX scrapes third-party portals, the most probable legal scenario is 
 4. **Purge historical data** from that portal within 30 days if demanded.
 5. **Assess impact:** How many listings came from that portal? Can alternative sources cover the gap?
 
-**Prevention:** robots.txt compliance, respectful rate limiting, and use of a clearly identified bot UA for Go services (`CardexBot/1.0`) reduce C&D probability. The Python scraper fleet uses browser-mimicking UAs (Strategy B) — this is a calculated trade-off documented in `CONTEXT_FOR_AI.md`.
+**Prevention:** robots.txt compliance, respectful rate limiting, and use of a clearly identified bot UA for Go services (`CardexBot/1.0`) reduce C&D probability. The Python scraper fleet uses browser-mimicking UAs (Strategy B) — this is a calculated trade-off documented in `docs/PYTHON_SCRAPER_AUDIT_2026-06.md`.
 
 ---
 

@@ -1,11 +1,12 @@
 # CARDEX — CLAUDE.md
 <!-- Deltas de repo. Hereda la doctrina global (~/.claude/CLAUDE.md). -->
-<!-- Comportamiento y estándares: §"Estándares y forma de trabajar". Arquitectura: el código, deploy/, planning/, goal/. -->
+<!-- Comportamiento: estándares operativos abajo; el resto lo dicta el global. Arquitectura: el código, STATUS.md y goal/GOAL.md. -->
 
 ## Autoridad
 - **Arquitectura y qué existe**: el código es la fuente de verdad — léelo antes
-  de tocar nada. Apóyate, en orden, en `deploy/`, `planning/`, `goal/`
-  (objetivo/estado/método) y `SPEC.md` (visión original, parcialmente superada).
+  de tocar nada. Estado y objetivo vivos en `STATUS.md` y `goal/GOAL.md`; apóyate
+  además en `deploy/`, `planning/` y `SPEC.md` (visión original, parcialmente
+  superada).
 - Este archivo **no describe arquitectura**. Si alguna vez lo hiciera, gana el
   código observado. No hay precedencia invertida.
 

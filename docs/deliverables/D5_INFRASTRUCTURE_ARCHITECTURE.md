@@ -341,4 +341,4 @@ The current architecture handles 1.55M listings on a single CX42. When (if) scal
 
 ---
 
-*This document reflects the deployed state of CARDEX infrastructure as of 2026-06-05. It was written against `CONTEXT_FOR_AI.md` (ground truth), `deploy/` (deployment artifacts), and `deploy/observability/` (monitoring configuration). Any reference to PostgreSQL, Redis, ClickHouse, MeiliSearch, multi-node clusters, or Kubernetes in other documents describes future state, not current reality.*
+*This document reflects the deployed state of CARDEX infrastructure as of 2026-06-05. It was written against the codebase (ground truth), `deploy/` (deployment artifacts), and `deploy/observability/` (monitoring configuration). Any reference to PostgreSQL, Redis, ClickHouse, MeiliSearch, multi-node clusters, or Kubernetes in other documents describes future state, not current reality.*
