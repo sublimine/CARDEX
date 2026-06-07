@@ -130,6 +130,27 @@ python -m pytest scrapers/tests -q   # 1453 passed
 
 ---
 
+## 8b. Producción a escala — inventario RETENIDO en `vehicles` [VERIFICADO en vivo]
+
+`python -m scripts.produce_inventory --per-segment 8 --limit 25 --max-cars 5000` (modo
+PRODUCE: persiste y **NO purga**, orden por yield probado):
+
+```
+PRODUCE SUMMARY: dealers=72  yielding=8  cars_produced=114
+vehicles 30 -> 144 (KEPT, not purged) · SELECT en vivo: 114 coches reales · 4 países
+```
+
+| País | Coches reales | Dealers (vía) |
+|---|---|---|
+| FR | 50 | audi-thionville.com (estático) + garage-saint-christophe-brest.fr |
+| NL | 25 | autocenterandelst.nl (BOVAG, estático) |
+| ES | 23 | uralmotor.com (VW Group) |
+| DE | 16 | 4× `.seat.de` (VW Group, **DMS/XHR**) |
+
+**8 de 72 dealers de marca/grupo rinden (~11%)**; **114 coches reales** persistidos y consultables en `vehicles` (no purgados). Ambos vectores nuevos en producción real, en 4 países. Tope local 25 coches/dealer (el inventario real por dealer es mayor — audi-thionville: 241; el volcado íntegro es de la VPS).
+
+---
+
 ## 9. Veredicto (honesto)
 
 - **Sistema corriendo y validado, produciendo inventario REAL a escala.** Dos vectores nuevos (`playwright_xhr`, conector DMS) construidos, testeados (14 tests, suite **1453 verde**) y **validados E2E hasta `vehicles`** (5 coches SEAT reales del feed DMS; 24 coches de marca FR estáticos; todos purgados — el disco local es banco, el volcado es de la VPS).
