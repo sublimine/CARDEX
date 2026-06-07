@@ -10,7 +10,7 @@ proyecto (Habana Legacy) se han excluido a propósito — ver `../../README.md`.
 - [Goal: scraping production indexing](project_cardex_scraping_goal.md) — cada portal indexa 100% del inventario live por país; ciclo deploy→monitor→diagnose→fix.
 
 ## Estado del proyecto
-- [Estado CARDEX junio 2026](project_cardex_state.md) — main=1ca158a (los 8 frentes), métrica dealers-con-web 28.570→45.864, censo 685K, cuello = conversión a escala + proxies/VPS.
+- [Estado CARDEX junio 2026](project_cardex_state.md) — main consolidado (los 8 frentes); métrica dealers-con-web ≈48,7K [verificado 2026-06-08; antes 45.864] en discovery_candidates.domain (tabla dealers vacía); cuello = browser/proxy + conversión a escala.
 - [Supervisor 24/7 + 73 portales tier-1](project_cardex_supervisor_73.md) — daemon en el terminal del usuario; goal activo = 73 portales con config guardada por portal.
 - [Plan 7 entregables P1](project_deliverables_action.md) — D1-D7 en `docs/deliverables/`.
 

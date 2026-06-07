@@ -7,13 +7,21 @@ originSessionId: f40b2fe4-7b98-4b15-bea1-af705c3e870f
 
 # GOAL #1 — COBERTURA 100% DEL TERRITORIO + 900K+ DEALERS
 
+> **MÉTRICAS VERIFICADAS 2026-06-08 (autoritativas, Postgres `cardex-pg` read-only).**
+> Las cifras del cuerpo son snapshot de memoria y resultaron infladas. Reales:
+> portales implementados **65** (no 71; el 71 = filas `portal_cadence`); cobertura
+> **19 portales con cosecha / 52 en cero** (no «51/71»); `vehicle_index` 436.114
+> punteros (todos libres T0/T1); **12 gateados T2/T3 a 0 filas**; dealers con web
+> **≈48,7K** en `discovery_candidates.domain` (tabla `dealers` VACÍA; no 45.864);
+> `vehicles` 563 (mobile.de=6 demo, real 0). Queries completas en `goal/GOAL.md` §2.
+
 **Qué:** Dos frentes simultáneos hasta cobertura total en DE/FR/ES/NL/BE/CH:
-1. **Portales agregadores:** 71 implementados, T0/T1 cerrado. Mantener.
+1. **Portales agregadores:** 65 scrapers implementados [CORREGIDO 2026-06-08; el «71» eran filas de portal_cadence], T0/T1 cerrado. Mantener.
 2. **Discovery Crawler: TODOS los dealers individuales (~900K+ estimados).** No 75K, no 140K — TODOS. Buscar bajo cada piedra. Cada concesionario, garaje, taller de VO, importador, broker, con presencia web debe estar indexado.
 
 **SIN TECHO (Salman 2026-06-07):** 900K es un PISO, no un techo. Se indexan TODOS los dealers con web que existan, sea el número que sea — nada de techos mentales. Tres frentes SIMULTÁNEOS, todos máxima prioridad: (A) DESCUBRIR más dealers (OSM-full, geo-sweep H3, todos los OEM, directorios), (B) CONVERTIR (resolución de dominio name→web a escala), (C) SCRAPING A MEDIDA por dealer (config guardada por web + drift + auto-remediación). No basta con uno; corren en paralelo y se TERMINAN.
 
-**MÉTRICA DE ÉXITO (re-clarificado por Salman 2026-06-07, NO confundir):** el goal son **dealers CON WEB resuelta** (de los que se puede scrapear inventario), NO filas brutas en `discovery_candidates`. 3M de dealers sin web no valen nada. Reportar SIEMPRE "dealers con dominio web", no el total bruto. Estado 2026-06-07: 551K filas pero solo ~30.395 con web → la palanca crítica es la **RESOLUCIÓN DE DOMINIO a escala** (name+ciudad → web) sobre los ~520K dealers identificados sin web. Ver [[project_cardex_state]]. RAM del host: procesar por lotes pequeños (nunca evitar trabajo "por RAM"; usarla poco a poco).
+**MÉTRICA DE ÉXITO (re-clarificado por Salman 2026-06-07, NO confundir):** el goal son **dealers CON WEB resuelta** (de los que se puede scrapear inventario), NO filas brutas en `discovery_candidates`. 3M de dealers sin web no valen nada. Reportar SIEMPRE "dealers con dominio web", no el total bruto. Estado [CORREGIDO 2026-06-08]: discovery_candidates ≈764K filas, ~48,7K con web (no 30.395) → la palanca crítica es la **RESOLUCIÓN DE DOMINIO a escala** (name+ciudad → web) sobre los ~520K dealers identificados sin web. Ver [[project_cardex_state]]. RAM del host: procesar por lotes pequeños (nunca evitar trabajo "por RAM"; usarla poco a poco).
 
 **Universo de dealers estimado:**
 - DE: ~36K (KBA/ZDK) + independientes

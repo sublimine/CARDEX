@@ -17,7 +17,8 @@
 **Qué.** Dos frentes simultáneos hasta cobertura total en **DE / FR / ES / NL /
 BE / CH**:
 
-1. **Portales agregadores.** 71 implementados (T0/T1 cerrado). Mantener y llevar
+1. **Portales agregadores.** 65 scrapers despachables implementados (T0/T1
+   cerrado; cifra verificada en §2). Mantener y llevar
    los 73 portales tier-1 al 100%, guardando la **config de scraping de cada
    portal** (estrategia, faceteo, endpoints, anti-bot, paginación) en
    `configs/portals/<portal>.json`, versionada y reproducible.
@@ -85,21 +86,42 @@ domain-resolution + discovery-scale + P2-hardening. **Suite 1.439 verde**
 > `6e084a5`). El push era la única acción irreversible pendiente; ejecutado con
 > autorización explícita del propietario. Este `goal/` se integra a continuación.
 
-**Métrica del GOAL — dealers CON WEB: 28.570 → 45.864 (+60,5 %)**
-(DE 26.653 · NL 6.898 · CH 4.026 · FR 5.293 · ES 1.747 · BE 1.247).
-Censo total: 460.930 → **685.572 filas**.
+> **MÉTRICAS VERIFICADAS 2026-06-08 (autoritativas, vía Postgres `cardex-pg`
+> read-only).** Reemplazan cifras previas de snapshot de memoria que resultaron
+> infladas/falsas (ver «Corrección» al final del bloque). Cada métrica lleva su query.
 
-**Cuello para seguir hacia 900K:**
-1. **Conversión a escala** del censo domain-NULL (FR ≈ 568K filas / 5.293 web →
-   el mayor yacimiento) con el `worker.py` del resolver ya en `main`.
-2. **Proxies / VPS** para directorios protegidos (BE/ES Incapsula) y gigantes
-   anti-bot. Las fuentes libres host-safe están agotadas.
+| Métrica | Valor REAL | Query / comando |
+|---------|-----------|-----------------|
+| Portales implementados | **65** scrapers despachables | `awk '/_PORTAL_CLASSES/{f=1} f{print} /^)/{if(f)exit}' scrapers/portals/__init__.py \| grep -cE 'Scraper,?\s*$'` |
+| Specs de routing | 69 | `grep -cE 'PortalSpec\(' scrapers/engine/router/domain_map.py` |
+| Tiers (primario) | T0=12 · T1=45 · T2=8 · T3=4 | `grep PortalSpec domain_map.py \| sed -E 's/can_escalate_to=Tier\.T[0-9]//' \| grep -cE 'Tier\.Tn'` |
+| Origen del "71" | 71 filas en `portal_cadence` (≠ scrapers) | `SELECT count(*) FROM portal_cadence;` |
+| Cobertura real | **19 portales con cosecha** (26,8%), **52 en cero** | `SELECT count(DISTINCT source_domain) FROM vehicle_index;` |
+| Punteros `vehicle_index` | 436.114 — TODOS de portales libres T0/T1 | `SELECT count(*) FROM vehicle_index;` |
+| Gateados T2/T3 | **12, los 12 a 0 filas** (mobile.de, leboncoin, lacentrale, autoscout24.*, kleinanzeigen, coches.net… Akamai/DataDome/CF) | `grep PortalSpec … \| grep -cE 'Tier\.T[23]'` |
+| Dealers con web | **≈48,7K** (48.740 a 2026-06-08, **contador vivo**; ≈48,6K dominios únicos) en `discovery_candidates.domain` — tabla `dealers` **VACÍA (0)** | `SELECT count(*) FROM discovery_candidates WHERE domain IS NOT NULL AND domain<>'';` |
+| Dealers con web / país | DE 28.971 · NL 6.980 · FR 5.411 · CH 4.135 · ES 1.924 · BE 1.319 | `… GROUP BY country` |
+| `vehicles` (store rico) | 563 filas; mobile.de = 6 (todas SEED_DEMO → real 0) | `SELECT count(*) FROM vehicles;` |
 
-**Veredicto GUARDIAN (auditoría adversarial).** CARDEX es un **esqueleto
-VALIDADO, no un producto poblado**: la fontanería está probada; los datos del
-producto rondan el 0 %. Cobertura real ≈ 26,7 % de los 20 portales activos; 51
-de 71 portales en CERO (gigantes gated por proxy → backlog P3). El trabajo
-pendiente es **poblar**, no reconstruir.
+**Veredicto (sin maquillaje).** CARDEX es un **esqueleto VALIDADO, no un producto
+poblado**: la cosecha real (436.114 punteros) viene ÍNTEGRA de **19 portales
+libres T0/T1**; los **12 gateados (los gigantes) están a 0** — el cuello es la
+capa **browser/proxy**, no el código. La tabla `dealers` está vacía; los
+dealers-con-web viven en `discovery_candidates.domain`.
+
+**Cuello para seguir hacia 900K:** (1) capa **browser/proxy** para los 12 gateados
+(mobile.de/leboncoin/lacentrale/AS24/kleinanzeigen/coches.net), hoy a 0;
+(2) **conversión a escala** del censo domain-NULL (FR es el mayor yacimiento) con
+el `worker.py` del resolver ya en `main`.
+
+> **Corrección — las cifras previas eran snapshot de memoria, infladas:**
+> «71 portales implementados» → **65** (el 71 eran filas de `portal_cadence`).
+> «45.864 dealers con web» → **≈48,7K y subiendo**, y viven en
+> `discovery_candidates`, no en la tabla `dealers` (vacía). «51 de 71 en cero /
+> 26,7% de 20 activos» → **52 en cero / 19 con cosecha (26,8%)**. «Censo 685.572 /
+> vehicles 30» → `discovery_candidates` ≈764K filas, `vehicles` 563. Las cifras en
+> `goal/memory/fronts/*` son snapshots CON FECHA (registro histórico); esta tabla
+> las supersede.
 
 **Worktrees aislados** (cada frente en su worktree; `main` intacto):
 
