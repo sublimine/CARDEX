@@ -1,0 +1,33 @@
+{
+  "source_key": "autocenterandelst.nl",
+  "country": "NL",
+  "strategy": "sitemap_listing",
+  "version": 1,
+  "endpoints": {
+    "host": "www.autocenterandelst.nl",
+    "listing_url_template": "https://autocenterandelst.nl/wp-content/plugins/vwe-autovoorraad/assets/css/vwe-global.min.css?ver=2.2.01",
+    "sitemap_url": "",
+    "detail_url_re": "",
+    "api_url": ""
+  },
+  "pagination": {
+    "page_size": 0,
+    "max_pages": 0,
+    "page_param": "page"
+  },
+  "extraction": {
+    "method": "jsonld",
+    "field_map": {}
+  },
+  "drift_baseline": {
+    "extraction_method": "jsonld",
+    "expected_min_volume": 51,
+    "required_fields": [
+      "make",
+      "model",
+      "year",
+      "price"
+    ],
+    "min_nonnull_ratio": 0.6
+  }
+}

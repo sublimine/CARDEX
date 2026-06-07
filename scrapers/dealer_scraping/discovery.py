@@ -122,6 +122,16 @@ async def discover_detail_urls(
     home_html = home.text if (home is not None and home.status_code == 200) else ""
     catalog_url = find_catalog_url(home_html, base) if home_html else None
 
+    # Detail-shaped links the homepage exposes directly (featured stock, deep slugs
+    # with an id) — caught even when the sitemap lists only the catalog/nav pages. The
+    # per-URL probe rejects any non-vehicle, so adding these can only raise yield.
+    home_details: list[str] = []
+    if home_html:
+        home_details = [u for u in extract_listing_links(home_html, base, max_urls=cap)
+                        if looks_like_detail(u)]
+    if catalog_url and looks_like_detail(catalog_url) and catalog_url not in home_details:
+        home_details.insert(0, catalog_url)
+
     # Layer 1/2: static sitemap, then WordPress REST
     candidates = await discover_sitemap_listings(base, static_fetcher, max_urls=cap)
     method = "sitemap" if candidates else ""
@@ -171,6 +181,12 @@ async def discover_detail_urls(
         if rendered_details:
             details = rendered_details
             method = "render_follow"
+
+    # Merge homepage detail-shaped links (additive; real details the sitemap missed).
+    if home_details:
+        if not details:
+            method = "homepage"
+        details = list(dict.fromkeys(details + home_details))
 
     # 3. Last resort: treat a catalog index itself as the surface (the probe decides if
     # the index entry carries a vehicle); only when nothing better was found.
