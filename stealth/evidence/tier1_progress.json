@@ -1,0 +1,41 @@
+{
+  "mobile.de": {
+    "total_oficial": 1586022,
+    "cobertura": 1586026,
+    "pct": 100.0,
+    "estado": "pendiente de verificación",
+    "ev": "facet/mobilede_coverage.json"
+  },
+  "leboncoin.fr": {
+    "total_oficial": 900000,
+    "cobertura": 900000,
+    "pct": 100.0,
+    "estado": "pendiente de verificación",
+    "ev": "sitemap_recon.json"
+  },
+  "coches.net": {
+    "total_oficial": 249963,
+    "cobertura": 238411,
+    "pct": 95.38,
+    "estado": "midiendo cobertura (worker vivo)",
+    "makes_done": 98,
+    "ev": "facet/coches_coverage.json",
+    "ts": "2026-06-07T22:49:28+02:00"
+  },
+  "_meta": {
+    "ts": "2026-06-07T22:49:28+02:00",
+    "queue_total": 70,
+    "medidos_o_en_curso": 3,
+    "pendientes_de_perfil": 67,
+    "proximos": [
+      "2dehands.be",
+      "2ememain.be",
+      "autolina.ch",
+      "autohero.com",
+      "wallapop.com",
+      "auto-selection.com",
+      "autosphere.fr",
+      "caravenue.com"
+    ]
+  }
+}

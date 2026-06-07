@@ -1,0 +1,51 @@
+{
+  "_comment": "Worker registry governed by cardex_supervisor. Each worker: name, cmd, cwd, enabled, heartbeat. Disabled stubs document the registry shape for subsystems that live elsewhere (enable = flip the flag + point cmd at the real entrypoint).",
+  "workers": [
+    {
+      "name": "tier1_runner",
+      "cmd": ["python", "-u", "supervisor/tier1_runner.py"],
+      "enabled": true,
+      "use_heartbeat": true,
+      "heartbeat_max_age_s": 300,
+      "backoff_base_s": 10,
+      "backoff_max_s": 300
+    },
+    {
+      "name": "demo_worker",
+      "cmd": ["python", "-u", "supervisor/demo_worker.py"],
+      "enabled": true,
+      "use_heartbeat": true,
+      "heartbeat_max_age_s": 60,
+      "backoff_base_s": 5,
+      "backoff_max_s": 120
+    },
+    {
+      "name": "conversion_rest_fr",
+      "cmd": ["python", "-u", "scrapers/discovery/worker.py"],
+      "enabled": false,
+      "use_heartbeat": true,
+      "heartbeat_max_age_s": 900,
+      "backoff_base_s": 30,
+      "backoff_max_s": 900,
+      "_note": "REST + FR proxy domain-resolution worker (lives in scrapers/discovery). enable when wired."
+    },
+    {
+      "name": "discovery",
+      "cmd": ["python", "-u", "scrapers/discovery/orchestrator.py"],
+      "enabled": false,
+      "use_heartbeat": false,
+      "backoff_base_s": 60,
+      "backoff_max_s": 1800,
+      "_note": "dealer discovery fan-out. enable when wired."
+    },
+    {
+      "name": "inventory_scraper",
+      "cmd": ["python", "-u", "scrapers/run_coordinator_supervised.py"],
+      "enabled": false,
+      "use_heartbeat": false,
+      "backoff_base_s": 60,
+      "backoff_max_s": 1800,
+      "_note": "portal inventory coordinator. enable when wired."
+    }
+  ]
+}
