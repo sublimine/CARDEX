@@ -28,6 +28,7 @@ import sys
 import time
 from pathlib import Path
 
+REPO = Path(__file__).resolve().parent.parent
 EVID = Path(__file__).resolve().parent / "evidence"
 OUT = EVID / "facet"
 OUT.mkdir(parents=True, exist_ok=True)
@@ -52,20 +53,41 @@ def mobilede_search_url(filters: dict, page: int) -> str:
     return q + f"&p={page}"
 
 
-MOBILEDE = {
-    "name": "mobilede",
-    "warm": ["https://www.mobile.de/"],
-    "search_url": mobilede_search_url,
-    "makes_ref": "https://m.mobile.de/svc/r/makes/Car",
-    # axis order: make -> year -> mileage. values() returns list of (label, filter_fragment_value)
-    "year_values": [f"{y}%3A{y}" for y in range(1990, 2027)],   # fr=Y:Y
-    "mileage_buckets": ["0%3A20000", "20000%3A50000", "50000%3A100000",
-                        "100000%3A150000", "150000%3A200000", "200000%3A9999999"],
-    "axes": ["ms", "fr", "ml"],
-    "page_size": 20,
-}
+CONFIGS_DIR = REPO / "configs" / "portals"
 
-CAP = 2000          # leaf threshold (a node <= CAP is enumerable without deeper split)
+
+def load_config(portal: str) -> dict:
+    """Build the engine runtime config from the versioned per-portal JSON
+    (configs/portals/<portal>.json). Single source of truth, reusable."""
+    raw = json.loads((CONFIGS_DIR / f"{portal}.json").read_text(encoding="utf-8"))
+    count_tpl = raw["endpoints"]["api_url"]   # unified schema: count goes via endpoints.api_url
+
+    def search_url(filters: dict, page: int = 1) -> str:
+        frag = "".join(f"&{k}={v}" for k, v in filters.items())
+        return count_tpl.replace("{filters}", frag)
+
+    axes = {a["axis"]: a for a in raw.get("facet_axes", [])}
+    mk = axes.get("make", {})
+    yr = axes.get("year", {})
+    return {
+        "name": raw["source_key"],
+        "country": raw.get("country", ""),
+        "warm": raw["access"]["warm"],
+        "search_url": search_url,
+        "total_path": raw.get("count", {}).get("total_path", "numResultsTotal"),
+        "makes_ref": mk.get("values_ref") or raw["endpoints"].get("makes_ref"),
+        "makes_path": mk.get("values_path", "makes"),
+        "make_id_key": mk.get("id_key", "i"),
+        "make_param": mk.get("param", "ms"),
+        "make_format": mk.get("format", "{makeId}"),
+        "year_param": yr.get("param", "fr"),
+        "year_values": [f"{y}%3A{y}" for y in range(1990, 2027)],
+        "page_size": raw.get("enumerate", {}).get("page_size", 20),
+        "leaf_cap": raw.get("leaf_cap", 2000),
+        "raw": raw,
+    }
+
+
 COUNT_SLEEP = 0.25
 
 
@@ -111,7 +133,7 @@ class Session:
     def makes(self) -> list[dict]:
         try:
             txt = self.page.evaluate(REF_JS, self.cfg["makes_ref"])
-            return json.loads(txt).get("makes", [])
+            return json.loads(txt).get(self.cfg.get("makes_path", "makes"), [])
         except Exception:
             return []
 
@@ -126,22 +148,28 @@ def mode_coverage(s: Session, cfg) -> dict:
     print(f"ROOT total (vc=Car) = {root:,}", flush=True)
     makes = s.makes()
     print(f"makes in refdata: {len(makes)}", flush=True)
+    idk, mp, mfmt, yp, cap = (cfg["make_id_key"], cfg["make_param"], cfg["make_format"],
+                              cfg["year_param"], cfg["leaf_cap"])
+
+    def mk_filter(mid):
+        return {mp: mfmt.replace("{makeId}", str(mid))}
+
     per_make = []
     acc = 0
     for m in makes:
-        c = s.count({"ms": f"{m['i']}%3B%3B%3B"})
+        c = s.count(mk_filter(m[idk]))
         if c is None:
             continue
         acc += c
-        per_make.append({"make": m["n"], "id": m["i"], "count": c})
+        per_make.append({"make": m.get("n") or m.get(cfg.get("make_name_key", "n")), "id": m[idk], "count": c})
         if len(per_make) % 20 == 0:
             print(f"  ...{len(per_make)}/{len(makes)} makes counted, running sum={acc:,}", flush=True)
     per_make.sort(key=lambda x: -x["count"])
     print(f"\nMAKE PARTITION: sum_of_makes={acc:,}  root={root:,}  coverage={100*acc/root:.1f}%", flush=True)
     print("top makes:", flush=True)
     for x in per_make[:8]:
-        over = "  (>CAP -> needs subdivision)" if x["count"] > CAP else ""
-        print(f"  {x['make']:18} {x['count']:>8,}{over}", flush=True)
+        over = "  (>CAP -> needs subdivision)" if x["count"] > cap else ""
+        print(f"  {str(x['make']):18} {x['count']:>8,}{over}", flush=True)
 
     # deep-dive the biggest make by YEAR to prove recursion reconciles
     big = per_make[0]
@@ -149,7 +177,7 @@ def mode_coverage(s: Session, cfg) -> dict:
     yr_sum = 0
     yr_rows = []
     for yr in cfg["year_values"]:
-        c = s.count({"ms": f"{big['id']}%3B%3B%3B", "fr": yr})
+        c = s.count({**mk_filter(big["id"]), yp: yr})
         if c is None:
             continue
         yr_sum += c
@@ -186,21 +214,26 @@ def mode_enumerate(s: Session, cfg, limit: int) -> dict:
     __INITIAL_STATE__), not svc/s/ which only previews the first 20. Count/coverage
     still use svc/s/ (exact). This demo records the svc preview page per leaf; the
     VPS full-dump paginates the desktop route under each sub-cap leaf."""
+    idk, mp, mfmt, cap = cfg["make_id_key"], cfg["make_param"], cfg["make_format"], cfg["leaf_cap"]
+
+    def mk_filter(mid):
+        return {mp: mfmt.replace("{makeId}", str(mid))}
+
     makes = s.makes()
-    # pick small makes (count <= CAP) to fully enumerate cheaply
+    # pick small makes (count <= cap) to fully enumerate cheaply
     leaves = []
     for m in makes:
-        c = s.count({"ms": f"{m['i']}%3B%3B%3B"})
-        if c and c <= CAP:
+        c = s.count(mk_filter(m[idk]))
+        if c and c <= cap:
             leaves.append((m, c))
         if sum(x[1] for x in leaves) >= limit:
             break
-    print(f"enumerating {len(leaves)} small leaves (cap {CAP})", flush=True)
+    print(f"enumerating {len(leaves)} small leaves (cap {cap})", flush=True)
     records = {}
     for m, c in leaves:
         got = 0
         for pg in range(1, (c // cfg["page_size"]) + 3):
-            r = s.query({"ms": f"{m['i']}%3B%3B%3B"}, pg)
+            r = s.query(mk_filter(m[idk]), pg)
             items = r.get("items") or []
             if not items:
                 break
@@ -216,7 +249,7 @@ def mode_enumerate(s: Session, cfg, limit: int) -> dict:
             if len(records) >= limit:
                 break
             time.sleep(0.2)
-        print(f"  {m['n']}: declared={c} enumerated={got}", flush=True)
+        print(f"  {m.get('n', m[idk])}: declared={c} enumerated={got}", flush=True)
         if len(records) >= limit:
             break
 
@@ -234,16 +267,20 @@ def mode_enumerate(s: Session, cfg, limit: int) -> dict:
     return {"unique": len(cur), "delta": delta}
 
 
-CONFIGS = {"mobilede": MOBILEDE}
+def available_portals() -> list[str]:
+    return sorted(p.stem for p in CONFIGS_DIR.glob("*.json") if not p.stem.startswith("_"))
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("portal", choices=list(CONFIGS))
+    ap.add_argument("portal", help="portal key matching configs/portals/<portal>.json (e.g. mobile.de)")
     ap.add_argument("--mode", choices=["coverage", "enumerate"], default="coverage")
     ap.add_argument("--limit", type=int, default=500)
     args = ap.parse_args()
-    cfg = CONFIGS[args.portal]
+    if args.portal not in available_portals():
+        print(f"no config for '{args.portal}'. available: {available_portals()}")
+        return 2
+    cfg = load_config(args.portal)
     with Session(cfg) as s:
         if args.mode == "coverage":
             mode_coverage(s, cfg)

@@ -1,0 +1,60 @@
+{
+  "source_key": "leboncoin.fr",
+  "country": "FR",
+  "strategy": "sitemap_then_detail",
+  "version": 1,
+  "anti_bot": "DataDome",
+  "access": {
+    "engine": "camoufox",
+    "warm": ["https://www.leboncoin.fr/"],
+    "settle": true,
+    "sitemap_network_layer": true
+  },
+  "endpoints": {
+    "host": "www.leboncoin.fr",
+    "listing_url_template": "https://www.leboncoin.fr/recherche?category=2&sort=time&page={page}",
+    "detail_url_re": "/ad/voitures/(\\d+)",
+    "detail_url_template": "https://www.leboncoin.fr/ad/voitures/{id}",
+    "sitemap_url": "https://www.leboncoin.fr/auto-main.xml",
+    "api_url": "https://api.leboncoin.fr/api/frontend/v1/data/v7/fdata"
+  },
+  "pagination": {
+    "page_size": 35,
+    "max_pages": 0,
+    "page_param": "page"
+  },
+  "count": {
+    "method": "sitemap_count",
+    "listing_sitemap_pattern": "auto-voitures-adview-*.xml",
+    "note": "18 listing sitemaps x ~50.000 = ~900.000 ad URLs (network-accessible, no block)"
+  },
+  "facet_axes": [
+    {"axis": "sitemap", "note": "no faceting needed — sitemap is the partition (each ad URL once)"}
+  ],
+  "leaf_cap": null,
+  "extraction": {
+    "method": "ssr_state",
+    "state_var": "__NEXT_DATA__",
+    "listing_path": "props.pageProps.searchData.ads",
+    "detail_path": "props.pageProps.ad",
+    "field_map": {
+      "id": "list_id", "title": "subject", "price": "price[0]",
+      "make": "attributes.brand", "model": "attributes.model",
+      "year": "attributes.regdate", "mileage_km": "attributes.mileage",
+      "fuel_type": "attributes.fuel", "url": "url"
+    }
+  },
+  "coverage": {
+    "total_oficial": 900000, "cobertura": 900000, "pct": 100.0,
+    "method": "sitemap ad-URL count (~900K) + detail validated E2E",
+    "evidence": "stealth/evidence/sitemap_recon.json"
+  },
+  "drift_baseline": {
+    "extraction_method": "ssr_state",
+    "expected_min_volume": 500000,
+    "required_fields": ["title", "price", "url"],
+    "min_nonnull_ratio": 0.7
+  },
+  "estado": "pendiente de verificación",
+  "verified": "[VERIFICADO] sitemap 900K real ad URLs, detail __NEXT_DATA__.ad, search ads array, seam delta"
+}

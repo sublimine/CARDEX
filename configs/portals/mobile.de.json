@@ -1,0 +1,61 @@
+{
+  "source_key": "mobile.de",
+  "country": "DE",
+  "strategy": "faceted_api",
+  "version": 1,
+  "anti_bot": "Akamai Bot Manager v2",
+  "access": {
+    "engine": "camoufox",
+    "warm": ["https://www.mobile.de/"],
+    "settle": true,
+    "in_page_fetch": true,
+    "notes": "warm homepage clears _abck; count via in-page fetch; residential IP improves trust"
+  },
+  "endpoints": {
+    "host": "m.mobile.de",
+    "listing_url_template": "https://suchen.mobile.de/fahrzeuge/search.html?isSearchRequest=true&s=Car&vc=Car{filters}&pageNumber={page}",
+    "detail_url_re": "details\\.html\\?id=(\\d+)",
+    "sitemap_url": "",
+    "api_url": "https://m.mobile.de/svc/s/?vc=Car{filters}&p=1",
+    "makes_ref": "https://m.mobile.de/svc/r/makes/Car"
+  },
+  "pagination": {
+    "page_size": 20,
+    "max_pages": 0,
+    "page_param": "pageNumber"
+  },
+  "count": {
+    "method": "internal_api_in_page",
+    "total_path": "numResultsTotal",
+    "note": "svc/s/ returns exact total for any filter combo (count + top-20 preview; does NOT paginate)"
+  },
+  "facet_axes": [
+    {"axis": "make", "param": "ms", "format": "{makeId}%3B%3B%3B",
+     "values_ref": "https://m.mobile.de/svc/r/makes/Car", "values_path": "makes", "id_key": "i", "name_key": "n"},
+    {"axis": "year", "param": "fr", "format": "{from}%3A{to}"},
+    {"axis": "mileage", "param": "ml", "format": "{from}%3A{to}"}
+  ],
+  "leaf_cap": 2000,
+  "extraction": {
+    "method": "ssr_state",
+    "state_var": "window.__INITIAL_STATE__",
+    "listing_path": "search.srp.data.searchResults.items",
+    "url_base": "https://suchen.mobile.de",
+    "field_map": {
+      "id": "id", "make": "make", "model": "model",
+      "price": "price.grossAmount", "url": "relativeUrl"
+    }
+  },
+  "coverage": {
+    "total_oficial": 1586022, "cobertura": 1586026, "pct": 100.0,
+    "method": "sum counts over 178 makes (svc ms=)", "evidence": "stealth/evidence/facet/mobilede_coverage.json"
+  },
+  "drift_baseline": {
+    "extraction_method": "ssr_state",
+    "expected_min_volume": 1000000,
+    "required_fields": ["make", "model", "price", "url"],
+    "min_nonnull_ratio": 0.7
+  },
+  "estado": "pendiente de verificación",
+  "verified": "[VERIFICADO] count/total/makes-refdata/axes ms,fr,ml/enumerate route"
+}

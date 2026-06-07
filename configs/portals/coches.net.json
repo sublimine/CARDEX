@@ -1,0 +1,62 @@
+{
+  "source_key": "coches.net",
+  "country": "ES",
+  "strategy": "faceted_ssr",
+  "version": 1,
+  "anti_bot": "DataDome",
+  "access": {
+    "engine": "camoufox",
+    "warm": ["https://www.coches.net/"],
+    "settle": true,
+    "notes": "internal API host ms-mt--api-web.spain.advgo.net returns 502 CloudFront; use SSR route"
+  },
+  "endpoints": {
+    "host": "www.coches.net",
+    "listing_url_template": "https://www.coches.net/{make}/segunda-mano/?pg={page}",
+    "detail_url_re": "/[a-z0-9-]+-(\\d+)-covo\\.aspx",
+    "root_url": "https://www.coches.net/segunda-mano/",
+    "sitemap_url": "https://www.coches.net/servicios/sitemaps/sitemap-index.xml",
+    "api_url": ""
+  },
+  "pagination": {
+    "page_size": 30,
+    "max_pages": 631,
+    "page_param": "pg"
+  },
+  "count": {
+    "method": "ssr_total",
+    "state_var": "window.__INITIAL_PROPS__",
+    "total_path": "initialResults.totalResults"
+  },
+  "facet_axes": [
+    {"axis": "make", "param": "path_slug", "format": "{slug}",
+     "values_evidence": "stealth/evidence/coches_brands.json",
+     "warning": "slug list includes body-type/category slugs -> clean to a true make partition"}
+  ],
+  "leaf_cap": 5000,
+  "extraction": {
+    "method": "ssr_state",
+    "state_var": "window.__INITIAL_PROPS__",
+    "listing_path": "initialResults.items",
+    "url_base": "https://www.coches.net",
+    "field_map": {
+      "id": "id", "title": "title", "price": "price.amount",
+      "make": "make", "model": "model", "year": "year",
+      "mileage_km": "km", "fuel_type": "fuelType", "url": "url"
+    }
+  },
+  "coverage": {
+    "total_oficial": 249963, "cobertura": 238411, "pct": 95.38,
+    "method": "sum totalResults over 98 brand slugs",
+    "evidence": "stealth/evidence/facet/coches_coverage.json",
+    "gap_note": "4.62% residual = makes outside slug list / failed navigations; clean make-list to close >=99%"
+  },
+  "drift_baseline": {
+    "extraction_method": "ssr_state",
+    "expected_min_volume": 200000,
+    "required_fields": ["title", "price", "url"],
+    "min_nonnull_ratio": 0.7
+  },
+  "estado": "pendiente de verificación",
+  "verified": "[VERIFICADO] root total 249.963, brand-page totalResults, SSR items; [PENDIENTE] depurar make-list"
+}

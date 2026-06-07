@@ -96,6 +96,31 @@ def load_queue():
         return []
 
 
+def ingest_configs(ledger: dict):
+    """Fold each versioned per-portal config's coverage block into the ledger.
+    Configs are the source of truth (configs/portals/<portal>.json)."""
+    cfg_dir = REPO / "configs" / "portals"
+    if not cfg_dir.exists():
+        return
+    for f in cfg_dir.glob("*.json"):
+        if f.stem.startswith("_"):
+            continue
+        try:
+            c = json.loads(f.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        cov = c.get("coverage", {})
+        ledger[c.get("source_key", f.stem)] = {
+            "total_oficial": cov.get("total_oficial"),
+            "cobertura": cov.get("cobertura"),
+            "pct": cov.get("pct"),
+            "estado": c.get("estado", "pendiente"),
+            "strategy": c.get("strategy"),
+            "anti_bot": c.get("anti_bot"),
+            "config": f"configs/portals/{f.name}",
+        }
+
+
 def ingest_coches(ledger: dict):
     j = FACET / "coches_coverage.json"
     if not j.exists():
@@ -156,8 +181,8 @@ def main() -> int:
                 ledger = json.loads(LEDGER.read_text(encoding="utf-8"))
             except Exception:
                 ledger = {}
-        ledger.update(SEEDS)
-        ingest_coches(ledger)
+        ingest_configs(ledger)   # versioned configs = source of truth
+        ingest_coches(ledger)    # live profiler output (overrides config with fresh numbers)
         # record pending portals (those in queue without measurement/profiler)
         measured = set(ledger)
         pendientes = [q["portal"] for q in queue if q["portal"] not in measured
