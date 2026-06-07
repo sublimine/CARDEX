@@ -245,6 +245,33 @@ def test_confirms_automotive_email_via():
     assert confirms_automotive("") == (False, "empty_page")
 
 
+@pytest.mark.unit
+def test_auto_signal_word_boundary_excludes_ambiguous_words():
+    # bare-substring "auto" inside other words must NOT confirm (automatique/autonome)
+    sub = "<html><body><p>Service automatique et gestion autonome.</p>" + _FILLER + "</body></html>"
+    assert confirms_automotive(sub)[0] is False
+    # the live FP vector: FR "occasion" (=bargain) + "garage" (=parking) on a butcher
+    fp = ("<html><body><h1>Boucherie Erard</h1><p>viande et charcuterie, garage à "
+          "louer, profitez de l'occasion.</p>" + _FILLER + "</body></html>")
+    assert confirms_automotive(fp)[0] is False
+    # whole-word automotive vocabulary confirms (incl. EN for luxury/SPA sites)
+    assert confirms_automotive("<html><body><p>Pre-owned cars and vehicles.</p>"
+                               + _FILLER + "</body></html>")[0] is True
+    assert confirms_automotive("<html><body><p>Nos voitures et vehicules.</p>"
+                               + _FILLER + "</body></html>")[0] is True
+
+
+@pytest.mark.unit
+def test_text_strips_script_style_so_css_js_auto_does_not_count():
+    # the real FP cause: CSS/JS source carries "auto" (sizes=auto, autocomplete,
+    # trackers) — it must NOT confirm an automotive page. Visible text is a butcher.
+    page = ('<html><head><style>img:is([sizes=auto i],[sizes^="auto," i]){x:1}</style>'
+            '<script>var autocomplete=1; window._paq.push(["trackPageView"]);</script></head>'
+            '<body><h1>Boucherie Erard</h1><p>viande et charcuterie depuis 1985.</p>'
+            + _FILLER + '</body></html>')
+    assert confirms_automotive(page)[0] is False
+
+
 # ── national directories ────────────────────────────────────────────────────────
 class _FakeSession:
     def __init__(self, html: str, status: int = 200):

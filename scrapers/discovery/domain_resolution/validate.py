@@ -18,22 +18,54 @@ import re
 
 from scrapers.discovery.domain_resolution.candidate import _norm, name_tokens
 
-# Automotive signals across DE/FR/ES/NL/IT/EN — a dealer homepage carries several.
-_AUTO_SIGNALS: tuple[str, ...] = (
-    "fahrzeug", "gebrauchtwagen", "neuwagen", "autohaus", "werkstatt", "kfz",
-    "occasion", "occasioni", "voiture", "vehicule", "vehicules", "concession",
-    "carrosserie", "coche", "vehiculo", "vehiculos", "automovil", "taller",
-    "auto", "automobile", "automobili", "veicoli", "showroom", "dealer",
-    "haendler", "handler", "garage", "inventory", "voorraad", "bedrijfswagen",
-    "leasing", "probefahrt", "test drive", "modelle", "modelos",
+# Automotive vocabulary, matched as WHOLE WORDS (\b) over accent-stripped VISIBLE text
+# (script/style removed — see _text). Two tiers, because single weak words leak:
+#   STRONG (≥1 confirms): terms that essentially only occur in the motor trade.
+#   WEAK   (≥2 distinct confirm): real but ambiguous in isolation — an optician has a
+#           "showroom", a law firm mentions a "fahrzeug" once. One alone is not enough;
+#           a real dealer carries several. Deliberately EXCLUDED entirely: "occasion"/
+#           "ocasion" (FR/ES = bargain), "garage" (= parking), bare "motor" (industrial).
+_AUTO_STRONG: tuple[str, ...] = (
+    "autohaus", "autohauser", "autohandel", "autohandler", "autohaendler",
+    "autowerkstatt", "gebrauchtwagen", "neuwagen", "jahreswagen", "vorfuhrwagen",
+    "vorfuehrwagen", "gebrauchtfahrzeug", "neufahrzeug", "occasionen",
+    "occasionsfahrzeug", "probefahrt", "autozentrum", "kfz",
+    "concessionnaire", "carrosserie", "concessionaria", "carrozzeria", "autovetture",
+    "concesionario", "automocion", "autobedrijf", "bedrijfswagen",
+    "automobile", "automobiles", "automobili", "automobiel",
 )
+_AUTO_WEAK: tuple[str, ...] = (
+    "auto", "autos", "fahrzeug", "fahrzeuge", "marken", "voiture", "voitures",
+    "vehicule", "vehicules", "vettura", "vetture", "veicoli", "coche", "coches",
+    "vehiculo", "vehiculos", "automovil", "automoviles", "seminuevo", "seminuevos",
+    "voertuig", "voertuigen", "tweedehands", "cars", "car", "motors", "dealership",
+    "vehicles", "vehicle", "automotive", "showroom", "dealer",
+)
+_STRONG_RE = re.compile(r"\b(" + "|".join(re.escape(w) for w in _AUTO_STRONG) + r")\b")
+_WEAK_RE = re.compile(r"\b(" + "|".join(re.escape(w) for w in _AUTO_WEAK) + r")\b")
+
+
+def _auto_ok(text: str) -> bool:
+    """True if the visible text shows ≥1 strong OR ≥2 distinct weak automotive words."""
+    if _STRONG_RE.search(text):
+        return True
+    return len(set(_WEAK_RE.findall(text))) >= 2
+# Script/style CONTENT must be removed before text extraction — CSS/JS source is full
+# of "auto" (sizes=auto, autocomplete, tracker vars) that otherwise fakes an automotive
+# signal on butcher/optician/lawyer pages (the real cause of the directory false
+# positives). Strip those blocks and HTML comments first, THEN tags.
+_SCRIPT_STYLE_RE = re.compile(r"<(script|style|noscript|template|svg)\b[^>]*>.*?</\1>", re.I | re.S)
+_COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
 _TAG_RE = re.compile(r"<[^>]+>")
 _WS_RE = re.compile(r"\s+")
 
 
 def _text(html: str, limit: int = 20000) -> str:
-    """Strip tags → normalised lowercase text (bounded, so a huge page stays cheap)."""
-    stripped = _TAG_RE.sub(" ", html[: limit * 4])
+    """Visible-text only: drop script/style/comments, then tags → normalised lowercase."""
+    h = html[:300000]                      # generous window: body text can follow big inline JS
+    h = _SCRIPT_STYLE_RE.sub(" ", h)
+    h = _COMMENT_RE.sub(" ", h)
+    stripped = _TAG_RE.sub(" ", h)
     return _WS_RE.sub(" ", _norm(stripped))[:limit]
 
 
@@ -58,7 +90,7 @@ def confirms_dealer(html: str, name: str, city: str, *, require_name: bool = Tru
     name_hit = any(t in text for t in toks)
     city_n = _norm(city)
     city_hit = bool(city_n) and len(city_n) >= 3 and city_n in text
-    auto_hit = any(sig in text for sig in _AUTO_SIGNALS)
+    auto_hit = _auto_ok(text)
 
     if require_name and toks:             # strict: distinctive name must be on the page
         if not name_hit:
@@ -82,7 +114,7 @@ def confirms_automotive(html: str) -> tuple[bool, str]:
     if not html or len(html) < 200:
         return False, "empty_page"
     text = _text(html)
-    if not any(sig in text for sig in _AUTO_SIGNALS):
+    if not _auto_ok(text):
         return False, "no_automotive_signal"
     return True, "email+auto"
 

@@ -147,9 +147,12 @@ async def _candidates(session, row) -> tuple[list[tuple[str, str, bool]], int]:
     if e:
         out.append(("email", e, False))
 
+    # directory candidates carry name+city provenance, but a results page can list
+    # several businesses — require the dealer's distinctive name on the candidate's
+    # homepage (+ strong automotive signal) so a same-city non-dealer can't slip in.
     _prov, dir_hosts = await directory_candidates(session, name, city, country)
     for h in dir_hosts[:_VALIDATE_TOP]:
-        out.append((f"directory:{_prov}", h, False))
+        out.append((f"directory:{_prov}", h, True))
 
     search_pages = 0
     for provider in PROVIDER_ORDER:
