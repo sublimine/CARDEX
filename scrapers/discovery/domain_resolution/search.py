@@ -23,7 +23,8 @@ PROVIDERS: dict[str, str] = {
     "ddg": "https://html.duckduckgo.com/html/?q={q}",
     "mojeek": "https://www.mojeek.com/search?q={q}",
 }
-_PROVIDER_ORDER = ("ddg", "mojeek")
+PROVIDER_ORDER = ("ddg", "mojeek")
+_PROVIDER_ORDER = PROVIDER_ORDER  # backwards-compatible alias
 
 
 def build_query(name: str, city: str) -> str:

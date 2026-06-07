@@ -40,7 +40,7 @@ import asyncpg
 
 from scrapers.discovery.domain_resolution.candidate import email_apex, ranked_candidates
 from scrapers.discovery.domain_resolution.directories import directory_candidates
-from scrapers.discovery.domain_resolution.search import search_all
+from scrapers.discovery.domain_resolution.search import PROVIDER_ORDER, fetch_search_html
 from scrapers.discovery.domain_resolution.validate import validate_automotive, validate_domain
 
 log = logging.getLogger("domres_worker")
@@ -132,10 +132,13 @@ def _make_session():
     return cr.AsyncSession(impersonate="chrome", timeout=20)
 
 
-async def _candidates(session, row) -> list[tuple[str, str, bool]]:
+async def _candidates(session, row) -> tuple[list[tuple[str, str, bool]], int]:
     """
-    Ordered (via, host, require_name) candidates for one dealer, cheapest via first.
-    require_name drives validation strictness; the email via is validated automotive-only.
+    (ordered (via, host, require_name) candidates, search_pages_seen) for one dealer,
+    cheapest via first. The search via exhausts providers (DDG → Mojeek): it uses the
+    FIRST provider that yields candidates, but counts every provider that returned a
+    usable page so the caller can tell "no web found" from "search unreachable".
+    require_name drives validation strictness; email is validated automotive-only.
     """
     name, city, country = row["name"], row["city"] or "", row["country"]
     out: list[tuple[str, str, bool]] = []
@@ -148,11 +151,18 @@ async def _candidates(session, row) -> list[tuple[str, str, bool]]:
     for h in dir_hosts[:_VALIDATE_TOP]:
         out.append((f"directory:{_prov}", h, False))
 
-    provider, html = await search_all(session, name, city)
-    if html:
-        for h, _score in ranked_candidates(html, name, country, top=_VALIDATE_TOP + 1)[:_VALIDATE_TOP]:
-            out.append((f"search:{provider}", h, True))
-    return out
+    search_pages = 0
+    for provider in PROVIDER_ORDER:
+        html = await fetch_search_html(session, name, city, provider)
+        if not html or len(html) <= 1000:
+            continue
+        search_pages += 1
+        ranked = ranked_candidates(html, name, country, top=_VALIDATE_TOP + 1)[:_VALIDATE_TOP]
+        if ranked:
+            for h, _score in ranked:
+                out.append((f"search:{provider}", h, True))
+            break  # got candidates — don't burn the next provider
+    return out, search_pages
 
 
 async def _resolve_one(pool, session, row, stats: Stats) -> None:
@@ -165,9 +175,11 @@ async def _resolve_one(pool, session, row, stats: Stats) -> None:
         # would discard real dealers. No secrets are sent. Providers keep cert checks on.
         return await session.get(url, timeout=15, allow_redirects=True, verify=False)
 
+    candidates, search_pages = await _candidates(session, row)
     resolved_host = resolved_via = None
+    rejected = 0
     seen: set[str] = set()
-    for via, host, require_name in await _candidates(session, row):
+    for via, host, require_name in candidates:
         if host in seen:
             continue
         seen.add(host)
@@ -179,10 +191,22 @@ async def _resolve_one(pool, session, row, stats: Stats) -> None:
         if ok:
             resolved_host, resolved_via = host, via
             break
+        rejected += 1
 
     if not resolved_host:
-        await pool.execute(_MARK_FAIL_SQL, row["id"], "no_valid_candidate")
+        # Granular reason so progress is auditable (real "no web" vs retryable throttle):
+        #   candidates_rejected:N  — sites found but none validated as this dealer
+        #   no_results             — search worked but surfaced no dealer site (likely no web)
+        #   search_unreachable     — every search provider returned nothing (throttle/transport): retry
+        if rejected:
+            reason = f"candidates_rejected:{rejected}"
+        elif search_pages:
+            reason = "no_results"
+        else:
+            reason = "search_unreachable"
+        await pool.execute(_MARK_FAIL_SQL, row["id"], reason)
         stats.failed += 1
+        stats.bump(stats.by_via, f"fail:{reason.split(':')[0]}")
         return
 
     refs = json.dumps({"resolved_via": resolved_via})
