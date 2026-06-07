@@ -63,20 +63,26 @@ Esta misión deja el **motor que convierte sin-web → con-web** corriendo en lo
 Todos validados (el dominio contiene el token distintivo del nombre y la home confirma
 nombre + señal automotriz). Verificados en BD:
 
-| País | Dominios nuevos persistidos | Vía |
-|---|---|---|
-| **BE** | `meeusen.bmw.be`, `bilia.bmw.be`, `pautric.bmw.be` | DDG |
-| **CH** | `dimab.ch` | DDG |
-| **NL** | `rinsma.nl`, `smitkoudum.nl`, `heiwo.nl`, `garagecupido.nl` | DDG |
-| **DE** | `stoeber-eschwege.skoda-auto.de`, `salzmann.skoda-auto.de` (microsites OEM) | DDG |
-| **ES** | `alboranmotor.es`, `artalautomocion.com`, `artalocasion.com`, `armentiatoyota.com` | DDG |
+**Neto nuevo esta sesión (con web, medido contra la baseline de inicio de misión):**
 
-→ **Los 5 países con dominios reales resueltos.** (Más acumulándose en la pasada
-acotada de fondo; ver §6.)
+| País | baseline | ahora | **neto nuevos** | Dominios |
+|---|---:|---:|---:|---|
+| **BE** | 1 240 | 1 243 | **+3** | `meeusen.bmw.be`, `bilia.bmw.be`, `pautric.bmw.be` |
+| **CH** | 1 490 | 1 491 | **+1** | `dimab.ch` |
+| **DE** | 17 859 | 17 864 | **+5** | `stoeber-eschwege.skoda-auto.de`, `salzmann.skoda-auto.de`, `autokaufhausrhoen.skoda-auto.de`, `autohaus-georg-maulhardt.skoda-auto.de`, `gottingen-ni.deutscheshoponline.com` |
+| **ES** | 1 606 | 1 610 | **+4** | `alboranmotor.es`, `artalautomocion.com`, `artalocasion.com`, `armentiatoyota.com` |
+| **NL** | 2 925 | 2 928 | **+3** | `smitkoudum.nl`, `heiwo.nl`, `garagecupido.nl` (`rinsma.nl` ya existía del vertical NL previo) |
 
-Además, en DE la primera pasada validó **11 dominios propios reales**
-(p.ej. `ungeheuer-bmw.de`, `rhein-bmw.de`, `cloppenburg-gruppe.de`, `reisacher.de`) que
-resultaron **dup** (ya estaban en BD bajo otra fila) — ver el insight de dedup en §5.
+→ **16 dominios reales nuevos en los 5 países, 0 falsos positivos persistidos.** Todos
+validados (token distintivo del nombre en el dominio y/o home confirmada). Los DE son en
+su mayoría microsites de plataforma (OEM `skoda-auto.de` / shop blanco) porque el apex
+propio no apareció en DDG — web real validada del dealer, marcada para preferir apex
+propio en una pasada futura (§5).
+
+Además, varias pasadas validaron **dominios propios reales** que resultaron **dup** (ya
+estaban en BD bajo otra fila) — p.ej. DE `ungeheuer-bmw.de`, `rhein-bmw.de`,
+`cloppenburg-gruppe.de`, `reisacher.de`, `schade.de`, `carunion.de`,
+`autohaus-ostmann.de`. No son fallos: son enlaces same-entity confirmados (§5).
 
 ---
 
