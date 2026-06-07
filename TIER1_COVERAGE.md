@@ -4,7 +4,7 @@
 > **«pendiente de verificación»**; Guardian hace un conteo independiente antes de cerrarlo.
 > Generado por `stealth/make_dashboard.py` (re-ejecutable). Evidencia en `stealth/evidence/`.
 
-**Resumen:** 71 portales · 2 pendiente-de-verificación · 8 parcial · 2 bloqueado · 58 pendiente.
+**Resumen:** 71 portales · 2 pendiente-de-verificación · 7 parcial · 2 bloqueado · 58 pendiente.
 
 | Portal | País | Tier | Total oficial | Cobertura | % | Delta | Estado | Evidencia |
 |---|---|---|---|---|---|---|---|---|
@@ -14,7 +14,6 @@
 | autoscout24.de | DE | T2 | pend. | SSR 20/pág | — | — | parcial · falta count+faceteo | as24_de_listings.json |
 | kleinanzeigen.de | DE | T2 | pend. | DOM 27/pág | — | — | parcial · falta count+faceteo | kleinanzeigen_listings.json |
 | autoscout24.es | ES | T2 | pend. | SSR 20/pág | — | — | parcial · falta count+faceteo | as24_es_listings.json |
-| coches.net | ES | T1 | pend. (count) | SSR 35/pág crackeado | — | — | parcial · falta count+faceteo | coches_audi_listings.json |
 | autoscout24.fr | FR | T2 | pend. | SSR 20/pág | — | — | parcial · falta count+faceteo | as24_fr_listings.json |
 | autoscout24.nl | NL | T2 | pend. | SSR 20/pág | — | — | parcial · falta count+faceteo | as24_nl_listings.json |
 | gumtree.com | UK | T? | pend. | DOM 12/pág | — | — | parcial · falta count+faceteo | gumtree_listings.json |
@@ -79,6 +78,7 @@
 | marktplaats.nl | NL | T0 | — | — | — | — | pendiente | — |
 | nederlandmobiel.nl | NL | T0 | — | — | — | — | pendiente | — |
 | viabovag.nl | NL | T1 | — | — | — | — | pendiente | — |
+| coches.net | ES | T1 | 249.949 (vivo) | Σ marcas (worker en curso) | midiendo | — | midiendo cobertura (worker vivo) | facet/coches_coverage.json |
 
 ## Notas de método
 - **Cobertura = Σ(conteos por faceta) ≈ total oficial** (≥99%; resto justificado). Conteo vía API interna del portal; enumeración vía estado SSR paginado; faceteo recursivo `marca→año→km→región` mantiene cada hoja bajo el cap de paginación.

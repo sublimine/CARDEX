@@ -14,6 +14,11 @@ a DETACHED run keeps a durable record across idle.
 from __future__ import annotations
 import json, sys, time, re
 from pathlib import Path
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from extract_state import extract_balanced
 
@@ -71,10 +76,10 @@ def main() -> int:
             if report["root"]:
                 report["coverage_pct"] = round(100 * acc / report["root"], 2)
             (OUT / "coches_coverage.json").write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
-            print(f"  [{i+1}/{len(brands)}] {slug}: {t}  Σ={acc:,}  cov={report['coverage_pct']}%", flush=True)
+            print(f"  [{i+1}/{len(brands)}] {slug}: {t}  sum={acc:,}  cov={report['coverage_pct']}%", flush=True)
             time.sleep(0.5)
         page.close()
-    print(f"\nCOCHES COVERAGE: root={report['root']:,} Σmakes={acc:,} coverage={report['coverage_pct']}%", flush=True)
+    print(f"\nCOCHES COVERAGE: root={report['root']:,} sum_makes={acc:,} coverage={report['coverage_pct']}%", flush=True)
     return 0
 
 
