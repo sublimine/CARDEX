@@ -93,6 +93,29 @@ mobile.de/AS24/coches por faceteo marca×región×precio sobre la API/SSR intern
 milanuncios requiere **proxy residencial ES estable** (única dependencia de pago
 real del set). lacentrale igual (DataDome + geo FR).
 
+## MOTOR DE FACETEO RECURSIVO (`facet_engine.py`) — cobertura total por portal
+
+**Inteligencia de API mobile.de (probada in-page tras Akamai, evidencia en `mobilede_probe*.json`):**
+- Endpoint de faceteo: **`https://m.mobile.de/svc/s/?vc=Car&…&p=N`** → JSON `{numResultsTotal, items[]}`, sin clave.
+- **Total vivo real = 1.586.008 coches** (la cifra "4,4M" era asumida; el universo vivo es ~1,58M).
+- Items con `id, makeId, modelId, make, model, price, url, title, attr{fr,ml,ft,pw,cc,loc,z…}` → normalización directa.
+- **Refdata marcas: `m.mobile.de/svc/r/makes/Car`** → `[{i:1900,n:"Audi"},…]` (lista completa con IDs).
+- **Ejes de faceteo descubiertos** (cambian `numResultsTotal`): `ms`=marca (`1900;;;`=Audi→130.370), `fr`=año (`2018:2020`→195.348), `ml`=km (`0:50000`→620.091). Precio min/max no filtra (param distinto).
+- **Sin cap bajo de paginación**: `p=1000` aún devuelve 20 items → paginación profunda; el faceteo es por eficiencia/rate, no por romper cap.
+
+**Diseño del motor (config-driven, genérico para los ~73 tier-1):**
+1. `count(filters)` = una llamada in-page `svc/s/…&p=1` → `numResultsTotal`.
+2. Recursión: si `count > CAP` (2.000), subdivide en el siguiente eje (`ms→fr→ml`) hasta hoja `< CAP`.
+3. **Prueba de cobertura por conteo**: `Σ(conteos de hojas) ≈ total root`. Partición por marca (cada coche tiene make) reconcilia contra 1,58M; deep-dive marca×año reconcilia contra el conteo de la marca.
+4. Enumeración de hojas (validar-con-límite local) → normaliza al contrato seam → DELTA (SEEN/GONE) vs snapshot.
+5. Una sola sesión Camoufox calienta Akamai; todo count/enumerate es `page.evaluate(fetch)` in-page (cookie/TLS válidos). RAM-safe, worker persistente desacoplado.
+
+**Resultado de cobertura mobile.de** (ver `facet/mobilede_coverage.json`):
+- ROOT (`vc=Car`) = **1.586.022** coches · 178 marcas en refdata.
+- **Σ(conteos por marca) = 1.586.026 → cobertura = 100,0 %** (el +4 es churn vivo durante el escaneo de ~3 min). **El faceteo por marca cubre el catálogo entero por conteo.**
+- Top marcas (>CAP, requieren subdivisión): VW 258.494, Mercedes 171.880, BMW 135.825, Audi 130.367, Ford 102.568, Opel 95.068.
+- Deep-dive VW por año: make=258.494, Σ(años)=239.016 → **92,5 %**; el ~7,5 % restante son listings **sin año de matriculación** (escapan al filtro `fr`) → cierre con bucket `fr` desconocido o eje `ml`. Hallazgo honesto, no se oculta.
+
 ## Herramientas entregadas (en `stealth/`)
 - `fix_camoufox_sxs.py` — repara el arranque de Camoufox en Windows (byte-patch SxS, reversible).
 - `harness.py` — colector de evidencia Camoufox: navega, detecta bloqueo, warm-up + settle

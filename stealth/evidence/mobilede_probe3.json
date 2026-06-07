@@ -1,0 +1,162 @@
+{
+  "first_item": {
+    "isEyeCatcher": false,
+    "numImages": 12,
+    "attr": {
+      "cn": "DE",
+      "z": "51149",
+      "loc": "Köln",
+      "fr": "06/2021",
+      "pw": "140 kW (190 PS)",
+      "ft": "Diesel",
+      "ml": "115.400 km",
+      "cc": "1.995 cm³",
+      "tr": "Automatik",
+      "gi": "04/2027",
+      "ecol": "Schwarz",
+      "door": "4/5",
+      "sc": "5",
+      "c": "OffRoad",
+      "emc": "Euro6d-TEMP",
+      "pvo": "2"
+    },
+    "siteId": "GERMANY",
+    "p": "1 €",
+    "st": "Privatanbieter",
+    "shortTitle": "BMW X3",
+    "subTitle": "xDrive20d M SPORT AT M SPORT.  Neu Motor Turb",
+    "hasDamage": false,
+    "isDamageCase": true,
+    "isVideoEnabled": false,
+    "readyToDrive": true,
+    "contact": {
+      "type": "Privatanbieter",
+      "country": "DE",
+      "enumType": "FSBO",
+      "latLong": {
+        "lat": 50.9093945,
+        "lon": 7.0486698
+      }
+    },
+    "created": 1780560646,
+    "modified": 1780755383,
+    "renewed": 1780560646,
+    "version": 38,
+    "makeId": 3500,
+    "modelId": 48,
+    "make": {
+      "id": "3500",
+      "localized": "BMW"
+    },
+    "model": {
+      "id": "48",
+      "localized": "X3"
+    },
+    "images": [
+      {
+        "uri": "m.mobile.de/yams-proxy/img.classistatic.de/api/v1/mo-prod/images/b8/b8261644-d4c7-40bf-9c51-829cf7f925e6",
+        "set": "fe4cfedffdffffffff"
+      },
+      {
+        "uri": "m.mobile.de/yams-proxy/img.classistatic.de/api/v1/mo-prod/images/86/866ca942-6ef5-43a5-aa4a-afd38853e851",
+        "set": "fe4cfedffdffffffff"
+      },
+      {
+        "uri": "m.mobile.de/yams-proxy/img.classistatic.de/api/v1/mo-prod/images/02/02d2d7cc-63a8-4e37-9172-1e6d2ba4ba3d",
+        "set": "fe4cfedffdffffffff"
+      },
+      {
+        "uri": "m.mobile.de/yams-proxy/img.classistatic.de/api/v1/mo-prod/images/71/7178eef2-76e3-46b8-b445-5f4dcefb3be8",
+        "set": "fe4cfedffdffffffff"
+      },
+      {
+        "uri": "m.mobile.de/yams-proxy/img.classistatic.de/api/v1/mo-prod/images/65/658f1bb3-43c5-498d-8cb6-702e93c9fbc8",
+        "set": "fe4cfedffdffffffff"
+      },
+      {
+        "uri": "m.mobile.de/yams-proxy/img.classistatic.de/api/v1/mo-prod/images/f7/f78ea2e1-ea6b-4557-af7e-77630c8713ba",
+        "set": "fe4cfedffdffffffff"
+      },
+      {
+        "uri": "m.mobile.de/yams-proxy/img.classistatic.de/api/v1/mo-prod/images/af/af8754a1-ba01-4f27-9894-f915fe5717d1",
+        "set": "fe4cfedffdffffffff"
+      },
+      {
+        "uri": "m.mobile.de/yams-proxy/img.classistatic.de/api/v1/mo-prod/images/da/dade6203-9cee-4d8c-86d5-669caf06bdfe",
+        "set": "fe4cfedffdffffffff"
+      },
+      {
+        "uri": "m.mobile.de/yams-proxy/img.classistatic.de/api/v1/mo-prod/images/b4/b4998799-604e-42f7-b7d0-537fd62be691",
+        "set": "fe4cfedffdffffffff"
+      },
+      {
+        "uri": "m.mobile.de/yams-proxy/img.classistatic.de/api/v1/mo-prod/images/33/33769989-97d9-4891-92a0-e926978a5c05",
+        "set": "fe4cfedffdffffffff"
+      },
+      {
+        "uri": "m.mobile.de/yams-proxy/img.classistatic.de/api/v1/mo-prod/images/13/138516a0-b7f8-4b94-bcf5-c46324bfbbbc",
+        "set": "fe4cfedffdffffffff"
+      },
+      {
+        "uri": "m.mobile.de/yams-proxy/img.classistatic.de/api/v1/mo-prod/images/b9/b9711e94-5af1-4c52-9436-c7b3a423cdd8",
+        "set": "fe4cfedffdffffffff"
+      }
+    ],
+    "sellerId": 36031130,
+    "priceRating": {
+      "rating": "NO_RATING",
+      "ratingLabel": "Ohne Bewertung",
+      "noRatingReason": "mobile.de bewertet nur dann den Preis eines Fahrzeugs, wenn ausreichend viele Vergleichsdaten vorliegen. Ist dies nicht der Fall, kann mobile.de keine realistische Preisbewertung vornehmen."
+    },
+    "segment": "Car",
+    "title": "BMW X3 xDrive20d M SPORT AT M SPORT.  Neu Motor Turb",
+    "url": "https://suchen.mobile.de/auto-inserat/bmw-x3-xdrive20d-m-sport-at-m-sport-neu-motor-turb-k%C3%B6ln/457403403.html",
+    "vc": "Car",
+    "category": "SUV/Geländewagen/Pickup",
+    "id": 457403403,
+    "price": {
+      "grs": {
+        "amount": 1,
+        "currency": "EUR",
+        "localized": "1 €"
+      },
+      "type": "NEGOTIABLE"
+    },
+    "customDimensions": {
+      "10": "fsbo"
+    }
+  },
+  "p50": {
+    "status": 200,
+    "items": 20
+  },
+  "p100": {
+    "status": 200,
+    "items": 20
+  },
+  "p200": {
+    "status": 200,
+    "items": 20
+  },
+  "p300": {
+    "status": 200,
+    "items": 20
+  },
+  "p400": {
+    "status": 200,
+    "items": 20
+  },
+  "p500": {
+    "status": 200,
+    "items": 20
+  },
+  "p1000": {
+    "status": 200,
+    "items": 20
+  },
+  "makes": {
+    "url": "https://m.mobile.de/svc/r/makes/Car",
+    "status": 200,
+    "head": "{\"makes\":[{\"i\":140,\"n\":\"Abarth\"},{\"i\":203,\"n\":\"AC\"},{\"i\":375,\"n\":\"Acura\"},{\"i\":31930,\"n\":\"Aiways\"},{\"i\":800,\"n\":\"Aixam\"},{\"i\":900,\"n\":\"Alfa Romeo\"},{\"i\":1100,\"n\":\"ALPINA\"},{\"i\":5,\"n\":\"Alpine\"},{\"i\":32315,\"n\":\"Alvis\"},{\"i\":31876,\"n\":\"Ariel\"},{\"i\":121,\"n\":\"Artega\"},{\"i\":1750,\"n\":\"Asia Motors\"},{\"i\":1700,\"n\":\"Aston Martin\"},{\"i\":1900,\"n\":\"Audi\"},{\"i\":2000,\"n\":\"Austin\"},{\"i\":1950,\"n\":\"Austin Healey\"},"
+  }
+}

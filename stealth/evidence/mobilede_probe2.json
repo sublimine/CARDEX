@@ -1,0 +1,156 @@
+{
+  "baseline": {
+    "frag": "",
+    "status": 200,
+    "len": 58976,
+    "numResultsTotal": 1586008,
+    "items": 20,
+    "head": "{\"numResultsTotal\":1586008,\"items\":[{\"isEyeCatcher\":false,\"numImages\":12,\"attr\":{\"cn\":\"DE\",\"z\":\"51149\",\"loc\":\"Köln\",\"fr\""
+  },
+  "price_minmax": {
+    "frag": "&minPrice=10000&maxPrice=20000",
+    "status": 200,
+    "len": 58976,
+    "numResultsTotal": 1586007,
+    "items": 20,
+    "head": "{\"numResultsTotal\":1586007,\"items\":[{\"isEyeCatcher\":false,\"numImages\":12,\"attr\":{\"cn\":\"DE\",\"z\":\"51149\",\"loc\":\"Köln\",\"fr\""
+  },
+  "price_pr": {
+    "frag": "&pr=10000%3A20000",
+    "status": 200,
+    "len": 213,
+    "numResultsTotal": 0,
+    "items": 0,
+    "head": "{\"numResultsTotal\":0,\"items\":[],\"meta\":{\"srx\":\"/svc/ml-recommendations-by-query?vc=Car&pr=10000%3A20000&p=1&searchId=d32"
+  },
+  "price_p$": {
+    "frag": "&p%24=10000%3A20000",
+    "status": 200,
+    "len": 58976,
+    "numResultsTotal": 1586006,
+    "items": 20,
+    "head": "{\"numResultsTotal\":1586006,\"items\":[{\"isEyeCatcher\":false,\"numImages\":12,\"attr\":{\"cn\":\"DE\",\"z\":\"51149\",\"loc\":\"Köln\",\"fr\""
+  },
+  "price_price": {
+    "frag": "&price=10000%3A20000",
+    "status": 200,
+    "len": 58976,
+    "numResultsTotal": 1586007,
+    "items": 20,
+    "head": "{\"numResultsTotal\":1586007,\"items\":[{\"isEyeCatcher\":false,\"numImages\":12,\"attr\":{\"cn\":\"DE\",\"z\":\"51149\",\"loc\":\"Köln\",\"fr\""
+  },
+  "year_fr": {
+    "frag": "&fr=2018%3A2020",
+    "status": 200,
+    "len": 69601,
+    "numResultsTotal": 195348,
+    "items": 20,
+    "head": "{\"numResultsTotal\":195348,\"items\":[{\"isEyeCatcher\":false,\"numImages\":35,\"attr\":{\"cn\":\"NL\",\"z\":\"8356VS\",\"loc\":\"Blokzijl\","
+  },
+  "year_minmax": {
+    "frag": "&minFirstRegistrationDate=2018&maxFirstRegistrationDate=2020",
+    "status": 200,
+    "len": 58976,
+    "numResultsTotal": 1586007,
+    "items": 20,
+    "head": "{\"numResultsTotal\":1586007,\"items\":[{\"isEyeCatcher\":false,\"numImages\":12,\"attr\":{\"cn\":\"DE\",\"z\":\"51149\",\"loc\":\"Köln\",\"fr\""
+  },
+  "year_yor": {
+    "frag": "&yor=2018%3A2020",
+    "status": 200,
+    "len": 58976,
+    "numResultsTotal": 1586005,
+    "items": 20,
+    "head": "{\"numResultsTotal\":1586005,\"items\":[{\"isEyeCatcher\":false,\"numImages\":12,\"attr\":{\"cn\":\"DE\",\"z\":\"51149\",\"loc\":\"Köln\",\"fr\""
+  },
+  "make_ms_audi": {
+    "frag": "&ms=1900%3B%3B%3B",
+    "status": 200,
+    "len": 55394,
+    "numResultsTotal": 130370,
+    "items": 20,
+    "head": "{\"numResultsTotal\":130370,\"items\":[{\"isEyeCatcher\":false,\"numImages\":12,\"attr\":{\"cn\":\"DE\",\"z\":\"09212\",\"loc\":\"Limbach-Obe"
+  },
+  "make_make": {
+    "frag": "&make=AUDI",
+    "status": 200,
+    "len": 58976,
+    "numResultsTotal": 1586007,
+    "items": 20,
+    "head": "{\"numResultsTotal\":1586007,\"items\":[{\"isEyeCatcher\":false,\"numImages\":12,\"attr\":{\"cn\":\"DE\",\"z\":\"51149\",\"loc\":\"Köln\",\"fr\""
+  },
+  "mileage_ml": {
+    "frag": "&ml=0%3A50000",
+    "status": 200,
+    "len": 66153,
+    "numResultsTotal": 620091,
+    "items": 20,
+    "head": "{\"numResultsTotal\":620091,\"items\":[{\"isEyeCatcher\":false,\"numImages\":35,\"attr\":{\"cn\":\"NL\",\"z\":\"8356VS\",\"loc\":\"Blokzijl\","
+  },
+  "pagesize_ps": {
+    "frag": "&ps=100",
+    "status": 200,
+    "len": 55295,
+    "numResultsTotal": 1586005,
+    "items": 20,
+    "head": "{\"numResultsTotal\":1586005,\"items\":[{\"isEyeCatcher\":false,\"numImages\":0,\"attr\":{\"cn\":\"IT\",\"z\":\"94100\",\"loc\":\"ENNA\",\"fr\":"
+  },
+  "pagesize_ipp": {
+    "frag": "&ipp=100",
+    "status": 200,
+    "len": 58976,
+    "numResultsTotal": 1586006,
+    "items": 20,
+    "head": "{\"numResultsTotal\":1586006,\"items\":[{\"isEyeCatcher\":false,\"numImages\":12,\"attr\":{\"cn\":\"DE\",\"z\":\"51149\",\"loc\":\"Köln\",\"fr\""
+  },
+  "pagesize_pageSize": {
+    "frag": "&pageSize=100",
+    "status": 200,
+    "len": 58976,
+    "numResultsTotal": 1586006,
+    "items": 20,
+    "head": "{\"numResultsTotal\":1586006,\"items\":[{\"isEyeCatcher\":false,\"numImages\":12,\"attr\":{\"cn\":\"DE\",\"z\":\"51149\",\"loc\":\"Köln\",\"fr\""
+  },
+  "page_1": {
+    "status": 200,
+    "len": 58976,
+    "numResultsTotal": 1586005,
+    "items": 20,
+    "head": "{\"numResultsTotal\":1586005,\"items\":[{\"isEyeCatcher\":false,\"numImages\":12,\"attr\":{\"cn\":\"DE\",\"z\":\"51149\",\"loc\":\"Köln\",\"fr\""
+  },
+  "page_20": {
+    "status": 200,
+    "len": 49872,
+    "numResultsTotal": 1585998,
+    "items": 20,
+    "head": "{\"numResultsTotal\":1585998,\"items\":[{\"isEyeCatcher\":false,\"numImages\":7,\"attr\":{\"cn\":\"DE\",\"z\":\"77972\",\"loc\":\"Mahlberg\",\""
+  },
+  "page_50": {
+    "status": 200,
+    "len": 48839,
+    "numResultsTotal": 1585997,
+    "items": 20,
+    "head": "{\"numResultsTotal\":1585997,\"items\":[{\"isEyeCatcher\":false,\"numImages\":5,\"attr\":{\"cn\":\"DE\",\"z\":\"36404\",\"loc\":\"Vacha\",\"fr\""
+  },
+  "page_60": {
+    "status": 200,
+    "len": 48806,
+    "numResultsTotal": 1585995,
+    "items": 20,
+    "head": "{\"numResultsTotal\":1585995,\"items\":[{\"isEyeCatcher\":false,\"numImages\":4,\"attr\":{\"cn\":\"DE\",\"z\":\"22043\",\"loc\":\"Hamburg\",\"f"
+  },
+  "page_80": {
+    "status": 200,
+    "len": 50598,
+    "numResultsTotal": 1585994,
+    "items": 20,
+    "head": "{\"numResultsTotal\":1585994,\"items\":[{\"isEyeCatcher\":false,\"isNew\":true,\"numImages\":4,\"attr\":{\"cn\":\"DE\",\"z\":\"72622\",\"loc\""
+  },
+  "page_120": {
+    "status": 200,
+    "len": 50618,
+    "numResultsTotal": 1585951,
+    "items": 20,
+    "head": "{\"numResultsTotal\":1585951,\"items\":[{\"isEyeCatcher\":false,\"numImages\":3,\"attr\":{\"cn\":\"DE\",\"z\":\"79761\",\"loc\":\"Waldshut\",\""
+  }
+}
