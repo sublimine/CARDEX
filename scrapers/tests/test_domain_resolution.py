@@ -280,7 +280,33 @@ def test_localch_extracts_email_apex_and_website_json():
     assert cands == ["emilfrey.ch"]                           # website + email collapse to apex
 
 
+class _MapSession:
+    """Fake session routing by URL substring → HTML (for 2-step directory tests)."""
+    def __init__(self, mapping: dict[str, str]):
+        self._m = mapping
+
+    async def get(self, url, **kw):
+        class _R:
+            pass
+        r = _R()
+        r.status_code = 200
+        r.text = next((v for k, v in self._m.items() if k in url), "")
+        return r
+
+
+@pytest.mark.unit
+def test_gelbeseiten_two_step_follows_detail_to_dealer_site():
+    results = '<a href="https://www.gelbeseiten.de/gsbiz/eb8f2717-0b46-4801-826b-f6e44e272591">Ostmann</a>'
+    detail = ('<a href="http://www.autohaus-ostmann.de">Webseite</a>'
+              '<a href="https://www.tvg-verlag.de/x">ad</a>'
+              '<a href="https://bcrw.apple.com/y">app</a>')
+    sess = _MapSession({"/Suche/": results, "/gsbiz/": detail})
+    prov, cands = asyncio.run(D.directory_candidates(sess, "Autohaus Ostmann", "Melsungen", "DE"))
+    assert prov == "gelbeseiten"
+    assert cands == ["autohaus-ostmann.de"]                   # detail site, noise filtered
+
+
 @pytest.mark.unit
 def test_directory_candidates_unmapped_country_is_empty():
-    prov, cands = asyncio.run(D.directory_candidates(_FakeSession(""), "X", "Y", "DE"))
+    prov, cands = asyncio.run(D.directory_candidates(_FakeSession(""), "X", "Y", "BE"))
     assert prov == "" and cands == []

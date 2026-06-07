@@ -27,11 +27,12 @@ from scrapers.discovery.domain_resolution.candidate import apex, clean_name, ema
 log = logging.getLogger(__name__)
 
 # Country → directory provider key.
-DIRECTORY_BY_COUNTRY: dict[str, str] = {"FR": "pagesjaunes", "CH": "localch"}
+DIRECTORY_BY_COUNTRY: dict[str, str] = {"FR": "pagesjaunes", "CH": "localch", "DE": "gelbeseiten"}
 
 _HREF_RE = re.compile(r'href="(https?://[^"]+)"', re.I)
 _EMAIL_RE = re.compile(r'[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}')
 _WEBSITE_JSON_RE = re.compile(r'"(?:website|websiteUrl|url|web)"\s*:\s*"(https?://[^"]+)"', re.I)
+_GS_DETAIL_RE = re.compile(r'href="(https://www\.gelbeseiten\.de/gsbiz/[a-f0-9\-]+)"', re.I)
 
 
 def _uniq(hosts: list[str]) -> list[str]:
@@ -90,7 +91,30 @@ async def _localch(session, name: str, city: str) -> list[str]:
     return _uniq(cands)
 
 
-_PROVIDERS = {"pagesjaunes": _pagesjaunes, "localch": _localch}
+async def _gelbeseiten(session, name: str, city: str) -> list[str]:
+    # 2-step: results page only carries the name; the dealer's website lives on the
+    # business detail page (gsbiz/<uuid>). Follow the top match, then extract its
+    # external site link. Throttle-resistant alternative to DDG for the big DE pool.
+    q = urllib.parse.quote(clean_name(name))
+    where = urllib.parse.quote(city or "")
+    results = await _get(session, f"https://www.gelbeseiten.de/Suche/{q}/{where}")
+    if not results:
+        return []
+    m = _GS_DETAIL_RE.search(results)
+    if not m:
+        return []
+    detail = await _get(session, m.group(1))
+    if not detail:
+        return []
+    cands = []
+    for raw in _HREF_RE.findall(detail):
+        h = apex(raw)
+        if h and not is_excluded(h):
+            cands.append(h)
+    return _uniq(cands)
+
+
+_PROVIDERS = {"pagesjaunes": _pagesjaunes, "localch": _localch, "gelbeseiten": _gelbeseiten}
 
 
 async def directory_candidates(session, name: str, city: str, country: str) -> tuple[str, list[str]]:

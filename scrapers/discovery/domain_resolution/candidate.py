@@ -46,6 +46,7 @@ _EXCLUDE: tuple[str, ...] = (
     "societe.com", "infogreffe", "verif.com", "axesor", "empresia", "expansion.com",
     "solocal", "browsehappy", "consentmanager", "cookiebot", "cookielaw",
     "localcities", "renovero", "swissmadesoftware", "dastelefonbuch", "tvg-verlag",
+    "wipe.de", "adition", "surveymonkey", "apple.com", "kunze-medien",
     # infra / blogspam
     "blocksurvey", "buttondown", "amazon", "ebay", "wordpress.com", "wixsite",
     "blogspot", "medium.com", "github", "archive.org", "muw-nachrichten",
