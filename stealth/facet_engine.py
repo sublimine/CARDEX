@@ -167,8 +167,25 @@ def mode_coverage(s: Session, cfg) -> dict:
     return report
 
 
+def desktop_page_url(filters: dict, page: int) -> str:
+    """Enumeration route. svc/s/ is COUNT+PREVIEW only (top-20, does NOT paginate
+    via any param). Full leaf enumeration uses the desktop SSR search, which DOES
+    paginate via pageNumber; listings are in __INITIAL_STATE__.search.srp.data.
+    searchResults.items. Faceting keeps each leaf under the desktop pagination cap
+    (~50 pages) so a leaf is fully enumerable. [VERIFIED probe_pageparam.py]"""
+    q = "https://suchen.mobile.de/fahrzeuge/search.html?isSearchRequest=true&s=Car&vc=Car"
+    for k, v in filters.items():
+        q += f"&{k}={v}"
+    return q + f"&pageNumber={page}"
+
+
 def mode_enumerate(s: Session, cfg, limit: int) -> dict:
-    """Enumerate small leaves (validate-with-limit), normalise, dedup, DELTA."""
+    """Enumerate small leaves (validate-with-limit), normalise, dedup, DELTA.
+
+    NOTE: enumeration must use the desktop SSR route (desktop_page_url +
+    __INITIAL_STATE__), not svc/s/ which only previews the first 20. Count/coverage
+    still use svc/s/ (exact). This demo records the svc preview page per leaf; the
+    VPS full-dump paginates the desktop route under each sub-cap leaf."""
     makes = s.makes()
     # pick small makes (count <= CAP) to fully enumerate cheaply
     leaves = []

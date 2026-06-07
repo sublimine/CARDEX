@@ -116,6 +116,11 @@ real del set). lacentrale igual (DataDome + geo FR).
 - Top marcas (>CAP, requieren subdivisión): VW 258.494, Mercedes 171.880, BMW 135.825, Audi 130.367, Ford 102.568, Opel 95.068.
 - Deep-dive VW por año: make=258.494, Σ(años)=239.016 → **92,5 %**; el ~7,5 % restante son listings **sin año de matriculación** (escapan al filtro `fr`) → cierre con bucket `fr` desconocido o eje `ml`. Hallazgo honesto, no se oculta.
 
+**Conteo vs Enumeración (corrección honesta, `probe_pageparam.py`):**
+- `svc/s/` es **count + preview**: da el total EXACTO de cualquier filtro + los primeros 20 items, pero **NO pagina** (ningún param —`p/pageNumber/pn/page/o/from/start/offset`— avanza; todos dan el mismo primer id). → La prueba de cobertura por CONTEO (100%) es exacta e independiente de esto.
+- La **enumeración** completa de cada hoja va por la ruta SSR ya crackeada: `suchen.mobile.de/fahrzeuge/search.html?…&pageNumber=N` → `__INITIAL_STATE__.search.srp.data.searchResults.items` (28/pág, paginación real). El **faceteo mantiene cada hoja bajo el cap de paginación del desktop (~50 pág)** — esa es exactamente su función. Volcado íntegro = VPS.
+- Enumerate demo (Abarth, hoja <CAP): API devolvió datos reales (Abarth 500/Grande Punto, make/model/id) y el DELTA funcionó (20 SEEN_new); pero al usar el preview svc se dedup a 20 — la enumeración real usa la ruta desktop. Documentado en `facet_engine.py`.
+
 ## Herramientas entregadas (en `stealth/`)
 - `fix_camoufox_sxs.py` — repara el arranque de Camoufox en Windows (byte-patch SxS, reversible).
 - `harness.py` — colector de evidencia Camoufox: navega, detecta bloqueo, warm-up + settle
