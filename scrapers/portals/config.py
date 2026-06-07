@@ -42,7 +42,13 @@ STRATEGIES = (
     "jsonld_detail",      # detail pages carry schema.org Car/Vehicle JSON-LD
     "wp_rest",            # WordPress /wp-json CPT enumeration (dealer long-tail)
     "socrata",            # open-data Socrata API (discovery, e.g. RDW)
+    "playwright_meta",    # E07: JS/SPA — render in a browser, parse SEO meta (autolina)
+    "playwright_xhr",     # E07: JS/SPA — render + intercept the SPA's data XHR/JSON
 )
+
+# Strategies that require the browser renderer (E07). A source with one of these
+# routes through the Playwright extractor instead of the static fetch cascade.
+PLAYWRIGHT_STRATEGIES = ("playwright_meta", "playwright_xhr")
 
 
 @dataclass(frozen=True)
