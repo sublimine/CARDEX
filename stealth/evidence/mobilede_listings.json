@@ -1,0 +1,3717 @@
+[
+  {
+    "isEyeCatcher": false,
+    "numImages": 14,
+    "attr": {
+      "cn": "DE",
+      "z": "33102",
+      "loc": "Paderborn",
+      "fr": "09/2016",
+      "pw": "110 kW (150 PS)",
+      "ft": "Benzin",
+      "ml": "105.560 km",
+      "cc": "1.498 cm³",
+      "tr": "Schaltgetriebe",
+      "gi": "01/2028",
+      "door": "4/5",
+      "sc": "5",
+      "c": "OffRoad",
+      "emc": "Euro6",
+      "pvo": "3",
+      "nw": "1.579 kg"
+    },
+    "shortTitle": "Ford Kuga",
+    "subTitle": "Titanium",
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "AO",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/1?adId=456666263&loanType=balloon&loanDuration=60&downPayment=1698",
+        "shortFlow": false,
+        "promotion": false,
+        "showInGallery": false,
+        "offer": {
+          "bankName": "Openbank Deutschland AG",
+          "loanBroker": "Check24 GmbH",
+          "loanType": "BALLOON",
+          "downPayment": 1698,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 6792,
+          "interestRateNominal": 5.26,
+          "interestRateEffective": 5.39,
+          "monthlyInstallment": 89.37,
+          "finalInstallment": 2801.7,
+          "totalInterest": 1282.5,
+          "totalAmount": 8074.5,
+          "localized": {
+            "downPayment": "1.698 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "6.792 €",
+            "interestRateNominal": "5,26%",
+            "interestRateEffective": "5,39%",
+            "monthlyInstallment": "90 €",
+            "finalInstallment": "2.801,70 €",
+            "totalInterest": "1.282,50 €",
+            "totalAmount": "8.074,50 €",
+            "disclaimer": "Repräsentatives Beispiel gemäß § 17 Abs. 4 PAngV: Nettodarlehensbetrag von 10.000 €, effektiver Jahreszins 5,39%, fester Sollzinssatz 5,26% p.a., Laufzeit 60 Monate, 59 monatliche Raten à 143,60 € und eine Schlussrate à 3.300,00 €, Gesamtbetrag 11.772,13 €. Ein Angebot der Openbank Deutschland AG (Darlehensgeber), Santander-Platz 1, 41061 Mönchengladbach"
+          }
+        }
+      }
+    ],
+    "sellerId": 28795755,
+    "priceRating": {
+      "rating": "VERY_GOOD_PRICE",
+      "ratingLabel": "Sehr guter Preis",
+      "thresholdLabels": [
+        "7.300 €",
+        "9.500 €",
+        "10.200 €",
+        "11.300 €",
+        "12.200 €",
+        "13.500 €"
+      ],
+      "vehiclePriceOffset": 54
+    },
+    "segment": "Car",
+    "title": "Ford Kuga Titanium",
+    "vc": "Car",
+    "category": "SUV/Geländewagen/Pickup",
+    "id": 456666263,
+    "kba": {
+      "hsn": "8566",
+      "tsn": "BJH"
+    },
+    "customDimensions": {
+      "10": "gold"
+    },
+    "previewThumbnails": [
+      {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/39/394a8f99-0d5d-4210-895e-e19808532e0f?rule=mo-160w",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/39/394a8f99-0d5d-4210-895e-e19808532e0f?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/39/394a8f99-0d5d-4210-895e-e19808532e0f?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/39/394a8f99-0d5d-4210-895e-e19808532e0f?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/39/394a8f99-0d5d-4210-895e-e19808532e0f?rule=mo-1024w 1024w",
+        "alt": "Ford Kuga Titanium"
+      },
+      {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/6b/6b36e3e8-93c1-4b78-a689-3911321b6296?rule=mo-160w",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/6b/6b36e3e8-93c1-4b78-a689-3911321b6296?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/6b/6b36e3e8-93c1-4b78-a689-3911321b6296?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/6b/6b36e3e8-93c1-4b78-a689-3911321b6296?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/6b/6b36e3e8-93c1-4b78-a689-3911321b6296?rule=mo-1024w 1024w",
+        "alt": "Ford Kuga Titanium"
+      },
+      {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/35/35d43e27-1e9e-4f9b-87ed-54e379cb41a3?rule=mo-160w",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/35/35d43e27-1e9e-4f9b-87ed-54e379cb41a3?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/35/35d43e27-1e9e-4f9b-87ed-54e379cb41a3?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/35/35d43e27-1e9e-4f9b-87ed-54e379cb41a3?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/35/35d43e27-1e9e-4f9b-87ed-54e379cb41a3?rule=mo-1024w 1024w",
+        "alt": "Ford Kuga Titanium"
+      }
+    ],
+    "attributes": [
+      [
+        {
+          "value": "EZ 09/2016"
+        },
+        {
+          "value": "105.560 km"
+        },
+        {
+          "value": "110 kW (150 PS)"
+        },
+        {
+          "value": "Benzin"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "Jouseph Automobile",
+      "location": "33102 Paderborn",
+      "rating": {
+        "score": 3,
+        "count": 2,
+        "totalCount": 7
+      },
+      "logo": null,
+      "hasContactPhones": true,
+      "contactPhone": "+49 (0)163 4711062",
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/456666263?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "Ford",
+    "model": "Kuga",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/eb/ebe11243-3527-400e-8651-9214b2348a6a?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/eb/ebe11243-3527-400e-8651-9214b2348a6a?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/eb/ebe11243-3527-400e-8651-9214b2348a6a?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/eb/ebe11243-3527-400e-8651-9214b2348a6a?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/eb/ebe11243-3527-400e-8651-9214b2348a6a?rule=mo-1024w 1024w",
+      "alt": "Ford Kuga Titanium"
+    },
+    "price": {
+      "gross": "8.490 €",
+      "grossAmount": 8490,
+      "grossCurrency": "EUR"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=456666263&action=topOfPage&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "topAd"
+  },
+  {
+    "isEyeCatcher": false,
+    "numImages": 25,
+    "attr": {
+      "cn": "DE",
+      "z": "38642",
+      "loc": "Goslar",
+      "fr": "03/2015",
+      "pw": "221 kW (300 PS)",
+      "ft": "Benzin",
+      "ml": "116.700 km",
+      "cc": "1.984 cm³",
+      "tr": "Schaltgetriebe",
+      "gi": "03/2028",
+      "ecol": "Grau",
+      "eu": "Deutsche Ausführung",
+      "door": "4/5",
+      "sc": "5",
+      "c": "Limousine",
+      "emc": "Euro6",
+      "pvo": "2",
+      "nw": "1.382 kg"
+    },
+    "shortTitle": "Volkswagen Golf",
+    "subTitle": "VII Lim. GTI Performance 221 kW/Bi-Xenon",
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "DF",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/2?adId=456438581&loanType=balloon&loanDuration=60&downPayment=3390",
+        "shortFlow": true,
+        "promotion": false,
+        "showInGallery": true,
+        "offer": {
+          "bankId": "BDK",
+          "bankName": "Bank Deutsches Kraftfahrzeuggewerbe GmbH",
+          "loanType": "BALLOON",
+          "downPayment": 3390,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 13560,
+          "interestRateNominal": 5.17,
+          "interestRateEffective": 5.29,
+          "monthlyInstallment": 109.62,
+          "finalInstallment": 10170,
+          "totalInterest": 3077.44,
+          "totalAmount": 16637.44,
+          "localized": {
+            "downPayment": "3.390 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "13.560 €",
+            "interestRateNominal": "5,17%",
+            "interestRateEffective": "5,29%",
+            "monthlyInstallment": "110 €",
+            "finalInstallment": "10.170,00 €",
+            "totalInterest": "3.077,44 €",
+            "totalAmount": "16.637,44 €",
+            "disclaimer": "Repräsentatives Beispiel: Vorstehende Angaben stellen zugleich das 2/3-Beispiel gem. § 17 Abs. 4 PAngV dar. Ein Finanzierungsangebot der Bank Deutsches Kraftfahrzeuggewerbe GmbH, Fuhlsbüttler Straße 437, 22309 Hamburg (Darlehensgeber). Bonität vorausgesetzt."
+          }
+        },
+        "bankId": "BDK"
+      }
+    ],
+    "sellerId": 17952952,
+    "priceRating": {
+      "rating": "GOOD_PRICE",
+      "ratingLabel": "Guter Preis",
+      "thresholdLabels": [
+        "12.200 €",
+        "15.800 €",
+        "17.100 €",
+        "19.000 €",
+        "20.400 €",
+        "22.600 €"
+      ],
+      "vehiclePriceOffset": 88
+    },
+    "segment": "Car",
+    "title": "Volkswagen Golf VII Lim. GTI Performance 221 kW/Bi-Xenon",
+    "vc": "Car",
+    "category": "Limousine",
+    "id": 456438581,
+    "kba": {
+      "hsn": "0603",
+      "tsn": "BKM"
+    },
+    "customDimensions": {
+      "10": "platinum"
+    },
+    "attributes": [
+      [
+        {
+          "value": "Unfallfrei",
+          "bold": true
+        },
+        {
+          "value": "EZ 03/2015"
+        },
+        {
+          "value": "116.700 km"
+        },
+        {
+          "value": "221 kW (300 PS)"
+        },
+        {
+          "value": "Benzin"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "Autohaus am Fliegerhorst",
+      "location": "38642 Goslar",
+      "rating": {
+        "score": 4.6,
+        "count": 10,
+        "totalCount": 194
+      },
+      "logo": {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/2f/2f5e1032-5003-4a30-9641-ec1b29f3a321?rule=mo-80",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/2f/2f5e1032-5003-4a30-9641-ec1b29f3a321?rule=mo-80 80w, https://img.classistatic.de/api/v1/mo-prod/images/2f/2f5e1032-5003-4a30-9641-ec1b29f3a321?rule=mo-160 160w, https://img.classistatic.de/api/v1/mo-prod/images/2f/2f5e1032-5003-4a30-9641-ec1b29f3a321?rule=mo-240 240w",
+        "alt": "Autohaus am Fliegerhorst"
+      },
+      "hasContactPhones": true,
+      "contactPhone": "+49 (0)174 2028054",
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/456438581?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "Volkswagen",
+    "model": "Golf",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/e3/e330298c-c78d-4526-9f58-43d3e39bc014?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/e3/e330298c-c78d-4526-9f58-43d3e39bc014?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/e3/e330298c-c78d-4526-9f58-43d3e39bc014?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/e3/e330298c-c78d-4526-9f58-43d3e39bc014?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/e3/e330298c-c78d-4526-9f58-43d3e39bc014?rule=mo-1024w 1024w",
+      "alt": "Volkswagen Golf VII Lim. GTI Performance 221 kW/Bi-Xenon"
+    },
+    "price": {
+      "gross": "16.950 €",
+      "grossAmount": 16950,
+      "grossCurrency": "EUR"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=456438581&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "ad"
+  },
+  {
+    "isEyeCatcher": false,
+    "numImages": 33,
+    "attr": {
+      "cn": "DE",
+      "z": "25421",
+      "loc": "Pinneberg",
+      "fr": "05/2018",
+      "pw": "169 kW (230 PS)",
+      "ft": "Benzin",
+      "ml": "96.222 km",
+      "cc": "1.984 cm³",
+      "tr": "Automatik",
+      "gi": "Neu",
+      "ecol": "Silber",
+      "eu": "Deutsche Ausführung",
+      "door": "4/5",
+      "sc": "5",
+      "c": "Limousine",
+      "emc": "Euro6",
+      "nw": "1.386 kg"
+    },
+    "shortTitle": "Volkswagen Golf",
+    "subTitle": "VII GTI BMT STANDHEIZUNG",
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "DF",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/2?adId=455929501&loanType=balloon&loanDuration=60&downPayment=4180",
+        "shortFlow": true,
+        "promotion": false,
+        "showInGallery": true,
+        "offer": {
+          "bankId": "Santander",
+          "bankName": "Openbank Deutschland AG",
+          "loanType": "BALLOON",
+          "downPayment": 4180,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 16720,
+          "interestRateNominal": 4.88,
+          "interestRateEffective": 4.99,
+          "monthlyInstallment": 178.51,
+          "finalInstallment": 9405,
+          "totalInterest": 3217.35,
+          "totalAmount": 19937.35,
+          "localized": {
+            "downPayment": "4.180 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "16.720 €",
+            "interestRateNominal": "4,88%",
+            "interestRateEffective": "4,99%",
+            "monthlyInstallment": "179 €",
+            "finalInstallment": "9.405,00 €",
+            "totalInterest": "3.217,35 €",
+            "totalAmount": "19.937,35 €",
+            "disclaimer": "Repräsentatives Beispiel: Vorstehende Angaben stellen zugleich das 2/3-Beispiel gem. § 17 Abs. 4 PAngV dar. Ein Finanzierungsangebot der Openbank Deutschland AG, Santander-Platz 1, 41061 Mönchengladbach (Darlehensgeber). Bonität vorausgesetzt."
+          }
+        },
+        "bankId": "Santander"
+      }
+    ],
+    "highlights": [
+      "FINANZIERUNG AB 3,99%",
+      "KFZ-ANKAUF"
+    ],
+    "sellerId": 37133914,
+    "priceRating": {
+      "rating": "REASONABLE_PRICE",
+      "ratingLabel": "Fairer Preis",
+      "thresholdLabels": [
+        "13.700 €",
+        "17.700 €",
+        "19.100 €",
+        "21.300 €",
+        "22.800 €",
+        "25.400 €"
+      ],
+      "vehiclePriceOffset": 81
+    },
+    "segment": "Car",
+    "title": "Volkswagen Golf VII GTI BMT STANDHEIZUNG",
+    "vc": "Car",
+    "category": "Limousine",
+    "id": 455929501,
+    "kba": {
+      "hsn": "0603",
+      "tsn": "BKM"
+    },
+    "customDimensions": {
+      "10": "platinum"
+    },
+    "attributes": [
+      [
+        {
+          "value": "Unfallfrei",
+          "bold": true
+        },
+        {
+          "value": "EZ 05/2018"
+        },
+        {
+          "value": "96.222 km"
+        },
+        {
+          "value": "169 kW (230 PS)"
+        },
+        {
+          "value": "Benzin"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "H&S Automobile Hamburg Gmbh",
+      "location": "25421 Pinneberg",
+      "rating": {
+        "score": 4.6,
+        "count": 49,
+        "totalCount": 49
+      },
+      "logo": {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/37/37c43602-81b7-4dd3-912f-9512854e48f1?rule=mo-80",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/37/37c43602-81b7-4dd3-912f-9512854e48f1?rule=mo-80 80w, https://img.classistatic.de/api/v1/mo-prod/images/37/37c43602-81b7-4dd3-912f-9512854e48f1?rule=mo-160 160w, https://img.classistatic.de/api/v1/mo-prod/images/37/37c43602-81b7-4dd3-912f-9512854e48f1?rule=mo-240 240w",
+        "alt": "H&S Automobile Hamburg Gmbh"
+      },
+      "hasContactPhones": true,
+      "contactPhone": "+49 (0)176 22578171",
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/455929501?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "Volkswagen",
+    "model": "Golf",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/29/29948c07-c39f-4615-9824-f3e282bca308?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/29/29948c07-c39f-4615-9824-f3e282bca308?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/29/29948c07-c39f-4615-9824-f3e282bca308?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/29/29948c07-c39f-4615-9824-f3e282bca308?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/29/29948c07-c39f-4615-9824-f3e282bca308?rule=mo-1024w 1024w",
+      "alt": "Volkswagen Golf VII GTI BMT STANDHEIZUNG"
+    },
+    "price": {
+      "gross": "20.900 €",
+      "grossAmount": 20900,
+      "grossCurrency": "EUR"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=455929501&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "ad"
+  },
+  {
+    "slotId": "SRP_BRAND_PORTAL_ENTRY_POINT",
+    "type": "inlineAdvertising"
+  },
+  {
+    "type": "page1Ads",
+    "items": [
+      {
+        "isEyeCatcher": false,
+        "numImages": 10,
+        "attr": {
+          "cn": "DE",
+          "z": "72458",
+          "loc": "Albstadt",
+          "pw": "142 kW (193 PS)",
+          "ft": "Diesel",
+          "ml": "0 km",
+          "cc": "1.968 cm³",
+          "csmpt": "6,8 l/100km (komb.)",
+          "emiss": "180 g CO₂/km (komb.)",
+          "co2class": "CO₂-Klasse G (komb.)",
+          "tr": "Automatik",
+          "con": "Neuwagen",
+          "ecol": "Schwarz",
+          "eu": "Deutsche Ausführung",
+          "door": "4/5",
+          "c": "OffRoad",
+          "emc": "Euro6d",
+          "pvo": "0"
+        },
+        "shortTitle": "Volkswagen Tayron",
+        "subTitle": "R-Line 2,0 l TDI SCR 4MOTION   7-Gang-Dop",
+        "isVideoEnabled": false,
+        "isConditionNew": true,
+        "financePlans": [
+          {
+            "type": "DF",
+            "url": "https://www.mobile.de/finanzierung/route/outlink/2?adId=448052522&loanType=balloon&loanDuration=60&downPayment=13910",
+            "shortFlow": true,
+            "promotion": false,
+            "showInGallery": true,
+            "offer": {
+              "bankId": "Santander",
+              "bankName": "Openbank Deutschland AG",
+              "loanType": "BALLOON",
+              "downPayment": 13910,
+              "creditTerm": 60,
+              "yearlyMileage": 10000,
+              "creditAmount": 55640,
+              "interestRateNominal": 5.83,
+              "interestRateEffective": 5.99,
+              "monthlyInstallment": 629.87,
+              "finalInstallment": 31297.5,
+              "totalInterest": 12819.63,
+              "totalAmount": 68459.63,
+              "localized": {
+                "downPayment": "13.910 €",
+                "downPaymentInPercent": "20%",
+                "creditTerm": "60",
+                "creditTermInYears": "5",
+                "yearlyMileage": "10.000",
+                "creditAmount": "55.640 €",
+                "interestRateNominal": "5,83%",
+                "interestRateEffective": "5,99%",
+                "monthlyInstallment": "630 €",
+                "finalInstallment": "31.297,50 €",
+                "totalInterest": "12.819,63 €",
+                "totalAmount": "68.459,63 €",
+                "disclaimer": "Repräsentatives Beispiel: Vorstehende Angaben stellen zugleich das 2/3-Beispiel gem. § 17 Abs. 4 PAngV dar. Ein Finanzierungsangebot der Openbank Deutschland AG, Santander-Platz 1, 41061 Mönchengladbach (Darlehensgeber). Bonität vorausgesetzt."
+              }
+            },
+            "bankId": "Santander"
+          }
+        ],
+        "sellerId": 9378513,
+        "priceRating": {
+          "rating": "INCREASED_PRICE",
+          "ratingLabel": "Erhöhter Preis",
+          "thresholdLabels": [
+            "44.100 €",
+            "57.300 €",
+            "61.700 €",
+            "68.700 €",
+            "73.700 €",
+            "81.900 €"
+          ],
+          "vehiclePriceOffset": 17
+        },
+        "segment": "Car",
+        "title": "Volkswagen Tayron R-Line 2,0 l TDI SCR 4MOTION   7-Gang-Dop",
+        "vc": "Car",
+        "category": "SUV/Geländewagen/Pickup",
+        "id": 448052522,
+        "kba": {
+          "hsn": "0603",
+          "tsn": "CUR"
+        },
+        "customDimensions": {
+          "10": "platinum"
+        },
+        "attributes": [
+          [
+            {
+              "value": "Neuwagen",
+              "bold": true
+            },
+            {
+              "value": "142 kW (193 PS)"
+            },
+            {
+              "value": "Diesel"
+            }
+          ],
+          [
+            {
+              "value": "6,8 l/100km (komb.)"
+            },
+            {
+              "value": "180 g CO₂/km (komb.)"
+            },
+            {
+              "value": "CO₂-Klasse G (komb.)"
+            }
+          ]
+        ],
+        "contactInfo": {
+          "typeLocalized": "Händler",
+          "name": "bhg Autohandelsgesellschaft mbH",
+          "location": "72458 Albstadt",
+          "rating": {
+            "score": 4.2,
+            "count": 7,
+            "totalCount": 72
+          },
+          "logo": {
+            "src": "https://img.classistatic.de/api/v1/mo-prod/images/8f/8fde77a2-bac6-4bee-978c-71ca484c574f?rule=mo-80",
+            "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/8f/8fde77a2-bac6-4bee-978c-71ca484c574f?rule=mo-80 80w, https://img.classistatic.de/api/v1/mo-prod/images/8f/8fde77a2-bac6-4bee-978c-71ca484c574f?rule=mo-160 160w, https://img.classistatic.de/api/v1/mo-prod/images/8f/8fde77a2-bac6-4bee-978c-71ca484c574f?rule=mo-240 240w",
+            "alt": "bhg Autohandelsgesellschaft mbH"
+          },
+          "hasContactPhones": true,
+          "contactPhone": "+49 (0)7431 93560",
+          "country": "DE",
+          "sellerType": "DEALER"
+        },
+        "checkoutLink": "https://www.mobile.de/checkout/core/448052522?ref=srpContact",
+        "isFinancingAvailable": true,
+        "leasingRate": null,
+        "make": "Volkswagen",
+        "model": "Tayron",
+        "previewImage": {
+          "src": "https://img.classistatic.de/api/v1/mo-prod/images/11/11f74408-e5fa-49d1-ab50-b9241cb38317?rule=mo-160w",
+          "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/11/11f74408-e5fa-49d1-ab50-b9241cb38317?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/11/11f74408-e5fa-49d1-ab50-b9241cb38317?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/11/11f74408-e5fa-49d1-ab50-b9241cb38317?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/11/11f74408-e5fa-49d1-ab50-b9241cb38317?rule=mo-1024w 1024w",
+          "alt": "Volkswagen Tayron R-Line 2,0 l TDI SCR 4MOTION   7-Gang-Dop"
+        },
+        "price": {
+          "gross": "69.550 €",
+          "grossAmount": 69550.01,
+          "grossCurrency": "EUR",
+          "net": "58.445 €",
+          "netAmount": 58445.39,
+          "vat": "19% MwSt."
+        },
+        "relativeUrl": "/fahrzeuge/details.html?id=448052522&action=topInCategory&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+        "supportedLeasingType": null,
+        "type": "page1Ad"
+      },
+      {
+        "isEyeCatcher": false,
+        "numImages": 10,
+        "attr": {
+          "cn": "AT",
+          "z": "1030",
+          "loc": "Wien",
+          "fr": "08/2018",
+          "pw": "375 kW (510 PS)",
+          "ft": "Benzin",
+          "ml": "39.251 km",
+          "cc": "3.982 cm³",
+          "tr": "Automatik",
+          "ecol": "Weiß",
+          "door": "2/3",
+          "sc": "4",
+          "c": "SportsCar"
+        },
+        "shortTitle": "Aston Martin DB11",
+        "subTitle": "Coupé | Stratus White | 1Y AM warranty",
+        "isVideoEnabled": false,
+        "financePlans": [
+          {
+            "type": "AO",
+            "url": "https://www.mobile.de/finanzierung/route/outlink/1?adId=435919803&loanType=balloon&loanDuration=60&downPayment=23952",
+            "shortFlow": false,
+            "promotion": false,
+            "showInGallery": false,
+            "offer": {
+              "bankName": "Openbank Deutschland AG",
+              "loanBroker": "Check24 GmbH",
+              "loanType": "BALLOON",
+              "downPayment": 23952,
+              "creditTerm": 60,
+              "yearlyMileage": 10000,
+              "creditAmount": 95808,
+              "interestRateNominal": 5.26,
+              "interestRateEffective": 5.39,
+              "monthlyInstallment": 1260.65,
+              "finalInstallment": 39520.8,
+              "totalInterest": 18091,
+              "totalAmount": 113899,
+              "localized": {
+                "downPayment": "23.952 €",
+                "downPaymentInPercent": "20%",
+                "creditTerm": "60",
+                "creditTermInYears": "5",
+                "yearlyMileage": "10.000",
+                "creditAmount": "95.808 €",
+                "interestRateNominal": "5,26%",
+                "interestRateEffective": "5,39%",
+                "monthlyInstallment": "1.261 €",
+                "finalInstallment": "39.520,80 €",
+                "totalInterest": "18.091,00 €",
+                "totalAmount": "113.899,00 €",
+                "disclaimer": "Repräsentatives Beispiel gemäß § 17 Abs. 4 PAngV: Nettodarlehensbetrag von 10.000 €, effektiver Jahreszins 5,39%, fester Sollzinssatz 5,26% p.a., Laufzeit 60 Monate, 59 monatliche Raten à 143,60 € und eine Schlussrate à 3.300,00 €, Gesamtbetrag 11.772,13 €. Ein Angebot der Openbank Deutschland AG (Darlehensgeber), Santander-Platz 1, 41061 Mönchengladbach"
+              }
+            }
+          }
+        ],
+        "highlights": [
+          "incl. 1Y AM warranty"
+        ],
+        "sellerId": 19052913,
+        "priceRating": {
+          "rating": "NO_RATING",
+          "ratingLabel": "Ohne Bewertung",
+          "noRatingReason": "mobile.de bewertet nur dann den Preis eines Fahrzeugs, wenn ausreichend viele Vergleichsdaten vorliegen. Ist dies nicht der Fall, kann mobile.de keine realistische Preisbewertung vornehmen."
+        },
+        "segment": "Car",
+        "title": "Aston Martin DB11 Coupé | Stratus White | 1Y AM warranty",
+        "vc": "Car",
+        "category": "Sportwagen/Coupé",
+        "id": 435919803,
+        "customDimensions": {
+          "10": "gold"
+        },
+        "attributes": [
+          [
+            {
+              "value": "EZ 08/2018"
+            },
+            {
+              "value": "39.251 km"
+            },
+            {
+              "value": "375 kW (510 PS)"
+            },
+            {
+              "value": "Benzin"
+            }
+          ],
+          []
+        ],
+        "contactInfo": {
+          "typeLocalized": "Händler",
+          "name": "Frey Luxury Cars GmbH",
+          "location": "AT-1030 Wien",
+          "rating": {
+            "score": 5,
+            "count": 1,
+            "totalCount": 7
+          },
+          "logo": {
+            "src": "https://img.classistatic.de/api/v1/mo-prod/images/c2/c257aee4-f8bd-434b-94df-cfddf793959f?rule=mo-80",
+            "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/c2/c257aee4-f8bd-434b-94df-cfddf793959f?rule=mo-80 80w, https://img.classistatic.de/api/v1/mo-prod/images/c2/c257aee4-f8bd-434b-94df-cfddf793959f?rule=mo-160 160w, https://img.classistatic.de/api/v1/mo-prod/images/c2/c257aee4-f8bd-434b-94df-cfddf793959f?rule=mo-240 240w",
+            "alt": "Frey Luxury Cars GmbH"
+          },
+          "hasContactPhones": true,
+          "contactPhone": "+43 1 89070078910",
+          "country": "AT",
+          "sellerType": "DEALER"
+        },
+        "checkoutLink": "https://www.mobile.de/checkout/core/435919803?ref=srpContact",
+        "isFinancingAvailable": true,
+        "leasingRate": null,
+        "make": "Aston Martin",
+        "model": "DB11",
+        "previewImage": {
+          "src": "https://img.classistatic.de/api/v1/mo-prod/images/c3/c3471496-c82b-4f46-8985-5cb6e0431f92?rule=mo-160w",
+          "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/c3/c3471496-c82b-4f46-8985-5cb6e0431f92?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/c3/c3471496-c82b-4f46-8985-5cb6e0431f92?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/c3/c3471496-c82b-4f46-8985-5cb6e0431f92?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/c3/c3471496-c82b-4f46-8985-5cb6e0431f92?rule=mo-1024w 1024w",
+          "alt": "Aston Martin DB11 Coupé | Stratus White | 1Y AM warranty"
+        },
+        "price": {
+          "gross": "119.760 €",
+          "grossAmount": 119760,
+          "grossCurrency": "EUR",
+          "net": "99.800 €",
+          "netAmount": 99800,
+          "vat": "20% MwSt."
+        },
+        "relativeUrl": "/fahrzeuge/details.html?id=435919803&action=topInCategory&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+        "supportedLeasingType": null,
+        "type": "page1Ad"
+      },
+      {
+        "isEyeCatcher": false,
+        "numImages": 20,
+        "attr": {
+          "cn": "DE",
+          "z": "37120",
+          "loc": "Bovenden",
+          "fr": "05/2007",
+          "yc": "2007",
+          "pw": "235 kW (320 PS)",
+          "ft": "Diesel",
+          "ml": "300.000 km",
+          "cc": "3.997 cm³",
+          "tr": "Automatik",
+          "ecol": "Schwarz",
+          "door": "4/5",
+          "sc": "5",
+          "c": "Limousine",
+          "emc": "Euro4",
+          "nw": "2.140 kg"
+        },
+        "shortTitle": "Mercedes-Benz S 420",
+        "subTitle": "420 L CDI Limousine BKA Ausstattung",
+        "isVideoEnabled": false,
+        "financePlans": [
+          {
+            "type": "AO",
+            "url": "https://www.mobile.de/finanzierung/route/outlink/1?adId=334934483&loanType=balloon&loanDuration=60&downPayment=5400",
+            "shortFlow": false,
+            "promotion": false,
+            "showInGallery": false,
+            "offer": {
+              "bankName": "Openbank Deutschland AG",
+              "loanBroker": "Check24 GmbH",
+              "loanType": "BALLOON",
+              "downPayment": 5400,
+              "creditTerm": 60,
+              "yearlyMileage": 10000,
+              "creditAmount": 21600,
+              "interestRateNominal": 5.26,
+              "interestRateEffective": 5.39,
+              "monthlyInstallment": 284.21,
+              "finalInstallment": 8910,
+              "totalInterest": 4078.63,
+              "totalAmount": 25678.63,
+              "localized": {
+                "downPayment": "5.400 €",
+                "downPaymentInPercent": "20%",
+                "creditTerm": "60",
+                "creditTermInYears": "5",
+                "yearlyMileage": "10.000",
+                "creditAmount": "21.600 €",
+                "interestRateNominal": "5,26%",
+                "interestRateEffective": "5,39%",
+                "monthlyInstallment": "285 €",
+                "finalInstallment": "8.910,00 €",
+                "totalInterest": "4.078,63 €",
+                "totalAmount": "25.678,63 €",
+                "disclaimer": "Repräsentatives Beispiel gemäß § 17 Abs. 4 PAngV: Nettodarlehensbetrag von 10.000 €, effektiver Jahreszins 5,39%, fester Sollzinssatz 5,26% p.a., Laufzeit 60 Monate, 59 monatliche Raten à 143,60 € und eine Schlussrate à 3.300,00 €, Gesamtbetrag 11.772,13 €. Ein Angebot der Openbank Deutschland AG (Darlehensgeber), Santander-Platz 1, 41061 Mönchengladbach"
+              }
+            }
+          }
+        ],
+        "sellerId": 15849414,
+        "priceRating": {
+          "rating": "NO_RATING",
+          "ratingLabel": "Ohne Bewertung",
+          "noRatingReason": "mobile.de bewertet nur dann den Preis eines Fahrzeugs, wenn ausreichend viele Vergleichsdaten vorliegen. Ist dies nicht der Fall, kann mobile.de keine realistische Preisbewertung vornehmen."
+        },
+        "segment": "Car",
+        "title": "Mercedes-Benz 420 L CDI Limousine BKA Ausstattung",
+        "vc": "Car",
+        "category": "Limousine",
+        "id": 334934483,
+        "customDimensions": {
+          "10": "silver"
+        },
+        "attributes": [
+          [
+            {
+              "value": "EZ 05/2007"
+            },
+            {
+              "value": "300.000 km"
+            },
+            {
+              "value": "235 kW (320 PS)"
+            },
+            {
+              "value": "Diesel"
+            }
+          ],
+          []
+        ],
+        "contactInfo": {
+          "typeLocalized": "Händler",
+          "name": "Gassmann GmbH",
+          "location": "37120 Bovenden",
+          "rating": {
+            "score": 4,
+            "count": 13,
+            "totalCount": 119
+          },
+          "logo": null,
+          "hasContactPhones": true,
+          "contactPhone": "+49 (0)551 82020",
+          "country": "DE",
+          "sellerType": "DEALER"
+        },
+        "checkoutLink": "https://www.mobile.de/checkout/core/334934483?ref=srpContact",
+        "isFinancingAvailable": true,
+        "leasingRate": null,
+        "make": "Mercedes-Benz",
+        "model": "S 420",
+        "previewImage": {
+          "src": "https://img.classistatic.de/api/v1/mo-prod/images/03/0334b725-ae47-4f41-915a-9a13a30d31d1?rule=mo-160w",
+          "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/03/0334b725-ae47-4f41-915a-9a13a30d31d1?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/03/0334b725-ae47-4f41-915a-9a13a30d31d1?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/03/0334b725-ae47-4f41-915a-9a13a30d31d1?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/03/0334b725-ae47-4f41-915a-9a13a30d31d1?rule=mo-1024w 1024w",
+          "alt": "Mercedes-Benz 420 L CDI Limousine BKA Ausstattung"
+        },
+        "price": {
+          "gross": "27.000 €",
+          "grossAmount": 27000,
+          "grossCurrency": "EUR"
+        },
+        "relativeUrl": "/fahrzeuge/details.html?id=334934483&action=topInCategory&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+        "supportedLeasingType": null,
+        "type": "page1Ad"
+      }
+    ]
+  },
+  {
+    "isEyeCatcher": false,
+    "numImages": 29,
+    "attr": {
+      "cn": "DE",
+      "z": "25421",
+      "loc": "Pinneberg",
+      "fr": "03/2018",
+      "pw": "169 kW (230 PS)",
+      "ft": "Benzin",
+      "ml": "82.182 km",
+      "cc": "1.984 cm³",
+      "tr": "Automatik",
+      "gi": "Neu",
+      "ecol": "Weiß",
+      "door": "4/5",
+      "sc": "5",
+      "c": "Limousine",
+      "emc": "Euro6",
+      "pvo": "1",
+      "nw": "1.386 kg"
+    },
+    "shortTitle": "Volkswagen Golf",
+    "subTitle": "VII GTI BMT Panorama*ACC",
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "DF",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/2?adId=454259512&loanType=balloon&loanDuration=60&downPayment=4160",
+        "shortFlow": true,
+        "promotion": false,
+        "showInGallery": true,
+        "offer": {
+          "bankId": "Santander",
+          "bankName": "Openbank Deutschland AG",
+          "loanType": "BALLOON",
+          "downPayment": 4160,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 16640,
+          "interestRateNominal": 4.88,
+          "interestRateEffective": 4.99,
+          "monthlyInstallment": 177.66,
+          "finalInstallment": 9360,
+          "totalInterest": 3201.96,
+          "totalAmount": 19841.96,
+          "localized": {
+            "downPayment": "4.160 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "16.640 €",
+            "interestRateNominal": "4,88%",
+            "interestRateEffective": "4,99%",
+            "monthlyInstallment": "178 €",
+            "finalInstallment": "9.360,00 €",
+            "totalInterest": "3.201,96 €",
+            "totalAmount": "19.841,96 €",
+            "disclaimer": "Repräsentatives Beispiel: Vorstehende Angaben stellen zugleich das 2/3-Beispiel gem. § 17 Abs. 4 PAngV dar. Ein Finanzierungsangebot der Openbank Deutschland AG, Santander-Platz 1, 41061 Mönchengladbach (Darlehensgeber). Bonität vorausgesetzt."
+          }
+        },
+        "bankId": "Santander"
+      }
+    ],
+    "highlights": [
+      "FINANZIERUNG AB 3 ,99%",
+      "KFZ-ANKAUF",
+      "Panorama*ACC"
+    ],
+    "sellerId": 37133914,
+    "priceRating": {
+      "rating": "REASONABLE_PRICE",
+      "ratingLabel": "Fairer Preis",
+      "thresholdLabels": [
+        "14.400 €",
+        "18.700 €",
+        "20.200 €",
+        "22.500 €",
+        "24.100 €",
+        "26.800 €"
+      ],
+      "vehiclePriceOffset": 26
+    },
+    "segment": "Car",
+    "title": "Volkswagen Golf VII GTI BMT Panorama*ACC",
+    "vc": "Car",
+    "category": "Limousine",
+    "id": 454259512,
+    "kba": {
+      "hsn": "0603",
+      "tsn": "BKM"
+    },
+    "customDimensions": {
+      "10": "platinum"
+    },
+    "attributes": [
+      [
+        {
+          "value": "Unfallfrei",
+          "bold": true
+        },
+        {
+          "value": "EZ 03/2018"
+        },
+        {
+          "value": "82.182 km"
+        },
+        {
+          "value": "169 kW (230 PS)"
+        },
+        {
+          "value": "Benzin"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "H&S Automobile Hamburg Gmbh",
+      "location": "25421 Pinneberg",
+      "rating": {
+        "score": 4.6,
+        "count": 49,
+        "totalCount": 49
+      },
+      "logo": {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/37/37c43602-81b7-4dd3-912f-9512854e48f1?rule=mo-80",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/37/37c43602-81b7-4dd3-912f-9512854e48f1?rule=mo-80 80w, https://img.classistatic.de/api/v1/mo-prod/images/37/37c43602-81b7-4dd3-912f-9512854e48f1?rule=mo-160 160w, https://img.classistatic.de/api/v1/mo-prod/images/37/37c43602-81b7-4dd3-912f-9512854e48f1?rule=mo-240 240w",
+        "alt": "H&S Automobile Hamburg Gmbh"
+      },
+      "hasContactPhones": true,
+      "contactPhone": "+49 (0)176 22578171",
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/454259512?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "Volkswagen",
+    "model": "Golf",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/3b/3ba0101d-3fe4-42a8-82d3-55df9bb5a09d?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/3b/3ba0101d-3fe4-42a8-82d3-55df9bb5a09d?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/3b/3ba0101d-3fe4-42a8-82d3-55df9bb5a09d?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/3b/3ba0101d-3fe4-42a8-82d3-55df9bb5a09d?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/3b/3ba0101d-3fe4-42a8-82d3-55df9bb5a09d?rule=mo-1024w 1024w",
+      "alt": "Volkswagen Golf VII GTI BMT Panorama*ACC"
+    },
+    "price": {
+      "gross": "20.800 €",
+      "grossAmount": 20800,
+      "grossCurrency": "EUR"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=454259512&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "ad"
+  },
+  {
+    "slotId": "SRP_TABLECELL_UPPER",
+    "type": "inlineAdvertising"
+  },
+  {
+    "isEyeCatcher": false,
+    "numImages": 23,
+    "attr": {
+      "cn": "DE",
+      "z": "55767",
+      "loc": "Buhlenberg",
+      "fr": "09/2018",
+      "pw": "169 kW (230 PS)",
+      "ft": "Benzin",
+      "ml": "90.604 km",
+      "cc": "1.984 cm³",
+      "tr": "Automatik",
+      "gi": "Neu",
+      "ecol": "Schwarz",
+      "eu": "Deutsche Ausführung",
+      "door": "4/5",
+      "sc": "5",
+      "c": "Limousine",
+      "emc": "Euro6",
+      "pvo": "3",
+      "nw": "1.386 kg"
+    },
+    "shortTitle": "Volkswagen Golf",
+    "subTitle": "VII Lim. GTI DSG AHK ACC NAVI LED PANO",
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "DF",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/2?adId=451883807&loanType=balloon&loanDuration=60&downPayment=4298",
+        "shortFlow": true,
+        "promotion": false,
+        "showInGallery": true,
+        "offer": {
+          "bankId": "Santander",
+          "bankName": "Openbank Deutschland AG",
+          "loanType": "BALLOON",
+          "downPayment": 4298,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 17192,
+          "interestRateNominal": 4.88,
+          "interestRateEffective": 4.99,
+          "monthlyInstallment": 183.55,
+          "finalInstallment": 9670.5,
+          "totalInterest": 3308.18,
+          "totalAmount": 20500.18,
+          "localized": {
+            "downPayment": "4.298 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "17.192 €",
+            "interestRateNominal": "4,88%",
+            "interestRateEffective": "4,99%",
+            "monthlyInstallment": "184 €",
+            "finalInstallment": "9.670,50 €",
+            "totalInterest": "3.308,18 €",
+            "totalAmount": "20.500,18 €",
+            "disclaimer": "Repräsentatives Beispiel: Vorstehende Angaben stellen zugleich das 2/3-Beispiel gem. § 17 Abs. 4 PAngV dar. Ein Finanzierungsangebot der Openbank Deutschland AG, Santander-Platz 1, 41061 Mönchengladbach (Darlehensgeber). Bonität vorausgesetzt."
+          }
+        },
+        "bankId": "Santander"
+      }
+    ],
+    "highlights": [
+      "2 JAHRE GARANTIE",
+      "VOLLTANK",
+      "4,99% FINANZIERUNG"
+    ],
+    "sellerId": 30312464,
+    "priceRating": {
+      "rating": "REASONABLE_PRICE",
+      "ratingLabel": "Fairer Preis",
+      "thresholdLabels": [
+        "14.500 €",
+        "18.800 €",
+        "20.300 €",
+        "22.600 €",
+        "24.200 €",
+        "26.900 €"
+      ],
+      "vehiclePriceOffset": 51
+    },
+    "segment": "Car",
+    "title": "Volkswagen Golf VII Lim. GTI DSG AHK ACC NAVI LED PANO",
+    "vc": "Car",
+    "category": "Limousine",
+    "id": 451883807,
+    "kba": {
+      "hsn": "0603",
+      "tsn": "BKM"
+    },
+    "customDimensions": {
+      "10": "platinum"
+    },
+    "attributes": [
+      [
+        {
+          "value": "Unfallfrei",
+          "bold": true
+        },
+        {
+          "value": "EZ 09/2018"
+        },
+        {
+          "value": "90.604 km"
+        },
+        {
+          "value": "169 kW (230 PS)"
+        },
+        {
+          "value": "Benzin"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "Auto GEMO GmbH",
+      "location": "55767 Buhlenberg",
+      "rating": {
+        "score": 5,
+        "count": 5,
+        "totalCount": 51
+      },
+      "logo": {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/11/117eac60-abe3-414f-8a0a-aa1afb61cd38?rule=mo-80",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/11/117eac60-abe3-414f-8a0a-aa1afb61cd38?rule=mo-80 80w, https://img.classistatic.de/api/v1/mo-prod/images/11/117eac60-abe3-414f-8a0a-aa1afb61cd38?rule=mo-160 160w, https://img.classistatic.de/api/v1/mo-prod/images/11/117eac60-abe3-414f-8a0a-aa1afb61cd38?rule=mo-240 240w",
+        "alt": "Auto GEMO GmbH"
+      },
+      "hasContactPhones": true,
+      "contactPhone": "+49 (0)176 64932948",
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/451883807?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "Volkswagen",
+    "model": "Golf",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/1d/1d17e080-5c64-4f40-bd19-8efb8c380831?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/1d/1d17e080-5c64-4f40-bd19-8efb8c380831?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/1d/1d17e080-5c64-4f40-bd19-8efb8c380831?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/1d/1d17e080-5c64-4f40-bd19-8efb8c380831?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/1d/1d17e080-5c64-4f40-bd19-8efb8c380831?rule=mo-1024w 1024w",
+      "alt": "Volkswagen Golf VII Lim. GTI DSG AHK ACC NAVI LED PANO"
+    },
+    "price": {
+      "gross": "21.490 €",
+      "grossAmount": 21490,
+      "grossCurrency": "EUR"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=451883807&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "ad"
+  },
+  {
+    "isEyeCatcher": false,
+    "numImages": 45,
+    "attr": {
+      "cn": "DE",
+      "z": "96515",
+      "loc": "Sonneberg",
+      "fr": "03/2014",
+      "pw": "90 kW (122 PS)",
+      "ft": "Benzin",
+      "ml": "75.330 km",
+      "cc": "1.395 cm³",
+      "tr": "Schaltgetriebe",
+      "gi": "Neu",
+      "ecol": "Weiß",
+      "door": "4/5",
+      "sc": "5",
+      "c": "Limousine",
+      "emc": "Euro5",
+      "nw": "1.225 kg"
+    },
+    "shortTitle": "Volkswagen Golf",
+    "subTitle": "VII Lim. Highline BMT",
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "DF",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/2?adId=454392247&loanType=balloon&loanDuration=60&downPayment=2660",
+        "shortFlow": true,
+        "promotion": false,
+        "showInGallery": true,
+        "offer": {
+          "bankId": "Bank11",
+          "bankName": "Bank11 für Privatkunden und Handel GmbH",
+          "loanType": "BALLOON",
+          "downPayment": 2660,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 10640,
+          "interestRateNominal": 6.78,
+          "interestRateEffective": 6.99,
+          "monthlyInstallment": 108.31,
+          "finalInstallment": 7315,
+          "totalInterest": 3065.41,
+          "totalAmount": 13705.41,
+          "localized": {
+            "downPayment": "2.660 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "10.640 €",
+            "interestRateNominal": "6,78%",
+            "interestRateEffective": "6,99%",
+            "monthlyInstallment": "109 €",
+            "finalInstallment": "7.315,00 €",
+            "totalInterest": "3.065,41 €",
+            "totalAmount": "13.705,41 €",
+            "disclaimer": "Repräsentatives Beispiel: Vorstehende Angaben stellen zugleich das 2/3-Beispiel gem. § 17 Abs. 4 PAngV dar. Ein Finanzierungsangebot der Bank11 für Privatkunden und Handel GmbH, Hammer Landstraße 91, 41460 Neuss (Darlehensgeber). Bonität vorausgesetzt."
+          }
+        },
+        "bankId": "Bank11"
+      }
+    ],
+    "highlights": [
+      "Scheckheftgepflegt",
+      "TÜV NEU",
+      "Inspektion NEU"
+    ],
+    "sellerId": 5847215,
+    "priceRating": {
+      "rating": "INCREASED_PRICE",
+      "ratingLabel": "Erhöhter Preis",
+      "thresholdLabels": [
+        "8.400 €",
+        "10.900 €",
+        "11.800 €",
+        "13.100 €",
+        "14.000 €",
+        "15.600 €"
+      ],
+      "vehiclePriceOffset": 22
+    },
+    "segment": "Car",
+    "title": "Volkswagen Golf VII Lim. Highline BMT",
+    "vc": "Car",
+    "category": "Limousine",
+    "id": 454392247,
+    "kba": {
+      "hsn": "0603",
+      "tsn": "BJF"
+    },
+    "customDimensions": {
+      "10": "platinum"
+    },
+    "attributes": [
+      [
+        {
+          "value": "EZ 03/2014"
+        },
+        {
+          "value": "75.330 km"
+        },
+        {
+          "value": "90 kW (122 PS)"
+        },
+        {
+          "value": "Benzin"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "Negrov Automobile",
+      "location": "96515 Sonneberg",
+      "rating": {
+        "score": 4.8,
+        "count": 7,
+        "totalCount": 125
+      },
+      "logo": {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/74/74f9cd56-ed86-4701-9c85-b06e02db0661?rule=mo-80",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/74/74f9cd56-ed86-4701-9c85-b06e02db0661?rule=mo-80 80w, https://img.classistatic.de/api/v1/mo-prod/images/74/74f9cd56-ed86-4701-9c85-b06e02db0661?rule=mo-160 160w, https://img.classistatic.de/api/v1/mo-prod/images/74/74f9cd56-ed86-4701-9c85-b06e02db0661?rule=mo-240 240w",
+        "alt": "Negrov Automobile"
+      },
+      "hasContactPhones": true,
+      "contactPhone": "+49 (0)3675 4294155",
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/454392247?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "Volkswagen",
+    "model": "Golf",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/ef/ef852689-dd9a-4419-a16f-7c8f35b924bf?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/ef/ef852689-dd9a-4419-a16f-7c8f35b924bf?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/ef/ef852689-dd9a-4419-a16f-7c8f35b924bf?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/ef/ef852689-dd9a-4419-a16f-7c8f35b924bf?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/ef/ef852689-dd9a-4419-a16f-7c8f35b924bf?rule=mo-1024w 1024w",
+      "alt": "Volkswagen Golf VII Lim. Highline BMT"
+    },
+    "price": {
+      "gross": "13.300 €",
+      "grossAmount": 13300,
+      "grossCurrency": "EUR"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=454392247&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "ad"
+  },
+  {
+    "type": "recommendedFilters"
+  },
+  {
+    "isEyeCatcher": true,
+    "threeSixty": true,
+    "numImages": 49,
+    "attr": {
+      "cn": "DE",
+      "z": "14513",
+      "loc": "Teltow",
+      "fr": "05/2016",
+      "pw": "110 kW (150 PS)",
+      "ft": "Benzin",
+      "ml": "99.846 km",
+      "cc": "1.395 cm³",
+      "tr": "Automatik",
+      "gi": "Neu",
+      "ecol": "Silber",
+      "eu": "Deutsche Ausführung",
+      "door": "4/5",
+      "sc": "5",
+      "c": "Van",
+      "emc": "Euro6",
+      "pvo": "2",
+      "nw": "1.478 kg"
+    },
+    "shortTitle": "Volkswagen Touran",
+    "subTitle": "1.4TSI 150PS DSG Highline AHK ACC Navi",
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "DF",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/2?adId=444816304&loanType=balloon&loanDuration=60&downPayment=3949",
+        "shortFlow": true,
+        "promotion": false,
+        "showInGallery": true,
+        "offer": {
+          "bankId": "Santander",
+          "bankName": "Openbank Deutschland AG",
+          "loanType": "BALLOON",
+          "downPayment": 3949,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 15800,
+          "interestRateNominal": 5.83,
+          "interestRateEffective": 5.99,
+          "monthlyInstallment": 178.87,
+          "finalInstallment": 8887.05,
+          "totalInterest": 3640.31,
+          "totalAmount": 19440.31,
+          "localized": {
+            "downPayment": "3.949 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "15.800 €",
+            "interestRateNominal": "5,83%",
+            "interestRateEffective": "5,99%",
+            "monthlyInstallment": "179 €",
+            "finalInstallment": "8.887,05 €",
+            "totalInterest": "3.640,31 €",
+            "totalAmount": "19.440,31 €",
+            "disclaimer": "Repräsentatives Beispiel: Vorstehende Angaben stellen zugleich das 2/3-Beispiel gem. § 17 Abs. 4 PAngV dar. Ein Finanzierungsangebot der Openbank Deutschland AG, Santander-Platz 1, 41061 Mönchengladbach (Darlehensgeber). Bonität vorausgesetzt."
+          }
+        },
+        "bankId": "Santander"
+      }
+    ],
+    "highlights": [
+      "Massage R-CAM LED",
+      "3-Zonen-Klima SHZ",
+      "Keyless DCC"
+    ],
+    "sellerId": 9246884,
+    "priceRating": {
+      "rating": "REASONABLE_PRICE",
+      "ratingLabel": "Fairer Preis",
+      "thresholdLabels": [
+        "13.300 €",
+        "17.300 €",
+        "18.600 €",
+        "20.700 €",
+        "22.200 €",
+        "24.700 €"
+      ],
+      "vehiclePriceOffset": 54
+    },
+    "segment": "Car",
+    "title": "Volkswagen Touran 1.4TSI 150PS DSG Highline AHK ACC Navi",
+    "vc": "Car",
+    "category": "Van/Minibus",
+    "id": 444816304,
+    "kba": {
+      "hsn": "0603",
+      "tsn": "BWN"
+    },
+    "customDimensions": {
+      "10": "platinum"
+    },
+    "previewThumbnails": [
+      {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/fa/fa5128ec-068d-4d94-af35-f1c76db417e1?rule=mo-160w",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/fa/fa5128ec-068d-4d94-af35-f1c76db417e1?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/fa/fa5128ec-068d-4d94-af35-f1c76db417e1?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/fa/fa5128ec-068d-4d94-af35-f1c76db417e1?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/fa/fa5128ec-068d-4d94-af35-f1c76db417e1?rule=mo-1024w 1024w",
+        "alt": "Volkswagen Touran 1.4TSI 150PS DSG Highline AHK ACC Navi"
+      },
+      {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/a6/a681d71b-d32d-4692-9341-d859592a0dd7?rule=mo-160w",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/a6/a681d71b-d32d-4692-9341-d859592a0dd7?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/a6/a681d71b-d32d-4692-9341-d859592a0dd7?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/a6/a681d71b-d32d-4692-9341-d859592a0dd7?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/a6/a681d71b-d32d-4692-9341-d859592a0dd7?rule=mo-1024w 1024w",
+        "alt": "Volkswagen Touran 1.4TSI 150PS DSG Highline AHK ACC Navi"
+      },
+      {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/b8/b83b2327-8873-4f1f-81a1-cff86011e8c9?rule=mo-160w",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/b8/b83b2327-8873-4f1f-81a1-cff86011e8c9?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/b8/b83b2327-8873-4f1f-81a1-cff86011e8c9?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/b8/b83b2327-8873-4f1f-81a1-cff86011e8c9?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/b8/b83b2327-8873-4f1f-81a1-cff86011e8c9?rule=mo-1024w 1024w",
+        "alt": "Volkswagen Touran 1.4TSI 150PS DSG Highline AHK ACC Navi"
+      }
+    ],
+    "attributes": [
+      [
+        {
+          "value": "EZ 05/2016"
+        },
+        {
+          "value": "99.846 km"
+        },
+        {
+          "value": "110 kW (150 PS)"
+        },
+        {
+          "value": "Benzin"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "Autohaus Klann GmbH",
+      "location": "14513 Teltow",
+      "rating": {
+        "score": 4,
+        "count": 15,
+        "totalCount": 171
+      },
+      "logo": {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/ca/caa62002-4a79-434c-a2f1-58942b3568ba?rule=mo-80",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/ca/caa62002-4a79-434c-a2f1-58942b3568ba?rule=mo-80 80w, https://img.classistatic.de/api/v1/mo-prod/images/ca/caa62002-4a79-434c-a2f1-58942b3568ba?rule=mo-160 160w, https://img.classistatic.de/api/v1/mo-prod/images/ca/caa62002-4a79-434c-a2f1-58942b3568ba?rule=mo-240 240w",
+        "alt": "Autohaus Klann GmbH"
+      },
+      "hasContactPhones": true,
+      "contactPhone": "+49 (0)3328 3599968",
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/444816304?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "Volkswagen",
+    "model": "Touran",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/54/54c834cb-054c-4771-ae28-8a988c6e620e?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/54/54c834cb-054c-4771-ae28-8a988c6e620e?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/54/54c834cb-054c-4771-ae28-8a988c6e620e?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/54/54c834cb-054c-4771-ae28-8a988c6e620e?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/54/54c834cb-054c-4771-ae28-8a988c6e620e?rule=mo-1024w 1024w",
+      "alt": "Volkswagen Touran 1.4TSI 150PS DSG Highline AHK ACC Navi"
+    },
+    "price": {
+      "gross": "19.749 €",
+      "grossAmount": 19749,
+      "grossCurrency": "EUR"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=444816304&action=eyeCatcher&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "eyecatcherAd"
+  },
+  {
+    "isEyeCatcher": false,
+    "numImages": 25,
+    "attr": {
+      "cn": "DE",
+      "z": "45721",
+      "loc": "Haltern am See",
+      "fr": "12/2014",
+      "yc": "2014",
+      "pw": "155 kW (211 PS)",
+      "ft": "Benzin",
+      "ml": "106.568 km",
+      "cc": "1.991 cm³",
+      "tr": "Automatik",
+      "gi": "Neu",
+      "ecol": "Weiß",
+      "eu": "Deutsche Ausführung",
+      "door": "4/5",
+      "sc": "5",
+      "c": "OffRoad",
+      "emc": "Euro6",
+      "pvo": "3"
+    },
+    "shortTitle": "Mercedes-Benz GLA 250",
+    "subTitle": "AMG Line Rückfahrkamera *Garantie*",
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "DF",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/2?adId=455343925&loanType=balloon&loanDuration=60&downPayment=3998",
+        "shortFlow": true,
+        "promotion": false,
+        "showInGallery": true,
+        "offer": {
+          "bankId": "Santander",
+          "bankName": "Openbank Deutschland AG",
+          "loanType": "BALLOON",
+          "downPayment": 3998,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 15992,
+          "interestRateNominal": 3.92,
+          "interestRateEffective": 3.99,
+          "monthlyInstallment": 160.4,
+          "finalInstallment": 8995.5,
+          "totalInterest": 2466.86,
+          "totalAmount": 18458.86,
+          "localized": {
+            "downPayment": "3.998 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "15.992 €",
+            "interestRateNominal": "3,92%",
+            "interestRateEffective": "3,99%",
+            "monthlyInstallment": "161 €",
+            "finalInstallment": "8.995,50 €",
+            "totalInterest": "2.466,86 €",
+            "totalAmount": "18.458,86 €",
+            "disclaimer": "Repräsentatives Beispiel: Vorstehende Angaben stellen zugleich das 2/3-Beispiel gem. § 17 Abs. 4 PAngV dar. Ein Finanzierungsangebot der Openbank Deutschland AG, Santander-Platz 1, 41061 Mönchengladbach (Darlehensgeber). Bonität vorausgesetzt."
+          }
+        },
+        "bankId": "Santander"
+      }
+    ],
+    "highlights": [
+      "Aktionszins 3,99 %",
+      "Rückfahrkamera",
+      "AMG Line "
+    ],
+    "sellerId": 25334534,
+    "priceRating": {
+      "rating": "REASONABLE_PRICE",
+      "ratingLabel": "Fairer Preis",
+      "thresholdLabels": [
+        "13.100 €",
+        "17.000 €",
+        "18.300 €",
+        "20.400 €",
+        "21.900 €",
+        "24.300 €"
+      ],
+      "vehiclePriceOffset": 80
+    },
+    "segment": "Car",
+    "title": "Mercedes-Benz GLA 250 AMG Line Rückfahrkamera *Garantie*",
+    "vc": "Car",
+    "category": "SUV/Geländewagen/Pickup",
+    "id": 455343925,
+    "kba": {
+      "hsn": "1313",
+      "tsn": "DYU"
+    },
+    "customDimensions": {
+      "10": "platinum"
+    },
+    "attributes": [
+      [
+        {
+          "value": "Unfallfrei",
+          "bold": true
+        },
+        {
+          "value": "EZ 12/2014"
+        },
+        {
+          "value": "106.568 km"
+        },
+        {
+          "value": "155 kW (211 PS)"
+        },
+        {
+          "value": "Benzin"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "Rock Automobil GmbH",
+      "location": "45721 Haltern am See",
+      "rating": {
+        "score": 4.7,
+        "count": 11,
+        "totalCount": 46
+      },
+      "logo": {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/0f/0ff58ce4-606d-432a-9e74-b4d392459cc3?rule=mo-80",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/0f/0ff58ce4-606d-432a-9e74-b4d392459cc3?rule=mo-80 80w, https://img.classistatic.de/api/v1/mo-prod/images/0f/0ff58ce4-606d-432a-9e74-b4d392459cc3?rule=mo-160 160w, https://img.classistatic.de/api/v1/mo-prod/images/0f/0ff58ce4-606d-432a-9e74-b4d392459cc3?rule=mo-240 240w",
+        "alt": "Rock Automobil GmbH"
+      },
+      "hasContactPhones": true,
+      "contactPhone": "+49 (0)2364 9462570",
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/455343925?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "Mercedes-Benz",
+    "model": "GLA 250",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/8e/8ed95a31-198a-4406-95c5-c57f892eca32?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/8e/8ed95a31-198a-4406-95c5-c57f892eca32?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/8e/8ed95a31-198a-4406-95c5-c57f892eca32?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/8e/8ed95a31-198a-4406-95c5-c57f892eca32?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/8e/8ed95a31-198a-4406-95c5-c57f892eca32?rule=mo-1024w 1024w",
+      "alt": "Mercedes-Benz GLA 250 AMG Line Rückfahrkamera *Garantie*"
+    },
+    "price": {
+      "gross": "19.990 €",
+      "grossAmount": 19990,
+      "grossCurrency": "EUR"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=455343925&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "ad"
+  },
+  {
+    "isEyeCatcher": false,
+    "numImages": 37,
+    "attr": {
+      "cn": "DE",
+      "z": "01237",
+      "loc": "Dresden",
+      "fr": "04/2013",
+      "pw": "235 kW (320 PS)",
+      "ft": "Benzin",
+      "ml": "113.814 km",
+      "cc": "2.979 cm³",
+      "tr": "Automatik",
+      "gi": "Neu",
+      "ecol": "Weiß",
+      "eu": "Deutsche Ausführung",
+      "door": "4/5",
+      "sc": "5",
+      "c": "Limousine",
+      "emc": "Euro5",
+      "nw": "1.595 kg"
+    },
+    "shortTitle": "BMW M135",
+    "subTitle": "i xDrive * Leder * Sitzhzg. * HU/AU neu",
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "AO",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/1?adId=454495868&loanType=balloon&loanDuration=60&downPayment=3996",
+        "shortFlow": false,
+        "promotion": false,
+        "showInGallery": true,
+        "offer": {
+          "bankName": "Openbank Deutschland AG",
+          "loanBroker": "Check24 GmbH",
+          "loanType": "BALLOON",
+          "downPayment": 3996,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 15984,
+          "interestRateNominal": 5.26,
+          "interestRateEffective": 5.39,
+          "monthlyInstallment": 210.32,
+          "finalInstallment": 6593.4,
+          "totalInterest": 3018.19,
+          "totalAmount": 19002.19,
+          "localized": {
+            "downPayment": "3.996 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "15.984 €",
+            "interestRateNominal": "5,26%",
+            "interestRateEffective": "5,39%",
+            "monthlyInstallment": "211 €",
+            "finalInstallment": "6.593,40 €",
+            "totalInterest": "3.018,19 €",
+            "totalAmount": "19.002,19 €",
+            "disclaimer": "Repräsentatives Beispiel gemäß § 17 Abs. 4 PAngV: Nettodarlehensbetrag von 10.000 €, effektiver Jahreszins 5,39%, fester Sollzinssatz 5,26% p.a., Laufzeit 60 Monate, 59 monatliche Raten à 143,60 € und eine Schlussrate à 3.300,00 €, Gesamtbetrag 11.772,13 €. Ein Angebot der Openbank Deutschland AG (Darlehensgeber), Santander-Platz 1, 41061 Mönchengladbach"
+          }
+        }
+      }
+    ],
+    "sellerId": 5615979,
+    "priceRating": {
+      "rating": "GOOD_PRICE",
+      "ratingLabel": "Guter Preis",
+      "thresholdLabels": [
+        "14.700 €",
+        "19.100 €",
+        "20.600 €",
+        "22.900 €",
+        "24.600 €",
+        "27.300 €"
+      ],
+      "vehiclePriceOffset": 58
+    },
+    "segment": "Car",
+    "title": "BMW M135 i xDrive * Leder * Sitzhzg. * HU/AU neu",
+    "vc": "Car",
+    "category": "Limousine",
+    "id": 454495868,
+    "kba": {
+      "hsn": "0005",
+      "tsn": "BMF"
+    },
+    "customDimensions": {
+      "10": "platinum"
+    },
+    "attributes": [
+      [
+        {
+          "value": "EZ 04/2013"
+        },
+        {
+          "value": "113.814 km"
+        },
+        {
+          "value": "235 kW (320 PS)"
+        },
+        {
+          "value": "Benzin"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "Admiral Deutscher Handelskontor GmbH",
+      "location": "01237 Dresden",
+      "rating": {
+        "score": 4.6,
+        "count": 21,
+        "totalCount": 265
+      },
+      "logo": {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/39/39ff8be7-16f6-4c81-b4e3-1e9fe3abe7cb?rule=mo-80",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/39/39ff8be7-16f6-4c81-b4e3-1e9fe3abe7cb?rule=mo-80 80w, https://img.classistatic.de/api/v1/mo-prod/images/39/39ff8be7-16f6-4c81-b4e3-1e9fe3abe7cb?rule=mo-160 160w, https://img.classistatic.de/api/v1/mo-prod/images/39/39ff8be7-16f6-4c81-b4e3-1e9fe3abe7cb?rule=mo-240 240w",
+        "alt": "Admiral Deutscher Handelskontor GmbH"
+      },
+      "hasContactPhones": true,
+      "contactPhone": "+49 (0)351 2705563",
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/454495868?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "BMW",
+    "model": "M135",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/60/606b7e59-23aa-411a-adcd-4b60eb8511e9?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/60/606b7e59-23aa-411a-adcd-4b60eb8511e9?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/60/606b7e59-23aa-411a-adcd-4b60eb8511e9?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/60/606b7e59-23aa-411a-adcd-4b60eb8511e9?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/60/606b7e59-23aa-411a-adcd-4b60eb8511e9?rule=mo-1024w 1024w",
+      "alt": "BMW M135 i xDrive * Leder * Sitzhzg. * HU/AU neu"
+    },
+    "price": {
+      "gross": "19.980 €",
+      "grossAmount": 19980,
+      "grossCurrency": "EUR"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=454495868&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "ad"
+  },
+  {
+    "isEyeCatcher": false,
+    "numImages": 38,
+    "attr": {
+      "cn": "DE",
+      "z": "29225",
+      "loc": "Celle",
+      "fr": "04/2015",
+      "pw": "265 kW (360 PS)",
+      "ft": "Benzin",
+      "ml": "103.000 km",
+      "cc": "1.991 cm³",
+      "tr": "Automatik",
+      "gi": "05/2027",
+      "ecol": "Schwarz",
+      "eu": "Deutsche Ausführung",
+      "door": "4/5",
+      "sc": "5",
+      "c": "Limousine",
+      "emc": "Euro6",
+      "nw": "1.555 kg"
+    },
+    "shortTitle": "Mercedes-Benz A 45 AMG",
+    "subTitle": "Performance 4Matic Aero H/K Kamera Navi",
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "DF",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/2?adId=457308337&loanType=balloon&loanDuration=60&downPayment=5399",
+        "shortFlow": true,
+        "promotion": false,
+        "showInGallery": true,
+        "offer": {
+          "bankId": "CreditPlus",
+          "bankName": "Creditplus Bank AG",
+          "loanType": "BALLOON",
+          "downPayment": 5399,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 21600,
+          "interestRateNominal": 6.3,
+          "interestRateEffective": 6.49,
+          "monthlyInstallment": 231.98,
+          "finalInstallment": 13499.5,
+          "totalInterest": 5586.21,
+          "totalAmount": 27186.21,
+          "localized": {
+            "downPayment": "5.399 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "21.600 €",
+            "interestRateNominal": "6,30%",
+            "interestRateEffective": "6,49%",
+            "monthlyInstallment": "232 €",
+            "finalInstallment": "13.499,50 €",
+            "totalInterest": "5.586,21 €",
+            "totalAmount": "27.186,21 €",
+            "disclaimer": "Repräsentatives Beispiel: Vorstehende Angaben stellen zugleich das 2/3-Beispiel gem. § 17 Abs. 4 PAngV dar. Ein Finanzierungsangebot der Creditplus Bank AG, Augustenstraße 7, 70178 Stuttgart (Darlehensgeber). Bonität vorausgesetzt."
+          }
+        },
+        "bankId": "CreditPlus"
+      }
+    ],
+    "highlights": [
+      "Finanzierung",
+      "Inzahlungnahme ",
+      "Lieferung"
+    ],
+    "sellerId": 34028665,
+    "priceRating": {
+      "rating": "INCREASED_PRICE",
+      "ratingLabel": "Erhöhter Preis",
+      "thresholdLabels": [
+        "16.500 €",
+        "21.400 €",
+        "23.000 €",
+        "25.600 €",
+        "27.500 €",
+        "30.600 €"
+      ],
+      "vehiclePriceOffset": 73
+    },
+    "segment": "Car",
+    "title": "Mercedes-Benz A 45 AMG Performance 4Matic Aero H/K Kamera Navi",
+    "vc": "Car",
+    "category": "Limousine",
+    "id": 457308337,
+    "kba": {
+      "hsn": "1313",
+      "tsn": "DJL"
+    },
+    "customDimensions": {
+      "10": "platinum"
+    },
+    "attributes": [
+      [
+        {
+          "value": "EZ 04/2015"
+        },
+        {
+          "value": "103.000 km"
+        },
+        {
+          "value": "265 kW (360 PS)"
+        },
+        {
+          "value": "Benzin"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "Autoland Celle GmbH & Co. KG",
+      "location": "29225 Celle",
+      "rating": {
+        "score": 4.5,
+        "count": 71,
+        "totalCount": 403
+      },
+      "logo": {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/50/50161177-0b26-4c67-b591-5f9a1ae8bd58?rule=mo-80",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/50/50161177-0b26-4c67-b591-5f9a1ae8bd58?rule=mo-80 80w, https://img.classistatic.de/api/v1/mo-prod/images/50/50161177-0b26-4c67-b591-5f9a1ae8bd58?rule=mo-160 160w, https://img.classistatic.de/api/v1/mo-prod/images/50/50161177-0b26-4c67-b591-5f9a1ae8bd58?rule=mo-240 240w",
+        "alt": "Autoland Celle GmbH & Co. KG"
+      },
+      "hasContactPhones": true,
+      "contactPhone": "+49 (0)5141 5989981",
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/457308337?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "Mercedes-Benz",
+    "model": "A 45 AMG",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/ea/ea56f2ed-ac40-44ba-8cd4-0a71f5759480?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/ea/ea56f2ed-ac40-44ba-8cd4-0a71f5759480?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/ea/ea56f2ed-ac40-44ba-8cd4-0a71f5759480?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/ea/ea56f2ed-ac40-44ba-8cd4-0a71f5759480?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/ea/ea56f2ed-ac40-44ba-8cd4-0a71f5759480?rule=mo-1024w 1024w",
+      "alt": "Mercedes-Benz A 45 AMG Performance 4Matic Aero H/K Kamera Navi"
+    },
+    "price": {
+      "gross": "26.999 €",
+      "grossAmount": 26999,
+      "grossCurrency": "EUR"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=457308337&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "ad"
+  },
+  {
+    "isEyeCatcher": false,
+    "numImages": 22,
+    "attr": {
+      "cn": "DE",
+      "z": "97688",
+      "loc": "Bad Kissingen",
+      "fr": "09/2016",
+      "pw": "110 kW (150 PS)",
+      "ft": "Diesel",
+      "ml": "88.300 km",
+      "cc": "1.968 cm³",
+      "tr": "Automatik",
+      "gi": "Neu",
+      "ecol": "Grau",
+      "eu": "Deutsche Ausführung",
+      "door": "4/5",
+      "sc": "5",
+      "c": "Limousine",
+      "emc": "Euro6",
+      "pvo": "2"
+    },
+    "shortTitle": "Volkswagen Golf",
+    "subTitle": "2.0 TDI Allstar *SHZ*PDC*Bi-XENON*Winterpak",
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "AO",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/1?adId=445777243&loanType=balloon&loanDuration=60&downPayment=3276",
+        "shortFlow": false,
+        "promotion": false,
+        "showInGallery": true,
+        "offer": {
+          "bankName": "Openbank Deutschland AG",
+          "loanBroker": "Check24 GmbH",
+          "loanType": "BALLOON",
+          "downPayment": 3276,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 13104,
+          "interestRateNominal": 5.26,
+          "interestRateEffective": 5.39,
+          "monthlyInstallment": 172.42,
+          "finalInstallment": 5405.4,
+          "totalInterest": 2474.37,
+          "totalAmount": 15578.37,
+          "localized": {
+            "downPayment": "3.276 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "13.104 €",
+            "interestRateNominal": "5,26%",
+            "interestRateEffective": "5,39%",
+            "monthlyInstallment": "173 €",
+            "finalInstallment": "5.405,40 €",
+            "totalInterest": "2.474,37 €",
+            "totalAmount": "15.578,37 €",
+            "disclaimer": "Repräsentatives Beispiel gemäß § 17 Abs. 4 PAngV: Nettodarlehensbetrag von 10.000 €, effektiver Jahreszins 5,39%, fester Sollzinssatz 5,26% p.a., Laufzeit 60 Monate, 59 monatliche Raten à 143,60 € und eine Schlussrate à 3.300,00 €, Gesamtbetrag 11.772,13 €. Ein Angebot der Openbank Deutschland AG (Darlehensgeber), Santander-Platz 1, 41061 Mönchengladbach"
+          }
+        }
+      }
+    ],
+    "highlights": [
+      "www.avemo-group.de",
+      "20.000 Autos abrufbar",
+      "gratis FZ-Bewertung"
+    ],
+    "sellerId": 19749600,
+    "priceRating": {
+      "rating": "GOOD_PRICE",
+      "ratingLabel": "Guter Preis",
+      "thresholdLabels": [
+        "11.800 €",
+        "15.300 €",
+        "16.500 €",
+        "18.300 €",
+        "19.700 €",
+        "21.800 €"
+      ],
+      "vehiclePriceOffset": 90
+    },
+    "segment": "Car",
+    "title": "Volkswagen Golf 2.0 TDI Allstar *SHZ*PDC*Bi-XENON*Winterpak",
+    "vc": "Car",
+    "category": "Limousine",
+    "id": 445777243,
+    "kba": {
+      "hsn": "0603",
+      "tsn": "BJJ"
+    },
+    "customDimensions": {
+      "10": "platinum"
+    },
+    "attributes": [
+      [
+        {
+          "value": "EZ 09/2016"
+        },
+        {
+          "value": "88.300 km"
+        },
+        {
+          "value": "110 kW (150 PS)"
+        },
+        {
+          "value": "Diesel"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "Gelder & Sorg Schweinfurt GmbH & Co. KG",
+      "location": "97688 Bad Kissingen",
+      "rating": null,
+      "logo": {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/c5/c50295e4-5394-4c63-ac7d-ed7fd198fb34?rule=mo-80",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/c5/c50295e4-5394-4c63-ac7d-ed7fd198fb34?rule=mo-80 80w, https://img.classistatic.de/api/v1/mo-prod/images/c5/c50295e4-5394-4c63-ac7d-ed7fd198fb34?rule=mo-160 160w, https://img.classistatic.de/api/v1/mo-prod/images/c5/c50295e4-5394-4c63-ac7d-ed7fd198fb34?rule=mo-240 240w",
+        "alt": "Gelder & Sorg Schweinfurt GmbH & Co. KG"
+      },
+      "hasContactPhones": false,
+      "contactPhone": null,
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/445777243?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "Volkswagen",
+    "model": "Golf",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/b6/b6ab7269-ba50-40d8-ae6d-c46d9012e3e0?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/b6/b6ab7269-ba50-40d8-ae6d-c46d9012e3e0?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/b6/b6ab7269-ba50-40d8-ae6d-c46d9012e3e0?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/b6/b6ab7269-ba50-40d8-ae6d-c46d9012e3e0?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/b6/b6ab7269-ba50-40d8-ae6d-c46d9012e3e0?rule=mo-1024w 1024w",
+      "alt": "Volkswagen Golf 2.0 TDI Allstar *SHZ*PDC*Bi-XENON*Winterpak"
+    },
+    "price": {
+      "gross": "16.380 €",
+      "grossAmount": 16380,
+      "grossCurrency": "EUR",
+      "reducedGross": "17.480 €"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=445777243&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "ad"
+  },
+  {
+    "isEyeCatcher": false,
+    "numImages": 44,
+    "attr": {
+      "cn": "DE",
+      "z": "30916",
+      "loc": "Isernhagen",
+      "fr": "07/2014",
+      "pw": "225 kW (306 PS)",
+      "ft": "Benzin",
+      "ml": "118.679 km",
+      "cc": "2.979 cm³",
+      "tr": "Automatik",
+      "gi": "01/2027",
+      "ecol": "Weiß",
+      "eu": "Deutsche Ausführung",
+      "door": "4/5",
+      "sc": "5",
+      "c": "Limousine",
+      "emc": "Euro6"
+    },
+    "shortTitle": "BMW 535",
+    "subTitle": "i Activehybrid5 HUD DAB H/K 360°Sport SoftCl",
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "DF",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/2?adId=457152821&loanType=balloon&loanDuration=60&downPayment=3940",
+        "shortFlow": true,
+        "promotion": false,
+        "showInGallery": true,
+        "offer": {
+          "bankId": "CreditPlus",
+          "bankName": "Creditplus Bank AG",
+          "loanType": "BALLOON",
+          "downPayment": 3940,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 15760,
+          "interestRateNominal": 6.3,
+          "interestRateEffective": 6.49,
+          "monthlyInstallment": 169.25,
+          "finalInstallment": 9850,
+          "totalInterest": 4075.92,
+          "totalAmount": 19835.92,
+          "localized": {
+            "downPayment": "3.940 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "15.760 €",
+            "interestRateNominal": "6,30%",
+            "interestRateEffective": "6,49%",
+            "monthlyInstallment": "170 €",
+            "finalInstallment": "9.850,00 €",
+            "totalInterest": "4.075,92 €",
+            "totalAmount": "19.835,92 €",
+            "disclaimer": "Repräsentatives Beispiel: Vorstehende Angaben stellen zugleich das 2/3-Beispiel gem. § 17 Abs. 4 PAngV dar. Ein Finanzierungsangebot der Creditplus Bank AG, Augustenstraße 7, 70178 Stuttgart (Darlehensgeber). Bonität vorausgesetzt."
+          }
+        },
+        "bankId": "CreditPlus"
+      }
+    ],
+    "highlights": [
+      "Finanzierung",
+      "Inzahlungnahme",
+      "Lieferung"
+    ],
+    "sellerId": 33744761,
+    "priceRating": {
+      "rating": "REASONABLE_PRICE",
+      "ratingLabel": "Fairer Preis",
+      "thresholdLabels": [
+        "12.900 €",
+        "16.700 €",
+        "18.000 €",
+        "20.100 €",
+        "21.500 €",
+        "23.900 €"
+      ],
+      "vehiclePriceOffset": 80
+    },
+    "segment": "Car",
+    "title": "BMW 535i Activehybrid5 HUD DAB H/K 360°Sport SoftCl",
+    "vc": "Car",
+    "category": "Limousine",
+    "id": 457152821,
+    "kba": {
+      "hsn": "0005",
+      "tsn": "BRZ"
+    },
+    "customDimensions": {
+      "10": "platinum"
+    },
+    "attributes": [
+      [
+        {
+          "value": "EZ 07/2014"
+        },
+        {
+          "value": "118.679 km"
+        },
+        {
+          "value": "225 kW (306 PS)"
+        },
+        {
+          "value": "Benzin"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "Autohaus Isernhagen GmbH & Co. KG",
+      "location": "30916 Isernhagen",
+      "rating": {
+        "score": 4.5,
+        "count": 98,
+        "totalCount": 1023
+      },
+      "logo": {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/7b/7bd11486-83b1-4f1f-bb99-2907c3be967d?rule=mo-80",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/7b/7bd11486-83b1-4f1f-bb99-2907c3be967d?rule=mo-80 80w, https://img.classistatic.de/api/v1/mo-prod/images/7b/7bd11486-83b1-4f1f-bb99-2907c3be967d?rule=mo-160 160w, https://img.classistatic.de/api/v1/mo-prod/images/7b/7bd11486-83b1-4f1f-bb99-2907c3be967d?rule=mo-240 240w",
+        "alt": "Autohaus Isernhagen GmbH & Co. KG"
+      },
+      "hasContactPhones": true,
+      "contactPhone": "+49 (0)511 16652000",
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/457152821?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "BMW",
+    "model": "535",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/0b/0bb051a4-e9fc-48aa-8b45-a0de061982f9?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/0b/0bb051a4-e9fc-48aa-8b45-a0de061982f9?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/0b/0bb051a4-e9fc-48aa-8b45-a0de061982f9?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/0b/0bb051a4-e9fc-48aa-8b45-a0de061982f9?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/0b/0bb051a4-e9fc-48aa-8b45-a0de061982f9?rule=mo-1024w 1024w",
+      "alt": "BMW 535i Activehybrid5 HUD DAB H/K 360°Sport SoftCl"
+    },
+    "price": {
+      "gross": "19.700 €",
+      "grossAmount": 19700,
+      "grossCurrency": "EUR"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=457152821&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "ad"
+  },
+  {
+    "slotId": "SRP_INPAGE_VIDEO",
+    "type": "inlineAdvertising"
+  },
+  {
+    "slotId": "SRP_TABLECELL_LOWER",
+    "type": "inlineAdvertising"
+  },
+  {
+    "isEyeCatcher": false,
+    "numImages": 16,
+    "attr": {
+      "cn": "DE",
+      "z": "23843",
+      "loc": "Bad Oldesloe",
+      "fr": "09/2017",
+      "pw": "132 kW (179 PS)",
+      "ft": "Benzin",
+      "ml": "108.841 km",
+      "cc": "1.984 cm³",
+      "tr": "Automatik",
+      "gi": "Neu",
+      "ecol": "Beige",
+      "eu": "Deutsche Ausführung",
+      "door": "4/5",
+      "sc": "5",
+      "c": "OffRoad",
+      "emc": "Euro6",
+      "pvo": "1",
+      "nw": "1.645 kg"
+    },
+    "shortTitle": "Volkswagen Tiguan",
+    "subTitle": "Highline*Allrad*1.Hand*Garantie*Navi*SHZ",
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "AO",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/1?adId=451285051&loanType=balloon&loanDuration=60&downPayment=4350",
+        "shortFlow": false,
+        "promotion": false,
+        "showInGallery": true,
+        "offer": {
+          "bankName": "Openbank Deutschland AG",
+          "loanBroker": "Check24 GmbH",
+          "loanType": "BALLOON",
+          "downPayment": 4350,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 17400,
+          "interestRateNominal": 5.26,
+          "interestRateEffective": 5.39,
+          "monthlyInstallment": 228.95,
+          "finalInstallment": 7177.5,
+          "totalInterest": 3285.57,
+          "totalAmount": 20685.57,
+          "localized": {
+            "downPayment": "4.350 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "17.400 €",
+            "interestRateNominal": "5,26%",
+            "interestRateEffective": "5,39%",
+            "monthlyInstallment": "229 €",
+            "finalInstallment": "7.177,50 €",
+            "totalInterest": "3.285,57 €",
+            "totalAmount": "20.685,57 €",
+            "disclaimer": "Repräsentatives Beispiel gemäß § 17 Abs. 4 PAngV: Nettodarlehensbetrag von 10.000 €, effektiver Jahreszins 5,39%, fester Sollzinssatz 5,26% p.a., Laufzeit 60 Monate, 59 monatliche Raten à 143,60 € und eine Schlussrate à 3.300,00 €, Gesamtbetrag 11.772,13 €. Ein Angebot der Openbank Deutschland AG (Darlehensgeber), Santander-Platz 1, 41061 Mönchengladbach"
+          }
+        }
+      }
+    ],
+    "highlights": [
+      "Scheckheft gepflegt!",
+      "Finanzierung!",
+      "Garantie!"
+    ],
+    "sellerId": 31913493,
+    "priceRating": {
+      "rating": "REASONABLE_PRICE",
+      "ratingLabel": "Fairer Preis",
+      "thresholdLabels": [
+        "14.100 €",
+        "18.400 €",
+        "19.800 €",
+        "22.000 €",
+        "23.600 €",
+        "26.300 €"
+      ],
+      "vehiclePriceOffset": 88
+    },
+    "segment": "Car",
+    "title": "Volkswagen Tiguan Highline*Allrad*1.Hand*Garantie*Navi*SHZ",
+    "vc": "Car",
+    "category": "SUV/Geländewagen/Pickup",
+    "id": 451285051,
+    "kba": {
+      "hsn": "0603",
+      "tsn": "BZD"
+    },
+    "customDimensions": {
+      "10": "platinum"
+    },
+    "attributes": [
+      [
+        {
+          "value": "Unfallfrei",
+          "bold": true
+        },
+        {
+          "value": "EZ 09/2017"
+        },
+        {
+          "value": "108.841 km"
+        },
+        {
+          "value": "132 kW (179 PS)"
+        },
+        {
+          "value": "Benzin"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "Oberst Automobile",
+      "location": "23843 Bad Oldesloe",
+      "rating": {
+        "score": 5,
+        "count": 55,
+        "totalCount": 66
+      },
+      "logo": null,
+      "hasContactPhones": true,
+      "contactPhone": "+49 (0)176 72369169",
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/451285051?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "Volkswagen",
+    "model": "Tiguan",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/db/db6119de-0760-41ba-a6c9-45c394833422?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/db/db6119de-0760-41ba-a6c9-45c394833422?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/db/db6119de-0760-41ba-a6c9-45c394833422?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/db/db6119de-0760-41ba-a6c9-45c394833422?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/db/db6119de-0760-41ba-a6c9-45c394833422?rule=mo-1024w 1024w",
+      "alt": "Volkswagen Tiguan Highline*Allrad*1.Hand*Garantie*Navi*SHZ"
+    },
+    "price": {
+      "gross": "21.750 €",
+      "grossAmount": 21750,
+      "grossCurrency": "EUR"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=451285051&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "ad"
+  },
+  {
+    "isEyeCatcher": false,
+    "numImages": 18,
+    "attr": {
+      "cn": "DE",
+      "z": "66839",
+      "loc": "Schmelz",
+      "fr": "04/2014",
+      "pw": "228 kW (310 PS)",
+      "ft": "Benzin",
+      "ml": "105.500 km",
+      "cc": "2.480 cm³",
+      "tr": "Automatik",
+      "gi": "Neu",
+      "ecol": "Schwarz",
+      "eu": "Deutsche Ausführung",
+      "door": "4/5",
+      "sc": "5",
+      "c": "OffRoad",
+      "emc": "Euro6",
+      "pvo": "2",
+      "nw": "1.730 kg"
+    },
+    "shortTitle": "Audi RSQ3",
+    "subTitle": "2.5 TFSI quattro *Carbon*Bose*Pano*Naviplus",
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "DF",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/2?adId=456993252&loanType=balloon&loanDuration=60&downPayment=5100",
+        "shortFlow": true,
+        "promotion": false,
+        "showInGallery": true,
+        "offer": {
+          "bankId": "Santander",
+          "bankName": "Openbank Deutschland AG",
+          "loanType": "BALLOON",
+          "downPayment": 5100,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 20400,
+          "interestRateNominal": 7.71,
+          "interestRateEffective": 7.99,
+          "monthlyInstallment": 257,
+          "finalInstallment": 11475,
+          "totalInterest": 6238.15,
+          "totalAmount": 26638.15,
+          "localized": {
+            "downPayment": "5.100 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "20.400 €",
+            "interestRateNominal": "7,71%",
+            "interestRateEffective": "7,99%",
+            "monthlyInstallment": "258 €",
+            "finalInstallment": "11.475,00 €",
+            "totalInterest": "6.238,15 €",
+            "totalAmount": "26.638,15 €",
+            "disclaimer": "Repräsentatives Beispiel: Vorstehende Angaben stellen zugleich das 2/3-Beispiel gem. § 17 Abs. 4 PAngV dar. Ein Finanzierungsangebot der Openbank Deutschland AG, Santander-Platz 1, 41061 Mönchengladbach (Darlehensgeber). Bonität vorausgesetzt."
+          }
+        },
+        "bankId": "Santander"
+      }
+    ],
+    "highlights": [
+      "Carbon",
+      "Panorama-Dach",
+      "HU neu"
+    ],
+    "sellerId": 3495703,
+    "priceRating": {
+      "rating": "GOOD_PRICE",
+      "ratingLabel": "Guter Preis",
+      "thresholdLabels": [
+        "18.600 €",
+        "24.200 €",
+        "26.100 €",
+        "29.000 €",
+        "31.100 €",
+        "34.600 €"
+      ],
+      "vehiclePriceOffset": 68
+    },
+    "segment": "Car",
+    "title": "Audi RSQ3 2.5 TFSI quattro *Carbon*Bose*Pano*Naviplus",
+    "vc": "Car",
+    "category": "SUV/Geländewagen/Pickup",
+    "id": 456993252,
+    "kba": {
+      "hsn": "7967",
+      "tsn": "ABA"
+    },
+    "customDimensions": {
+      "10": "platinum"
+    },
+    "attributes": [
+      [
+        {
+          "value": "EZ 04/2014"
+        },
+        {
+          "value": "105.500 km"
+        },
+        {
+          "value": "228 kW (310 PS)"
+        },
+        {
+          "value": "Benzin"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "Auto Frank & Tan GmbH",
+      "location": "66839 Schmelz",
+      "rating": {
+        "score": 4.6,
+        "count": 32,
+        "totalCount": 169
+      },
+      "logo": null,
+      "hasContactPhones": true,
+      "contactPhone": "+49 (0)6887 8948118",
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/456993252?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "Audi",
+    "model": "RSQ3",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/03/031d246f-a1c5-475a-aa30-d7cc5b96038f?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/03/031d246f-a1c5-475a-aa30-d7cc5b96038f?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/03/031d246f-a1c5-475a-aa30-d7cc5b96038f?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/03/031d246f-a1c5-475a-aa30-d7cc5b96038f?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/03/031d246f-a1c5-475a-aa30-d7cc5b96038f?rule=mo-1024w 1024w",
+      "alt": "Audi RSQ3 2.5 TFSI quattro *Carbon*Bose*Pano*Naviplus"
+    },
+    "price": {
+      "gross": "25.500 €",
+      "grossAmount": 25500,
+      "grossCurrency": "EUR"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=456993252&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "ad"
+  },
+  {
+    "isEyeCatcher": false,
+    "numImages": 38,
+    "attr": {
+      "cn": "DE",
+      "z": "89415",
+      "loc": "Lauingen an der Donau ( Bei Augsburg ) ",
+      "fr": "11/2011",
+      "pw": "63 kW (86 PS)",
+      "ft": "Benzin",
+      "ml": "95.482 km",
+      "cc": "1.197 cm³",
+      "tr": "Schaltgetriebe",
+      "gi": "Neu",
+      "ecol": "Schwarz",
+      "eu": "Deutsche Ausführung",
+      "door": "4/5",
+      "sc": "5",
+      "c": "Limousine",
+      "emc": "Euro5",
+      "nw": "1.229 kg"
+    },
+    "shortTitle": "Volkswagen Golf",
+    "subTitle": "/2 Jahre Premium Garantie/TÜV-Service-NEU!",
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "DF",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/2?adId=453662252&loanType=balloon&loanDuration=60&downPayment=1999",
+        "shortFlow": true,
+        "promotion": false,
+        "showInGallery": true,
+        "offer": {
+          "bankId": "Bank11",
+          "bankName": "Bank11 für Privatkunden und Handel GmbH",
+          "loanType": "BALLOON",
+          "downPayment": 1999,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 8000,
+          "interestRateNominal": 4.79,
+          "interestRateEffective": 4.9,
+          "monthlyInstallment": 69.95,
+          "finalInstallment": 5499.45,
+          "totalInterest": 1626.68,
+          "totalAmount": 9626.68,
+          "localized": {
+            "downPayment": "1.999 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "8.000 €",
+            "interestRateNominal": "4,79%",
+            "interestRateEffective": "4,90%",
+            "monthlyInstallment": "70 €",
+            "finalInstallment": "5.499,45 €",
+            "totalInterest": "1.626,68 €",
+            "totalAmount": "9.626,68 €",
+            "disclaimer": "Repräsentatives Beispiel: Vorstehende Angaben stellen zugleich das 2/3-Beispiel gem. § 17 Abs. 4 PAngV dar. Ein Finanzierungsangebot der Bank11 für Privatkunden und Handel GmbH, Hammer Landstraße 91, 41460 Neuss (Darlehensgeber). Bonität vorausgesetzt."
+          }
+        },
+        "bankId": "Bank11"
+      }
+    ],
+    "highlights": [
+      "Inzahlungnahme",
+      "Finanzierung",
+      "Top-Service"
+    ],
+    "sellerId": 29658265,
+    "priceRating": {
+      "rating": "NO_RATING",
+      "ratingLabel": "Ohne Bewertung",
+      "noRatingReason": "mobile.de bewertet nur dann den Preis eines Fahrzeugs, wenn ausreichend viele Vergleichsdaten vorliegen. Ist dies nicht der Fall, kann mobile.de keine realistische Preisbewertung vornehmen.",
+      "thresholdLabels": [
+        "5.000 €",
+        "6.500 €",
+        "7.000 €",
+        "7.700 €",
+        "8.300 €",
+        "9.200 €"
+      ]
+    },
+    "segment": "Car",
+    "title": "Volkswagen Golf/2 Jahre Premium Garantie/TÜV-Service-NEU!",
+    "vc": "Car",
+    "category": "Limousine",
+    "id": 453662252,
+    "kba": {
+      "hsn": "0603",
+      "tsn": "ATG"
+    },
+    "customDimensions": {
+      "10": "platinum"
+    },
+    "attributes": [
+      [
+        {
+          "value": "Unfallfrei",
+          "bold": true
+        },
+        {
+          "value": "EZ 11/2011"
+        },
+        {
+          "value": "95.482 km"
+        },
+        {
+          "value": "63 kW (86 PS)"
+        },
+        {
+          "value": "Benzin"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "Autohandel Jakob",
+      "location": "89415 Lauingen an der Donau ( Bei Augsburg ) ",
+      "rating": {
+        "score": 4.8,
+        "count": 10,
+        "totalCount": 20
+      },
+      "logo": {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/d1/d1aaebae-0363-4a8e-9243-2f7725486272?rule=mo-80",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/d1/d1aaebae-0363-4a8e-9243-2f7725486272?rule=mo-80 80w, https://img.classistatic.de/api/v1/mo-prod/images/d1/d1aaebae-0363-4a8e-9243-2f7725486272?rule=mo-160 160w, https://img.classistatic.de/api/v1/mo-prod/images/d1/d1aaebae-0363-4a8e-9243-2f7725486272?rule=mo-240 240w",
+        "alt": "Autohandel Jakob"
+      },
+      "hasContactPhones": true,
+      "contactPhone": "+49 (0)171 8174222",
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/453662252?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "Volkswagen",
+    "model": "Golf",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/6f/6f1ef718-cb43-4beb-8e8a-3ad3cbe0dccd?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/6f/6f1ef718-cb43-4beb-8e8a-3ad3cbe0dccd?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/6f/6f1ef718-cb43-4beb-8e8a-3ad3cbe0dccd?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/6f/6f1ef718-cb43-4beb-8e8a-3ad3cbe0dccd?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/6f/6f1ef718-cb43-4beb-8e8a-3ad3cbe0dccd?rule=mo-1024w 1024w",
+      "alt": "Volkswagen Golf/2 Jahre Premium Garantie/TÜV-Service-NEU!"
+    },
+    "price": {
+      "gross": "9.999 €",
+      "grossAmount": 9999,
+      "grossCurrency": "EUR"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=453662252&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "ad"
+  },
+  {
+    "isEyeCatcher": false,
+    "numImages": 23,
+    "attr": {
+      "cn": "DE",
+      "z": "45721",
+      "loc": "Haltern am See",
+      "fr": "05/2014",
+      "yc": "2014",
+      "pw": "90 kW (122 PS)",
+      "ft": "Benzin",
+      "ml": "89.990 km",
+      "cc": "1.595 cm³",
+      "tr": "Automatik",
+      "gi": "Neu",
+      "ecol": "Grau",
+      "eu": "Deutsche Ausführung",
+      "door": "4/5",
+      "sc": "5",
+      "c": "Van",
+      "emc": "Euro6",
+      "pvo": "2"
+    },
+    "shortTitle": "Mercedes-Benz B 180",
+    "subTitle": "7G-DCT Automatik *Garantie*",
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "DF",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/2?adId=455344114&loanType=balloon&loanDuration=60&downPayment=2998",
+        "shortFlow": true,
+        "promotion": false,
+        "showInGallery": true,
+        "offer": {
+          "bankId": "Santander",
+          "bankName": "Openbank Deutschland AG",
+          "loanType": "BALLOON",
+          "downPayment": 2998,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 11992,
+          "interestRateNominal": 3.92,
+          "interestRateEffective": 3.99,
+          "monthlyInstallment": 120.28,
+          "finalInstallment": 6745.5,
+          "totalInterest": 1849.84,
+          "totalAmount": 13841.84,
+          "localized": {
+            "downPayment": "2.998 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "11.992 €",
+            "interestRateNominal": "3,92%",
+            "interestRateEffective": "3,99%",
+            "monthlyInstallment": "121 €",
+            "finalInstallment": "6.745,50 €",
+            "totalInterest": "1.849,84 €",
+            "totalAmount": "13.841,84 €",
+            "disclaimer": "Repräsentatives Beispiel: Vorstehende Angaben stellen zugleich das 2/3-Beispiel gem. § 17 Abs. 4 PAngV dar. Ein Finanzierungsangebot der Openbank Deutschland AG, Santander-Platz 1, 41061 Mönchengladbach (Darlehensgeber). Bonität vorausgesetzt."
+          }
+        },
+        "bankId": "Santander"
+      }
+    ],
+    "highlights": [
+      "Aktionszins 3,99 %",
+      "Scheckheftgepflegt",
+      "Automatik"
+    ],
+    "sellerId": 25334534,
+    "priceRating": {
+      "rating": "INCREASED_PRICE",
+      "ratingLabel": "Erhöhter Preis",
+      "thresholdLabels": [
+        "9.000 €",
+        "11.600 €",
+        "12.500 €",
+        "14.000 €",
+        "15.000 €",
+        "16.600 €"
+      ],
+      "vehiclePriceOffset": 99
+    },
+    "segment": "Car",
+    "title": "Mercedes-Benz B 180 7G-DCT Automatik *Garantie*",
+    "vc": "Car",
+    "category": "Van/Minibus",
+    "id": 455344114,
+    "kba": {
+      "hsn": "1313",
+      "tsn": "BXT"
+    },
+    "customDimensions": {
+      "10": "platinum"
+    },
+    "attributes": [
+      [
+        {
+          "value": "Unfallfrei",
+          "bold": true
+        },
+        {
+          "value": "EZ 05/2014"
+        },
+        {
+          "value": "89.990 km"
+        },
+        {
+          "value": "90 kW (122 PS)"
+        },
+        {
+          "value": "Benzin"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "Rock Automobil GmbH",
+      "location": "45721 Haltern am See",
+      "rating": {
+        "score": 4.7,
+        "count": 11,
+        "totalCount": 46
+      },
+      "logo": {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/0f/0ff58ce4-606d-432a-9e74-b4d392459cc3?rule=mo-80",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/0f/0ff58ce4-606d-432a-9e74-b4d392459cc3?rule=mo-80 80w, https://img.classistatic.de/api/v1/mo-prod/images/0f/0ff58ce4-606d-432a-9e74-b4d392459cc3?rule=mo-160 160w, https://img.classistatic.de/api/v1/mo-prod/images/0f/0ff58ce4-606d-432a-9e74-b4d392459cc3?rule=mo-240 240w",
+        "alt": "Rock Automobil GmbH"
+      },
+      "hasContactPhones": true,
+      "contactPhone": "+49 (0)2364 9462570",
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/455344114?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "Mercedes-Benz",
+    "model": "B 180",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/0b/0b066ea1-7449-4ca6-8c52-e439c3320464?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/0b/0b066ea1-7449-4ca6-8c52-e439c3320464?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/0b/0b066ea1-7449-4ca6-8c52-e439c3320464?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/0b/0b066ea1-7449-4ca6-8c52-e439c3320464?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/0b/0b066ea1-7449-4ca6-8c52-e439c3320464?rule=mo-1024w 1024w",
+      "alt": "Mercedes-Benz B 180 7G-DCT Automatik *Garantie*"
+    },
+    "price": {
+      "gross": "14.990 €",
+      "grossAmount": 14990,
+      "grossCurrency": "EUR"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=455344114&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "ad"
+  },
+  {
+    "isEyeCatcher": false,
+    "isNew": true,
+    "numImages": 50,
+    "attr": {
+      "cn": "DE",
+      "z": "50829",
+      "loc": "Köln",
+      "fr": "06/2015",
+      "pw": "135 kW (184 PS)",
+      "ft": "Diesel",
+      "ml": "126.586 km",
+      "cc": "1.968 cm³",
+      "tr": "Automatik",
+      "gi": "Neu",
+      "ecol": "Schwarz",
+      "eu": "Deutsche Ausführung",
+      "door": "4/5",
+      "sc": "5",
+      "c": "Limousine",
+      "emc": "Euro6",
+      "pvo": "2",
+      "nw": "1.377 kg"
+    },
+    "shortTitle": "Volkswagen Golf",
+    "subTitle": "VII 2.0 TDI*GTD*BI-XN*NAV*DYNAUD*SOUND*KEYL",
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "DF",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/2?adId=455785234&loanType=balloon&loanDuration=60&downPayment=3298",
+        "shortFlow": true,
+        "promotion": false,
+        "showInGallery": true,
+        "offer": {
+          "bankId": "Santander",
+          "bankName": "Openbank Deutschland AG",
+          "loanType": "BALLOON",
+          "downPayment": 3298,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 13192,
+          "interestRateNominal": 6.78,
+          "interestRateEffective": 6.99,
+          "monthlyInstallment": 157.79,
+          "finalInstallment": 7420.5,
+          "totalInterest": 3537.98,
+          "totalAmount": 16729.98,
+          "localized": {
+            "downPayment": "3.298 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "13.192 €",
+            "interestRateNominal": "6,78%",
+            "interestRateEffective": "6,99%",
+            "monthlyInstallment": "158 €",
+            "finalInstallment": "7.420,50 €",
+            "totalInterest": "3.537,98 €",
+            "totalAmount": "16.729,98 €",
+            "disclaimer": "Repräsentatives Beispiel: Vorstehende Angaben stellen zugleich das 2/3-Beispiel gem. § 17 Abs. 4 PAngV dar. Ein Finanzierungsangebot der Openbank Deutschland AG, Santander-Platz 1, 41061 Mönchengladbach (Darlehensgeber). Bonität vorausgesetzt."
+          }
+        },
+        "bankId": "Santander"
+      }
+    ],
+    "highlights": [
+      "GTD, LIM, AUTOMATIK",
+      "BI-XENON, DYNAUD, SOUN",
+      "NAVI, TEMP, KEYLESS"
+    ],
+    "sellerId": 25827645,
+    "priceRating": {
+      "rating": "GOOD_PRICE",
+      "ratingLabel": "Guter Preis",
+      "thresholdLabels": [
+        "12.000 €",
+        "15.700 €",
+        "16.900 €",
+        "18.700 €",
+        "20.100 €",
+        "22.400 €"
+      ],
+      "vehiclePriceOffset": 65
+    },
+    "segment": "Car",
+    "title": "Volkswagen Golf VII 2.0 TDI*GTD*BI-XN*NAV*DYNAUD*SOUND*KEYL",
+    "vc": "Car",
+    "category": "Limousine",
+    "id": 455785234,
+    "kba": {
+      "hsn": "0603",
+      "tsn": "BKO"
+    },
+    "customDimensions": {
+      "10": "platinum"
+    },
+    "attributes": [
+      [
+        {
+          "value": "Unfallfrei",
+          "bold": true
+        },
+        {
+          "value": "EZ 06/2015"
+        },
+        {
+          "value": "126.586 km"
+        },
+        {
+          "value": "135 kW (184 PS)"
+        },
+        {
+          "value": "Diesel"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "Yildiz Automobile",
+      "location": "50829 Köln",
+      "rating": {
+        "score": 5,
+        "count": 43,
+        "totalCount": 135
+      },
+      "logo": {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/ef/ef77dc65-7ddd-41d4-9917-05a158f257bf?rule=mo-80",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/ef/ef77dc65-7ddd-41d4-9917-05a158f257bf?rule=mo-80 80w, https://img.classistatic.de/api/v1/mo-prod/images/ef/ef77dc65-7ddd-41d4-9917-05a158f257bf?rule=mo-160 160w, https://img.classistatic.de/api/v1/mo-prod/images/ef/ef77dc65-7ddd-41d4-9917-05a158f257bf?rule=mo-240 240w",
+        "alt": "Yildiz Automobile"
+      },
+      "hasContactPhones": true,
+      "contactPhone": "+49 (0)172 1474625",
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/455785234?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "Volkswagen",
+    "model": "Golf",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/9c/9c03b8d0-64eb-4641-bed3-3ea2df1a5ddb?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/9c/9c03b8d0-64eb-4641-bed3-3ea2df1a5ddb?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/9c/9c03b8d0-64eb-4641-bed3-3ea2df1a5ddb?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/9c/9c03b8d0-64eb-4641-bed3-3ea2df1a5ddb?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/9c/9c03b8d0-64eb-4641-bed3-3ea2df1a5ddb?rule=mo-1024w 1024w",
+      "alt": "Volkswagen Golf VII 2.0 TDI*GTD*BI-XN*NAV*DYNAUD*SOUND*KEYL"
+    },
+    "price": {
+      "gross": "16.490 €",
+      "grossAmount": 16490,
+      "grossCurrency": "EUR"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=455785234&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "ad"
+  },
+  {
+    "slotId": "T_01_ADSENSE_CSA_SRP_TOP",
+    "type": "inlineAdvertising"
+  },
+  {
+    "isEyeCatcher": false,
+    "numImages": 38,
+    "attr": {
+      "cn": "DE",
+      "z": "95030",
+      "loc": "Hof",
+      "fr": "03/2016",
+      "pw": "110 kW (150 PS)",
+      "ft": "Benzin",
+      "ml": "123.893 km",
+      "cc": "1.395 cm³",
+      "tr": "Schaltgetriebe",
+      "gi": "Neu",
+      "ecol": "Blau",
+      "door": "4/5",
+      "sc": "5",
+      "c": "Limousine",
+      "emc": "Euro6",
+      "nw": "1.268 kg"
+    },
+    "shortTitle": "Volkswagen Golf",
+    "subTitle": "VII Lim. Allstar BMT***MTL.RATE 117 €***",
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "DF",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/2?adId=457026601&loanType=balloon&loanDuration=60&downPayment=2399",
+        "shortFlow": true,
+        "promotion": false,
+        "showInGallery": true,
+        "offer": {
+          "bankId": "Santander",
+          "bankName": "Openbank Deutschland AG",
+          "loanType": "BALLOON",
+          "downPayment": 2399,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 9600,
+          "interestRateNominal": 5.83,
+          "interestRateEffective": 5.99,
+          "monthlyInstallment": 108.68,
+          "finalInstallment": 5399.55,
+          "totalInterest": 2211.81,
+          "totalAmount": 11811.81,
+          "localized": {
+            "downPayment": "2.399 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "9.600 €",
+            "interestRateNominal": "5,83%",
+            "interestRateEffective": "5,99%",
+            "monthlyInstallment": "109 €",
+            "finalInstallment": "5.399,55 €",
+            "totalInterest": "2.211,81 €",
+            "totalAmount": "11.811,81 €",
+            "disclaimer": "Repräsentatives Beispiel: Vorstehende Angaben stellen zugleich das 2/3-Beispiel gem. § 17 Abs. 4 PAngV dar. Ein Finanzierungsangebot der Openbank Deutschland AG, Santander-Platz 1, 41061 Mönchengladbach (Darlehensgeber). Bonität vorausgesetzt."
+          }
+        },
+        "bankId": "Santander"
+      }
+    ],
+    "highlights": [
+      "***MTL.RATE 117 €***",
+      "KLIMAAUTOMATIC",
+      "SITZHEIZUNG"
+    ],
+    "sellerId": 464228,
+    "priceRating": {
+      "rating": "REASONABLE_PRICE",
+      "ratingLabel": "Fairer Preis",
+      "thresholdLabels": [
+        "8.300 €",
+        "10.800 €",
+        "11.700 €",
+        "13.000 €",
+        "13.900 €",
+        "15.500 €"
+      ],
+      "vehiclePriceOffset": 23
+    },
+    "segment": "Car",
+    "title": "Volkswagen Golf VII Lim. Allstar BMT***MTL.RATE 117 €***",
+    "vc": "Car",
+    "category": "Limousine",
+    "id": 457026601,
+    "kba": {
+      "hsn": "0603",
+      "tsn": "BPG"
+    },
+    "customDimensions": {
+      "10": "platinum"
+    },
+    "attributes": [
+      [
+        {
+          "value": "EZ 03/2016"
+        },
+        {
+          "value": "123.893 km"
+        },
+        {
+          "value": "110 kW (150 PS)"
+        },
+        {
+          "value": "Benzin"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "Sendel e.K. inh.Marco Sendel",
+      "location": "95030 Hof",
+      "rating": {
+        "score": 4.8,
+        "count": 33,
+        "totalCount": 165
+      },
+      "logo": {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/2f/2f27b286-cf40-4ce3-8a3f-08064bbf4e21?rule=mo-80",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/2f/2f27b286-cf40-4ce3-8a3f-08064bbf4e21?rule=mo-80 80w, https://img.classistatic.de/api/v1/mo-prod/images/2f/2f27b286-cf40-4ce3-8a3f-08064bbf4e21?rule=mo-160 160w, https://img.classistatic.de/api/v1/mo-prod/images/2f/2f27b286-cf40-4ce3-8a3f-08064bbf4e21?rule=mo-240 240w",
+        "alt": "Sendel e.K. inh.Marco Sendel"
+      },
+      "hasContactPhones": true,
+      "contactPhone": "+49 (0)9281 7798462",
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/457026601?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "Volkswagen",
+    "model": "Golf",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/43/4318729a-a735-4b2c-b971-d040ce185529?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/43/4318729a-a735-4b2c-b971-d040ce185529?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/43/4318729a-a735-4b2c-b971-d040ce185529?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/43/4318729a-a735-4b2c-b971-d040ce185529?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/43/4318729a-a735-4b2c-b971-d040ce185529?rule=mo-1024w 1024w",
+      "alt": "Volkswagen Golf VII Lim. Allstar BMT***MTL.RATE 117 €***"
+    },
+    "price": {
+      "gross": "11.999 €",
+      "grossAmount": 11999,
+      "grossCurrency": "EUR"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=457026601&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "ad"
+  },
+  {
+    "isEyeCatcher": true,
+    "numImages": 15,
+    "attr": {
+      "cn": "DE",
+      "z": "91595",
+      "loc": "Burgoberbach",
+      "fr": "07/2016",
+      "yc": "2016",
+      "pw": "77 kW (105 PS)",
+      "ft": "Benzin",
+      "ml": "92.300 km",
+      "cc": "1.197 cm³",
+      "tr": "Schaltgetriebe",
+      "ecol": "Schwarz",
+      "eu": "Deutsche Ausführung",
+      "door": "2/3",
+      "sc": "4",
+      "c": "Cabrio",
+      "emc": "Euro6",
+      "pvo": "2"
+    },
+    "shortTitle": "Volkswagen Beetle",
+    "subTitle": "Cabrio Allstar 1.2 TSI NAVI KAMERA",
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "AO",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/1?adId=448075746&loanType=balloon&loanDuration=60&downPayment=2988",
+        "shortFlow": false,
+        "promotion": false,
+        "showInGallery": true,
+        "offer": {
+          "bankName": "Openbank Deutschland AG",
+          "loanBroker": "Check24 GmbH",
+          "loanType": "BALLOON",
+          "downPayment": 2988,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 11952,
+          "interestRateNominal": 5.26,
+          "interestRateEffective": 5.39,
+          "monthlyInstallment": 157.27,
+          "finalInstallment": 4930.2,
+          "totalInterest": 2256.84,
+          "totalAmount": 14208.84,
+          "localized": {
+            "downPayment": "2.988 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "11.952 €",
+            "interestRateNominal": "5,26%",
+            "interestRateEffective": "5,39%",
+            "monthlyInstallment": "158 €",
+            "finalInstallment": "4.930,20 €",
+            "totalInterest": "2.256,84 €",
+            "totalAmount": "14.208,84 €",
+            "disclaimer": "Repräsentatives Beispiel gemäß § 17 Abs. 4 PAngV: Nettodarlehensbetrag von 10.000 €, effektiver Jahreszins 5,39%, fester Sollzinssatz 5,26% p.a., Laufzeit 60 Monate, 59 monatliche Raten à 143,60 € und eine Schlussrate à 3.300,00 €, Gesamtbetrag 11.772,13 €. Ein Angebot der Openbank Deutschland AG (Darlehensgeber), Santander-Platz 1, 41061 Mönchengladbach"
+          }
+        }
+      }
+    ],
+    "highlights": [
+      "Anschlussgarantie...",
+      "Motor Euro 6",
+      "Tempomat"
+    ],
+    "sellerId": 11103895,
+    "priceRating": {
+      "rating": "REASONABLE_PRICE",
+      "ratingLabel": "Fairer Preis",
+      "thresholdLabels": [
+        "9.700 €",
+        "12.600 €",
+        "13.600 €",
+        "15.200 €",
+        "16.300 €",
+        "18.100 €"
+      ],
+      "vehiclePriceOffset": 83
+    },
+    "segment": "Car",
+    "title": "Volkswagen Beetle Cabrio Allstar 1.2 TSI NAVI KAMERA",
+    "vc": "Car",
+    "category": "Cabrio/Roadster",
+    "id": 448075746,
+    "kba": {
+      "hsn": "0603",
+      "tsn": "BIY"
+    },
+    "customDimensions": {
+      "10": "platinum"
+    },
+    "previewThumbnails": [
+      {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/54/545f1fd8-c672-4ec3-9f2a-b4ad82af115e?rule=mo-160w",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/54/545f1fd8-c672-4ec3-9f2a-b4ad82af115e?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/54/545f1fd8-c672-4ec3-9f2a-b4ad82af115e?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/54/545f1fd8-c672-4ec3-9f2a-b4ad82af115e?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/54/545f1fd8-c672-4ec3-9f2a-b4ad82af115e?rule=mo-1024w 1024w",
+        "alt": "Volkswagen Beetle Cabrio Allstar 1.2 TSI NAVI KAMERA"
+      },
+      {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/3b/3b845a61-84c3-4993-b266-46022e280230?rule=mo-160w",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/3b/3b845a61-84c3-4993-b266-46022e280230?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/3b/3b845a61-84c3-4993-b266-46022e280230?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/3b/3b845a61-84c3-4993-b266-46022e280230?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/3b/3b845a61-84c3-4993-b266-46022e280230?rule=mo-1024w 1024w",
+        "alt": "Volkswagen Beetle Cabrio Allstar 1.2 TSI NAVI KAMERA"
+      },
+      {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/0c/0c162e72-cd31-4b30-8b10-58e2bb78fa1b?rule=mo-160w",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/0c/0c162e72-cd31-4b30-8b10-58e2bb78fa1b?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/0c/0c162e72-cd31-4b30-8b10-58e2bb78fa1b?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/0c/0c162e72-cd31-4b30-8b10-58e2bb78fa1b?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/0c/0c162e72-cd31-4b30-8b10-58e2bb78fa1b?rule=mo-1024w 1024w",
+        "alt": "Volkswagen Beetle Cabrio Allstar 1.2 TSI NAVI KAMERA"
+      }
+    ],
+    "attributes": [
+      [
+        {
+          "value": "EZ 07/2016"
+        },
+        {
+          "value": "92.300 km"
+        },
+        {
+          "value": "77 kW (105 PS)"
+        },
+        {
+          "value": "Benzin"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "Volkswagen Burgoberbach | Autohaus Feser-Breitschwert GmbH",
+      "location": "91595 Burgoberbach",
+      "rating": {
+        "score": 4.7,
+        "count": 8,
+        "totalCount": 80
+      },
+      "logo": {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/32/32ba18b2-b0f5-4b18-8d9f-91e56b97994e?rule=mo-80",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/32/32ba18b2-b0f5-4b18-8d9f-91e56b97994e?rule=mo-80 80w, https://img.classistatic.de/api/v1/mo-prod/images/32/32ba18b2-b0f5-4b18-8d9f-91e56b97994e?rule=mo-160 160w, https://img.classistatic.de/api/v1/mo-prod/images/32/32ba18b2-b0f5-4b18-8d9f-91e56b97994e?rule=mo-240 240w",
+        "alt": "Volkswagen Burgoberbach | Autohaus Feser-Breitschwert GmbH"
+      },
+      "hasContactPhones": true,
+      "contactPhone": "+49 (0)9805 8704903",
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/448075746?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "Volkswagen",
+    "model": "Beetle",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/21/21db18af-40e4-4b19-a2f3-9a8ebc7f7488?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/21/21db18af-40e4-4b19-a2f3-9a8ebc7f7488?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/21/21db18af-40e4-4b19-a2f3-9a8ebc7f7488?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/21/21db18af-40e4-4b19-a2f3-9a8ebc7f7488?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/21/21db18af-40e4-4b19-a2f3-9a8ebc7f7488?rule=mo-1024w 1024w",
+      "alt": "Volkswagen Beetle Cabrio Allstar 1.2 TSI NAVI KAMERA"
+    },
+    "price": {
+      "gross": "14.940 €",
+      "grossAmount": 14940,
+      "grossCurrency": "EUR"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=448075746&action=eyeCatcher&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "eyecatcherAd"
+  },
+  {
+    "isEyeCatcher": true,
+    "numImages": 16,
+    "attr": {
+      "cn": "DE",
+      "z": "44625",
+      "loc": "Herne",
+      "fr": "05/2016",
+      "yc": "2016",
+      "pw": "141 kW (192 PS)",
+      "ft": "Benzin",
+      "ml": "71.500 km",
+      "cc": "1.998 cm³",
+      "tr": "Automatik",
+      "gi": "Neu",
+      "ecol": "Grau",
+      "door": "4/5",
+      "sc": "5",
+      "c": "OffRoad",
+      "emc": "Euro6",
+      "pvo": "2"
+    },
+    "shortTitle": "BMW X1",
+    "subTitle": "xDrive20i Advantage Navi LED RFK AHK",
+    "badges": [
+      "Lieferung möglich"
+    ],
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "AO",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/1?adId=407532103&loanType=balloon&loanDuration=60&downPayment=3896",
+        "shortFlow": false,
+        "promotion": false,
+        "showInGallery": true,
+        "offer": {
+          "bankName": "Openbank Deutschland AG",
+          "loanBroker": "Check24 GmbH",
+          "loanType": "BALLOON",
+          "downPayment": 3896,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 15584,
+          "interestRateNominal": 5.26,
+          "interestRateEffective": 5.39,
+          "monthlyInstallment": 205.06,
+          "finalInstallment": 6428.4,
+          "totalInterest": 2942.66,
+          "totalAmount": 18526.66,
+          "localized": {
+            "downPayment": "3.896 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "15.584 €",
+            "interestRateNominal": "5,26%",
+            "interestRateEffective": "5,39%",
+            "monthlyInstallment": "206 €",
+            "finalInstallment": "6.428,40 €",
+            "totalInterest": "2.942,66 €",
+            "totalAmount": "18.526,66 €",
+            "disclaimer": "Repräsentatives Beispiel gemäß § 17 Abs. 4 PAngV: Nettodarlehensbetrag von 10.000 €, effektiver Jahreszins 5,39%, fester Sollzinssatz 5,26% p.a., Laufzeit 60 Monate, 59 monatliche Raten à 143,60 € und eine Schlussrate à 3.300,00 €, Gesamtbetrag 11.772,13 €. Ein Angebot der Openbank Deutschland AG (Darlehensgeber), Santander-Platz 1, 41061 Mönchengladbach"
+          }
+        }
+      }
+    ],
+    "highlights": [
+      "Adaptives Fahrwerk"
+    ],
+    "sellerId": 37416488,
+    "priceRating": {
+      "rating": "REASONABLE_PRICE",
+      "ratingLabel": "Fairer Preis",
+      "thresholdLabels": [
+        "13.800 €",
+        "17.900 €",
+        "19.300 €",
+        "21.500 €",
+        "23.000 €",
+        "25.600 €"
+      ],
+      "vehiclePriceOffset": 8
+    },
+    "segment": "Car",
+    "title": "BMW X1 xDrive20i Advantage Navi LED RFK AHK",
+    "vc": "Car",
+    "category": "SUV/Geländewagen/Pickup",
+    "id": 407532103,
+    "kba": {
+      "hsn": "0005",
+      "tsn": "CCB"
+    },
+    "customDimensions": {
+      "10": "platinum"
+    },
+    "deliveryOption": "Lieferung möglich",
+    "nationalDelivery": {
+      "radius": "700 km",
+      "fee": {
+        "amount": 550,
+        "currency": "EUR",
+        "localized": "550 €"
+      },
+      "period": "7 Tage"
+    },
+    "previewThumbnails": [
+      {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/ff/ff2493e8-624d-4076-9432-f7744da7fdea?rule=mo-160w",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/ff/ff2493e8-624d-4076-9432-f7744da7fdea?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/ff/ff2493e8-624d-4076-9432-f7744da7fdea?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/ff/ff2493e8-624d-4076-9432-f7744da7fdea?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/ff/ff2493e8-624d-4076-9432-f7744da7fdea?rule=mo-1024w 1024w",
+        "alt": "BMW X1 xDrive20i Advantage Navi LED RFK AHK"
+      },
+      {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/d7/d7f1ffc8-02b7-4724-b02e-216a8a9f90c8?rule=mo-160w",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/d7/d7f1ffc8-02b7-4724-b02e-216a8a9f90c8?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/d7/d7f1ffc8-02b7-4724-b02e-216a8a9f90c8?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/d7/d7f1ffc8-02b7-4724-b02e-216a8a9f90c8?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/d7/d7f1ffc8-02b7-4724-b02e-216a8a9f90c8?rule=mo-1024w 1024w",
+        "alt": "BMW X1 xDrive20i Advantage Navi LED RFK AHK"
+      },
+      {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/9b/9b277354-f8ff-4ef4-b54a-20edeacd7376?rule=mo-160w",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/9b/9b277354-f8ff-4ef4-b54a-20edeacd7376?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/9b/9b277354-f8ff-4ef4-b54a-20edeacd7376?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/9b/9b277354-f8ff-4ef4-b54a-20edeacd7376?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/9b/9b277354-f8ff-4ef4-b54a-20edeacd7376?rule=mo-1024w 1024w",
+        "alt": "BMW X1 xDrive20i Advantage Navi LED RFK AHK"
+      }
+    ],
+    "attributes": [
+      [
+        {
+          "value": "Unfallfrei",
+          "bold": true
+        },
+        {
+          "value": "EZ 05/2016"
+        },
+        {
+          "value": "71.500 km"
+        },
+        {
+          "value": "141 kW (192 PS)"
+        },
+        {
+          "value": "Benzin"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "Procar Automobile Wuppertal GmbH & Co. KG",
+      "location": "44625 Herne",
+      "rating": {
+        "score": 4.3,
+        "count": 17,
+        "totalCount": 147
+      },
+      "logo": {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/4f/4fedd362-3986-4300-92ad-1ff7cfd528f8?rule=mo-80",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/4f/4fedd362-3986-4300-92ad-1ff7cfd528f8?rule=mo-80 80w, https://img.classistatic.de/api/v1/mo-prod/images/4f/4fedd362-3986-4300-92ad-1ff7cfd528f8?rule=mo-160 160w, https://img.classistatic.de/api/v1/mo-prod/images/4f/4fedd362-3986-4300-92ad-1ff7cfd528f8?rule=mo-240 240w",
+        "alt": "Procar Automobile Wuppertal GmbH & Co. KG"
+      },
+      "hasContactPhones": true,
+      "contactPhone": "+49 (0)2325 5984907",
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "deal": {
+      "types": [
+        "KIA_BRAND_PORTAL"
+      ]
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/407532103?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "BMW",
+    "model": "X1",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/9e/9ea35e79-3273-46e7-ae96-a015ebacee28?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/9e/9ea35e79-3273-46e7-ae96-a015ebacee28?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/9e/9ea35e79-3273-46e7-ae96-a015ebacee28?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/9e/9ea35e79-3273-46e7-ae96-a015ebacee28?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/9e/9ea35e79-3273-46e7-ae96-a015ebacee28?rule=mo-1024w 1024w",
+      "alt": "BMW X1 xDrive20i Advantage Navi LED RFK AHK"
+    },
+    "price": {
+      "gross": "19.480 €",
+      "grossAmount": 19480,
+      "grossCurrency": "EUR",
+      "delivery": "ggf. zzgl. Lieferkosten"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=407532103&action=eyeCatcher&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "eyecatcherAd"
+  },
+  {
+    "isEyeCatcher": false,
+    "numImages": 46,
+    "attr": {
+      "cn": "DE",
+      "z": "22087",
+      "loc": "Hamburg",
+      "fr": "10/2016",
+      "pw": "115 kW (156 PS)",
+      "ft": "Benzin",
+      "ml": "87.292 km",
+      "cc": "1.595 cm³",
+      "tr": "Automatik",
+      "gi": "03/2028",
+      "ecol": "Grau",
+      "eu": "Deutsche Ausführung",
+      "door": "4/5",
+      "sc": "5",
+      "c": "Limousine",
+      "emc": "Euro6",
+      "pvo": "3",
+      "nw": "1.395 kg"
+    },
+    "shortTitle": "Mercedes-Benz C 180",
+    "subTitle": "CGI Aut,Avantgarde,Navi,LED,AHK, TÜV28",
+    "isVideoEnabled": false,
+    "financePlans": [
+      {
+        "type": "AO",
+        "url": "https://www.mobile.de/finanzierung/route/outlink/1?adId=452720949&loanType=balloon&loanDuration=60&downPayment=3490",
+        "shortFlow": false,
+        "promotion": false,
+        "showInGallery": true,
+        "offer": {
+          "bankName": "Openbank Deutschland AG",
+          "loanBroker": "Check24 GmbH",
+          "loanType": "BALLOON",
+          "downPayment": 3490,
+          "creditTerm": 60,
+          "yearlyMileage": 10000,
+          "creditAmount": 13960,
+          "interestRateNominal": 5.26,
+          "interestRateEffective": 5.39,
+          "monthlyInstallment": 183.69,
+          "finalInstallment": 5758.5,
+          "totalInterest": 2636.01,
+          "totalAmount": 16596.01,
+          "localized": {
+            "downPayment": "3.490 €",
+            "downPaymentInPercent": "20%",
+            "creditTerm": "60",
+            "creditTermInYears": "5",
+            "yearlyMileage": "10.000",
+            "creditAmount": "13.960 €",
+            "interestRateNominal": "5,26%",
+            "interestRateEffective": "5,39%",
+            "monthlyInstallment": "184 €",
+            "finalInstallment": "5.758,50 €",
+            "totalInterest": "2.636,01 €",
+            "totalAmount": "16.596,01 €",
+            "disclaimer": "Repräsentatives Beispiel gemäß § 17 Abs. 4 PAngV: Nettodarlehensbetrag von 10.000 €, effektiver Jahreszins 5,39%, fester Sollzinssatz 5,26% p.a., Laufzeit 60 Monate, 59 monatliche Raten à 143,60 € und eine Schlussrate à 3.300,00 €, Gesamtbetrag 11.772,13 €. Ein Angebot der Openbank Deutschland AG (Darlehensgeber), Santander-Platz 1, 41061 Mönchengladbach"
+          }
+        }
+      }
+    ],
+    "highlights": [
+      "Avantgarde",
+      "AHK,LED + Navi",
+      "Tüv 03-2028"
+    ],
+    "sellerId": 12734722,
+    "priceRating": {
+      "rating": "GOOD_PRICE",
+      "ratingLabel": "Guter Preis",
+      "thresholdLabels": [
+        "12.900 €",
+        "16.700 €",
+        "18.000 €",
+        "20.100 €",
+        "21.500 €",
+        "23.900 €"
+      ],
+      "vehiclePriceOffset": 57
+    },
+    "segment": "Car",
+    "title": "Mercedes-Benz C 180 CGI Aut,Avantgarde,Navi,LED,AHK, TÜV28",
+    "vc": "Car",
+    "category": "Limousine",
+    "id": 452720949,
+    "kba": {
+      "hsn": "1313",
+      "tsn": "DZD"
+    },
+    "customDimensions": {
+      "10": "platinum"
+    },
+    "attributes": [
+      [
+        {
+          "value": "EZ 10/2016"
+        },
+        {
+          "value": "87.292 km"
+        },
+        {
+          "value": "115 kW (156 PS)"
+        },
+        {
+          "value": "Benzin"
+        }
+      ],
+      []
+    ],
+    "contactInfo": {
+      "typeLocalized": "Händler",
+      "name": "Ronald Richter - Stuwe e.k Automobile",
+      "location": "22087 Hamburg",
+      "rating": {
+        "score": 4.6,
+        "count": 35,
+        "totalCount": 326
+      },
+      "logo": {
+        "src": "https://img.classistatic.de/api/v1/mo-prod/images/18/18a0a9b3-bdbc-4dbc-8428-1812d6c67c3f?rule=mo-80",
+        "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/18/18a0a9b3-bdbc-4dbc-8428-1812d6c67c3f?rule=mo-80 80w, https://img.classistatic.de/api/v1/mo-prod/images/18/18a0a9b3-bdbc-4dbc-8428-1812d6c67c3f?rule=mo-160 160w, https://img.classistatic.de/api/v1/mo-prod/images/18/18a0a9b3-bdbc-4dbc-8428-1812d6c67c3f?rule=mo-240 240w",
+        "alt": "Ronald Richter - Stuwe e.k Automobile"
+      },
+      "hasContactPhones": true,
+      "contactPhone": "+49 (0)179 6994103",
+      "country": "DE",
+      "sellerType": "DEALER"
+    },
+    "checkoutLink": "https://www.mobile.de/checkout/core/452720949?ref=srpContact",
+    "isFinancingAvailable": true,
+    "leasingRate": null,
+    "make": "Mercedes-Benz",
+    "model": "C 180",
+    "previewImage": {
+      "src": "https://img.classistatic.de/api/v1/mo-prod/images/9c/9c00bd3a-dbf8-4b02-bf6d-220acc11fbc1?rule=mo-160w",
+      "srcSet": "https://img.classistatic.de/api/v1/mo-prod/images/9c/9c00bd3a-dbf8-4b02-bf6d-220acc11fbc1?rule=mo-160w 160w, https://img.classistatic.de/api/v1/mo-prod/images/9c/9c00bd3a-dbf8-4b02-bf6d-220acc11fbc1?rule=mo-240w 240w, https://img.classistatic.de/api/v1/mo-prod/images/9c/9c00bd3a-dbf8-4b02-bf6d-220acc11fbc1?rule=mo-360w 360w, https://img.classistatic.de/api/v1/mo-prod/images/9c/9c00bd3a-dbf8-4b02-bf6d-220acc11fbc1?rule=mo-1024w 1024w",
+      "alt": "Mercedes-Benz C 180 CGI Aut,Avantgarde,Navi,LED,AHK, TÜV28"
+    },
+    "price": {
+      "gross": "17.450 €",
+      "grossAmount": 17450,
+      "grossCurrency": "EUR"
+    },
+    "relativeUrl": "/fahrzeuge/details.html?id=452720949&dam=false&isSearchRequest=true&od=up&ref=srp&refId=4e87e958-69af-ce24-efdb-f32923801065&s=Car&sb=rel&searchId=4e87e958-69af-ce24-efdb-f32923801065&vc=Car",
+    "supportedLeasingType": null,
+    "type": "ad"
+  }
+]

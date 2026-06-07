@@ -1,0 +1,102 @@
+[
+  {
+    "host": "www.mobile.de",
+    "sitemaps": [
+      "https://www.mobile.de/sitemap.xml"
+    ],
+    "listing_url_estimate": 80000,
+    "blocked": null,
+    "listing_sitemaps": 16,
+    "sample_sitemap": "https://suchen.mobile.de/fahrzeuge/sitemap-pls-carspecification-0.xml",
+    "sample_url_count": 5000
+  },
+  {
+    "host": "www.coches.net",
+    "sitemaps": [
+      "https://www.coches.net/servicios/sitemaps/sitemap-index.xml"
+    ],
+    "listing_url_estimate": null,
+    "blocked": null,
+    "listing_sitemaps": 0,
+    "sample_sitemap": null,
+    "sample_url_count": 0
+  },
+  {
+    "host": "www.leboncoin.fr",
+    "sitemaps": [
+      "https://www.leboncoin.fr/auto-main.xml"
+    ],
+    "listing_url_estimate": 900000,
+    "blocked": null,
+    "listing_sitemaps": 18,
+    "sample_sitemap": "https://www.leboncoin.fr/auto-voitures-adview-1.xml",
+    "sample_url_count": 50000
+  },
+  {
+    "host": "www.autoscout24.de",
+    "sitemaps": [
+      "https://www.autoscout24.de/sitemap.xml"
+    ],
+    "listing_url_estimate": null,
+    "blocked": "cloudflare",
+    "listing_sitemaps": 0,
+    "sample_sitemap": null,
+    "sample_url_count": 0
+  },
+  {
+    "host": "www.autoscout24.fr",
+    "sitemaps": [
+      "https://www.autoscout24.fr/sitemap.xml"
+    ],
+    "listing_url_estimate": null,
+    "blocked": "cloudflare",
+    "listing_sitemaps": 0,
+    "sample_sitemap": null,
+    "sample_url_count": 0
+  },
+  {
+    "host": "www.autoscout24.es",
+    "sitemaps": [
+      "https://www.autoscout24.es/sitemap.xml"
+    ],
+    "listing_url_estimate": null,
+    "blocked": "cloudflare",
+    "listing_sitemaps": 0,
+    "sample_sitemap": null,
+    "sample_url_count": 0
+  },
+  {
+    "host": "www.autoscout24.nl",
+    "sitemaps": [
+      "https://www.autoscout24.nl/sitemap.xml"
+    ],
+    "listing_url_estimate": null,
+    "blocked": "cloudflare",
+    "listing_sitemaps": 0,
+    "sample_sitemap": null,
+    "sample_url_count": 0
+  },
+  {
+    "host": "www.autoscout24.be",
+    "sitemaps": [
+      "https://www.autoscout24.be/sitemap.xml"
+    ],
+    "listing_url_estimate": null,
+    "blocked": "cloudflare",
+    "listing_sitemaps": 0,
+    "sample_sitemap": null,
+    "sample_url_count": 0
+  },
+  {
+    "host": "www.autoscout24.ch",
+    "sitemaps": [
+      "https://www.autoscout24.ch/sitemap.xml",
+      "https://guide.autoscout24.ch/sitemap_index.xml"
+    ],
+    "listing_url_estimate": 8163,
+    "blocked": null,
+    "listing_sitemaps": 1,
+    "sample_sitemap": "https://www.autoscout24.ch/sitemap/dynamic/2026/06/07/08/srp-1.xml",
+    "sample_url_count": 8163
+  }
+]
