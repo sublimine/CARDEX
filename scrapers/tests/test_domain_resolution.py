@@ -6,7 +6,12 @@ import asyncio
 import pytest
 
 from scrapers.discovery.domain_resolution import candidate as C
-from scrapers.discovery.domain_resolution.validate import confirms_dealer, validate_domain
+from scrapers.discovery.domain_resolution import directories as D
+from scrapers.discovery.domain_resolution.validate import (
+    confirms_automotive,
+    confirms_dealer,
+    validate_domain,
+)
 
 
 # ── candidate ───────────────────────────────────────────────────────────────────
@@ -201,3 +206,81 @@ def test_score_prefers_own_apex_over_oem_subdomain():
     own = C.score("bilia.be", "Bilia Arlon", "BE", 1)         # 2-label own domain
     oem = C.score("bilia.bmw.be", "Bilia Arlon", "BE", 0)     # OEM subdomain, better rank
     assert own > oem                                          # own apex wins despite worse rank
+
+
+# ── email-domain via ──────────────────────────────────────────────────────────
+@pytest.mark.unit
+def test_email_apex_real_domain_and_rejects_freemail_isp_directory():
+    assert C.email_apex("info@bmw-dimab.ch") == "bmw-dimab.ch"
+    assert C.email_apex("contact@www.toyota-lutry.ch") == "toyota-lutry.ch"
+    assert C.email_apex("garage@bluewin.ch") is None          # CH ISP
+    assert C.email_apex("dealer@gmail.com") is None           # freemail
+    assert C.email_apex("x@t-online.de") is None              # DE ISP
+    assert C.email_apex("info@gelbeseiten.de") is None        # directory (excluded)
+    assert C.email_apex("not-an-email") is None
+    assert C.email_apex("") is None
+
+
+# ── per-via validation ──────────────────────────────────────────────────────────
+@pytest.mark.unit
+def test_confirms_dealer_lenient_allows_city_for_distinctive_name():
+    # require_name=False (directory/email provenance): city+auto confirms even though
+    # the distinctive name token is absent from the page.
+    page = ("<html><body><h1>Bienvenue chez votre garage à Lyon</h1>"
+            "<p>Voitures neuves et d'occasion, atelier carrosserie.</p>"
+            + _FILLER + "</body></html>")
+    strict, _ = confirms_dealer(page, "Garage Curty", "Lyon")               # name "curty" absent
+    lenient, why = confirms_dealer(page, "Garage Curty", "Lyon", require_name=False)
+    assert strict is False                                                   # strict needs name
+    assert lenient and why == "city+auto"                                    # lenient accepts city
+
+
+@pytest.mark.unit
+def test_confirms_automotive_email_via():
+    auto = ("<html><body><h1>Autohaus</h1><p>Gebrauchtwagen und Werkstatt.</p>"
+            + _FILLER + "</body></html>")
+    not_auto = "<html><body><h1>Steuerberater</h1><p>Buchhaltung.</p>" + _FILLER + "</body></html>"
+    assert confirms_automotive(auto)[0] is True
+    assert confirms_automotive(not_auto) == (False, "no_automotive_signal")
+    assert confirms_automotive("") == (False, "empty_page")
+
+
+# ── national directories ────────────────────────────────────────────────────────
+class _FakeSession:
+    def __init__(self, html: str, status: int = 200):
+        self._html, self._status = html, status
+
+    async def get(self, url, **kw):
+        class _R:
+            pass
+        r = _R()
+        r.status_code = self._status
+        r.text = self._html
+        return r
+
+
+@pytest.mark.unit
+def test_pagesjaunes_extracts_dealer_site_drops_directory_and_social():
+    html = ('<a href="https://www.pagesjaunes.fr/pro/123">listing</a>'
+            '<a href="https://www.garagecurty.com/">Site internet</a>'
+            '<a href="https://www.facebook.com/garagecurty">FB</a>'
+            '<a href="https://www.solocal.com/">parent</a>')
+    prov, cands = asyncio.run(D.directory_candidates(_FakeSession(html), "Garage Curty", "Lyon", "FR"))
+    assert prov == "pagesjaunes"
+    assert cands == ["garagecurty.com"]                       # only the real dealer site
+
+
+@pytest.mark.unit
+def test_localch_extracts_email_apex_and_website_json():
+    html = ('{"website":"https://www.emilfrey.ch/bern"},'
+            '{"email":"autocenterbern@emilfrey.ch"},'
+            '{"email":"someone@bluewin.ch"}')               # ISP email ignored
+    prov, cands = asyncio.run(D.directory_candidates(_FakeSession(html), "Emil Frey", "Bern", "CH"))
+    assert prov == "localch"
+    assert cands == ["emilfrey.ch"]                           # website + email collapse to apex
+
+
+@pytest.mark.unit
+def test_directory_candidates_unmapped_country_is_empty():
+    prov, cands = asyncio.run(D.directory_candidates(_FakeSession(""), "X", "Y", "DE"))
+    assert prov == "" and cands == []

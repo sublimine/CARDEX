@@ -44,6 +44,8 @@ _EXCLUDE: tuple[str, ...] = (
     "bedrijvenregister", "bedrijvenpagina", "bedrijven.", "telefoonboek",
     "drimble", "oozo.", "companyinfo", "kvk.nl", "kompass", "trendstop",
     "societe.com", "infogreffe", "verif.com", "axesor", "empresia", "expansion.com",
+    "solocal", "browsehappy", "consentmanager", "cookiebot", "cookielaw",
+    "localcities", "renovero", "swissmadesoftware", "dastelefonbuch", "tvg-verlag",
     # infra / blogspam
     "blocksurvey", "buttondown", "amazon", "ebay", "wordpress.com", "wixsite",
     "blogspot", "medium.com", "github", "archive.org", "muw-nachrichten",
@@ -135,6 +137,42 @@ def apex(host_or_url: str) -> str | None:
 def is_excluded(host: str) -> bool:
     h = (host or "").lower()
     return any(x in h for x in _EXCLUDE)
+
+
+# Free / ISP / webmail providers: an email hosted there is NOT the dealer's own
+# domain. A dealer publishing info@gmx.de tells us nothing about its website.
+_FREEMAIL: frozenset[str] = frozenset({
+    "gmail.com", "googlemail.com", "hotmail.com", "hotmail.fr", "hotmail.de",
+    "hotmail.es", "hotmail.it", "outlook.com", "outlook.de", "outlook.fr",
+    "outlook.es", "live.com", "live.fr", "live.de", "live.nl", "yahoo.com",
+    "yahoo.fr", "yahoo.de", "yahoo.es", "yahoo.it", "ymail.com", "aol.com",
+    "icloud.com", "me.com", "mac.com", "mail.com", "email.com",
+    "gmx.de", "gmx.net", "gmx.ch", "gmx.at", "web.de", "t-online.de",
+    "freenet.de", "arcor.de", "protonmail.com", "proton.me", "tutanota.com",
+    # ISPs by country (CH/FR/BE/NL/ES/IT)
+    "bluewin.ch", "sunrise.ch", "hispeed.ch", "green.ch", "swissonline.ch",
+    "orange.fr", "wanadoo.fr", "free.fr", "sfr.fr", "laposte.net", "neuf.fr",
+    "bbox.fr", "numericable.fr", "telenet.be", "skynet.be", "proximus.be",
+    "scarlet.be", "voo.be", "belgacom.net", "ziggo.nl", "kpnmail.nl",
+    "planet.nl", "home.nl", "telfort.nl", "hetnet.nl", "chello.nl", "xs4all.nl",
+    "telefonica.net", "terra.es", "movistar.es", "ya.com", "wanadoo.es",
+    "libero.it", "tin.it", "alice.it", "virgilio.it",
+})
+
+
+def email_apex(email: str) -> str | None:
+    """
+    The apex domain of an email address — a zero-cost candidate domain — or None if
+    the address is freemail/ISP/a directory/malformed. The dealer published this
+    address itself, so the apex is strong (but still homepage-validated) provenance.
+    """
+    if not email or "@" not in email:
+        return None
+    host = email.rsplit("@", 1)[-1].strip().lower().rstrip(".")
+    a = apex(host)
+    if not a or a in _FREEMAIL or is_excluded(a):
+        return None
+    return a
 
 
 _UDDG_RE = re.compile(r"uddg=([^\"&]+)")

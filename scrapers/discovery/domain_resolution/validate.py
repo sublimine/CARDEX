@@ -37,15 +37,19 @@ def _text(html: str, limit: int = 20000) -> str:
     return _WS_RE.sub(" ", _norm(stripped))[:limit]
 
 
-def confirms_dealer(html: str, name: str, city: str) -> tuple[bool, str]:
+def confirms_dealer(html: str, name: str, city: str, *, require_name: bool = True) -> tuple[bool, str]:
     """
-    True iff the homepage proves it is this dealer (pure).
+    True iff the homepage proves it is this dealer (pure). Per-via strictness.
 
-    A distinctive NAME token MUST appear on the page when the name has one. City
-    alone confirms ONLY when the name is entirely generic/brand (no distinctive
-    token), otherwise a same-city namesake passes (live: "ASTURHIBRIDO Gijón"
-    matched an unrelated Gijón workshop via city alone). Either path also requires
-    ≥1 automotive signal. Returns (ok, reason) — reason names the failing half.
+    ``require_name=True`` (web search — noisy results): a distinctive NAME token MUST
+    appear; city alone confirms only when the name is entirely generic/brand (else a
+    same-city namesake passes — live: "ASTURHIBRIDO Gijón" matched an unrelated Gijón
+    workshop via city alone).
+
+    ``require_name=False`` (directory / email-domain — the candidate already carries
+    name+city provenance from a matched listing or the dealer's own published address):
+    name OR city is enough. Both modes still require ≥1 automotive signal.
+    Returns (ok, reason) — reason names the failing half.
     """
     if not html or len(html) < 200:
         return False, "empty_page"
@@ -56,37 +60,67 @@ def confirms_dealer(html: str, name: str, city: str) -> tuple[bool, str]:
     city_hit = bool(city_n) and len(city_n) >= 3 and city_n in text
     auto_hit = any(sig in text for sig in _AUTO_SIGNALS)
 
-    if toks:                              # distinctive name → it must be on the page
+    if require_name and toks:             # strict: distinctive name must be on the page
         if not name_hit:
             return False, "name_not_on_page"
         if not auto_hit:
             return False, "no_automotive_signal"
         return True, "name+auto"
-    if not city_hit:                      # generic/brand-only name → city fallback
+    if not (name_hit or city_hit):        # lenient (or generic name): name|city fallback
         return False, "no_name_or_city"
     if not auto_hit:
         return False, "no_automotive_signal"
-    return True, "city+auto"
+    return True, "name+auto" if name_hit else "city+auto"
 
 
-async def validate_domain(host: str, name: str, city: str, fetcher) -> tuple[bool, str]:
+def confirms_automotive(html: str) -> tuple[bool, str]:
     """
-    Fetch ``host``'s homepage and confirm it is the dealer.
-
-    ``fetcher(url) -> object with .status_code and .text/.body`` is injected (a
-    curl_cffi session.get live; an in-memory map in tests). Transport faults and
-    non-200s are treated as "unconfirmed" (the domain is not persisted).
+    Lightweight gate for the email-domain via: the email's apex is the dealer's own
+    published address (strong provenance), so we only require the page to be a live
+    automotive site (≥1 signal), not a name match. Guards against parked/empty pages.
     """
+    if not html or len(html) < 200:
+        return False, "empty_page"
+    text = _text(html)
+    if not any(sig in text for sig in _AUTO_SIGNALS):
+        return False, "no_automotive_signal"
+    return True, "email+auto"
+
+
+async def _fetch_html(host: str, fetcher) -> tuple[str | None, str]:
+    """Fetch a homepage → (html, reason). html is None on transport/HTTP failure."""
     url = f"https://{host}/"
     try:
         resp = await fetcher(url)
     except Exception as exc:  # noqa: BLE001 — unreachable candidate = not confirmed
-        return False, f"fetch_error:{type(exc).__name__}"
+        return None, f"fetch_error:{type(exc).__name__}"
     status = int(getattr(resp, "status_code", 0) or 0)
     if status and status >= 400:
-        return False, f"http_{status}"
+        return None, f"http_{status}"
     html = getattr(resp, "text", None)
     if html is None:
         body = getattr(resp, "body", b"") or b""
         html = body.decode("utf-8", "replace") if isinstance(body, (bytes, bytearray)) else str(body)
-    return confirms_dealer(html, name, city)
+    return html, "ok"
+
+
+async def validate_domain(
+    host: str, name: str, city: str, fetcher, *, require_name: bool = True,
+) -> tuple[bool, str]:
+    """
+    Fetch ``host``'s homepage and confirm it is the dealer (strict by default; pass
+    ``require_name=False`` for directory/email vias whose candidate already carries
+    name+city provenance). ``fetcher(url) -> resp(.status_code,.text/.body)`` injected.
+    """
+    html, reason = await _fetch_html(host, fetcher)
+    if html is None:
+        return False, reason
+    return confirms_dealer(html, name, city, require_name=require_name)
+
+
+async def validate_automotive(host: str, fetcher) -> tuple[bool, str]:
+    """Email-domain via: fetch homepage, require only that it is a live automotive site."""
+    html, reason = await _fetch_html(host, fetcher)
+    if html is None:
+        return False, reason
+    return confirms_automotive(html)
