@@ -61,17 +61,32 @@ _WS_RE = re.compile(r"\s+")
 
 # Auto-ADJACENT businesses that carry car vocabulary but are NOT dealers — they live-
 # matched the 2-weak-word gate (a driving school says auto+fahrzeug, a car museum says
-# vehicles+cars, an airport/agency has car-rental). If one of these heads the page
-# (title / h1 / og:title), reject regardless of auto words. A real dealer never titles
-# itself a Fahrschule/Museum/Autovermietung.
+# vehicles+cars, an airport/agency has car-rental, a parts shop says auto+ricambi). If
+# one of these heads the page (title / h1 / og:title), reject regardless of auto words —
+# a real dealer never titles itself a Fahrschule/Museum/Autovermietung/Ersatzteile shop.
+# Six languages (DE/FR/ES/IT/NL/EN) across: driving school · rental · museum · airport ·
+# travel agency · spare-parts/body shop.
 _TITLE_RE = re.compile(r"<title[^>]*>(.*?)</title>", re.I | re.S)
 _H1_RE = re.compile(r"<h1[^>]*>(.*?)</h1>", re.I | re.S)
 _OGT_RE = re.compile(r'<meta[^>]+property=["\']og:title["\'][^>]+content=["\']([^"\']*)', re.I)
 _NON_DEALER_RE = re.compile(
-    r"\b(fahrschule|fahrschulen|auto-?ecole|autoescuela|driving school|"
-    r"museum|museo|musee|autovermietung|mietwagen|car rental|rent a car|"
-    r"autonoleggio|location de voiture|flughafen|aeroport|airport|aeroporto|"
-    r"reiseburo|reisebuero|travel agency|agence de voyage|fahrschulauto)\b"
+    r"\b("
+    # driving schools
+    r"fahrschule|fahrschulen|fahrschulauto|auto-?ecole|auto-?ecoles|autoescuela|"
+    r"autoescuelas|rijschool|scuola guida|scuola di guida|driving school|"
+    # rental
+    r"autovermietung|mietwagen|car rental|rent a car|autonoleggio|noleggio auto|"
+    r"location de voiture|huurauto|alquiler de coches|"
+    # museum
+    r"museum|museo|musee|"
+    # airport
+    r"flughafen|aeroport|airport|aeroporto|luchthaven|aeropuerto|"
+    # travel agency
+    r"reiseburo|reisebuero|travel agency|agence de voyage|reisbureau|agencia de viajes|"
+    # spare-parts / accessory / body shops
+    r"ersatzteile|autoteile|ricambi|autoricambi|recambios|repuestos|onderdelen|"
+    r"pieces detachees|pieces auto"
+    r")\b"
 )
 
 
@@ -117,7 +132,10 @@ def confirms_dealer(html: str, name: str, city: str, *, require_name: bool = Tru
         return False, "non_dealer_category"
     text = _text(html)
     toks = name_tokens(name)
-    name_hit = any(t in text for t in toks)
+    # WHOLE-WORD name match (not substring): a distinctive token must appear as a word,
+    # so a short dealer token can't ride a bigger unrelated brand — live FP
+    # "Artcar" → bmwartcarcollection.com (substring "artcar" in the BMW art-car page).
+    name_hit = any(re.search(r"\b" + re.escape(t) + r"\b", text) for t in toks)
     city_n = _norm(city)
     city_hit = bool(city_n) and len(city_n) >= 3 and city_n in text
     auto_hit = _auto_ok(text)

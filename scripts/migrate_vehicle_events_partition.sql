@@ -5,14 +5,18 @@
 -- converts it to RANGE-by-month partitions so old months can be detached/dropped
 -- and time-range queries prune to one partition.
 --
--- SAFETY: run as ONE transaction so any failure — including the row-count verify
--- RAISE at the end — rolls the whole thing back, leaving the original table intact:
+-- SAFETY: the script is wrapped in an explicit BEGIN/COMMIT so it is ONE atomic
+-- transaction REGARDLESS of how it is invoked — any failure (including the row-count
+-- verify RAISE at the end) aborts and rolls the whole thing back, leaving the original
+-- table intact. Abort-safety no longer depends on remembering --single-transaction:
 --
---     psql --single-transaction -U cardex -d cardex -f scripts/migrate_vehicle_events_partition.sql
+--     psql -U cardex -d cardex -f scripts/migrate_vehicle_events_partition.sql
 --
 -- On success the original survives as vehicle_events_old (a backup); drop it
 -- manually once you have verified the new table. There must be NO concurrent
 -- writer (stop the coordinator / enrich-worker) while this runs.
+
+BEGIN;
 
 ALTER TABLE vehicle_events RENAME TO vehicle_events_old;
 -- Index names are schema-global: free them from the old table so the new
@@ -74,3 +78,5 @@ BEGIN
   END IF;
   RAISE NOTICE 'vehicle_events partition migration OK: % rows preserved', new_n;
 END $$;
+
+COMMIT;

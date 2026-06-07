@@ -10,6 +10,7 @@ from scrapers.discovery.domain_resolution import directories as D
 from scrapers.discovery.domain_resolution.validate import (
     confirms_automotive,
     confirms_dealer,
+    is_non_dealer,
     validate_domain,
 )
 
@@ -285,6 +286,36 @@ def test_non_dealer_category_rejected_by_title():
     ok = ("<html><head><title>Auto Ferassi — Autowerkstatt</title></head>"
           "<body><p>occasionen, fahrzeuge, probefahrt.</p>" + _FILLER + "</body></html>")
     assert confirms_automotive(ok)[0] is True
+
+
+@pytest.mark.unit
+def test_non_dealer_six_languages_and_parts_shops():
+    # driving school / rental / museum / airport / travel / parts across DE/FR/ES/IT/NL/EN
+    for title in ("Rijschool Jansen", "Scuola Guida Milano", "Auto-École Dupont",
+                  "Autoteile Müller", "Recambios García", "Ricambi Auto Rossi",
+                  "Onderdelen Shop", "Luchthaven Schiphol", "Agencia de viajes Sol",
+                  "Noleggio Auto Roma"):
+        html = (f"<html><head><title>{title}</title></head><body>"
+                f"<p>auto fahrzeug cars vehicles voiture</p>{_FILLER}</body></html>")
+        assert is_non_dealer(html), title
+    # a real dealer title is NOT flagged
+    assert not is_non_dealer("<html><head><title>Autohaus Müller GmbH</title></head>"
+                             "<body>x</body></html>")
+
+
+@pytest.mark.unit
+def test_name_match_is_whole_word_not_substring():
+    # "Artcar" must NOT ride "bmw art car collection" (no whole-word "artcar") — the
+    # live FP Artcar -> bmwartcarcollection.com.
+    page = ("<html><head><title>BMW Art Car Collection</title></head><body>"
+            "<p>the bmw art car collection of automobiles and vehicles.</p>"
+            + _FILLER + "</body></html>")
+    ok, why = confirms_dealer(page, "Artcar", "")
+    assert not ok and why == "name_not_on_page"
+    # a genuine whole-word name still matches (hyphen is a word boundary)
+    page2 = ("<html><body><h1>Willkommen bei Artcar Tuning</h1>"
+             "<p>Gebrauchtwagen und Fahrzeuge.</p>" + _FILLER + "</body></html>")
+    assert confirms_dealer(page2, "Artcar", "")[0] is True
 
 
 # ── national directories ────────────────────────────────────────────────────────

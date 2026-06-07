@@ -139,7 +139,7 @@ python -m scripts.sweep_dealers --per-country 15 --out sweep_random.json
 python -m scripts.run_dealer_scraping \
   --domains "dacia-meaux.fr:FR,nissan-epernay.fr:FR,mercedes-benz-compiegne.fr:FR" --limit 8
 # tests:
-python -m pytest scrapers/tests -q   # 1324 passed
+python -m pytest scrapers/tests -q   # 1324 at this report's merge; 1366 on main after domain-resolution + P2 (2026-06-07)
 ```
 
 **Evidencia en la rama:** `sweep_random.json` (censo), `dealer_yielders.json` (prueba E2E), `configs/dealers/*.json` (3 recetas validadas).

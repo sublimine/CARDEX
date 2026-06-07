@@ -10,6 +10,7 @@ purge on/off, config resolve-vs-detect, and the report aggregation.
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 
 import pytest
 
@@ -163,6 +164,52 @@ def test_harvest_purge_disabled_keeps_rows(isolated_stores):
         seam_runner=_recording_seam(), purger=purger, purge=False,
     ))
     assert r.persisted == 2 and r.purged is False and purger.purged == []
+
+
+def _recording_remediator(recovered=True, persisted=7):
+    calls = []
+
+    async def rem(domain, country):
+        calls.append((domain, country))
+        return {"recovered": recovered, "persisted": persisted, "domain": domain}
+
+    rem.calls = calls
+    return rem
+
+
+@pytest.mark.unit
+def test_harvest_triggers_remediation_when_drift_trips(isolated_stores):
+    # Save a recipe with a HIGH volume floor, then harvest a site that yields only 2
+    # listings → volume drift trips → the wired remediator must fire (auto-repair loop).
+    static = MapFetcher(_sitemap_dealer())
+    cfg, _, _ = _run(resolve_or_detect_config("dealer.example", "DE", static_fetcher=static))
+    drifted = dataclasses.replace(
+        cfg, drift_baseline=dataclasses.replace(cfg.drift_baseline, expected_min_volume=100)
+    )
+    cfgmod.save(drifted, kind="dealer")                       # persisted high floor
+
+    remediator = _recording_remediator()
+    r = _run(harvest_dealer(
+        "dealer.example", "de", static_fetcher=static, e07_fetcher=None,
+        seam_runner=_recording_seam(), purger=_recording_purger(),
+        remediator=remediator,
+    ))
+    assert r.drift_ok is False                                # 2 < 100 floor
+    assert remediator.calls == [("dealer.example", "DE")]     # remediation fired in-flow
+    assert r.remediation is not None and r.remediation["recovered"] is True
+
+
+@pytest.mark.unit
+def test_harvest_no_remediation_when_healthy_or_unwired(isolated_stores):
+    # Healthy harvest (first run, baseline==discovered) must NOT call the remediator,
+    # and a drift with no remediator wired stays dormant (no crash, just drift_ok=False).
+    static = MapFetcher(_sitemap_dealer())
+    remediator = _recording_remediator()
+    r = _run(harvest_dealer(
+        "dealer.example", "de", static_fetcher=static, e07_fetcher=None,
+        seam_runner=_recording_seam(), purger=_recording_purger(), remediator=remediator,
+    ))
+    assert r.drift_ok is True and remediator.calls == [] and r.remediation is None
 
 
 @pytest.mark.unit

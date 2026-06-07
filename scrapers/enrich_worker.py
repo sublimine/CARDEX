@@ -56,6 +56,11 @@ DEFAULT_CHANNEL = "SCRAPER"                   # vehicles.ingestion_channel CHECK
 # and the work is lost at scale. 60s is well above a healthy in-flight time, so
 # reclaim never steals a message another consumer is actively processing.
 RECLAIM_IDLE_MS = int(os.environ.get("ENRICH_RECLAIM_IDLE_MS", "60000"))
+# Anti-churn cap: a message that keeps failing transiently is reclaimed forever,
+# burning fetches every cycle and never draining. After this many deliveries (the
+# XPENDING counter, bumped by each XAUTOCLAIM) give up and DLQ it instead of
+# re-queueing — bounded retries, no infinite churn.
+MAX_DELIVERIES = int(os.environ.get("ENRICH_MAX_DELIVERIES", "5"))
 
 _REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
 
@@ -313,6 +318,35 @@ async def process_message(
     log.warning("enrich transient url=%s reason=%s (no ack)", decoded.get("u"), reason)
 
 
+def _sid(mid) -> str:
+    """Normalise a stream id to ``str`` regardless of the client's decode mode."""
+    return mid.decode() if isinstance(mid, (bytes, bytearray)) else str(mid)
+
+
+async def _delivery_counts(rdb: aioredis.Redis, *, count: int) -> dict[str, int]:
+    """
+    ``message_id -> times_delivered`` for the group's pending list (for the churn cap).
+
+    Reads XPENDING (the per-message delivery counter Redis bumps on every XAUTOCLAIM).
+    Tolerates both redis-py shapes (dict / positional tuple) and an absent group.
+    """
+    try:
+        pend = await rdb.xpending_range(
+            ENRICH_STREAM, CONSUMER_GROUP, min="-", max="+", count=count,
+        )
+    except aioredis.ResponseError:  # pragma: no cover - group/stream gone
+        return {}
+    out: dict[str, int] = {}
+    for p in pend or []:
+        if isinstance(p, dict):
+            mid, dc = p.get("message_id"), p.get("times_delivered", 0)
+        else:  # positional: (message_id, consumer, idle, times_delivered)
+            mid, dc = (p[0], p[3]) if len(p) >= 4 else (p[0], 0)
+        if mid is not None:
+            out[_sid(mid)] = int(dc)
+    return out
+
+
 async def reclaim_pending(
     rdb: aioredis.Redis,
     fetcher: Fetcher,
@@ -343,13 +377,28 @@ async def reclaim_pending(
         return 0
     # redis-py shape: [next_cursor, [(id, fields), ...], <deleted_ids?>]. Slice safely.
     messages = res[1] if isinstance(res, (list, tuple)) and len(res) >= 2 else []
+    deliveries = await _delivery_counts(rdb, count=count)
     n = 0
     for mid, flds in messages:
         if not flds:  # tombstone → just clear from PEL
             await rdb.xack(ENRICH_STREAM, CONSUMER_GROUP, mid)
             continue
-        await process_message(rdb, fetcher, mid, flds, stats,
-                              default_country=default_country, e07_fetcher=e07_fetcher)
+        # Anti-churn: a message delivered too many times is parked on the DLQ and
+        # ACKed (give up) instead of being reprocessed forever.
+        delivered = deliveries.get(_sid(mid), 0)
+        if delivered > MAX_DELIVERIES:
+            await _to_dlq(rdb, _decode_fields(flds), f"max_deliveries:{delivered}")
+            await rdb.xack(ENRICH_STREAM, CONSUMER_GROUP, mid)
+            stats.dlq += 1
+            log.warning("enrich_worker DLQ churn id=%s deliveries=%d", _sid(mid), delivered)
+            continue
+        # try/except like A7: a still-bad reclaimed message must not kill the loop.
+        try:
+            await process_message(rdb, fetcher, mid, flds, stats,
+                                  default_country=default_country, e07_fetcher=e07_fetcher)
+        except Exception:  # noqa: BLE001
+            stats.transient += 1
+            log.exception("enrich_worker reclaimed message failed id=%s", _sid(mid))
         n += 1
     if n:
         log.info("enrich_worker reclaimed %d stranded PEL entries", n)

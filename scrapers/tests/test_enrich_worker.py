@@ -74,6 +74,14 @@ class FakeRedis:
         self._pending = []
         return ["0-0", batch, []]
 
+    # XPENDING double: per-message delivery counts for the anti-churn cap.
+    def seed_deliveries(self, mapping):
+        self._deliveries = dict(mapping)
+
+    async def xpending_range(self, stream, group, min, max, count, consumername=None):
+        return [{"message_id": mid, "times_delivered": dc}
+                for mid, dc in getattr(self, "_deliveries", {}).items()]
+
 
 _PAD = "<div class='spec'><span></span></div>" * 600
 
@@ -305,3 +313,36 @@ def test_reclaim_tombstone_is_acked_not_processed():
     rdb.seed_pending([("8-0", {})])
     n = _run(ew.reclaim_pending(rdb, MapFetcher({}), stats, consumer="c", idle_ms=60000, count=10))
     assert n == 0 and rdb.acked == ["8-0"] and stats.emitted == 0
+
+
+@pytest.mark.unit
+def test_reclaim_dlqs_message_past_max_deliveries():
+    # A message reclaimed too many times (delivery count > MAX_DELIVERIES) must be
+    # parked on the DLQ and ACKed (give up) — anti-churn, never reprocessed forever.
+    url = "https://flaky.de/v/1"
+    fetcher = MapFetcher({url: (200, _detail_html())})        # would enrich fine, but...
+    rdb, stats = FakeRedis(), EnrichStats()
+    rdb.seed_pending([("9-0", {"h": "CHURN", "u": url, "s": "flaky.de", "c": "DE"})])
+    rdb.seed_deliveries({"9-0": ew.MAX_DELIVERIES + 1})        # ...it has churned past the cap
+
+    n = _run(ew.reclaim_pending(rdb, fetcher, stats, consumer="c", idle_ms=60000, count=10))
+
+    assert n == 0 and stats.emitted == 0                       # NOT reprocessed
+    assert stats.dlq == 1 and rdb.acked == ["9-0"]             # parked + cleared from PEL
+    assert rdb.dlq and rdb.dlq[0]["reason"].startswith("max_deliveries")
+    assert rdb.ingestion == []
+
+
+@pytest.mark.unit
+def test_reclaim_isolates_a_raising_message(monkeypatch):
+    # A still-bad reclaimed message that raises must NOT kill the reclaim loop (the
+    # try/except A7 already had). The loop counts it and continues.
+    rdb, stats = FakeRedis(), EnrichStats()
+    rdb.seed_pending([("10-0", {"h": "BOOM", "u": "https://x/1", "s": "x.de", "c": "DE"})])
+
+    async def boom(*a, **k):
+        raise RuntimeError("db down")
+
+    monkeypatch.setattr(ew, "process_message", boom)
+    n = _run(ew.reclaim_pending(rdb, MapFetcher({}), stats, consumer="c", idle_ms=60000, count=10))
+    assert n == 1 and stats.transient == 1                     # isolated, no propagation

@@ -33,6 +33,7 @@ from scrapers import rich_consumer as a7  # noqa: E402
 from scrapers.common import indexer  # noqa: E402
 from scrapers.dealer_scraping import harvester as hv  # noqa: E402
 from scrapers.dealer_scraping.harvester import DealerHarvestResult, aggregate, harvest_dealer  # noqa: E402
+from scrapers.dealer_scraping.remediation import make_remediator  # noqa: E402
 from scrapers.pipeline.playwright_extractor import PlaywrightFetcher  # noqa: E402
 
 _DB_URL = os.environ.get("DATABASE_URL", "postgres://cardex:cardex_dev_only@localhost:5432/cardex")
@@ -140,6 +141,12 @@ async def run_validation(*, per_country: int, limit: int, batch_size: int,
                 e07 = PlaywrightFetcher(locale=locale)
                 await e07.__aenter__()
                 seam = make_live_seam(rdb, static, e07)
+                # Auto-remediation: a tripped drift gate re-detects→regenerates→revalidates
+                # the dealer in-flow (shares this batch's fetchers/seam/purger).
+                remediator = make_remediator(
+                    static_fetcher=static, e07_fetcher=e07, seam_runner=seam,
+                    purger=purger, limit=limit,
+                )
                 for domain, country in batch:
                     t0 = time.time()
                     try:
@@ -147,6 +154,7 @@ async def run_validation(*, per_country: int, limit: int, batch_size: int,
                             harvest_dealer(
                                 domain, country, static_fetcher=static, e07_fetcher=e07,
                                 seam_runner=seam, purger=purger, limit=limit,
+                                remediator=remediator,
                             ),
                             timeout=_PER_DEALER_TIMEOUT,
                         )

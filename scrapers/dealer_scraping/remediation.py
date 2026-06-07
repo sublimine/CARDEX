@@ -52,6 +52,30 @@ def needs_remediation(cfg: ExtractionConfig, current_volume: int) -> bool:
     return not drift_gate.evaluate_volume(cfg, current_volume).ok
 
 
+def make_remediator(
+    *,
+    static_fetcher: Fetcher,
+    e07_fetcher: Fetcher | None,
+    seam_runner: SeamRunner,
+    purger: Purger,
+    limit: int = 12,
+    save: bool = True,
+):
+    """
+    Bind ``remediate`` into the ``(domain, country) -> RemediationResult`` callback the
+    harvester expects, sharing the batch's fetchers/seam/purger. Pass the result as
+    ``harvest_dealer(..., remediator=make_remediator(...))`` so a tripped drift gate
+    auto-repairs the dealer in-flow.
+    """
+    async def _remediator(domain: str, country: str) -> RemediationResult:
+        return await remediate(
+            domain, country, static_fetcher=static_fetcher, e07_fetcher=e07_fetcher,
+            seam_runner=seam_runner, purger=purger, limit=limit, save=save,
+        )
+
+    return _remediator
+
+
 async def remediate(
     domain: str,
     country: str,

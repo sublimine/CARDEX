@@ -46,6 +46,11 @@ BATCH_SIZE = 20              # dealers per RAM batch (fetchers/browser reused, t
 SeamRunner = Callable[[str, str, list[str], bool], Awaitable[int]]
 # A purge callback: (urls) -> rows deleted from `vehicles` (scope-exact, by source_url).
 Purger = Callable[[list[str]], Awaitable[int]]
+# A remediation callback: (domain, country) -> outcome object (a RemediationResult). It is
+# INJECTED rather than imported so the harvester stays free of a remediation→harvester
+# import cycle, and so remediation's own revalidation harvest (which passes no remediator)
+# cannot recurse. The default driver binds it to ``functools.partial(remediate, ...)``.
+Remediator = Callable[[str, str], Awaitable[object]]
 
 
 @dataclass
@@ -67,6 +72,7 @@ class DealerHarvestResult:
     proof: dict | None = None
     error: str | None = None
     notes: tuple[str, ...] = field(default_factory=tuple)
+    remediation: object | None = None   # RemediationResult when drift triggered auto-repair
 
 
 # ── dealer fetcher (approved stack: curl_cffi impersonate, JA3-coherent per domain) ─
@@ -187,9 +193,15 @@ async def harvest_dealer(
     discovery_cap: int = DISCOVERY_CAP,
     save_config: bool = True,
     purge: bool = True,
+    remediator: Remediator | None = None,
 ) -> DealerHarvestResult:
     """
-    Detect → discover → seam (limited sample) → measure → drift → purge, for one dealer.
+    Detect → discover → seam (limited sample) → measure → drift → (remediate) → purge.
+
+    When the volume drift gate trips (the saved recipe no longer matches the live site)
+    and a ``remediator`` is wired, auto-remediation fires: re-detect → regenerate recipe
+    → revalidate. The outcome is recorded on ``result.remediation``. ``remediator`` is
+    ``None`` inside remediation's own revalidation harvest, so it never recurses.
 
     Returns a ``DealerHarvestResult``. Never raises for an ordinary dealer failure
     (dead site, no inventory) — those are recorded so the batch never aborts.
@@ -240,6 +252,18 @@ async def harvest_dealer(
         from scrapers.intelligence import drift_gate
         drift = drift_gate.evaluate_volume(cfg, discovered)
 
+        # Auto-remediation (point 5): a tripped drift gate means the saved recipe no
+        # longer matches the live site — re-detect → regenerate → revalidate. Dormant
+        # until a remediator is wired; the remediator runs its OWN harvest with no
+        # remediator, so this never recurses.
+        remediation = None
+        if not drift.ok and remediator is not None:
+            log.warning(
+                "drift on %s (discovered=%d < floor=%d) — triggering remediation",
+                domain, discovered, cfg.drift_baseline.expected_min_volume,
+            )
+            remediation = await remediator(domain, country)
+
         purged = False
         if purge:
             await purger(sample)
@@ -256,6 +280,7 @@ async def harvest_dealer(
             yields_inventory=persisted > 0, success_rate=round(success, 3),
             drift_ok=drift.ok, newly_detected=newly, purged=purged,
             proof=(detection.proof if detection else None),
+            remediation=remediation,
         )
     except Exception as exc:  # noqa: BLE001 — one bad dealer must not abort the batch
         log.exception("harvest_dealer failed domain=%s", domain)
