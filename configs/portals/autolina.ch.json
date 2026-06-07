@@ -1,0 +1,28 @@
+{
+  "source_key": "autolina.ch",
+  "country": "CH",
+  "strategy": "playwright_meta",
+  "version": 1,
+  "endpoints": {
+    "host": "www.autolina.ch",
+    "detail_url_re": "/auto/[^/]+/[0-9]+",
+    "sitemap_url": "https://www.autolina.ch/sitemap.xml"
+  },
+  "pagination": {},
+  "extraction": {
+    "method": "playwright_meta",
+    "field_map": {
+      "make": "og:title[0]",
+      "model": "og:title[1]",
+      "price": "meta:description Preis CHF",
+      "mileage": "meta:description Kilometer km",
+      "year": "meta:description Erstzulassung"
+    }
+  },
+  "drift_baseline": {
+    "extraction_method": "playwright_meta",
+    "expected_min_volume": 100,
+    "required_fields": ["make", "model", "year", "price"],
+    "min_nonnull_ratio": 0.6
+  }
+}

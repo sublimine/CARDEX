@@ -166,18 +166,31 @@ def _decode_fields(fields: dict) -> dict[str, str]:
     return out
 
 
+def _is_playwright_source(source_key: str) -> bool:
+    """True when the source's versioned config selects an E07 (browser) strategy."""
+    from scrapers.portals import config as portal_config
+
+    cfg = portal_config.load(source_key)
+    return cfg is not None and cfg.strategy in portal_config.PLAYWRIGHT_STRATEGIES
+
+
 async def enrich_one(
     fields: dict,
     fetcher: Fetcher,
     *,
     default_country: str = "",
+    e07_fetcher: Fetcher | None = None,
 ) -> tuple[dict | None, str]:
     """
     Enrich one ``enrich_pending`` entry into a ``vehiclePayload`` (or a reason).
 
-    Returns ``(payload, "ok")`` on success or ``(None, reason)`` where the reason
-    names the failure stage (``fetch_error``, ``http_404``, ``no_fields``,
-    ``missing_critical:...`` …) so the caller can route transient vs permanent.
+    Strategy is CONFIG-DRIVEN: if the source's ``configs/portals/<s>.json`` selects
+    an E07 (playwright) strategy AND an ``e07_fetcher`` is available, the listing is
+    rendered in a browser and meta-parsed (``extract_listing_rendered``); otherwise
+    the static engine cascade (``extract_listing``) runs. Both return the SAME
+    ``VehicleRecord`` contract, so the downstream payload is identical.
+
+    Returns ``(payload, "ok")`` or ``(None, reason)`` naming the failure stage.
     """
     f = _decode_fields(fields)
     url = f.get("u", "")
@@ -190,9 +203,15 @@ async def enrich_one(
 
     # Thread the pointer's country to the engine fetcher (identity selection).
     _enrich_country.set(country)
-    record, reason = await extract_listing(
-        url, fetcher, country=country, source_domain=source_key or None
-    )
+    if e07_fetcher is not None and _is_playwright_source(source_key):
+        from scrapers.pipeline.playwright_extractor import extract_listing_rendered
+        record, reason = await extract_listing_rendered(
+            url, e07_fetcher, country=country, source_domain=source_key or None
+        )
+    else:
+        record, reason = await extract_listing(
+            url, fetcher, country=country, source_domain=source_key or None
+        )
     if record is None:
         return None, reason
     payload = record_to_payload(record, source_key=source_key, url_hash=url_hash)
@@ -262,6 +281,7 @@ async def process_message(
     stats: EnrichStats,
     *,
     default_country: str = "",
+    e07_fetcher: Fetcher | None = None,
 ) -> None:
     """
     Enrich + route one message: emit to ingestion_raw, DLQ, or leave for reclaim.
@@ -271,7 +291,9 @@ async def process_message(
     re-delivers them.
     """
     decoded = _decode_fields(fields)
-    payload, reason = await enrich_one(fields, fetcher, default_country=default_country)
+    payload, reason = await enrich_one(
+        fields, fetcher, default_country=default_country, e07_fetcher=e07_fetcher
+    )
 
     if payload is not None:
         await _emit(rdb, payload, decoded.get("s", ""))
@@ -300,6 +322,7 @@ async def reclaim_pending(
     idle_ms: int,
     count: int,
     default_country: str = "",
+    e07_fetcher: Fetcher | None = None,
 ) -> int:
     """
     XAUTOCLAIM one batch of PEL entries idle > ``idle_ms`` and reprocess them.
@@ -325,7 +348,8 @@ async def reclaim_pending(
         if not flds:  # tombstone → just clear from PEL
             await rdb.xack(ENRICH_STREAM, CONSUMER_GROUP, mid)
             continue
-        await process_message(rdb, fetcher, mid, flds, stats, default_country=default_country)
+        await process_message(rdb, fetcher, mid, flds, stats,
+                              default_country=default_country, e07_fetcher=e07_fetcher)
         n += 1
     if n:
         log.info("enrich_worker reclaimed %d stranded PEL entries", n)
@@ -342,13 +366,15 @@ async def run(
     limit: int = 0,
     default_country: str = "",
     reclaim_idle_ms: int = RECLAIM_IDLE_MS,
+    e07_fetcher: Fetcher | None = None,
 ) -> EnrichStats:
     """
     Consume ``stream:enrich_pending`` and bridge to ``stream:ingestion_raw``.
 
     ``limit`` > 0 enables the local "validate-with-a-limit-and-purge" mode: stop
     after ``limit`` payloads are emitted, and exit when the stream drains. With
-    ``limit`` == 0 (VPS) it runs forever.
+    ``limit`` == 0 (VPS) it runs forever. ``e07_fetcher`` (a PlaywrightFetcher),
+    when provided, renders sources whose config selects an E07 strategy.
     """
     rdb = aioredis.from_url(redis_url or _REDIS_URL, decode_responses=True)
     if fetcher is None:
@@ -366,6 +392,7 @@ async def run(
             await reclaim_pending(
                 rdb, fetcher, stats, consumer=consumer,
                 idle_ms=reclaim_idle_ms, count=batch_size, default_country=default_country,
+                e07_fetcher=e07_fetcher,
             )
             if limit and stats.emitted >= limit:
                 break
@@ -381,7 +408,8 @@ async def run(
             async def _guarded(mid: str, flds: dict) -> None:
                 async with sem:
                     await process_message(
-                        rdb, fetcher, mid, flds, stats, default_country=default_country
+                        rdb, fetcher, mid, flds, stats,
+                        default_country=default_country, e07_fetcher=e07_fetcher,
                     )
 
             for _stream, messages in resp:
