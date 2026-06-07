@@ -22,9 +22,22 @@ log = logging.getLogger(__name__)
 PROVIDERS: dict[str, str] = {
     "ddg": "https://html.duckduckgo.com/html/?q={q}",
     "mojeek": "https://www.mojeek.com/search?q={q}",
+    "startpage": "https://www.startpage.com/sp/search?query={q}",
+    "searxng": "https://searxng.site/search?q={q}",
 }
-PROVIDER_ORDER = ("ddg", "mojeek")
+PROVIDER_ORDER = ("ddg", "mojeek", "startpage", "searxng")
 _PROVIDER_ORDER = PROVIDER_ORDER  # backwards-compatible alias
+
+
+def ordered_providers(seed: int) -> tuple[str, ...]:
+    """
+    Provider order ROTATED by ``seed`` (the dealer's id) so the FIRST hit spreads across
+    engines instead of hammering DDG on every dealer — the single-IP throttle mitigation.
+    Dealer N starts at provider N % len, then falls through the rest.
+    """
+    n = len(PROVIDER_ORDER)
+    i = (seed if seed is not None else 0) % n
+    return PROVIDER_ORDER[i:] + PROVIDER_ORDER[:i]
 
 
 def build_query(name: str, city: str) -> str:

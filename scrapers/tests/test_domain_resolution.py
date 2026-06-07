@@ -304,6 +304,17 @@ def test_non_dealer_six_languages_and_parts_shops():
 
 
 @pytest.mark.unit
+def test_ordered_providers_rotates_by_seed():
+    from scrapers.discovery.domain_resolution.search import PROVIDER_ORDER, ordered_providers
+    n = len(PROVIDER_ORDER)
+    assert ordered_providers(0) == PROVIDER_ORDER                       # id 0 → canonical
+    assert ordered_providers(1)[0] == PROVIDER_ORDER[1 % n]             # rotated start
+    assert set(ordered_providers(2)) == set(PROVIDER_ORDER)             # same set, reordered
+    assert ordered_providers(n) == PROVIDER_ORDER                       # wraps around
+    assert ordered_providers(None) == PROVIDER_ORDER                    # tolerates None id
+
+
+@pytest.mark.unit
 def test_name_match_is_whole_word_not_substring():
     # "Artcar" must NOT ride "bmw art car collection" (no whole-word "artcar") — the
     # live FP Artcar -> bmwartcarcollection.com.
