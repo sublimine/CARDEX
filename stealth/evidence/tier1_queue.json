@@ -1,0 +1,422 @@
+[
+ {
+  "portal": "2dehands.be",
+  "country": "BE",
+  "tier": "T0",
+  "status": "done"
+ },
+ {
+  "portal": "2ememain.be",
+  "country": "BE",
+  "tier": "T0",
+  "status": "done"
+ },
+ {
+  "portal": "autolina.ch",
+  "country": "CH",
+  "tier": "T0",
+  "status": "done"
+ },
+ {
+  "portal": "autohero.com",
+  "country": "DE",
+  "tier": "T0",
+  "status": "done"
+ },
+ {
+  "portal": "wallapop.com",
+  "country": "ES",
+  "tier": "T0",
+  "status": "pending"
+ },
+ {
+  "portal": "auto-selection.com",
+  "country": "FR",
+  "tier": "T0",
+  "status": "pending"
+ },
+ {
+  "portal": "autosphere.fr",
+  "country": "FR",
+  "tier": "T0",
+  "status": "pending"
+ },
+ {
+  "portal": "caravenue.com",
+  "country": "FR",
+  "tier": "T0",
+  "status": "pending"
+ },
+ {
+  "portal": "heycar.com",
+  "country": "FR",
+  "tier": "T0",
+  "status": "pending"
+ },
+ {
+  "portal": "marktplaats.nl",
+  "country": "NL",
+  "tier": "T0",
+  "status": "pending"
+ },
+ {
+  "portal": "nederlandmobiel.nl",
+  "country": "NL",
+  "tier": "T0",
+  "status": "pending"
+ },
+ {
+  "portal": "belgiemobiel.be",
+  "country": "BE",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "cardoen.be",
+  "country": "BE",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "moniteurautomobile.be",
+  "country": "BE",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "myway.be",
+  "country": "BE",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "vroom.be",
+  "country": "BE",
+  "tier": "T1",
+  "status": "done"
+ },
+ {
+  "portal": "youcar.be",
+  "country": "BE",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "anibis.ch",
+  "country": "CH",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "carforyou.ch",
+  "country": "CH",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "comparis.ch",
+  "country": "CH",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "gowago.ch",
+  "country": "CH",
+  "tier": "T1",
+  "status": "done"
+ },
+ {
+  "portal": "tutti.ch",
+  "country": "CH",
+  "tier": "T1",
+  "status": "done"
+ },
+ {
+  "portal": "auto.de",
+  "country": "DE",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "autoboerse.de",
+  "country": "DE",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "autohaus24.de",
+  "country": "DE",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "autohus.de",
+  "country": "DE",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "classic-trader.com",
+  "country": "DE",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "pkw.de",
+  "country": "DE",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "autocasion.com",
+  "country": "ES",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "buscocoches.com",
+  "country": "ES",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "clicars.com",
+  "country": "ES",
+  "tier": "T1",
+  "status": "done"
+ },
+ {
+  "portal": "coches.net",
+  "country": "ES",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "flexicar.es",
+  "country": "ES",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "motor.es",
+  "country": "ES",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "ocasionplus.com",
+  "country": "ES",
+  "tier": "T1",
+  "status": "done"
+ },
+ {
+  "portal": "carvago.com",
+  "country": "EU",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "annonces-automobile.com",
+  "country": "FR",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "aramisauto.com",
+  "country": "FR",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "capcar.fr",
+  "country": "FR",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "carizy.com",
+  "country": "FR",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "distinxion.fr",
+  "country": "FR",
+  "tier": "T1",
+  "status": "done"
+ },
+ {
+  "portal": "gueudet.fr",
+  "country": "FR",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "largus.fr",
+  "country": "FR",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "leparking.fr",
+  "country": "FR",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "occasions.jeanlain.com",
+  "country": "FR",
+  "tier": "T1",
+  "status": "done"
+ },
+ {
+  "portal": "paruvendu.fr",
+  "country": "FR",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "reezocar.com",
+  "country": "FR",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "simplicicar.com",
+  "country": "FR",
+  "tier": "T1",
+  "status": "done"
+ },
+ {
+  "portal": "spoticar.fr",
+  "country": "FR",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "starterre.fr",
+  "country": "FR",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "autokopen.nl",
+  "country": "NL",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "autotrack.nl",
+  "country": "NL",
+  "tier": "T1",
+  "status": "done"
+ },
+ {
+  "portal": "autowereld.nl",
+  "country": "NL",
+  "tier": "T1",
+  "status": "pending"
+ },
+ {
+  "portal": "gaspedaal.nl",
+  "country": "NL",
+  "tier": "T1",
+  "status": "done"
+ },
+ {
+  "portal": "viabovag.nl",
+  "country": "NL",
+  "tier": "T1",
+  "status": "done"
+ },
+ {
+  "portal": "autoscout24.be",
+  "country": "BE",
+  "tier": "T2",
+  "status": "pending"
+ },
+ {
+  "portal": "gocar.be",
+  "country": "BE",
+  "tier": "T2",
+  "status": "pending"
+ },
+ {
+  "portal": "autoscout24.ch",
+  "country": "CH",
+  "tier": "T2",
+  "status": "pending"
+ },
+ {
+  "portal": "autoscout24.de",
+  "country": "DE",
+  "tier": "T2",
+  "status": "pending"
+ },
+ {
+  "portal": "kleinanzeigen.de",
+  "country": "DE",
+  "tier": "T2",
+  "status": "pending"
+ },
+ {
+  "portal": "mobile.de",
+  "country": "DE",
+  "tier": "T2",
+  "status": "pending"
+ },
+ {
+  "portal": "autoscout24.es",
+  "country": "ES",
+  "tier": "T2",
+  "status": "pending"
+ },
+ {
+  "portal": "coches.com",
+  "country": "ES",
+  "tier": "T2",
+  "status": "pending"
+ },
+ {
+  "portal": "autoscout24.fr",
+  "country": "FR",
+  "tier": "T2",
+  "status": "pending"
+ },
+ {
+  "portal": "zoomcar.fr",
+  "country": "FR",
+  "tier": "T2",
+  "status": "pending"
+ },
+ {
+  "portal": "autoscout24.nl",
+  "country": "NL",
+  "tier": "T2",
+  "status": "pending"
+ },
+ {
+  "portal": "autoweek.nl",
+  "country": "NL",
+  "tier": "T2",
+  "status": "pending"
+ },
+ {
+  "portal": "milanuncios.com",
+  "country": "ES",
+  "tier": "T3",
+  "status": "pending"
+ },
+ {
+  "portal": "lacentrale.fr",
+  "country": "FR",
+  "tier": "T3",
+  "status": "pending"
+ },
+ {
+  "portal": "leboncoin.fr",
+  "country": "FR",
+  "tier": "T3",
+  "status": "pending"
+ }
+]

@@ -121,6 +121,26 @@ real del set). lacentrale igual (DataDome + geo FR).
 - La **enumeración** completa de cada hoja va por la ruta SSR ya crackeada: `suchen.mobile.de/fahrzeuge/search.html?…&pageNumber=N` → `__INITIAL_STATE__.search.srp.data.searchResults.items` (28/pág, paginación real). El **faceteo mantiene cada hoja bajo el cap de paginación del desktop (~50 pág)** — esa es exactamente su función. Volcado íntegro = VPS.
 - Enumerate demo (Abarth, hoja <CAP): API devolvió datos reales (Abarth 500/Grande Punto, make/model/id) y el DELTA funcionó (20 SEEN_new); pero al usar el preview svc se dedup a 20 — la enumeración real usa la ruta desktop. Documentado en `facet_engine.py`.
 
+## CABLEADO AL SEAM REAL (`seam_writer.py`) — delta → CARDEX
+
+El delta de altas/bajas se escribe en el seam vivo, idempotente e inyección-seguro
+(`\copy` CSV; el texto de scraping es no confiable). Probado E2E con leboncoin:
+- **Run1 (60 altas):** `INSERT vehicle_index` (ON CONFLICT DO NOTHING) + `vehicle_events SEEN`
+  + `XADD stream:enrich_pending {h,u,s,c}` → `vehicle_index[leboncoin.fr]=60`, `SEEN|60`, 60 msgs.
+- **Run2 (subconjunto 50):** reconciliación vs snapshot → **GONE(bajas)=10** → DELETE + `vehicle_events GONE`
+  → `index=50`; eventos `GONE|10, SEEN|60`.
+- **Mensaje `enrich_pending` = contrato C5 exacto:** `{h:url_hash, u:url, s:source, c:country}`.
+- **Purga local:** `DELETE … WHERE sitemap_source='stealth'` → `index=0` (validar-con-límite-y-purgar;
+  volcado íntegro = VPS). PG/Redis vía `docker exec` (sin driver en host).
+
+## TABLERO DE GOBERNANZA (`TIER1_COVERAGE.md`, `make_dashboard.py`)
+
+71 portales (70 work_queue + gumtree). **Ningún portal verde por mi cuenta** — máximo
+«pendiente de verificación»; Guardian audita con conteo independiente antes de cerrar.
+Estado: **2 pendiente-de-verificación** (mobile.de 100%, leboncoin sitemap) · **8 parcial**
+(coches/AS24×5/kleinanzeigen/gumtree: SSR/DOM crackeado, falta perfil count+faceteo) ·
+**2 bloqueado** (milanuncios/lacentrale: proxy residencial del país) · **58 pendiente**.
+
 ## Herramientas entregadas (en `stealth/`)
 - `fix_camoufox_sxs.py` — repara el arranque de Camoufox en Windows (byte-patch SxS, reversible).
 - `harness.py` — colector de evidencia Camoufox: navega, detecta bloqueo, warm-up + settle
