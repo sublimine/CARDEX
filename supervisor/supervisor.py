@@ -215,9 +215,18 @@ def main() -> int:
         return 0
     log(f"=== cardex_supervisor START pid={os.getpid()} ===")
     workers = load_workers()
+    names = {w.name for w in workers}
     log(f"governing {len(workers)} workers: {[w.name for w in workers]}")
     try:
         while True:
+            # hot-reload config: add newly-declared workers without a restart
+            try:
+                for cfg in json.loads(CONFIG.read_text(encoding="utf-8")).get("workers", []):
+                    if cfg["name"] not in names:
+                        workers.append(Worker(cfg)); names.add(cfg["name"])
+                        log(f"hot-added worker '{cfg['name']}' from config")
+            except Exception:
+                pass
             statuses = [w.supervise() for w in workers]
             state = {
                 "supervisor_pid": os.getpid(),
