@@ -1,0 +1,1007 @@
+{
+  "dealers": 90,
+  "yielding": 3,
+  "yield_rate": 0.033,
+  "by_classification": {
+    "no_inventory_links": 46,
+    "unreachable": 21,
+    "details_no_fields": 17,
+    "timeout": 2,
+    "sitemap_listing": 2,
+    "jsonld_detail": 1,
+    "spa_shell": 1
+  },
+  "embedded_dms_providers": {},
+  "yield_by_strategy": {
+    "sitemap_listing": 2,
+    "jsonld_detail": 1
+  },
+  "by_country": {
+    "BE": 15,
+    "CH": 15,
+    "DE": 15,
+    "ES": 15,
+    "FR": 15,
+    "NL": 15
+  },
+  "yield_by_country": {
+    "FR": 3
+  },
+  "elapsed_s": 544.7,
+  "yielders": [
+    {
+      "domain": "dacia-meaux.fr",
+      "country": "FR",
+      "ok": true,
+      "strategy": "sitemap_listing",
+      "classification": "sitemap_listing",
+      "discovery": "sitemap",
+      "discovered": 9,
+      "proof": {
+        "make": "Alpine",
+        "model": "A110",
+        "year": 2024,
+        "price": "74999",
+        "currency": "EUR",
+        "images": 1
+      }
+    },
+    {
+      "domain": "nissan-epernay.fr",
+      "country": "FR",
+      "ok": true,
+      "strategy": "sitemap_listing",
+      "classification": "sitemap_listing",
+      "discovery": "sitemap",
+      "discovered": 10,
+      "proof": {
+        "make": "Nissan",
+        "model": "Juke",
+        "year": 2020,
+        "price": "12999",
+        "currency": "EUR",
+        "images": 1
+      }
+    },
+    {
+      "domain": "mercedes-benz-compiegne.fr",
+      "country": "FR",
+      "ok": true,
+      "strategy": "jsonld_detail",
+      "classification": "jsonld_detail",
+      "discovery": "catalog_follow",
+      "discovered": 5,
+      "proof": {
+        "make": "MERCEDES",
+        "model": "CLASSE A",
+        "year": 2026,
+        "price": "46576",
+        "currency": "EUR",
+        "images": 1
+      }
+    }
+  ],
+  "rows": [
+    {
+      "domain": "groupollivier.be",
+      "country": "BE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "details_no_fields",
+      "discovery": "sitemap",
+      "discovered": 1,
+      "proof": null
+    },
+    {
+      "domain": "meeusenmotoren.be",
+      "country": "BE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "premio.be",
+      "country": "BE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "timeout",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "pautric.bmw.be",
+      "country": "BE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "citroenverellen.be",
+      "country": "BE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "autopartsbv.be",
+      "country": "BE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "groepvdh.be",
+      "country": "BE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "details_no_fields",
+      "discovery": "catalog_follow",
+      "discovered": 5,
+      "proof": null
+    },
+    {
+      "domain": "dielisbornem.be",
+      "country": "BE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "legarageducoin.business.site",
+      "country": "BE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "novoto.be",
+      "country": "BE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "details_no_fields",
+      "discovery": "sitemap",
+      "discovered": 40,
+      "proof": null
+    },
+    {
+      "domain": "bose.be",
+      "country": "BE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "leemans.hyundai.be",
+      "country": "BE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "vanosch.bmw.be",
+      "country": "BE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "citroen.be",
+      "country": "BE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "details_no_fields",
+      "discovery": "sitemap",
+      "discovered": 40,
+      "proof": null
+    },
+    {
+      "domain": "palm-auto.com",
+      "country": "BE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "details_no_fields",
+      "discovery": "sitemap",
+      "discovered": 1,
+      "proof": null
+    },
+    {
+      "domain": "singelemoto.ch",
+      "country": "CH",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "ural.ch",
+      "country": "CH",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "citroen-solothurn.ch",
+      "country": "CH",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "brueniggarage.ch",
+      "country": "CH",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "garagedesplantys.ch",
+      "country": "CH",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "driftracing.ch",
+      "country": "CH",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "hertz.ch",
+      "country": "CH",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "autotechnik.ch",
+      "country": "CH",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "garage-6102.ch",
+      "country": "CH",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "garage-st-legier.ch",
+      "country": "CH",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "pneumäxu.ch",
+      "country": "CH",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "garagejoller.ch",
+      "country": "CH",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "motosvogel.ch",
+      "country": "CH",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "carpointcar.ch",
+      "country": "CH",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "tiefenbach.ch",
+      "country": "CH",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "wolkenhauer-westerstede.audi",
+      "country": "DE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "details_no_fields",
+      "discovery": "catalog",
+      "discovered": 1,
+      "proof": null
+    },
+    {
+      "domain": "autohauskleindienst.go1a.de",
+      "country": "DE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "lackiercenter-burgau.de",
+      "country": "DE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "cheikhos-autozentrum.de",
+      "country": "DE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "motorenzimmer.de",
+      "country": "DE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "autohaus-kampsen.de",
+      "country": "DE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "details_no_fields",
+      "discovery": "sitemap",
+      "discovered": 1,
+      "proof": null
+    },
+    {
+      "domain": "reifenbachmann.de",
+      "country": "DE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "autohaus-vestrick.de",
+      "country": "DE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "kfz-technik-blecker.go1a.de",
+      "country": "DE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "kfz-raabe.de",
+      "country": "DE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "steingruppe-gummersbach.skoda-auto.de",
+      "country": "DE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "rothaler.de",
+      "country": "DE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "santo.mercedes-benz.de",
+      "country": "DE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "lucka.de",
+      "country": "DE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "automobile-amberg.de",
+      "country": "DE",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "montecarsantander.com",
+      "country": "ES",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "protectintmax.com",
+      "country": "ES",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "gruponani.com",
+      "country": "ES",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "rentacarpuntamarina.com",
+      "country": "ES",
+      "ok": false,
+      "strategy": "none",
+      "classification": "details_no_fields",
+      "discovery": "sitemap",
+      "discovered": 2,
+      "proof": null
+    },
+    {
+      "domain": "garciapeugeot.com",
+      "country": "ES",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "hersamotor.es",
+      "country": "ES",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "casvisa.com",
+      "country": "ES",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "valiramotors.net",
+      "country": "ES",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "eurorepar.es",
+      "country": "ES",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "concesionario.dacia.es",
+      "country": "ES",
+      "ok": false,
+      "strategy": "none",
+      "classification": "details_no_fields",
+      "discovery": "catalog_follow",
+      "discovered": 6,
+      "proof": null
+    },
+    {
+      "domain": "crt2010sl.com",
+      "country": "ES",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "atalayamotor.audi.es",
+      "country": "ES",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "pitstopwheels.es",
+      "country": "ES",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "automovilesjessicar.com",
+      "country": "ES",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "motoreac.es",
+      "country": "ES",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "hy-retro-utilitaire.com",
+      "country": "FR",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "renault-alencon.bodemerauto.com",
+      "country": "FR",
+      "ok": false,
+      "strategy": "none",
+      "classification": "details_no_fields",
+      "discovery": "catalog",
+      "discovered": 40,
+      "proof": null
+    },
+    {
+      "domain": "volkswagen-pithiviers.fr",
+      "country": "FR",
+      "ok": false,
+      "strategy": "none",
+      "classification": "details_no_fields",
+      "discovery": "catalog",
+      "discovered": 3,
+      "proof": null
+    },
+    {
+      "domain": "dacia-meaux.fr",
+      "country": "FR",
+      "ok": true,
+      "strategy": "sitemap_listing",
+      "classification": "sitemap_listing",
+      "discovery": "sitemap",
+      "discovered": 9,
+      "proof": {
+        "make": "Alpine",
+        "model": "A110",
+        "year": 2024,
+        "price": "74999",
+        "currency": "EUR",
+        "images": 1
+      }
+    },
+    {
+      "domain": "bes-auto-laroque.fr",
+      "country": "FR",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "rennes.centreporsche.fr",
+      "country": "FR",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "jantesaluservices.com",
+      "country": "FR",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "normandie-accessoires.com",
+      "country": "FR",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "vpm79.fr",
+      "country": "FR",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "piecesenstock.gf",
+      "country": "FR",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "nissan-epernay.fr",
+      "country": "FR",
+      "ok": true,
+      "strategy": "sitemap_listing",
+      "classification": "sitemap_listing",
+      "discovery": "sitemap",
+      "discovered": 10,
+      "proof": {
+        "make": "Nissan",
+        "model": "Juke",
+        "year": 2020,
+        "price": "12999",
+        "currency": "EUR",
+        "images": 1
+      }
+    },
+    {
+      "domain": "somarec.com",
+      "country": "FR",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "rapidparebrise-saint-nazaire.fr",
+      "country": "FR",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "espaceloisirs34.fr",
+      "country": "FR",
+      "ok": false,
+      "strategy": "none",
+      "classification": "details_no_fields",
+      "discovery": "catalog",
+      "discovered": 7,
+      "proof": null
+    },
+    {
+      "domain": "mercedes-benz-compiegne.fr",
+      "country": "FR",
+      "ok": true,
+      "strategy": "jsonld_detail",
+      "classification": "jsonld_detail",
+      "discovery": "catalog_follow",
+      "discovered": 5,
+      "proof": {
+        "make": "MERCEDES",
+        "model": "CLASSE A",
+        "year": 2026,
+        "price": "46576",
+        "currency": "EUR",
+        "images": 1
+      }
+    },
+    {
+      "domain": "autoschadebeerten.nl",
+      "country": "NL",
+      "ok": false,
+      "strategy": "none",
+      "classification": "timeout",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "autobedrijf-houwers.nl",
+      "country": "NL",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "rrcars.eu",
+      "country": "NL",
+      "ok": false,
+      "strategy": "none",
+      "classification": "details_no_fields",
+      "discovery": "sitemap",
+      "discovered": 40,
+      "proof": null
+    },
+    {
+      "domain": "motoportveldhoven.nl",
+      "country": "NL",
+      "ok": false,
+      "strategy": "none",
+      "classification": "unreachable",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "tsfheerenveen.nl",
+      "country": "NL",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "automotive.fource.nl",
+      "country": "NL",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "garagedezwart.com",
+      "country": "NL",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "autodijkwel.nl",
+      "country": "NL",
+      "ok": false,
+      "strategy": "none",
+      "classification": "details_no_fields",
+      "discovery": "sitemap",
+      "discovered": 40,
+      "proof": null
+    },
+    {
+      "domain": "itrbenelux.com",
+      "country": "NL",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "garagefredriks.nl",
+      "country": "NL",
+      "ok": false,
+      "strategy": "none",
+      "classification": "details_no_fields",
+      "discovery": "catalog",
+      "discovered": 1,
+      "proof": null
+    },
+    {
+      "domain": "starfit-nijmegen.nl",
+      "country": "NL",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "automobielbedrijfjaarsma.nl",
+      "country": "NL",
+      "ok": false,
+      "strategy": "none",
+      "classification": "spa_shell",
+      "discovery": "wp_rest",
+      "discovered": 6,
+      "proof": null
+    },
+    {
+      "domain": "autotechniekhanssloot.nl",
+      "country": "NL",
+      "ok": false,
+      "strategy": "none",
+      "classification": "no_inventory_links",
+      "discovery": "none",
+      "discovered": 0,
+      "proof": null
+    },
+    {
+      "domain": "autosmaling.nl",
+      "country": "NL",
+      "ok": false,
+      "strategy": "none",
+      "classification": "details_no_fields",
+      "discovery": "sitemap",
+      "discovered": 2,
+      "proof": null
+    },
+    {
+      "domain": "manenschijn.nl",
+      "country": "NL",
+      "ok": false,
+      "strategy": "none",
+      "classification": "details_no_fields",
+      "discovery": "sitemap",
+      "discovered": 6,
+      "proof": null
+    }
+  ]
+}
