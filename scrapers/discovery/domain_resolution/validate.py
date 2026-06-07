@@ -59,6 +59,21 @@ _COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
 _TAG_RE = re.compile(r"<[^>]+>")
 _WS_RE = re.compile(r"\s+")
 
+# Auto-ADJACENT businesses that carry car vocabulary but are NOT dealers — they live-
+# matched the 2-weak-word gate (a driving school says auto+fahrzeug, a car museum says
+# vehicles+cars, an airport/agency has car-rental). If one of these heads the page
+# (title / h1 / og:title), reject regardless of auto words. A real dealer never titles
+# itself a Fahrschule/Museum/Autovermietung.
+_TITLE_RE = re.compile(r"<title[^>]*>(.*?)</title>", re.I | re.S)
+_H1_RE = re.compile(r"<h1[^>]*>(.*?)</h1>", re.I | re.S)
+_OGT_RE = re.compile(r'<meta[^>]+property=["\']og:title["\'][^>]+content=["\']([^"\']*)', re.I)
+_NON_DEALER_RE = re.compile(
+    r"\b(fahrschule|fahrschulen|auto-?ecole|autoescuela|driving school|"
+    r"museum|museo|musee|autovermietung|mietwagen|car rental|rent a car|"
+    r"autonoleggio|location de voiture|flughafen|aeroport|airport|aeroporto|"
+    r"reiseburo|reisebuero|travel agency|agence de voyage|fahrschulauto)\b"
+)
+
 
 def _text(html: str, limit: int = 20000) -> str:
     """Visible-text only: drop script/style/comments, then tags → normalised lowercase."""
@@ -67,6 +82,19 @@ def _text(html: str, limit: int = 20000) -> str:
     h = _COMMENT_RE.sub(" ", h)
     stripped = _TAG_RE.sub(" ", h)
     return _WS_RE.sub(" ", _norm(stripped))[:limit]
+
+
+def _prominent(html: str) -> str:
+    """Title + h1 + og:title text, normalised — the page's self-declared identity."""
+    parts: list[str] = []
+    for rx in (_TITLE_RE, _H1_RE, _OGT_RE):
+        parts += rx.findall(html[:300000])
+    return _WS_RE.sub(" ", _norm(_TAG_RE.sub(" ", " ".join(parts))))
+
+
+def is_non_dealer(html: str) -> bool:
+    """True if the page heads itself as an auto-adjacent non-dealer (driving school…)."""
+    return bool(_NON_DEALER_RE.search(_prominent(html)))
 
 
 def confirms_dealer(html: str, name: str, city: str, *, require_name: bool = True) -> tuple[bool, str]:
@@ -85,6 +113,8 @@ def confirms_dealer(html: str, name: str, city: str, *, require_name: bool = Tru
     """
     if not html or len(html) < 200:
         return False, "empty_page"
+    if is_non_dealer(html):
+        return False, "non_dealer_category"
     text = _text(html)
     toks = name_tokens(name)
     name_hit = any(t in text for t in toks)
@@ -113,8 +143,9 @@ def confirms_automotive(html: str) -> tuple[bool, str]:
     """
     if not html or len(html) < 200:
         return False, "empty_page"
-    text = _text(html)
-    if not _auto_ok(text):
+    if is_non_dealer(html):
+        return False, "non_dealer_category"
+    if not _auto_ok(_text(html)):
         return False, "no_automotive_signal"
     return True, "email+auto"
 

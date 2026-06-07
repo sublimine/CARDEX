@@ -272,6 +272,21 @@ def test_text_strips_script_style_so_css_js_auto_does_not_count():
     assert confirms_automotive(page)[0] is False
 
 
+@pytest.mark.unit
+def test_non_dealer_category_rejected_by_title():
+    # auto-adjacent businesses pass the 2-weak gate but head themselves as non-dealers
+    ds = ("<html><head><title>Fahrschule Marty — Ihre Fahrschule</title></head>"
+          "<body><p>auto fahrzeug fahren lernen.</p>" + _FILLER + "</body></html>")
+    mus = ("<html><head><title>Saurer Museum</title></head>"
+           "<body><p>historic cars and vehicles on display.</p>" + _FILLER + "</body></html>")
+    assert confirms_automotive(ds) == (False, "non_dealer_category")
+    assert confirms_dealer(mus, "Saurer", "") == (False, "non_dealer_category")
+    # a real dealer (no non-dealer marker in title) still passes
+    ok = ("<html><head><title>Auto Ferassi — Autowerkstatt</title></head>"
+          "<body><p>occasionen, fahrzeuge, probefahrt.</p>" + _FILLER + "</body></html>")
+    assert confirms_automotive(ok)[0] is True
+
+
 # ── national directories ────────────────────────────────────────────────────────
 class _FakeSession:
     def __init__(self, html: str, status: int = 200):
