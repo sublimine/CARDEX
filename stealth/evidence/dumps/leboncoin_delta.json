@@ -1,0 +1,22 @@
+{
+  "portal": "leboncoin",
+  "ts": "2026-06-07 20:26:08",
+  "current": 60,
+  "prev": 60,
+  "seen_new": 60,
+  "gone": 60,
+  "seen_new_sample": [
+    "1b8c8ab096f2b9ab627aa1cfec83b3fd",
+    "9dd98da2b013f7928e4711a33ae38e7d",
+    "05acda769c06d3b4cf4400885bcaec67",
+    "b75abc741df3efce18bd2bce40111d9a",
+    "33265eea320932223c627c62b5929599"
+  ],
+  "gone_sample": [
+    "884c03282bdd3cf2fb3eb84027f9e338",
+    "eef09555ebf8ef03ee180dc7156aa129",
+    "b495ec3d7cfc8177bc7b93557b8596a3",
+    "c19cbd9e67337e79254147113cc415fd",
+    "16220d2b70edd11a9c5ad0c5e21fb551"
+  ]
+}

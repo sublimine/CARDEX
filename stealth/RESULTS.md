@@ -25,6 +25,16 @@
 | **mobile.de** | DE | Akamai Bot Mgr v2 | Camoufox + warm-up + settle → `__INITIAL_STATE__` | ✅ **CAE** (~4,4M) | HTTP 200, 28 listings/pág `search.srp.data.searchResults.items` (Ford Kuga 8.490€, VW Golf GTI 16.950€) |
 | **leboncoin.fr** | FR | DataDome | Camoufox + warm-up → `__NEXT_DATA__` (+API `api.leboncoin.fr/.../v7/fdata`) | ✅ **CAE** | HTTP 200, 35 listings/pág `props.pageProps.searchData.ads` (Audi A3 22.490€, Renault Austral 25.799€) |
 | **milanuncios.com** | ES | PerimeterX (HUMAN) | Camoufox + warm-up + settle×3 | ⛔ **BLOQUEA (por ahora)** | "Pardon Our Interruption" HTTP 405, 100KB, persiste 3 reloads — geo-mismatch (sitio ES / IP CH); pendiente proxy ES |
+| **autoscout24.fr** | FR | Akamai | Camoufox → `__NEXT_DATA__` | ✅ **CAE** | HTTP 200, 20 listings `props.pageProps.listings` |
+| **autoscout24.es** | ES | Akamai | Camoufox → `__NEXT_DATA__` | ✅ **CAE** | HTTP 200, 20 listings |
+| **autoscout24.nl** | NL | Akamai | Camoufox → `__NEXT_DATA__` | ✅ **CAE** | HTTP 200, 20 listings |
+| **autoscout24.ch** | CH | (Nuxt) | Camoufox → DOM `/de/d/` | ✅ **CAE** | HTTP 200, 20 anuncios (BMW 420d/540d/i4 M50) |
+| **autoscout24.be** | BE | Akamai | Camoufox (URL locale) | 🔧 **URL fix** | `/lst`=404; usa prefijo `/nl/` o `/fr/` (misma plataforma que .de → extraerá) |
+| **kleinanzeigen.de** | DE | Akamai | Camoufox → DOM `data-adid` | ✅ **CAE** | HTTP 200, 27 anuncios (Nissan Note, Volvo C30, BMW X1, Peugeot 3008) |
+| **gumtree.com** | UK | Cloudflare | Camoufox → DOM `/p/{make}/…/{id}` | ✅ **CAE** | HTTP 200, 12 anuncios (SEAT Leon, Jaguar XF, Skoda Karoq, Honda Civic) |
+| **lacentrale.fr** | FR | DataDome | Camoufox + settle×3 | ⛔ **BLOQUEA (por ahora)** | HTTP 403 `captcha-delivery`/`geo.captcha`; settle no limpia → requiere proxy FR / captcha |
+
+**Marcador: 10 gigantes CAEN gratis** (coches.net, mobile.de, leboncoin, autoscout24 ×5 [de/fr/es/nl/ch], kleinanzeigen, gumtree). 2 bloqueados por geo (milanuncios PerimeterX, lacentrale DataDome) → proxy del país. as24.be = fix de URL trivial.
 
 ---
 
@@ -56,6 +66,32 @@ con Camoufox → HTTP 200 → `__NEXT_DATA__` (`props.pageProps.ad`):
 **Pipeline coste-cero completo demostrado: sitemap (900K URLs) → detalle → registro rico.**
 
 ---
+
+## WORKER de volcado por faceteo + DELTA (tarea 4) — `dump_worker.py`
+Worker persistente RAM-safe (camoufox conc 1) que pagina el catálogo, extrae del
+estado SSR ya crackeado, **normaliza al contrato seam** y calcula el DELTA.
+
+**Prueba E2E leboncoin (límite local 60):**
+- run1: page1=35 + page2=25 → **harvested=60, schema_valid=60/60** (100%).
+- Registro normalizado real: `{source_url, url_hash, source_domain, country, title,
+  price_eur=8990, make=Volkswagen, model=Golf, year=2017, mileage_km=175000,
+  fuel=Diesel, city, region}` → mapea directo a `vehicle_index` (L1) + campos ricos.
+- **DELTA detecta altas y bajas:**
+  - Determinista (unit): prev=5, cur=5 → SEEN_new(altas)=2, GONE(bajas)=2, present=3. ✅
+  - En vivo run1→run2: prev=60 cur=60 → SEEN_new=60, GONE=60 (leboncoin rota
+    resultados entre cargas; para delta estable usar `sort=time`). ✅
+- Local validar-con-límite-y-purgar: `--limit N` corta; `--purge` borra el harvest
+  y deja snapshot+delta+sample (volcado íntegro = VPS, `--limit 0`).
+
+**Escala accesible por portal (medida):** leboncoin ~900.000 (sitemap directo);
+mobile.de/AS24/coches por faceteo marca×región×precio sobre la API/SSR interna
+(35-20/página, sin cap observado en página 1-2). Faceteo = config, no código nuevo.
+
+## milanuncios con proxy ES (tarea 3)
+2 proxies ES libres validados (GIGAS Hosting, XTRA Telecom) **murieron en minutos**
+(libres = efímeros + datacenter → PerimeterX los marca). Veredicto honesto:
+milanuncios requiere **proxy residencial ES estable** (única dependencia de pago
+real del set). lacentrale igual (DataDome + geo FR).
 
 ## Herramientas entregadas (en `stealth/`)
 - `fix_camoufox_sxs.py` — repara el arranque de Camoufox en Windows (byte-patch SxS, reversible).
