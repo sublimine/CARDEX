@@ -72,7 +72,7 @@ Where scope is: P{phase}-sprint{N}, or module name (discovery, extraction, quali
 Examples:
 - `feat(P2-sprint5): Familia F — mobile.de + La Centrale Pro`
 - `fix(quality): V07 price range edge case for CH dealers`
-- `docs: update CONTEXT_FOR_AI with V20 composite decision logic`
+- `docs: update STATUS.md with V20 composite decision logic`
 
 ## Innovation services (Python)
 

@@ -10,7 +10,7 @@
 #   • scripts/init-redis.sh, scripts/init-meili.sh and scripts/seed-demo.sql
 #     referenced below do NOT exist yet.
 #   • PostgreSQL / ClickHouse / Redis / MeiliSearch are NOT part of the deployed
-#     MVP — storage is SQLite (see CONTEXT_FOR_AI.md "What is NOT implemented").
+#     MVP — storage is SQLite.
 # This file is hardened as infrastructure-as-code for when those parts are built.
 # The scraper fleet (scrapers/) IS real; its Dockerfile is provided in scrapers/.
 #

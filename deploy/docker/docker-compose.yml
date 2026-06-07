@@ -1,7 +1,7 @@
 # docker-compose.yml — CARDEX local development & staging
 # Boots the deployed stack: 3 core Go services + observability + reverse proxy.
 # This is the REAL deployed topology (Phase 5). PostgreSQL/Redis/MeiliSearch are
-# NOT part of it — storage is SQLite (see CONTEXT_FOR_AI.md).
+# NOT part of it — storage is SQLite.
 #
 # Usage:
 #   cp .env.example .env          # fill in secrets
