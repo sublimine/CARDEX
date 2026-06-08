@@ -188,6 +188,29 @@ async def global_inventory(
     return _envelope(data, {"count": len(data), "next_cursor": next_cursor})
 
 
+@app.get("/v1/alerts")
+async def list_alerts(
+    status: str | None = None,
+    signal: str | None = None,
+    entity_ulid: str | None = None,
+    limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
+) -> dict:
+    """Operator alerts feed (internal channel the dashboard reads). Newest first."""
+    sql = f"""
+      SELECT alert_id, entity_ulid, source_key, stage, signal, severity, status,
+             evidence, remediation_action, remediation_result, attempts, created_at, updated_at
+      FROM operator_alerts
+      WHERE ($1::text IS NULL OR status = $1)
+        AND ($2::text IS NULL OR signal = $2)
+        AND ($3::text IS NULL OR entity_ulid = $3)
+      ORDER BY created_at DESC
+      LIMIT {limit}
+    """
+    async with _pool.acquire() as conn:
+        rows = await conn.fetch(sql, status, signal, entity_ulid)
+    return _envelope([dict(r) for r in rows], {"count": len(rows)})
+
+
 @app.exception_handler(HTTPException)
 async def _http_exc(_, exc: HTTPException):
     return JSONResponse(status_code=exc.status_code,
