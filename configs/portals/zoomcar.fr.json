@@ -1,0 +1,21 @@
+{
+  "source_key": "zoomcar.fr",
+  "country": "FR",
+  "version": 1,
+  "strategy": "jsonld_ssr",
+  "waf": "CF_PRO_INCAPSULA",
+  "access": {
+    "engine": "camoufox",
+    "warm": ["https://www.ouestfrance-auto.com/"],
+    "settle": false,
+    "notes": "Camoufox passes (HTTP 200). Listings served via ouestfrance-auto.com search; canonical detail URLs are on zoomcar.fr (same operator, ex-ouestfrance-auto). Extract via schema.org JSON-LD (Car/Vehicle/Offer). VERIFIED 2026-06-08: 24 real car listings harvested + purged."
+  },
+  "endpoints": {
+    "host": "www.ouestfrance-auto.com",
+    "listing_url_template": "https://www.ouestfrance-auto.com/voiture-occasion/?page={page}",
+    "detail_url_re": "zoomcar\\.fr/[a-z0-9-]+-(\\d{6,})\\.html",
+    "extract": "jsonld"
+  },
+  "status": "HARVESTED_VERIFIED",
+  "todo": "parse price/year from JSON-LD offers + paginate; dedup vs ouestfrance-auto.fr source_domain"
+}
