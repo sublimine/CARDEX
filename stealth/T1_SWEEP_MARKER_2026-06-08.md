@@ -82,3 +82,15 @@
 - **kleinanzeigen.de** ✅ **RE-VERIFICADO con precio+año+km** (27/27): selector preciso `.aditem-main--middle--price-shipping--price` + simpletags (NO el primer €). Honda Civic 3749€/2009/212591km, Skoda Octavia 13950€/2020. (El "€19" del intento previo era envío — corregido.)
 - **zoomcar.fr** ❌ precio: ouestfrance no expuso `__NEXT_DATA__` ni JSON-LD de coches en el render → 24 URLs siguen sin precio. Pendiente (otra vía de extracción).
 - **NETO actualizado:** kleinanzeigen pasa de URL-only a precio+año. Total con atributos completos: AS24×6 (217, precio+km+año) · leboncoin 70 · autoboerse 18 · coches 8 · **kleinanzeigen 27** (precio+año) = **340 con precio**; + zoomcar 24 (URL) + mobile.de ~1.49M enumerable.
+
+## LOTE-4 (2026-06-08, URLs vía sitemap/curl)
+- **gocar.be** ✅ **40 URLs reales vía sitemap** (`/sitemaps/vehicles-fr.xml` → 116 sub-sitemaps por marca, curl-abierto pese a CF en la home). NO es muro de pago; URL-only (precio/año = detail page con Camoufox, TODO).
+- **autoweek.nl** ⚠️ sitemap index tiene `/sitemap/category/occasions/` pero no rinde URLs de anuncio individuales en el primer nivel (estructura paginada/sub-índice TBD).
+- **autowereld.nl** ⚠️ home shell 7.9KB, sin sitemap en robots → SPA (Camoufox/API TBD).
+- **vlan.be** ⚠️ SPA (home 483KB pero links = secciones, no anuncios; API TBD).
+
+### MARCADOR T1 FINAL (este esfuerzo) — verdict por plataforma
+✅ **HARVEST verificado (filas reales, insertado+purgado):** mobile.de(~1.49M enum) · autoscout24 ×6 = 217 (precio+km+año) · leboncoin 70 (precio+año+km) · kleinanzeigen 27 (precio+año+km) · autoboerse 18 (precio+año+km) · coches.com 8 (precio+año+km) · zoomcar 24 (URL) · gocar.be 40 (URL) = **~404 anuncios reales + mobile.de**.
+⚠️ **No-muro, falta receta/URL (sin proxy):** autoweek.nl, autowereld.nl, vlan.be (sitemap/SPA/URL TBD), coches buscador-full, zoomcar/gocar precio (detail).
+⛔ **Muro de pago REAL (3):** lacentrale (DataDome), milanuncios (PerimeterX), nederlandmobiel.nl (CF-challenge que ni Camoufox pasó).
+**Conclusión:** de ~20 plataformas T1 del censo, **8 rinden filas reales gratis** (Camoufox/curl), ~6 más son no-muro pendientes de receta, y **solo 3 exigen proxy**. El "muro de pago" del censo se redujo de ~20 a **3**.

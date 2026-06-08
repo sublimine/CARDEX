@@ -1,0 +1,22 @@
+{
+  "source_key": "gocar.be",
+  "country": "BE",
+  "version": 1,
+  "strategy": "sitemap_urls",
+  "waf": "Cloudflare challenge (HTML home/listing 403 to curl; Camoufox passes; SITEMAP layer open to curl)",
+  "access": {
+    "engine": "curl_cffi",
+    "impersonate": "chrome",
+    "warm": [],
+    "notes": "VERIFIED 2026-06-08: HTML home=403 cf-chl to curl (Camoufox passes it), but /sitemaps/vehicles-{fr,nl}.xml is a curl-open index of 116 per-make sub-sitemaps with real listing URLs. NOT a paid-proxy wall. URL-only via sitemap; price/year need the detail page (Camoufox) or render."
+  },
+  "endpoints": {
+    "host": "gocar.be",
+    "sitemap_index": "https://gocar.be/sitemaps/vehicles-fr.xml",
+    "sub_sitemap_pattern": "https://gocar.be/sitemaps/vehicles-fr-<make>.xml",
+    "detail_url_re": "/fr/voitures/[a-z0-9-]+/.*/id/(\\d+)"
+  },
+  "status": "HARVESTED_VERIFIED_URLS",
+  "verified": {"date": "2026-06-08", "rows": 40, "with_price": 0, "sample": "https://gocar.be/fr/voitures/abarth/600/scorpionissima/id/5038268"},
+  "todo": "price/year from detail page (Camoufox passes CF) or detail JSON-LD"
+}
