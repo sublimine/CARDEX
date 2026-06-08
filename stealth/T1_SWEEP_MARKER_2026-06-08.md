@@ -27,3 +27,21 @@
 - **~11 plataformas: Camoufox vence el WAF gratis; falta solo la receta de extracción** (AS24 SPA = API `as24-search-funnel`, etc.). Es ingeniería, no dinero.
 - **Solo 4-5 exigen proxy de pago:** lacentrale, milanuncios (agotadas), nederlandmobiel (CF challenge), promoneuve (DataDome).
 - **Pendiente honesto:** recetas por portal (AS24/coches/autowereld), URLs correctas (vlan/autoboerse/gocar), parseo precio/año, leboncoin (DataDome, curl 200 + __NEXT_DATA__ por probar).
+
+## ACTUALIZACIÓN FASE-RECETAS (2026-06-08, motor `as24_sweep.py`)
+**AS24 RESUELTO** — receta: `__NEXT_DATA__.props.pageProps.listings` (NO la GraphQL, que solo da facetCounters). url=`/angebote|/offres|/ofertas|/aanbod|/annunci` + `vehicle.{make,modelVersionInput,mileageInKm}` + `price.priceFormatted`. VERIFICADO end-to-end (insertado en vehicle_index + purgado):
+
+| TLD | filas reales | con precio | muestra |
+|---|--:|--:|---|
+| autoscout24.de | 34 | 34 | Mercedes Cabrio 79.880€ |
+| autoscout24.fr | 40 | 40 | BMW G20 25.490€ |
+| autoscout24.es | 35 | 35 | Mercedes A180 30.446€ |
+| autoscout24.nl | 39 | 39 | BMW X5 142.753€ |
+| autoscout24.it | 35 | 35 | VW Polo GTI 18.900€ |
+| autoscout24.be | **0** | — | path .be distinto (pendiente) |
+
+**Total AS24: 183 coches reales con precio+km+título** (year=None: gap — AS24 no expone first-registration en los campos leídos; pendiente parsear `vehicleDetails`). 5/6 TLDs ✅.
+
+**Incidente hardware (declarado):** durante el sweep AS24 (6 TLD Camoufox) el OOM-killer reapó meili/grafana/prometheus (Exit 137) AUNQUE estaban pausados — el pause congela CPU pero no libera RAM. Reiniciados (`docker start`), estado restaurado. pg+Redis intactos. **Lección: en este host, 1 Camoufox de 6 navegaciones largas ya roza el OOM; el barrido masivo necesita VPS o lotes más cortos.**
+
+**Pendiente next iteration (sin proxy):** autoscout24.be (path), parseo year AS24 (vehicleDetails), leboncoin (__NEXT_DATA__), kleinanzeigen+zoomcar (añadir precio/año a la card), coches.com/autowereld/autoweek (receta), vlan/autoboerse/gocar (URL listado correcta).

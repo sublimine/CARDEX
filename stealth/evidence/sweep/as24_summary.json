@@ -1,0 +1,26 @@
+{
+  "autoscout24.de": {
+    "records": 34,
+    "with_price": 34
+  },
+  "autoscout24.fr": {
+    "records": 40,
+    "with_price": 40
+  },
+  "autoscout24.es": {
+    "records": 35,
+    "with_price": 35
+  },
+  "autoscout24.nl": {
+    "records": 39,
+    "with_price": 39
+  },
+  "autoscout24.be": {
+    "records": 0,
+    "with_price": 0
+  },
+  "autoscout24.it": {
+    "records": 35,
+    "with_price": 35
+  }
+}
