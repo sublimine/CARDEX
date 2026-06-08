@@ -115,6 +115,23 @@ def test_discover_detail_urls_catalog_follow():
 
 
 @pytest.mark.unit
+def test_discover_detail_urls_merges_homepage_detail_links():
+    # The sitemap lists only a catalog/nav page, but the homepage links a real detail
+    # (deep slug + id). The merge must surface that detail (the probe filters non-cars).
+    sm = "<urlset><url><loc>https://d.nl/occasion</loc></url></urlset>"
+    home = ('<html><body><a href="/occasion/ford-transit-custom-54008980">stock</a>'
+            '<a href="/over-ons">about</a></body></html>')
+    pages = {
+        "https://d.nl": (200, _b(home)),
+        "https://d.nl/robots.txt": (200, _b("Sitemap: https://d.nl/sitemap.xml")),
+        "https://d.nl/sitemap.xml": (200, _b(sm)),
+        "https://d.nl/occasion": (200, _b("<html><body>no inner links</body></html>")),
+    }
+    details, _method, _home, _cat = _run(discover_detail_urls("d.nl", static_fetcher=MapFetcher(pages)))
+    assert "https://d.nl/occasion/ford-transit-custom-54008980" in details
+
+
+@pytest.mark.unit
 def test_discover_detail_urls_ssrf_blocked():
     # A domain that is an internal IP literal must never be fetched.
     fetcher = MapFetcher({})
