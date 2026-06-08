@@ -34,8 +34,8 @@ log = logging.getLogger("probe_scale")
 PG_DSN = os.environ.get("DATABASE_URL", "postgresql://cardex:cardex_dev_only@localhost:5432/cardex")
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:56390")
 
-RAM_SOFT_MB = 450     # below this: drop concurrency
-RAM_HARD_MB = 280     # below this: pause + GC, then abort if it stays low
+RAM_SOFT_MB = 750     # below this: drop concurrency (raised — the host OOM-killed the API
+RAM_HARD_MB = 550     # at ~585MB; back off MUCH earlier to keep sibling services alive)
 
 
 def _avail_mb() -> int:
@@ -108,7 +108,7 @@ async def run(*, batches: int, size: int, conc: int, timeout: int, harvest: bool
 
             caged_new = 0; harvested = 0
             if harvest and t2:
-                hsem = asyncio.Semaphore(min(10, cur_conc))
+                hsem = asyncio.Semaphore(min(6, cur_conc))
                 async def _h(d, c):
                     nonlocal caged_new, harvested
                     async with hsem:
