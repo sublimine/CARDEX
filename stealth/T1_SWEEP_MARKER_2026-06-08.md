@@ -1,4 +1,11 @@
 # T1 SWEEP MARKER — barrido de plataformas defendidas (2026-06-08)
+
+> ## ⚠️ ALCANCE: SOLO 6 PAÍSES — ES · FR · DE · BE · NL · CH (corrección 2026-06-08)
+> **Italia (IT) y Austria (AT) están FUERA.** `autoscout24.it` se cosechó por error y se
+> **PURGÓ** (vehicle_index 0 + vehicle_events DELETE 35 SEEN); dump .it borrado; IT quitado
+> del sweep (`as24_sweep.py` TLDS). **AS24 = ×5 (de/fr/es/nl/be) = 182, NO ×6/217.** Toda
+> mención histórica abajo a "×6 / 217 / autoscout24.it / ~404" queda **superseded** por
+> **×5 / 182 / ~369**. Configs auditados: los 15 son de los 6 países, cero fuera.
 **Método:** 1 Camoufox secuencial (warm→search), extracción cascada (JSON-LD→regex), seam_writer validate-20-50-y-purga. Hardware: Meili/Grafana/Prometheus pausados durante el barrido; pg+Redis vivos; concurrencia 1. **Cifras VERIFICADAS** (inspeccionado el JSONL, no solo el contador).
 
 ## Hallazgo central
@@ -37,7 +44,7 @@
 | autoscout24.fr | 40 | 40 | BMW G20 25.490€ |
 | autoscout24.es | 35 | 35 | Mercedes A180 30.446€ |
 | autoscout24.nl | 39 | 39 | BMW X5 142.753€ |
-| autoscout24.it | 35 | 35 | VW Polo GTI 18.900€ |
+| ~~autoscout24.it~~ | ~~35~~ | — | EXCLUIDO (fuera de alcance, purgado) |
 | autoscout24.be | **0** | — | path .be distinto (pendiente) |
 
 **Total AS24: 183 coches reales con precio+km+título** (year=None: gap — AS24 no expone first-registration en los campos leídos; pendiente parsear `vehicleDetails`). 5/6 TLDs ✅.
@@ -90,7 +97,7 @@
 - **vlan.be** ⚠️ SPA (home 483KB pero links = secciones, no anuncios; API TBD).
 
 ### MARCADOR T1 FINAL (este esfuerzo) — verdict por plataforma
-✅ **HARVEST verificado (filas reales, insertado+purgado):** mobile.de(~1.49M enum) · autoscout24 ×6 = 217 (precio+km+año) · leboncoin 70 (precio+año+km) · kleinanzeigen 27 (precio+año+km) · autoboerse 18 (precio+año+km) · coches.com 8 (precio+año+km) · zoomcar 24 (URL) · gocar.be 40 (URL) = **~404 anuncios reales + mobile.de**.
+✅ **HARVEST verificado (filas reales, insertado+purgado) — SOLO 6 PAÍSES:** mobile.de(~1.49M enum) · autoscout24 ×5 (de/fr/es/nl/be) = 182 (precio+km+año) · leboncoin 70 (precio+año+km) · kleinanzeigen 27 (precio+año+km) · autoboerse 18 (precio+año+km) · coches.com 8 (precio+año+km) · zoomcar 24 (URL) · gocar.be 40 (URL) = **~369 anuncios reales + mobile.de** (autoscout24.it EXCLUIDO/purgado).
 ⚠️ **No-muro, falta receta/URL (sin proxy):** autoweek.nl, autowereld.nl, vlan.be (sitemap/SPA/URL TBD), coches buscador-full, zoomcar/gocar precio (detail).
 ⛔ **Muro de pago REAL (3):** lacentrale (DataDome), milanuncios (PerimeterX), nederlandmobiel.nl (CF-challenge que ni Camoufox pasó).
 **Conclusión:** de ~20 plataformas T1 del censo, **8 rinden filas reales gratis** (Camoufox/curl), ~6 más son no-muro pendientes de receta, y **solo 3 exigen proxy**. El "muro de pago" del censo se redujo de ~20 a **3**.

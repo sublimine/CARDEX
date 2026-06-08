@@ -8,7 +8,7 @@ from pathlib import Path
 
 STEALTH = Path(__file__).resolve().parent
 DUMPS = STEALTH/"evidence"/"dumps"; DUMPS.mkdir(parents=True, exist_ok=True)
-TLDS = [("de","DE"),("fr","FR"),("es","ES"),("nl","NL"),("be","BE"),("it","IT")]
+TLDS = [("de","DE"),("fr","FR"),("es","ES"),("nl","NL"),("be","BE")]  # SCOPE: 6 countries only (ES/FR/DE/BE/NL/CH); IT/AT excluded
 PAGES = 2; LIMIT = 40
 
 def uh(u): return hashlib.sha256(u.encode()).hexdigest()[:32]
