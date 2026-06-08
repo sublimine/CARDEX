@@ -336,10 +336,23 @@ async def _process_item(
     if result.status is RunStatus.OK:
         report = check_volume_drift(domain, result.url_count)
         if report is not None and report.alert:
-            log.warning(
-                "DRIFT [%s]: %s — harvest below baseline; portal may have changed, "
-                "repair configs/portals/%s.json", domain, report.reason(), domain,
-            )
+            # Emit a structured operator alert pinpointing the exact failure point
+            # (entity=domain, stage=extract, signal=volume_drift) → drives the
+            # remediation_dispatcher. Replaces the old log-only drift notice.
+            from scrapers.delta import operator_events
+            try:
+                await operator_events.emit_alert(
+                    source_key=domain, stage="extract", signal="volume_drift",
+                    severity="warning",
+                    evidence={"volume": result.url_count,
+                              "expected_min": report.details.get("expected_min"),
+                              "reason": report.reason(),
+                              "config": f"configs/portals/{domain}.json"},
+                )
+            except Exception:  # noqa: BLE001 — alerting must never break a harvest cycle
+                log.exception("failed to emit volume_drift alert for %s", domain)
+            log.warning("DRIFT [%s]: %s — operator alert emitted (extract/volume_drift)",
+                        domain, report.reason())
 
 
 async def _safe_process_item(

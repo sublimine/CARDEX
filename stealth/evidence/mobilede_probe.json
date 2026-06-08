@@ -1,0 +1,33 @@
+{
+  "hitcount_root": {
+    "url": "https://m.mobile.de/consumer/api/search/hit-count?dam=false&vc=Car",
+    "error": "TypeError: NetworkError when attempting to fetch resource."
+  },
+  "hitcount_audi": {
+    "url": "https://m.mobile.de/consumer/api/search/hit-count?dam=false&vc=Car&ms=1900%3B%3B%3B",
+    "error": "TypeError: NetworkError when attempting to fetch resource."
+  },
+  "refdata_makes": {
+    "url": "https://m.mobile.de/consumer/api/search/reference-data/makes?vc=Car",
+    "error": "TypeError: NetworkError when attempting to fetch resource."
+  },
+  "refdata_makes2": {
+    "url": "https://services.mobile.de/refdata/classes/Car/makes",
+    "error": "TypeError: NetworkError when attempting to fetch resource."
+  },
+  "srp_api": {
+    "url": "https://m.mobile.de/consumer/api/search/srp?dam=false&vc=Car&pageNumber=1&pageSize=100",
+    "error": "TypeError: NetworkError when attempting to fetch resource."
+  },
+  "srp_api50": {
+    "url": "https://m.mobile.de/consumer/api/search/srp?dam=false&vc=Car&pageNumber=1&pageSize=50",
+    "error": "TypeError: NetworkError when attempting to fetch resource."
+  },
+  "svc_search": {
+    "url": "https://m.mobile.de/svc/s/?vc=Car&p=1",
+    "status": 200,
+    "ct": "application/json;charset=utf-8",
+    "len": 61214,
+    "head": "{\"numResultsTotal\":1585982,\"items\":[{\"isEyeCatcher\":false,\"numImages\":12,\"attr\":{\"cn\":\"DE\",\"z\":\"51149\",\"loc\":\"Köln\",\"fr\":\"06/2021\",\"pw\":\"140 kW (190 Ch DIN)\",\"ft\":\"Diesel\",\"ml\":\"115 400 km\",\"cc\":\"1 995 ccm\",\"tr\":\"Boîte automatique\",\"gi\":\"04/2027\",\"ecol\":\"Noir\",\"door\":\"4/5\",\"sc\":\"5\",\"c\":\"OffRoad\",\"emc\":\"Euro6d-TEMP\",\"pvo\":\"2\"},\"siteId\":\"GERMANY\",\"p\":\"1 €\",\"st\":\"Particulier\",\"shortTitle\":\"BMW X3\",\"subTitle\":\"xDrive20d M SPORT AT M SPORT.  Neu Motor Turb\",\"hasDamage\":false,\"isDamageCase\":true,\"isVideoEnabled\":false,\"readyToDrive\":true,\"contact\":{\"type\":\"Particulier\",\"country\":\"DE\",\"enumType\":\"FSB"
+  }
+}

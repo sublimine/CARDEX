@@ -1,0 +1,176 @@
+[
+  {
+    "domain": "autoscout24.de",
+    "verdict": "OK",
+    "records_harvested": 0,
+    "before": null,
+    "after": null,
+    "samples": [],
+    "status": "NO_LISTINGS_SSR"
+  },
+  {
+    "domain": "autoscout24.fr",
+    "verdict": "OK",
+    "records_harvested": 0,
+    "before": null,
+    "after": null,
+    "samples": [],
+    "status": "NO_LISTINGS_SSR"
+  },
+  {
+    "domain": "autoscout24.es",
+    "verdict": "OK",
+    "records_harvested": 0,
+    "before": null,
+    "after": null,
+    "samples": [],
+    "status": "NO_LISTINGS_SSR"
+  },
+  {
+    "domain": "autoscout24.nl",
+    "verdict": "OK",
+    "records_harvested": 0,
+    "before": null,
+    "after": null,
+    "samples": [],
+    "status": "NO_LISTINGS_SSR"
+  },
+  {
+    "domain": "autoscout24.be",
+    "verdict": "OK",
+    "records_harvested": 0,
+    "before": null,
+    "after": null,
+    "samples": [],
+    "status": "NO_LISTINGS_SSR"
+  },
+  {
+    "domain": "autoscout24.it",
+    "verdict": "OK",
+    "records_harvested": 0,
+    "before": null,
+    "after": null,
+    "samples": [],
+    "status": "NO_LISTINGS_SSR"
+  },
+  {
+    "domain": "kleinanzeigen.de",
+    "verdict": "OK",
+    "records_harvested": 27,
+    "before": "25",
+    "after": "27",
+    "samples": [
+      "(no title) | - | -",
+      "(no title) | - | -",
+      "(no title) | - | -",
+      "(no title) | - | -",
+      "(no title) | - | -"
+    ],
+    "status": "HARVESTED"
+  },
+  {
+    "domain": "autoweek.nl",
+    "verdict": "OK",
+    "records_harvested": 2,
+    "before": "0",
+    "after": "2",
+    "samples": [
+      "(no title) | - | -",
+      "(no title) | - | -"
+    ],
+    "status": "HARVESTED"
+  },
+  {
+    "domain": "vlan.be",
+    "verdict": "BLOCKED",
+    "records_harvested": 0,
+    "before": null,
+    "after": null,
+    "samples": [],
+    "status": "REQUIRES_PROXY"
+  },
+  {
+    "domain": "autoboerse.de",
+    "verdict": "BLOCKED",
+    "records_harvested": 0,
+    "before": null,
+    "after": null,
+    "samples": [],
+    "status": "REQUIRES_PROXY"
+  },
+  {
+    "domain": "zoomcar.fr",
+    "verdict": "BLOCKED",
+    "records_harvested": 0,
+    "before": null,
+    "after": null,
+    "samples": [],
+    "status": "REQUIRES_PROXY"
+  },
+  {
+    "domain": "gocar.be",
+    "verdict": "BLOCKED",
+    "records_harvested": 0,
+    "before": null,
+    "after": null,
+    "samples": [],
+    "status": "REQUIRES_PROXY"
+  },
+  {
+    "domain": "nederlandmobiel.nl",
+    "verdict": "BLOCKED",
+    "records_harvested": 0,
+    "before": null,
+    "after": null,
+    "samples": [],
+    "status": "REQUIRES_PROXY"
+  },
+  {
+    "domain": "coches.com",
+    "verdict": "OK",
+    "records_harvested": 40,
+    "before": "0",
+    "after": "40",
+    "samples": [
+      "(no title) | - | -",
+      "(no title) | - | -",
+      "(no title) | - | -",
+      "(no title) | - | -",
+      "(no title) | - | -"
+    ],
+    "status": "HARVESTED"
+  },
+  {
+    "domain": "ouestfrance-auto.fr",
+    "verdict": "OK",
+    "records_harvested": 25,
+    "before": "0",
+    "after": "25",
+    "samples": [
+      "(no title) | - | -",
+      "(no title) | - | -",
+      "(no title) | - | -",
+      "(no title) | - | -",
+      "(no title) | - | -"
+    ],
+    "status": "HARVESTED"
+  },
+  {
+    "domain": "autowereld.nl",
+    "verdict": "OK",
+    "records_harvested": 0,
+    "before": null,
+    "after": null,
+    "samples": [],
+    "status": "NO_LISTINGS_SSR"
+  },
+  {
+    "domain": "promoneuve.fr",
+    "verdict": "BLOCKED",
+    "records_harvested": 0,
+    "before": null,
+    "after": null,
+    "samples": [],
+    "status": "REQUIRES_PROXY"
+  }
+]

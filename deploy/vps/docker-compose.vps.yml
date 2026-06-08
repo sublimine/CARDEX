@@ -1,0 +1,316 @@
+# =============================================================================
+# CARDEX — VPS plug&play stack (the REAL, buildable pipeline only).
+#
+# Scope: the verified Python pipeline + the per-entity API. The unbuilt Go vision
+# services (api/scheduler/census/frontier/gateway/meili-sync) are deliberately OUT —
+# they have no Dockerfile (see root docker-compose.yml header). ClickHouse/Meili are
+# optional and omitted here to stay RAM-light; add them when search/OLAP is needed.
+#
+# Topology:
+#   data  network → postgres, redis           (no host ports — internal only)
+#   app   network → API, seam workers, harvesters, discovery
+# Only the entity API binds a host port (for Elias to curl); everything else is internal.
+#
+# Build contexts are relative to THIS file (deploy/vps/), hence ../.. = repo root.
+# Provide real secrets via .env (cp .env.template .env). Never commit a populated .env.
+# =============================================================================
+
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "3" }
+
+x-hardening: &hardening
+  security_opt: [ "no-new-privileges:true" ]
+  logging: *logging
+  restart: unless-stopped
+
+# Common config for every service built from the scrapers image (one build, reused).
+x-scraper: &scraper
+  <<: *hardening
+  image: cardex/scrapers:vps
+  build:
+    context: ../../scrapers
+    dockerfile: Dockerfile
+  environment: &scraper-env
+    DATABASE_URL: postgresql://cardex:${POSTGRES_PASSWORD:-cardex_dev_only}@postgres:5432/cardex
+    REDIS_URL: redis://:${REDIS_PASSWORD:-cardex_dev_only}@redis:6379
+    ENGINE_DB_PATH: /state/engine.db
+    LOG_LEVEL: ${LOG_LEVEL:-info}
+  networks: [ app, data ]
+  depends_on:
+    postgres: { condition: service_healthy }
+    redis: { condition: service_healthy }
+
+networks:
+  data:
+    driver: bridge
+  app:
+    driver: bridge
+
+volumes:
+  pg_data:
+  redis_data:
+  engine_db:        # shared SQLite identity pool (direct + residential identities)
+
+services:
+  # ── Datastores (internal only — no host ports) ─────────────────────────────
+  postgres:
+    <<: *hardening
+    image: postgres:16-bookworm
+    container_name: cardex-pg
+    cap_drop: [ ALL ]
+    cap_add: [ CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID ]
+    networks: [ data ]
+    environment:
+      POSTGRES_DB: cardex
+      POSTGRES_USER: cardex
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cardex_dev_only}
+      POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ../../scripts/init-pg.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    command: >
+      postgres -c max_connections=120 -c shared_buffers=${PG_SHARED_BUFFERS:-1GB}
+        -c effective_cache_size=${PG_EFFECTIVE_CACHE:-3GB} -c work_mem=32MB
+        -c maintenance_work_mem=256MB -c wal_compression=on -c max_wal_size=2GB
+        -c checkpoint_completion_target=0.9 -c jit=off -c timezone=UTC
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cardex -d cardex"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  redis:
+    <<: *hardening
+    image: redis/redis-stack-server:7.4.0-v1
+    container_name: cardex-redis
+    cap_drop: [ ALL ]
+    networks: [ data ]
+    volumes:
+      - redis_data:/data
+    command: >
+      redis-server --requirepass ${REDIS_PASSWORD:-cardex_dev_only}
+        --maxmemory ${REDIS_MAXMEMORY:-2gb} --maxmemory-policy noeviction
+        --appendonly yes --appendfsync everysec --save 3600 1 --save 300 100
+        --loadmodule /opt/redis-stack/lib/redisbloom.so
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-cardex_dev_only}
+
+  # ── DB migrations (source_entities + operator_alerts + index) ──────────────
+  # init-pg.sql creates the base schema on first boot; this applies the feature
+  # migrations on top. Idempotent (IF NOT EXISTS / ON CONFLICT). Runs once per up.
+  pg-migrate:
+    <<: *hardening
+    image: postgres:16-bookworm
+    container_name: cardex-pg-migrate
+    restart: "no"
+    networks: [ data ]
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:-cardex_dev_only}
+    volumes:
+      - ../../scripts/migrations:/migrations:ro
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        set -e
+        for f in 0001_source_entities.up 0001_source_entities.backfill \
+                 0002_operator_alerts.up 0003_inventory_country_index.up; do
+          echo "applying $$f"; psql -h postgres -U cardex -d cardex -v ON_ERROR_STOP=1 -f /migrations/$$f.sql
+        done
+        echo "migrations done"
+
+  # ── Identity pool bootstrap (direct T0/T1 + residential T2/T3 from env) ────
+  identity-provision:
+    <<: *scraper
+    container_name: cardex-identity-provision
+    restart: "no"
+    depends_on: {}
+    environment:
+      <<: *scraper-env
+      RESIDENTIAL_PROXY_DE: ${RESIDENTIAL_PROXY_DE:-}
+      RESIDENTIAL_PROXY_FR: ${RESIDENTIAL_PROXY_FR:-}
+      RESIDENTIAL_PROXY_ES: ${RESIDENTIAL_PROXY_ES:-}
+      RESIDENTIAL_PROXY_NL: ${RESIDENTIAL_PROXY_NL:-}
+      RESIDENTIAL_PROXY_BE: ${RESIDENTIAL_PROXY_BE:-}
+      RESIDENTIAL_PROXY_CH: ${RESIDENTIAL_PROXY_CH:-}
+    volumes:
+      - engine_db:/state
+    command: ["-m", "scrapers.bootstrap_identities"]
+
+  # ── Per-entity inventory API (the surface Elias opens) ─────────────────────
+  entity-api:
+    <<: *hardening
+    image: cardex/entity-api:vps
+    build:
+      context: ../..
+      dockerfile: deploy/vps/Dockerfile.entity-api
+    container_name: cardex-entity-api
+    networks: [ app, data ]
+    ports:
+      - "${ENTITY_API_BIND:-127.0.0.1}:${ENTITY_API_PORT:-8088}:8088"
+    depends_on:
+      postgres: { condition: service_healthy }
+      pg-migrate: { condition: service_completed_successfully }
+    environment:
+      DATABASE_URL: postgresql://cardex:${POSTGRES_PASSWORD:-cardex_dev_only}@postgres:5432/cardex
+
+  # ── L1→L2 seam + delta + remediation (always-on consumers) ─────────────────
+  delta-worker:
+    <<: *scraper
+    container_name: cardex-delta-worker
+    command: ["-m", "scrapers.delta.delta_worker"]
+
+  remediation-dispatcher:
+    <<: *scraper
+    container_name: cardex-remediation-dispatcher
+    command: ["-m", "scrapers.delta.remediation_dispatcher"]
+
+  enrich-worker:
+    <<: *scraper
+    container_name: cardex-enrich-worker
+    volumes:
+      - engine_db:/state
+    environment:
+      <<: *scraper-env
+      ENRICH_BATCH_SIZE: "50"
+      ENRICH_CONCURRENCY: ${ENRICH_CONCURRENCY:-10}
+    command: ["-m", "scrapers.enrich_worker"]
+
+  rich-consumer:
+    <<: *scraper
+    container_name: cardex-rich-consumer
+    environment:
+      <<: *scraper-env
+      FX_RATE_CHF: ${FX_RATE_CHF:-1.05}
+    command: ["-m", "scrapers.rich_consumer"]
+
+  # ── Harvesters — one coordinator per territory (T0–T3; T2/T3 need proxies) ──
+  # Camoufox/Playwright need a writable browser cache → no read_only. Share the
+  # engine_db identity pool so residential proxies provisioned above are picked.
+  scraper-de:
+    <<: *scraper
+    container_name: cardex-scraper-de
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      identity-provision: { condition: service_completed_successfully }
+    volumes:
+      - engine_db:/state
+    environment:
+      <<: *scraper-env
+      SCRAPER_TARGETS: autoscout24_de,mobile_de,kleinanzeigen_de,autoboerse_de,pkw_de
+      CYCLE_WAIT_SECONDS: ${CYCLE_WAIT_SECONDS:-3600}
+      PLAYWRIGHT_HEADLESS: "true"
+    command: ["-m", "scrapers.coordinator"]
+    deploy: { resources: { limits: { memory: "${SCRAPER_MEM:-1500M}" } } }
+
+  scraper-fr:
+    <<: *scraper
+    container_name: cardex-scraper-fr
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      identity-provision: { condition: service_completed_successfully }
+    volumes:
+      - engine_db:/state
+    environment:
+      <<: *scraper-env
+      SCRAPER_TARGETS: autoscout24_fr,leboncoin,lacentrale,promoneuve,paruvendu
+      CYCLE_WAIT_SECONDS: ${CYCLE_WAIT_SECONDS:-3600}
+      PLAYWRIGHT_HEADLESS: "true"
+    command: ["-m", "scrapers.coordinator"]
+    deploy: { resources: { limits: { memory: "${SCRAPER_MEM:-1500M}" } } }
+
+  scraper-es:
+    <<: *scraper
+    container_name: cardex-scraper-es
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      identity-provision: { condition: service_completed_successfully }
+    volumes:
+      - engine_db:/state
+    environment:
+      <<: *scraper-env
+      SCRAPER_TARGETS: autoscout24_es,coches_net,milanuncios,wallapop,autocasion
+      CYCLE_WAIT_SECONDS: ${CYCLE_WAIT_SECONDS:-3600}
+      PLAYWRIGHT_HEADLESS: "true"
+    command: ["-m", "scrapers.coordinator"]
+    deploy: { resources: { limits: { memory: "${SCRAPER_MEM:-1500M}" } } }
+
+  scraper-nl:
+    <<: *scraper
+    container_name: cardex-scraper-nl
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      identity-provision: { condition: service_completed_successfully }
+    volumes:
+      - engine_db:/state
+    environment:
+      <<: *scraper-env
+      SCRAPER_TARGETS: autoscout24_nl,marktplaats,autotrack,gaspedaal,nederlandmobiel
+      CYCLE_WAIT_SECONDS: ${CYCLE_WAIT_SECONDS:-3600}
+      PLAYWRIGHT_HEADLESS: "true"
+    command: ["-m", "scrapers.coordinator"]
+    deploy: { resources: { limits: { memory: "${SCRAPER_MEM:-1500M}" } } }
+
+  scraper-be:
+    <<: *scraper
+    container_name: cardex-scraper-be
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      identity-provision: { condition: service_completed_successfully }
+    volumes:
+      - engine_db:/state
+    environment:
+      <<: *scraper-env
+      SCRAPER_TARGETS: autoscout24_be,2dehands,gocar
+      CYCLE_WAIT_SECONDS: ${CYCLE_WAIT_SECONDS:-3600}
+      PLAYWRIGHT_HEADLESS: "true"
+    command: ["-m", "scrapers.coordinator"]
+    deploy: { resources: { limits: { memory: "${SCRAPER_MEM:-1500M}" } } }
+
+  scraper-ch:
+    <<: *scraper
+    container_name: cardex-scraper-ch
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      identity-provision: { condition: service_completed_successfully }
+    volumes:
+      - engine_db:/state
+    environment:
+      <<: *scraper-env
+      SCRAPER_TARGETS: autoscout24_ch,comparis,tutti,autolina
+      CYCLE_WAIT_SECONDS: ${CYCLE_WAIT_SECONDS:-3600}
+      PLAYWRIGHT_HEADLESS: "true"
+    command: ["-m", "scrapers.coordinator"]
+    deploy: { resources: { limits: { memory: "${SCRAPER_MEM:-1500M}" } } }
+
+  # ── Discovery (identity census + name→web resolution toward 2M) ────────────
+  discovery-orchestrator:
+    <<: *scraper
+    container_name: cardex-discovery-orchestrator
+    environment:
+      <<: *scraper-env
+      DISCOVERY_COUNTRIES: ${DISCOVERY_COUNTRIES:-DE,FR,ES,NL,BE,CH}
+    command: ["-m", "scrapers.discovery.orchestrator"]
+
+  domain-resolver:
+    <<: *scraper
+    container_name: cardex-domain-resolver
+    # Canonical name→web resolver: SKIP-LOCKED multi-via (email→directory→DDG/Mojeek),
+    # RAM-safe (RSS watchdog). Defaults to DE,ES,CH,NL,BE (FR excluded — its sweep is huge;
+    # add via --countries when ready). DSN/throttle tunable via DOMRES_* env.
+    command: ["-m", "scrapers.discovery.domain_resolution.worker"]

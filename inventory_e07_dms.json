@@ -1,0 +1,184 @@
+{
+  "elapsed_s": 915.6,
+  "vehicles_before": 30,
+  "vehicles_after": 30,
+  "purge_restored": true,
+  "dealers_sampled": 30,
+  "static_yielding_dealers": 1,
+  "dms_yielding_dealers": 2,
+  "inventory_measured_total": 247,
+  "potential_inventory_total": 109510,
+  "by_segment": {
+    "brand:hyundai": {
+      "segment_total": 215,
+      "sampled": 3,
+      "static_yielding": 0,
+      "dms_yielding": 0,
+      "combined_yield_rate": 0.0,
+      "avg_inventory_per_yielder": 0.0,
+      "inventory_measured_in_sample": 0,
+      "persisted_proof": 0,
+      "potential_inventory_extrapolated": 0
+    },
+    "osm-longtail": {
+      "segment_total": 28892,
+      "sampled": 3,
+      "static_yielding": 0,
+      "dms_yielding": 0,
+      "combined_yield_rate": 0.0,
+      "avg_inventory_per_yielder": 0.0,
+      "inventory_measured_in_sample": 0,
+      "persisted_proof": 0,
+      "potential_inventory_extrapolated": 0
+    },
+    "assoc:agvs(CH)": {
+      "segment_total": 2401,
+      "sampled": 3,
+      "static_yielding": 0,
+      "dms_yielding": 0,
+      "combined_yield_rate": 0.0,
+      "avg_inventory_per_yielder": 0.0,
+      "inventory_measured_in_sample": 0,
+      "persisted_proof": 0,
+      "potential_inventory_extrapolated": 0
+    },
+    "brand:audi": {
+      "segment_total": 1354,
+      "sampled": 3,
+      "static_yielding": 1,
+      "dms_yielding": 0,
+      "combined_yield_rate": 0.333,
+      "avg_inventory_per_yielder": 241.0,
+      "inventory_measured_in_sample": 241,
+      "persisted_proof": 3,
+      "potential_inventory_extrapolated": 108662
+    },
+    "brand:renault": {
+      "segment_total": 479,
+      "sampled": 3,
+      "static_yielding": 0,
+      "dms_yielding": 0,
+      "combined_yield_rate": 0.0,
+      "avg_inventory_per_yielder": 0.0,
+      "inventory_measured_in_sample": 0,
+      "persisted_proof": 0,
+      "potential_inventory_extrapolated": 0
+    },
+    "brand:seat": {
+      "segment_total": 424,
+      "sampled": 3,
+      "static_yielding": 0,
+      "dms_yielding": 2,
+      "combined_yield_rate": 0.667,
+      "avg_inventory_per_yielder": 3.0,
+      "inventory_measured_in_sample": 6,
+      "persisted_proof": 0,
+      "potential_inventory_extrapolated": 848
+    },
+    "brand:dacia": {
+      "segment_total": 280,
+      "sampled": 3,
+      "static_yielding": 0,
+      "dms_yielding": 0,
+      "combined_yield_rate": 0.0,
+      "avg_inventory_per_yielder": 0.0,
+      "inventory_measured_in_sample": 0,
+      "persisted_proof": 0,
+      "potential_inventory_extrapolated": 0
+    },
+    "dir:gelbeseiten(DE)": {
+      "segment_total": 7723,
+      "sampled": 3,
+      "static_yielding": 0,
+      "dms_yielding": 0,
+      "combined_yield_rate": 0.0,
+      "avg_inventory_per_yielder": 0.0,
+      "inventory_measured_in_sample": 0,
+      "persisted_proof": 0,
+      "potential_inventory_extrapolated": 0
+    },
+    "brand:vw": {
+      "segment_total": 256,
+      "sampled": 3,
+      "static_yielding": 0,
+      "dms_yielding": 0,
+      "combined_yield_rate": 0.0,
+      "avg_inventory_per_yielder": 0.0,
+      "inventory_measured_in_sample": 0,
+      "persisted_proof": 0,
+      "potential_inventory_extrapolated": 0
+    },
+    "assoc:bovag(NL)": {
+      "segment_total": 3933,
+      "sampled": 3,
+      "static_yielding": 0,
+      "dms_yielding": 0,
+      "combined_yield_rate": 0.0,
+      "avg_inventory_per_yielder": 0.0,
+      "inventory_measured_in_sample": 0,
+      "persisted_proof": 0,
+      "potential_inventory_extrapolated": 0
+    }
+  },
+  "by_country": {
+    "BE": {
+      "dealers": 2,
+      "yielding": 0,
+      "inv_found": 0
+    },
+    "CH": {
+      "dealers": 3,
+      "yielding": 0,
+      "inv_found": 0
+    },
+    "DE": {
+      "dealers": 16,
+      "yielding": 2,
+      "inv_found": 6
+    },
+    "ES": {
+      "dealers": 3,
+      "yielding": 0,
+      "inv_found": 0
+    },
+    "FR": {
+      "dealers": 3,
+      "yielding": 1,
+      "inv_found": 241
+    },
+    "NL": {
+      "dealers": 3,
+      "yielding": 0,
+      "inv_found": 0
+    }
+  },
+  "yielders": [
+    {
+      "segment": "brand:seat",
+      "domain": "kuehl.seat.de",
+      "country": "DE",
+      "web_type": "dms_xhr",
+      "inventory": 1,
+      "persisted": 0,
+      "proof": null
+    },
+    {
+      "segment": "brand:seat",
+      "domain": "hamburg-nord.seat.de",
+      "country": "DE",
+      "web_type": "dms_xhr",
+      "inventory": 5,
+      "persisted": 0,
+      "proof": null
+    },
+    {
+      "segment": "brand:audi",
+      "domain": "audi-thionville.com",
+      "country": "FR",
+      "web_type": "sitemap_listing",
+      "inventory": 241,
+      "persisted": 3,
+      "proof": null
+    }
+  ]
+}

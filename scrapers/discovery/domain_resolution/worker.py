@@ -40,8 +40,20 @@ import asyncpg
 
 from scrapers.discovery.domain_resolution.candidate import email_apex, ranked_candidates
 from scrapers.discovery.domain_resolution.directories import directory_candidates
-from scrapers.discovery.domain_resolution.search import PROVIDER_ORDER, fetch_search_html
-from scrapers.discovery.domain_resolution.validate import validate_automotive, validate_domain
+from scrapers.discovery.domain_resolution.search import fetch_search_html, ordered_providers
+from scrapers.discovery.domain_resolution.validate import (
+    _fetch_html,
+    validate_automotive,
+    validate_domain,
+)
+
+# OPT-IN local-LLM verification of validated domains (default OFF → identical behaviour).
+# When ``DOMRES_LLM_VERIFY`` is set, a domain that PASSES the heuristic gate is also run
+# through the fuzzy decision layer (heuristic-first; the local LLM adjudicates only the
+# ambiguous band), catching FPs the keywords misread — motorcycle/tyre/body shops, B2B
+# auto-software — before it is persisted. Fail-open: the LLM layer degrades to the
+# heuristic if Ollama is unavailable, so enabling this never blocks the worker.
+_LLM_VERIFY = os.environ.get("DOMRES_LLM_VERIFY", "").strip().lower() in ("1", "true", "yes", "on")
 
 log = logging.getLogger("domres_worker")
 logging.basicConfig(
@@ -155,7 +167,9 @@ async def _candidates(session, row) -> tuple[list[tuple[str, str, bool]], int]:
         out.append((f"directory:{_prov}", h, True))
 
     search_pages = 0
-    for provider in PROVIDER_ORDER:
+    # ROTATE the provider order by dealer id so the first hit spreads across engines
+    # (DDG→Mojeek→Startpage→SearXNG) instead of throttling DDG on every dealer.
+    for provider in ordered_providers(row.get("id") or 0):
         html = await fetch_search_html(session, name, city, provider)
         if not html or len(html) <= 1000:
             continue
@@ -188,6 +202,16 @@ async def _resolve_one(pool, session, row, stats: Stats) -> None:
         seen.add(host)
         if via == "email":
             ok, _why = await validate_automotive(host, _fetch)
+        elif _LLM_VERIFY:
+            # Single fetch, then heuristic-first + LLM-on-doubt (fuzzy decision layer).
+            html, _why = await _fetch_html(host, _fetch)
+            if html is None:
+                ok = False
+            else:
+                from scrapers.llm.decisions import classify_is_car_dealer
+                v = classify_is_car_dealer(
+                    html, row["name"], row["city"] or "", require_name=require_name)
+                ok, _why = v.is_dealer, v.reason
         else:
             ok, _why = await validate_domain(
                 host, row["name"], row["city"] or "", _fetch, require_name=require_name)

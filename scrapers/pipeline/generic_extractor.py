@@ -37,7 +37,7 @@ from urllib.parse import urljoin, urlparse
 from scrapers.common.net_guard import is_safe_public_url
 from scrapers.pipeline.delta import is_deep_link
 from scrapers.pipeline.normalize import to_record
-from scrapers.pipeline.parse import parse_listing
+from scrapers.pipeline.parse import parse_jsonld, parse_listing, parse_og_meta
 from scrapers.pipeline.quality import evaluate
 from scrapers.pipeline.schema import VehicleRecord
 
@@ -387,14 +387,49 @@ async def extract_listing(
         return None, "no_fields"
 
     final_url = result.url or url
-    record = to_record(
-        raw,
-        source_url=final_url,
-        source_domain=source_domain or _host(final_url),
-        country=country,
-    )
+    domain = source_domain or _host(final_url)
+    record = to_record(raw, source_url=final_url, source_domain=domain, country=country)
     if not record.has_critical_fields():
-        return None, "missing_critical:" + ",".join(record.missing_critical())
+        # Second chance — SEO meta. Many dealers ship NO JSON-LD/microdata but DO
+        # carry the full vehicle in og:title (make/model head) + og:description
+        # ("Prix: …", "Reserve it for €…", km/year labels) — the same authoritative
+        # signal E07 reads from a render, present in the STATIC HTML too. Gap-fill
+        # ONLY the still-missing fields (cascade JSON-LD/OG values always win), so a
+        # page that already passed is byte-for-byte unchanged; only a currently
+        # failing page gets a second chance. Lazy import avoids a module cycle.
+        from scrapers.pipeline.playwright_extractor import parse_rendered_meta
+
+        meta = parse_rendered_meta(html)
+        filled = dict(raw)
+        for key, value in meta.items():
+            if value not in (None, "", [], (), {}) and filled.get(key) in (None, "", [], (), {}):
+                filled[key] = value
+        # Provenance guard on price. We are here because the cascade could not even
+        # surface make/model — a page that weak. On such a page the stage-3 heuristic
+        # (first "<number> €" anywhere in the full HTML) routinely grabs a financing /
+        # option / deposit / warranty figure, NOT the car price (observed: a €1,000
+        # "acompte" passed for a BMW X4). Keep the price only when a RELIABLE source
+        # confirms it — schema.org offer, product:price meta, or the scoped SEO
+        # title/description — else drop it and let the minimum-vehicle gate reject the
+        # row. Better no row than a fabricated price.
+        jsonld = parse_jsonld(html)
+        og = parse_og_meta(html)
+        reliable_price = jsonld.get("price") or og.get("price") or meta.get("price")
+        if not reliable_price:
+            filled.pop("price", None)
+            filled.pop("currency", None)
+        # Same provenance guard for the year: the full-HTML heuristic grabs the first
+        # 19xx/20xx token anywhere — a copyright "©2000", a phone, an address — not the
+        # registration year (observed: a whole dealer's stock stamped year=2000). Keep
+        # the year only from a reliable source (schema.org modelDate, or the scoped SEO
+        # title/description label); else drop it so the row is honestly year-less.
+        reliable_year = jsonld.get("year") or meta.get("year")
+        if not reliable_year:
+            filled.pop("year", None)
+        if filled != raw:
+            record = to_record(filled, source_url=final_url, source_domain=domain, country=country)
+        if not record.has_critical_fields():
+            return None, "missing_critical:" + ",".join(record.missing_critical())
 
     verdict = evaluate(record, html=html)
     if not verdict.ok:

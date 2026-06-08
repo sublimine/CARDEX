@@ -1,0 +1,308 @@
+[
+  {
+    "url": "https://dd.leboncoin.fr/js/",
+    "status": 200,
+    "ct": "application/json;charset=utf-8",
+    "bytes": 233
+  },
+  {
+    "url": "https://securepubads.g.doubleclick.net/pagead/ppub_config",
+    "status": 200,
+    "ct": "application/json; charset=UTF-8",
+    "bytes": 1012
+  },
+  {
+    "url": "https://www.leboncoin.fr/_next/data/gxtipuF5oYYgxIuO06x5x/service/bons-plans.json?seoSlug=bons-plans",
+    "status": 200,
+    "ct": "application/json; charset=utf-8",
+    "bytes": 46284
+  },
+  {
+    "url": "https://auth.leboncoin.fr/api/authorizer/v2/authorize?client_id=lbc-front-web&redirect_uri=https%3A%2F%2Fwww.leboncoin.fr%2Foauth2callback&response_type=code&state=e30026e7-4098-4727-abe5-32b29014f67f&prompt=none&force_redirect=true&scope=*+offline",
+    "status": 302,
+    "ct": "text/html; charset=utf-8",
+    "bytes": null
+  },
+  {
+    "url": "https://auth.leboncoin.fr/api/authenticator/v1/track_logged_unlogged",
+    "status": 200,
+    "ct": "",
+    "bytes": 0
+  },
+  {
+    "url": "https://api.leboncoin.fr/api/trustpilot-proxy-api/v1/lbc",
+    "status": 200,
+    "ct": "application/json; charset=utf-8",
+    "bytes": 79
+  },
+  {
+    "url": "https://api.leboncoin.fr/api/frontend/v1/data/v7/fdata",
+    "status": 200,
+    "ct": "application/json; charset=utf-8",
+    "bytes": 675060
+  },
+  {
+    "url": "https://api.leboncoin.fr/api/delivery-configurator-api/v1/configs",
+    "status": 200,
+    "ct": "application/json; charset=utf-8",
+    "bytes": 71606
+  },
+  {
+    "url": "https://api.leboncoin.fr/api/frontend/v1/data/v4/fforms",
+    "status": 200,
+    "ct": "application/json; charset=utf-8",
+    "bytes": 51487
+  },
+  {
+    "url": "https://api.leboncoin.fr/api/discovery/recent-ads",
+    "status": 200,
+    "ct": "application/json; charset=utf-8",
+    "bytes": 368322
+  },
+  {
+    "url": "https://api.leboncoin.fr/api/autopromo/v1/placeholders/active-placeholders",
+    "status": 200,
+    "ct": "application/json; charset=utf-8",
+    "bytes": 57
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/tenants/9a6387a1-6259-4f2c-a887-7e67f23dd4cb/domains/20bda58f-d650-462e-a72a-a5a7ecf2bf88/buckets/21d2b0bc-e54c-4b64-a30b-89127b18b785/images/profile/pictures/423653c7-480a-5001-9f97-b59ada886858?rule=pp-small",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 1501
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/tenants/9a6387a1-6259-4f2c-a887-7e67f23dd4cb/domains/20bda58f-d650-462e-a72a-a5a7ecf2bf88/buckets/21d2b0bc-e54c-4b64-a30b-89127b18b785/images/profile/pictures/default/1de02d2d-1531-55ea-a6ae-990fdacc3a2d?rule=pp-small",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 790
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/tenants/9a6387a1-6259-4f2c-a887-7e67f23dd4cb/domains/20bda58f-d650-462e-a72a-a5a7ecf2bf88/buckets/21d2b0bc-e54c-4b64-a30b-89127b18b785/images/profile/pictures/default/3c6472c4-26de-57ec-8fff-e2ef8c2857f2?rule=pp-small",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 1042
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/tenants/9a6387a1-6259-4f2c-a887-7e67f23dd4cb/domains/20bda58f-d650-462e-a72a-a5a7ecf2bf88/buckets/21d2b0bc-e54c-4b64-a30b-89127b18b785/images/profile/pictures/16dfc0e9-2c3f-5ab3-bc9c-2122a6379f6a?rule=pp-small",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 1856
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/tenants/9a6387a1-6259-4f2c-a887-7e67f23dd4cb/domains/20bda58f-d650-462e-a72a-a5a7ecf2bf88/buckets/21d2b0bc-e54c-4b64-a30b-89127b18b785/images/profile/pictures/default/7fc3d94e-2b49-5fe2-9af3-c5cf79a5be83?rule=pp-small",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 976
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/tenants/9a6387a1-6259-4f2c-a887-7e67f23dd4cb/domains/20bda58f-d650-462e-a72a-a5a7ecf2bf88/buckets/21d2b0bc-e54c-4b64-a30b-89127b18b785/images/profile/pictures/5efa8402-4508-54fe-a6bf-c80080ab85ed?rule=pp-small",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 1413
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/tenants/9a6387a1-6259-4f2c-a887-7e67f23dd4cb/domains/20bda58f-d650-462e-a72a-a5a7ecf2bf88/buckets/21d2b0bc-e54c-4b64-a30b-89127b18b785/images/profile/pictures/default/fb03ca79-b851-538a-b137-a0c3594b1f1f?rule=pp-small",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 682
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/tenants/9a6387a1-6259-4f2c-a887-7e67f23dd4cb/domains/20bda58f-d650-462e-a72a-a5a7ecf2bf88/buckets/21d2b0bc-e54c-4b64-a30b-89127b18b785/images/profile/pictures/default/0f38808a-4cdf-5d9c-ac46-2d010953d452?rule=pp-small",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 833
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/tenants/9a6387a1-6259-4f2c-a887-7e67f23dd4cb/domains/20bda58f-d650-462e-a72a-a5a7ecf2bf88/buckets/21d2b0bc-e54c-4b64-a30b-89127b18b785/images/profile/pictures/a84ba29c-7c8b-5207-86f1-78b911e3eb15?rule=pp-small",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 1757
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/tenants/9a6387a1-6259-4f2c-a887-7e67f23dd4cb/domains/20bda58f-d650-462e-a72a-a5a7ecf2bf88/buckets/21d2b0bc-e54c-4b64-a30b-89127b18b785/images/profile/pictures/default/d0a6131a-3641-51b9-9460-30d933f2071f?rule=pp-small",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 955
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/tenants/9a6387a1-6259-4f2c-a887-7e67f23dd4cb/domains/20bda58f-d650-462e-a72a-a5a7ecf2bf88/buckets/21d2b0bc-e54c-4b64-a30b-89127b18b785/images/profile/pictures/default/ac3b92b4-0bc6-5e38-8cea-bd68af6d6f8a?rule=pp-small",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 682
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/tenants/9a6387a1-6259-4f2c-a887-7e67f23dd4cb/domains/20bda58f-d650-462e-a72a-a5a7ecf2bf88/buckets/21d2b0bc-e54c-4b64-a30b-89127b18b785/images/profile/pictures/6dfbc811-6845-5f46-bfaa-08255c76e926?rule=pp-small",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 1469
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/tenants/9a6387a1-6259-4f2c-a887-7e67f23dd4cb/domains/20bda58f-d650-462e-a72a-a5a7ecf2bf88/buckets/21d2b0bc-e54c-4b64-a30b-89127b18b785/images/profile/pictures/default/bf5ce165-468f-5e50-8db7-894bc96e06b5?rule=pp-small",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 830
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/tenants/9a6387a1-6259-4f2c-a887-7e67f23dd4cb/domains/20bda58f-d650-462e-a72a-a5a7ecf2bf88/buckets/21d2b0bc-e54c-4b64-a30b-89127b18b785/images/profile/pictures/cf557e08-d3ed-56a5-946c-5dd1f19abf8d?rule=pp-small",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 1939
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/tenants/9a6387a1-6259-4f2c-a887-7e67f23dd4cb/domains/20bda58f-d650-462e-a72a-a5a7ecf2bf88/buckets/21d2b0bc-e54c-4b64-a30b-89127b18b785/images/profile/pictures/ebcb54db-5c44-5d7f-a134-76f2b79d36d4?rule=pp-small",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 1554
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/tenants/9a6387a1-6259-4f2c-a887-7e67f23dd4cb/domains/20bda58f-d650-462e-a72a-a5a7ecf2bf88/buckets/21d2b0bc-e54c-4b64-a30b-89127b18b785/images/profile/pictures/bfa43b64-e334-5570-b7d3-279f45f56017?rule=pp-small",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 2069
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/tenants/9a6387a1-6259-4f2c-a887-7e67f23dd4cb/domains/20bda58f-d650-462e-a72a-a5a7ecf2bf88/buckets/21d2b0bc-e54c-4b64-a30b-89127b18b785/images/profile/pictures/default/793dcbc3-b2ce-5bc4-8445-cfbd58034b92?rule=pp-small",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 745
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/tenants/9a6387a1-6259-4f2c-a887-7e67f23dd4cb/domains/20bda58f-d650-462e-a72a-a5a7ecf2bf88/buckets/21d2b0bc-e54c-4b64-a30b-89127b18b785/images/profile/pictures/default/4cff9094-33a2-5ba6-9c5d-8e237a101c30?rule=pp-small",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 753
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/tenants/9a6387a1-6259-4f2c-a887-7e67f23dd4cb/domains/20bda58f-d650-462e-a72a-a5a7ecf2bf88/buckets/21d2b0bc-e54c-4b64-a30b-89127b18b785/images/profile/pictures/b625bb0d-be55-50f5-970f-be741344d916?rule=pp-small",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 1176
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/lbcpb1/images/51/f7/1b/51f71b512cbe934edfc3dfc096062eacbdaed520.jpg?rule=ad-image",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 23098
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/lbcpb1/images/30/ee/41/30ee4187ec46c8b7e9748837bd675bc9ebc38930.jpg?rule=ad-image",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 20647
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/lbcpb1/images/bd/5a/fb/bd5afbfbc2a288d49525503bd781889b33d575cc.jpg?rule=ad-image",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 36261
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/lbcpb1/images/96/79/f4/9679f4b9e823088fe0352ca04c84101a82607dd8.jpg?rule=ad-image",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 34672
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/lbcpb1/images/53/6a/79/536a792772fa0ff2ea94fce74e82e371683332ac.jpg?rule=ad-image",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 32857
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/lbcpb1/images/c2/f3/7f/c2f37f13a08a05e337f005974267da667d864087.jpg?rule=ad-image",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 33568
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/lbcpb1/images/a9/1d/c7/a91dc707-1a03-4b5d-92b2-e3e26ec0aa19?rule=bo-thumb",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 6548
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/lbcpb1/images/6e/ac/95/6eac95d2-ef19-4f4f-943b-3d60cce71e4c?rule=bo-thumb",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 5657
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/lbcpb1/images/55/13/9c/55139c90-4a85-4ee1-8786-1bd359bd45d3?rule=bo-thumb",
+    "status": 200,
+    "ct": "image/jpeg",
+    "bytes": 2829
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/lbcpb1/images/3d/41/3a/3d413a353c4bec8c29093c789df25dae94451d77.jpg?rule=classified-760x460-avif",
+    "status": 200,
+    "ct": "image/avif",
+    "bytes": 34021
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/lbcpb1/images/f9/29/6d/f9296df828eb15346ecfeec71b2ae5306d7f7315.jpg?rule=classified-760x460-avif",
+    "status": 200,
+    "ct": "image/avif",
+    "bytes": 23811
+  },
+  {
+    "url": "https://img.leboncoin.fr/api/v1/lbcpb1/images/38/0d/01/380d01d9ce6b1e4ff91ba18ae1ad23686468b0e6.jpg?rule=classified-760x460-avif",
+    "status": 200,
+    "ct": "image/avif",
+    "bytes": 48292
+  },
+  {
+    "url": "https://api.leboncoin.fr/api/frontend/v1/data/v7/fdata",
+    "status": 200,
+    "ct": "application/json; charset=utf-8",
+    "bytes": 675060
+  },
+  {
+    "url": "https://api.leboncoin.fr/api/frontend/v1/data/v4/fforms",
+    "status": 200,
+    "ct": "application/json; charset=utf-8",
+    "bytes": 51487
+  },
+  {
+    "url": "https://api.leboncoin.fr/api/trustpilot-proxy-api/v1/lbc",
+    "status": 200,
+    "ct": "application/json; charset=utf-8",
+    "bytes": 79
+  },
+  {
+    "url": "https://auth.leboncoin.fr/api/authorizer/v2/authorize?client_id=lbc-front-web&redirect_uri=https%3A%2F%2Fwww.leboncoin.fr%2Foauth2callback&response_type=code&state=51c69b5c-ec9c-4328-a022-b4e5b61cb858&prompt=none&force_redirect=true&scope=*+offline",
+    "status": 302,
+    "ct": "text/html; charset=utf-8",
+    "bytes": null
+  },
+  {
+    "url": "https://api.leboncoin.fr/finder/search",
+    "status": 200,
+    "ct": "application/json; charset=utf-8",
+    "bytes": 3440
+  },
+  {
+    "url": "https://www.leboncoin.fr/_next/data/gxtipuF5oYYgxIuO06x5x/service/bons-plans.json?seoSlug=bons-plans",
+    "status": 200,
+    "ct": "application/json; charset=utf-8",
+    "bytes": 46284
+  },
+  {
+    "url": "https://auth.leboncoin.fr/api/authorizer/v2/authorize?client_id=lbc-front-web&redirect_uri=https%3A%2F%2Fwww.leboncoin.fr%2Foauth2callback&response_type=code&state=fc72c3ec-efe6-4e9b-8f80-6074457cdc0f&prompt=none&force_redirect=true&scope=*+offline",
+    "status": 302,
+    "ct": "text/html; charset=utf-8",
+    "bytes": null
+  },
+  {
+    "url": "https://api.leboncoin.fr/api/delivery-configurator-api/v1/configs",
+    "status": 200,
+    "ct": "application/json; charset=utf-8",
+    "bytes": 71606
+  },
+  {
+    "url": "https://api.leboncoin.fr/api/autopromo/v1/placeholders/active-placeholders",
+    "status": 200,
+    "ct": "application/json; charset=utf-8",
+    "bytes": 57
+  }
+]

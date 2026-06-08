@@ -1,0 +1,20 @@
+[
+  {
+    "url": "https://suchen.mobile.de/fahrzeuge/search.html?dam=false&isSearchRequest=true&ref=quickSearch&s=Car&sb=rel&vc=Car",
+    "status": 200,
+    "ct": "text/html",
+    "bytes": 2596
+  },
+  {
+    "url": "https://suchen.mobile.de/vJYn4TUq32/Tsza5fRz1J/7QEYb67rrOOXG4Da9S/URFBPSwC/CBZ-HFY/BZGQB",
+    "status": 201,
+    "ct": "application/json",
+    "bytes": 18
+  },
+  {
+    "url": "https://suchen.mobile.de/vJYn4TUq32/Tsza5fRz1J/7QEYb67rrOOXG4Da9S/URFBPSwC/CBZ-HFY/BZGQB",
+    "status": 201,
+    "ct": "application/json",
+    "bytes": 18
+  }
+]

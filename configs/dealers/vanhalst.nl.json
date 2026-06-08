@@ -1,0 +1,33 @@
+{
+  "source_key": "vanhalst.nl",
+  "country": "NL",
+  "strategy": "jsonld_detail",
+  "version": 1,
+  "endpoints": {
+    "host": "www.vanhalst.nl",
+    "listing_url_template": "",
+    "sitemap_url": "",
+    "detail_url_re": "",
+    "api_url": ""
+  },
+  "pagination": {
+    "page_size": 0,
+    "max_pages": 0,
+    "page_param": "page"
+  },
+  "extraction": {
+    "method": "jsonld",
+    "field_map": {}
+  },
+  "drift_baseline": {
+    "extraction_method": "jsonld",
+    "expected_min_volume": 2,
+    "required_fields": [
+      "make",
+      "model",
+      "year",
+      "price"
+    ],
+    "min_nonnull_ratio": 0.7
+  }
+}

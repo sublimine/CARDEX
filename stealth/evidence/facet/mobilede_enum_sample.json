@@ -1,0 +1,138 @@
+[
+  {
+    "source_url": "https://suchen.mobile.de/auto-inserat/abarth-autobianchi-series-3-artemida/441879686.html",
+    "url_hash": "855750a6c767ea4f6dfda94e835718e7",
+    "source_domain": "mobile.de",
+    "country": "DE",
+    "ext_id": 441879686,
+    "make": {
+      "id": "140",
+      "localized": "Abarth"
+    },
+    "model": {
+      "id": "1",
+      "localized": "Andere"
+    },
+    "title": "Abarth autobianchi series 3 ",
+    "price_eur": null
+  },
+  {
+    "source_url": "https://suchen.mobile.de/auto-inserat/abarth-500-1-4-basis-xenon-klimaauto-sport-schleswig/449126224.html",
+    "url_hash": "32b15148c7a1d31e1956f867c26dfd08",
+    "source_domain": "mobile.de",
+    "country": "DE",
+    "ext_id": 449126224,
+    "make": {
+      "id": "140",
+      "localized": "Abarth"
+    },
+    "model": {
+      "id": "2",
+      "localized": "500"
+    },
+    "title": "Abarth 500 1.4 Basis Xenon Klimaauto Sport",
+    "price_eur": null
+  },
+  {
+    "source_url": "https://suchen.mobile.de/auto-inserat/abarth-grande-punto-1-4-t-jet-16v-3-porte-vigevano/453511206.html",
+    "url_hash": "37ba73693de2111613f479e606c52cb8",
+    "source_domain": "mobile.de",
+    "country": "DE",
+    "ext_id": 453511206,
+    "make": {
+      "id": "140",
+      "localized": "Abarth"
+    },
+    "model": {
+      "id": "5",
+      "localized": "Grande Punto"
+    },
+    "title": "Abarth Grande Punto 1.4 T-Jet 16V 3 porte",
+    "price_eur": null
+  },
+  {
+    "source_url": "https://suchen.mobile.de/auto-inserat/abarth-grande-punto-1-4-16v-turbo-hu-au-neu-wenig-km-flintbek/456995008.html",
+    "url_hash": "8b805896d8c0de9f8d7ee3900cf91349",
+    "source_domain": "mobile.de",
+    "country": "DE",
+    "ext_id": 456995008,
+    "make": {
+      "id": "140",
+      "localized": "Abarth"
+    },
+    "model": {
+      "id": "5",
+      "localized": "Grande Punto"
+    },
+    "title": "Abarth Grande Punto 1.4 16V Turbo HU/AU NEU WENIG KM",
+    "price_eur": null
+  },
+  {
+    "source_url": "https://suchen.mobile.de/auto-inserat/abarth-500-1-4-t-jet-16v-remscheid/457576209.html",
+    "url_hash": "4a4b72d24a9a7a2831cc758e7e6c78b7",
+    "source_domain": "mobile.de",
+    "country": "DE",
+    "ext_id": 457576209,
+    "make": {
+      "id": "140",
+      "localized": "Abarth"
+    },
+    "model": {
+      "id": "2",
+      "localized": "500"
+    },
+    "title": "Abarth 500 1.4 T-Jet 16V -",
+    "price_eur": null
+  },
+  {
+    "source_url": "https://suchen.mobile.de/auto-inserat/abarth-grande-punto-1-4-t-jet-16v-gulf-edition-k%C3%B6ln/447609945.html",
+    "url_hash": "bfd5dee277a43ade9886e84a2bedc3de",
+    "source_domain": "mobile.de",
+    "country": "DE",
+    "ext_id": 447609945,
+    "make": {
+      "id": "140",
+      "localized": "Abarth"
+    },
+    "model": {
+      "id": "5",
+      "localized": "Grande Punto"
+    },
+    "title": "Abarth Grande Punto 1.4 T-Jet 16V - Gulf Edition",
+    "price_eur": null
+  },
+  {
+    "source_url": "https://suchen.mobile.de/auto-inserat/abarth-grande-punto-1-4-t-jet-16v-t%C3%BCv-neu-solingen/441798015.html",
+    "url_hash": "e83cb4f6d9559dc8c758cefac0f33a81",
+    "source_domain": "mobile.de",
+    "country": "DE",
+    "ext_id": 441798015,
+    "make": {
+      "id": "140",
+      "localized": "Abarth"
+    },
+    "model": {
+      "id": "5",
+      "localized": "Grande Punto"
+    },
+    "title": "Abarth Grande Punto 1.4 T-Jet 16V - TÜV NEU !",
+    "price_eur": null
+  },
+  {
+    "source_url": "https://suchen.mobile.de/auto-inserat/abarth-punto-evo-1-4-multiair-karlsruhe/456679737.html",
+    "url_hash": "4c3d22a7e3d1007ef5471e34b43ab7f3",
+    "source_domain": "mobile.de",
+    "country": "DE",
+    "ext_id": 456679737,
+    "make": {
+      "id": "140",
+      "localized": "Abarth"
+    },
+    "model": {
+      "id": "4",
+      "localized": "Punto Evo"
+    },
+    "title": "Abarth Punto Evo 1.4 MultiAir ",
+    "price_eur": null
+  }
+]

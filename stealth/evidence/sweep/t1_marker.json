@@ -1,0 +1,199 @@
+{
+  "autoscout24.de": {
+    "domain": "autoscout24.de",
+    "country": "DE",
+    "status": 200,
+    "verdict": "OK",
+    "hits": [
+      "_px",
+      "robot"
+    ],
+    "records": 0,
+    "method": null
+  },
+  "autoscout24.fr": {
+    "domain": "autoscout24.fr",
+    "country": "FR",
+    "status": 200,
+    "verdict": "OK",
+    "hits": [
+      "_px",
+      "robot"
+    ],
+    "records": 0,
+    "method": null
+  },
+  "autoscout24.es": {
+    "domain": "autoscout24.es",
+    "country": "ES",
+    "status": 200,
+    "verdict": "OK",
+    "hits": [
+      "_px",
+      "robot"
+    ],
+    "records": 0,
+    "method": null
+  },
+  "autoscout24.nl": {
+    "domain": "autoscout24.nl",
+    "country": "NL",
+    "status": 200,
+    "verdict": "OK",
+    "hits": [
+      "_px",
+      "robot"
+    ],
+    "records": 0,
+    "method": null
+  },
+  "autoscout24.be": {
+    "domain": "autoscout24.be",
+    "country": "BE",
+    "status": 200,
+    "verdict": "OK",
+    "hits": [
+      "_px",
+      "robot"
+    ],
+    "records": 0,
+    "method": null
+  },
+  "autoscout24.it": {
+    "domain": "autoscout24.it",
+    "country": "IT",
+    "status": 200,
+    "verdict": "OK",
+    "hits": [
+      "_px",
+      "robot"
+    ],
+    "records": 0,
+    "method": null
+  },
+  "kleinanzeigen.de": {
+    "domain": "kleinanzeigen.de",
+    "country": "DE",
+    "status": 200,
+    "verdict": "OK",
+    "hits": [
+      "robot"
+    ],
+    "records": 27,
+    "method": "regex"
+  },
+  "autoweek.nl": {
+    "domain": "autoweek.nl",
+    "country": "NL",
+    "status": 200,
+    "verdict": "OK",
+    "hits": [
+      "robot"
+    ],
+    "records": 2,
+    "method": "regex"
+  },
+  "vlan.be": {
+    "domain": "vlan.be",
+    "country": "BE",
+    "status": 404,
+    "verdict": "BLOCKED",
+    "hits": [
+      "robot"
+    ],
+    "records": 0,
+    "method": null
+  },
+  "autoboerse.de": {
+    "domain": "autoboerse.de",
+    "country": "DE",
+    "status": 404,
+    "verdict": "BLOCKED",
+    "hits": [
+      "robot"
+    ],
+    "records": 0,
+    "method": null
+  },
+  "zoomcar.fr": {
+    "domain": "zoomcar.fr",
+    "country": "FR",
+    "status": 404,
+    "verdict": "BLOCKED",
+    "hits": [
+      "http404"
+    ],
+    "records": 0,
+    "method": null
+  },
+  "gocar.be": {
+    "domain": "gocar.be",
+    "country": "BE",
+    "status": 404,
+    "verdict": "BLOCKED",
+    "hits": [
+      "robot"
+    ],
+    "records": 0,
+    "method": null
+  },
+  "nederlandmobiel.nl": {
+    "domain": "nederlandmobiel.nl",
+    "country": "NL",
+    "status": 403,
+    "verdict": "BLOCKED",
+    "hits": [
+      "cf-chl",
+      "challenge-platform",
+      "robot"
+    ],
+    "records": 0,
+    "method": null
+  },
+  "coches.com": {
+    "domain": "coches.com",
+    "country": "ES",
+    "status": 200,
+    "verdict": "OK",
+    "hits": [
+      "_px",
+      "robot"
+    ],
+    "records": 40,
+    "method": "regex"
+  },
+  "ouestfrance-auto.fr": {
+    "domain": "ouestfrance-auto.fr",
+    "country": "FR",
+    "status": 200,
+    "verdict": "OK",
+    "hits": [
+      "robot"
+    ],
+    "records": 25,
+    "method": "jsonld"
+  },
+  "autowereld.nl": {
+    "domain": "autowereld.nl",
+    "country": "NL",
+    "status": 200,
+    "verdict": "OK",
+    "hits": [
+      "robot"
+    ],
+    "records": 0,
+    "method": null
+  },
+  "promoneuve.fr": {
+    "domain": "promoneuve.fr",
+    "country": "FR",
+    "status": 404,
+    "verdict": "BLOCKED",
+    "hits": [
+      "datadome",
+      "robot"
+    ],
+    "records": 0,
+    "method": null
+  }
+}
