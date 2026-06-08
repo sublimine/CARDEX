@@ -7,7 +7,7 @@
     "host": "www.dacia-meaux.fr",
     "listing_url_template": "https://dacia-meaux.fr/occasion-fr-fr.htm",
     "sitemap_url": "",
-    "detail_url_re": "",
+    "detail_url_re": "/stock/",
     "api_url": ""
   },
   "pagination": {

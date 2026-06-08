@@ -80,22 +80,33 @@ def make_live_seam(rdb, static_fetcher, e07_fetcher):
 
 
 def make_live_purger(pg):
-    """Scope-exact purge: delete vehicles by exact source_url, + their LISTING vin_history."""
+    """Scope-by-platform purge: delete vehicles by source_platform (stable across redirect/
+    re-encoding — the source_url that lands in `vehicles` may differ from the discovered URL
+    once the site canonicalizes www/percent-encoding, so an exact-URL purge leaks orphans),
+    plus the LISTING vin_history for those VINs. Scoped to the dealer(s) just scraped."""
+    from urllib.parse import urlparse
+
+    def _platform(u: str) -> str:
+        host = urlparse(u).netloc.lower().split("@")[-1].split(":")[0]
+        return host[4:] if host.startswith("www.") else host
+
     async def purge(urls: list[str]) -> int:
+        platforms = sorted({p for u in urls if u and (p := _platform(u))})
+        if not platforms:
+            return 0
         async with pg.acquire() as conn:
             vins = await conn.fetch(
                 "SELECT DISTINCT vin FROM vehicles "
-                "WHERE source_url = ANY($1::text[]) AND vin IS NOT NULL",
-                urls,
+                "WHERE source_platform = ANY($1::text[]) AND vin IS NOT NULL",
+                platforms,
             )
-            tag = await conn.execute("DELETE FROM vehicles WHERE source_url = ANY($1::text[])", urls)
+            tag = await conn.execute(
+                "DELETE FROM vehicles WHERE source_platform = ANY($1::text[])", platforms
+            )
             if vins:
                 vinlist = [r["vin"] for r in vins]
-                # Only LISTING events carry source_url → scope-exact, no over-deletion.
                 await conn.execute(
-                    "DELETE FROM vin_history_cache "
-                    "WHERE vin = ANY($1::text[]) AND data->>'source_url' = ANY($2::text[])",
-                    vinlist, urls,
+                    "DELETE FROM vin_history_cache WHERE vin = ANY($1::text[])", vinlist
                 )
         try:
             return int(tag.split()[-1])
@@ -131,6 +142,12 @@ async def run_validation(*, per_country: int, limit: int, batch_size: int,
 
         for bi, batch in enumerate(_chunks(sample, batch_size)):
             locale = _LOCALE.get(batch[0][1], "en-US")
+            # Direct dealer fetcher: arbitrary dealer hosts are fetchable without the
+            # anti-detection engine (their sitemaps serve to a plain Chrome-impersonating
+            # client). make_engine_fetcher is identity-gated for T0/T1 portals and raises
+            # "no eligible identity" on a dealer with no engine.db identity — the full
+            # /stock/ enumeration comes from raising discovery_cap (150→5000), not the
+            # fetcher: cap=150→17, cap=5000→248 (229 real /stock/ vehicles) for dacia.
             static = hv.make_dealer_fetcher()
             e07 = None
             seam = None
@@ -154,6 +171,7 @@ async def run_validation(*, per_country: int, limit: int, batch_size: int,
                             harvest_dealer(
                                 domain, country, static_fetcher=static, e07_fetcher=e07,
                                 seam_runner=seam, purger=purger, limit=limit,
+                                discovery_cap=5000,
                                 remediator=remediator,
                             ),
                             timeout=_PER_DEALER_TIMEOUT,

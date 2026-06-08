@@ -24,6 +24,7 @@ from __future__ import annotations
 import dataclasses
 import gc
 import logging
+import re
 from dataclasses import dataclass, field
 from typing import Awaitable, Callable, Sequence
 
@@ -166,9 +167,29 @@ async def discover_dealer_urls(
     detail pages detection proved on: sitemap → wp → catalog → catalog-follow →
     render-follow. The browser (when supplied) is reused, bounded by ``cap``.
     """
-    details, _method, _home, _catalog = await discover_detail_urls(
+    details, method, _home, _catalog = await discover_detail_urls(
         domain, static_fetcher=static_fetcher, e07_fetcher=e07_fetcher, cap=cap
     )
+    # Recipe-driven detail filter: when the entity's recipe pins a ``detail_url_re``, keep only
+    # URLs matching it — separating real vehicle PDPs from the catalog/category index pages the
+    # sitemap also lists (e.g. dacia ``/stock/…-fr-fr.htm`` PDP vs ``/occasion-{make}-`` index).
+    # Additive: an empty detail_url_re (the default) preserves the prior heuristic behavior.
+    pattern = (cfg.endpoints.detail_url_re or "").strip()
+    if pattern:
+        try:
+            rx = re.compile(pattern)
+        except re.error as exc:
+            log.warning("discover %s: invalid detail_url_re %r (%s) — skipping filter", domain, pattern, exc)
+        else:
+            kept = [u for u in details if rx.search(u)]
+            if kept:
+                log.info("discover %s: detail_url_re kept %d/%d (method=%s)", domain, len(kept), len(details), method)
+                details = kept
+            elif details:
+                # Fail-loud, never silent: a recipe regex matching nothing is broken. Keep the
+                # unfiltered set so a live dealer is never zeroed, but make the fault visible.
+                log.warning("discover %s: detail_url_re %r matched 0/%d — recipe regex likely broken, using unfiltered",
+                            domain, pattern, len(details))
     return details
 
 
