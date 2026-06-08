@@ -11,6 +11,8 @@ These cover the additive extension to ``scrapers/portals/config.py``:
 """
 from __future__ import annotations
 
+import dataclasses
+
 import pytest
 
 from scrapers.portals import config as cfgmod
@@ -83,3 +85,66 @@ def test_list_configs_kind_selection(isolated_stores):
 @pytest.mark.unit
 def test_missing_in_both_stores_returns_none(isolated_stores):
     assert cfgmod.load("nowhere.invalid") is None
+
+
+# ── Bloque D #6: emit-on-success = CREATE-IF-ABSENT + version-bump, never clobber ──
+@pytest.mark.unit
+def test_emit_creates_recipe_when_absent(isolated_stores):
+    cfg = _dealer_cfg("fresh-dealer.fr", country="FR")
+    out = cfgmod.emit(cfg, kind="dealer")
+    assert out.version == 1
+    loaded = cfgmod.load("fresh-dealer.fr")
+    assert loaded is not None
+    assert loaded.strategy == "sitemap_listing"
+    assert loaded.version == 1
+
+
+@pytest.mark.unit
+def test_emit_bumps_version_and_preserves_operator_edits(isolated_stores):
+    domain = "operator-tuned.fr"
+    # Operator hand-tunes a recipe: a manual detail_url_re + baseline volume 5, v1.
+    tuned = dataclasses.replace(
+        _dealer_cfg(domain, country="FR"),
+        endpoints=Endpoints(
+            host=f"www.{domain}",
+            sitemap_url=f"https://{domain}/sitemap.xml",
+            detail_url_re="/stock/",
+        ),
+    )
+    cfgmod.save(tuned, kind="dealer")
+    # A later detection emits WITHOUT the manual regex but with a higher proven volume.
+    redetected = dataclasses.replace(
+        _dealer_cfg(domain, country="FR"),
+        drift_baseline=DriftBaseline(
+            expected_min_volume=229, required_fields=("make", "model", "year", "price")
+        ),
+    )
+    out = cfgmod.emit(redetected, kind="dealer")
+    loaded = cfgmod.load(domain)
+    assert out.version == 2
+    assert loaded.version == 2
+    # Operator edit PRESERVED (never clobbered) …
+    assert loaded.endpoints.detail_url_re == "/stock/"
+    # … while the learned drift floor is RAISED to the proven volume.
+    assert loaded.drift_baseline.expected_min_volume == 229
+
+
+@pytest.mark.unit
+def test_emit_never_lowers_drift_floor(isolated_stores):
+    domain = "stable.fr"
+    cfgmod.save(
+        dataclasses.replace(
+            _dealer_cfg(domain, country="FR"),
+            drift_baseline=DriftBaseline(expected_min_volume=200, required_fields=("make", "model")),
+        ),
+        kind="dealer",
+    )
+    # A later run that under-discovers (e.g. transient) must NOT lower the floor.
+    out = cfgmod.emit(
+        dataclasses.replace(
+            _dealer_cfg(domain, country="FR"),
+            drift_baseline=DriftBaseline(expected_min_volume=10, required_fields=("make", "model")),
+        ),
+        kind="dealer",
+    )
+    assert out.drift_baseline.expected_min_volume == 200

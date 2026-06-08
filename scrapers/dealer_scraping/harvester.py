@@ -285,6 +285,17 @@ async def harvest_dealer(
             )
             remediation = await remediator(domain, country)
 
+        # Bloque D recipe contract: on a verified success, refresh the per-entity recipe —
+        # version-bump + raise the learned drift floor to the proven volume, never clobbering
+        # operator edits (detail_url_re, field_map). Runs AFTER the drift verdict so a real
+        # collapse is still caught against the established floor; newly-detected sources were
+        # already written above with their first baseline, so only established recipes refresh.
+        if save_config and persisted > 0 and not newly and discovered > cfg.drift_baseline.expected_min_volume:
+            proven = dataclasses.replace(
+                cfg, drift_baseline=dataclasses.replace(cfg.drift_baseline, expected_min_volume=discovered)
+            )
+            cfg = portal_config.emit(proven, kind="dealer")
+
         purged = False
         if purge:
             await purger(sample)

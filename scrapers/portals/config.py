@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import asdict, dataclass, field, fields as dataclass_fields
+from dataclasses import asdict, dataclass, field, fields as dataclass_fields, replace
 from pathlib import Path
 
 # Versioned store root — git-tracked JSON, one file per source_key.
@@ -208,6 +208,37 @@ def save(cfg: ExtractionConfig, *, kind: str = "portal") -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(to_dict(cfg), indent=2, ensure_ascii=False), encoding="utf-8")
     return path
+
+
+def emit(cfg: ExtractionConfig, *, kind: str = "dealer") -> ExtractionConfig:
+    """
+    Emit a recipe on a verified extraction success — CREATE-IF-ABSENT, never clobber.
+
+    Recipes are git-tracked and hand-tuned to repair drift, so an emit on a source that
+    already has one must NOT overwrite operator/curation edits (strategy, endpoints incl.
+    ``detail_url_re``, field_map). It only (a) version-bumps and (b) raises the learned
+    drift floor ``expected_min_volume`` to the freshly proven volume (never lowers it — a
+    transient under-discovery must not erase a known-good baseline). The first emit of an
+    unseen source writes ``cfg`` as-is (version 1). Returns the config actually persisted.
+
+    This is the Bloque-D recipe contract: every 100%-successful scrape leaves a versioned,
+    individually-manageable recipe, without ever clobbering a human's repair.
+    """
+    path = _dealer_path(cfg.source_key) if kind == "dealer" else _config_path(cfg.source_key)
+    prior = from_dict(json.loads(path.read_text(encoding="utf-8"))) if path.exists() else None
+    if prior is None:
+        save(cfg, kind=kind)
+        return cfg
+    new_floor = max(
+        prior.drift_baseline.expected_min_volume, cfg.drift_baseline.expected_min_volume
+    )
+    merged = replace(
+        prior,
+        version=prior.version + 1,
+        drift_baseline=replace(prior.drift_baseline, expected_min_volume=new_floor),
+    )
+    save(merged, kind=kind)
+    return merged
 
 
 def list_configs(kind: str = "portal") -> list[str]:
