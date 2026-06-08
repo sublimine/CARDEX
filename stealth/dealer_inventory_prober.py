@@ -499,7 +499,7 @@ VEREDICTO SUELO 2M:
   Vehículos mediana por dealer (n={len(counted)}) : {avg_count:.0f}
   Proyección T2 vehículos : {"~{:,}".format(vehicles_from_t2) if vehicles_from_t2 else "sin datos suficientes"}
   Nota: vehiculos_T2_total incluye solo dominios con señal confirmada.
-        Para 2M se necesita discovery name→web a ~{int(2_000_000/(avg_count if avg_count>0 else 50)):,} dealers
+        Para 2M se necesita discovery name->web a ~{int(2_000_000/(avg_count if avg_count>0 else 50)):,} dealers
         (vs {universe:,} actuales con web, {est_t2:,} cosechables).""")
 
     # Top 10 examples with inventory
