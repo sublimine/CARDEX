@@ -40,6 +40,15 @@ _NAF = tuple(os.environ.get("FR_NAF", "45.11Z,45.19Z").split(","))
 _PER_PAGE = 25
 _HDR = {"Accept": "application/json", "User-Agent": "cardex-discovery/1.0 (open-data)"}
 
+# Politeness + resilience for the full 101-department sweep. The gouv API rate-
+# limits at ~7 req/s/IP; a small inter-request floor keeps us well under it, and
+# a bounded retry on transient 429/5xx prevents a single blip from returning []
+# and silently truncating a department mid-enumeration (the old behaviour).
+_THROTTLE_S = float(os.environ.get("FR_THROTTLE_S", "0.2"))
+_MAX_RETRIES = int(os.environ.get("FR_MAX_RETRIES", "4"))
+_BACKOFF_S = 2.0
+_TRANSIENT = frozenset({429, 500, 502, 503, 504})
+
 # The 101 French departments (metropolitan 01-95 incl. Corsica 2A/2B, + overseas).
 _ALL_DEPTS: tuple[str, ...] = tuple(
     [f"{n:02d}" for n in range(1, 96) if n != 20] + ["2A", "2B", "971", "972", "973", "974", "976"]
@@ -106,13 +115,28 @@ WHERE discovery_candidates.last_seen < NOW() - INTERVAL '1 hour'
 
 
 async def _fetch_page(client: httpx.AsyncClient, naf: str, dept: str, page: int) -> list[dict]:
-    r = await client.get(_API, params={
+    """One page of (naf, dept). Retries transient 429/5xx so a blip never masquerades
+    as 'end of department' (which would silently truncate the sweep)."""
+    params = {
         "activite_principale": naf, "departement": dept,
         "per_page": _PER_PAGE, "page": page,
-    }, headers=_HDR)
-    if r.status_code != 200:
-        return []
-    return r.json().get("results", [])
+    }
+    for attempt in range(_MAX_RETRIES):
+        try:
+            r = await client.get(_API, params=params, headers=_HDR)
+        except (httpx.TransportError, httpx.TimeoutException) as exc:
+            log.warning("naf=%s dept=%s page=%d transport error: %s (retry)", naf, dept, page, exc)
+            await asyncio.sleep(_BACKOFF_S * (attempt + 1))
+            continue
+        if r.status_code == 200:
+            return r.json().get("results", [])
+        if r.status_code in _TRANSIENT:
+            log.warning("naf=%s dept=%s page=%d HTTP %d (retry)", naf, dept, page, r.status_code)
+            await asyncio.sleep(_BACKOFF_S * (attempt + 1))
+            continue
+        return []  # genuine 4xx (e.g. bad param) — no data, stop this segment
+    log.error("naf=%s dept=%s page=%d exhausted retries — skipping", naf, dept, page)
+    return []
 
 
 async def run(*, depts: tuple[str, ...] | None = None, max_pages: int = 0) -> int:
@@ -141,6 +165,7 @@ async def run(*, depts: tuple[str, ...] | None = None, max_pages: int = 0) -> in
                             inserted += 1
                         if len(results) < _PER_PAGE:
                             break
+                        await asyncio.sleep(_THROTTLE_S)  # politeness floor (< 7 req/s/IP)
                     log.info("naf=%s dept=%s cumulative_upserted=%d", naf, dept, inserted)
             log.info("DONE fr_recherche upserted=%d depts=%d", inserted, len(depts))
     finally:

@@ -19,6 +19,8 @@
 
 **Regression gate (VERIFIED):** baseline `pytest scrapers/tests/` = **1 failed, 1308 passed** (the single failure is *pre-existing* — see §5). After all fixes: **1 failed, 1308 passed** — zero new regressions. Every changed module passes `py_compile` and an import smoke-test (35 files; the only non-importable module, `sitemap_bridge.py`, was already broken at HEAD — §5).
 
+> **[P2 update 2026-06-07]** That pre-existing failure is resolved: the current suite on `main` (6219527) + P2 hardening is **1366 passed, 0 failed**. This audit's counts above are the point-in-time record.
+
 **The headline risks closed:** SQL injection into the crt.sh Postgres replica (external registry names), SSRF via dealer-controlled robots.txt / sitemap / `domain` (cloud-metadata + RFC1918 reachable, including a no-proxy direct-egress path in the tier classifier), decompression-bomb / unbounded document parsing of untrusted PDF/XLSX/DOCX, a Playwright driver-process leak, a whole-crawl-cycle crash on any transport error in 9 portals, and a non-finite-float crash in the normalization hot path.
 
 ---

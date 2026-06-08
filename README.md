@@ -106,7 +106,6 @@ clients/edge-tauri/  Rust+Tauri dealer desktop client (edge push gRPC)
 planning/            All specs and architecture docs (primary reference)
 internal/shared/     Shared Go utilities
 SPEC.md              Original 924-page consolidated specification (vision doc)
-CONTEXT_FOR_AI.md    AI onboarding: what is real, what is planned
 ```
 
 ## Build rules
@@ -121,7 +120,6 @@ CONTEXT_FOR_AI.md    AI onboarding: what is real, what is planned
 
 | Document | Purpose |
 |----------|---------|
-| [`CONTEXT_FOR_AI.md`](CONTEXT_FOR_AI.md) | What any AI/developer must read first |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Current system architecture |
 | [`GETTING_STARTED.md`](GETTING_STARTED.md) | Developer onboarding |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Contribution guidelines |

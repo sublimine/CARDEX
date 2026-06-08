@@ -158,6 +158,30 @@ def _hash_urls(urls: Sequence[str]) -> dict[str, str]:
     return hash_to_url
 
 
+_entity_schema: bool | None = None
+
+
+async def _ensure_entity(pg: asyncpg.Pool, domain: str, country: str) -> bool:
+    """Idempotently register the source entity; return True when entity linking is active.
+
+    Detects the entity schema once per process (cached). When `source_entities` exists,
+    upserts the platform row so the FK on `vehicle_index.entity_ulid` always resolves and
+    the per-entity inventory API sees new pointers immediately.
+    """
+    global _entity_schema
+    async with pg.acquire() as conn:
+        if _entity_schema is None:
+            _entity_schema = bool(await conn.fetchval("SELECT to_regclass('public.source_entities')"))
+        if not _entity_schema:
+            return False
+        await conn.execute(
+            "INSERT INTO source_entities (entity_ulid, source_key, kind, domain, country) "
+            "VALUES ('se_'||md5($1), $1, 'platform', $1, $2) ON CONFLICT (source_key) DO NOTHING",
+            domain, (country[:2] if country else None),
+        )
+    return True
+
+
 async def insert_batch(
     pg: asyncpg.Pool,
     rdb: aioredis.Redis,
@@ -183,17 +207,27 @@ async def insert_batch(
 
     items = list(hash_to_url.items())
     inserted: list[str] = []
+    # Auto-link new pointers to their source entity so the per-entity API (entity_inventory
+    # view) picks them up the moment they appear. Degrades gracefully when the entity schema
+    # is absent (older envs) — then the original entity-less INSERT is used.
+    link = await _ensure_entity(pg, domain, country)
+    insert_sql = (
+        # moneda is country-derived (CH→CHF, else EUR), never the bare EUR column-default.
+        "INSERT INTO vehicle_index (url_hash,url_original,source_domain,country,moneda,last_seen,entity_ulid) "
+        "SELECT h,u,$3,$4,$5,NOW(),'se_'||md5($3) FROM unnest($1::text[],$2::text[]) AS t(h,u) "
+        "ON CONFLICT (url_hash) DO NOTHING RETURNING url_hash"
+        if link else
+        "INSERT INTO vehicle_index (url_hash,url_original,source_domain,country,moneda,last_seen) "
+        "SELECT h,u,$3,$4,$5,NOW() FROM unnest($1::text[],$2::text[]) AS t(h,u) "
+        "ON CONFLICT (url_hash) DO NOTHING RETURNING url_hash"
+    )
     for i in range(0, len(items), _PG_BATCH):
         chunk = items[i : i + _PG_BATCH]
         hashes = [h for h, _ in chunk]
         originals = [u for _, u in chunk]
         async with pg.acquire() as conn:
             rows = await conn.fetch(
-                # moneda is country-derived (CH→CHF, else EUR), never the bare EUR
-                # column-default — so a CH pointer is never mislabelled EUR.
-                "INSERT INTO vehicle_index (url_hash,url_original,source_domain,country,moneda,last_seen) "
-                "SELECT h,u,$3,$4,$5,NOW() FROM unnest($1::text[],$2::text[]) AS t(h,u) "
-                "ON CONFLICT (url_hash) DO NOTHING RETURNING url_hash",
+                insert_sql,
                 hashes, originals, domain, country, country_currency(country),
             )
             new_hashes = [r["url_hash"] for r in rows]
@@ -235,22 +269,25 @@ async def delete_stale(
     """
     async with pg.acquire() as conn:
         rows = await conn.fetch(
-            "SELECT url_hash FROM vehicle_index WHERE source_domain=$1 AND country=$2",
+            "SELECT url_hash, url_original FROM vehicle_index WHERE source_domain=$1 AND country=$2",
             domain, country,
         )
-    stale_list = [r["url_hash"] for r in rows if r["url_hash"] not in seen]
-    for i in range(0, len(stale_list), _PG_BATCH):
-        batch = stale_list[i : i + _PG_BATCH]
+    # Carry url_original on the GONE event so consumers know WHICH listing vanished
+    # (by URL, not just hash) — the per-entity delta API surfaces it directly.
+    stale = [(r["url_hash"], r["url_original"]) for r in rows if r["url_hash"] not in seen]
+    for i in range(0, len(stale), _PG_BATCH):
+        batch = stale[i : i + _PG_BATCH]
+        hashes = [h for h, _ in batch]
         async with pg.acquire() as conn:
             await conn.execute(
-                "DELETE FROM vehicle_index WHERE url_hash = ANY($1::text[])", batch
+                "DELETE FROM vehicle_index WHERE url_hash = ANY($1::text[])", hashes
             )
             await conn.executemany(
-                "INSERT INTO vehicle_events (url_hash,source_domain,country,event_type)"
-                " VALUES ($1,$2,$3,'GONE')",
-                [(h, domain, country) for h in batch],
+                "INSERT INTO vehicle_events (url_hash,url_original,source_domain,country,event_type)"
+                " VALUES ($1,$2,$3,$4,'GONE')",
+                [(h, u, domain, country) for h, u in batch],
             )
-    return len(stale_list)
+    return len(stale)
 
 
 class StreamingDeltaSink:

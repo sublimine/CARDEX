@@ -23,14 +23,28 @@ _DSN = os.environ.get(
 )
 
 
+def _countries_to_run() -> tuple[str, ...]:
+    """
+    Honour OSM_COUNTRIES env var (comma-separated, e.g. 'BE,NL,CH').
+    Falls back to all six countries when the var is absent.
+    Order is preserved exactly as specified in the env var.
+    """
+    env = os.environ.get("OSM_COUNTRIES", "").strip()
+    if env:
+        return tuple(c.strip().upper() for c in env.split(",") if c.strip())
+    return ("DE", "FR", "ES", "NL", "BE", "CH")
+
+
 async def run() -> None:
     pool = await asyncpg.create_pool(_DSN, min_size=2, max_size=4)
     written = 0
     seen = 0
+    countries = _countries_to_run()
+    log.info("countries to run: %s", countries)
     try:
         async with httpx.AsyncClient(timeout=600.0, follow_redirects=True) as client:
             src = OSMSource(client)
-            for country in ("DE", "FR", "ES", "NL", "BE", "CH"):
+            for country in countries:
                 log.info("country=%s", country)
                 async for cand in src.discover(country):
                     seen += 1

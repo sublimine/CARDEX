@@ -92,11 +92,10 @@ curl -X POST http://localhost:8080/api/discover \
 
 When starting work on a module, read these in order:
 
-1. `CONTEXT_FOR_AI.md` — ground truth about what is implemented
-2. `{module}/cmd/{module}-service/main.go` — service entrypoint, wiring, config
-3. `{module}/internal/config/config.go` — all env var configuration
-4. `{module}/internal/pipeline/pipeline.go` — core data structures and interfaces
-5. The specific family/strategy/validator you are working on
+1. `{module}/cmd/{module}-service/main.go` — service entrypoint, wiring, config
+2. `{module}/internal/config/config.go` — all env var configuration
+3. `{module}/internal/pipeline/pipeline.go` — core data structures and interfaces
+4. The specific family/strategy/validator you are working on
 
 ## 7. Known limitations
 

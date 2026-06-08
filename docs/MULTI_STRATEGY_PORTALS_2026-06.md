@@ -130,6 +130,7 @@ caravenue.com → `GET /api/search-results?page=N` (JSON), reemplaza la extracci
   contrato sitemap/API, preservando los portales NO migrados y el wiring
   (registry + domain_map) de cada uno.
 - **Suite: 1185 passed, 1 failed (pre-existente, ajeno — ver §Nota).**
+  _[P2 update 2026-06-07] El fallo pre-existente está resuelto; la suite actual en `main` (6219527) + P2 es **1366 passed, 0 failed**. El conteo de arriba es el registro point-in-time._
 
 ---
 

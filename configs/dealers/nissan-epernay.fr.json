@@ -1,0 +1,33 @@
+{
+  "source_key": "nissan-epernay.fr",
+  "country": "FR",
+  "strategy": "sitemap_listing",
+  "version": 1,
+  "endpoints": {
+    "host": "www.nissan-epernay.fr",
+    "listing_url_template": "https://nissan-epernay.fr/vehicules-neufs-stock-fr-fr.htm",
+    "sitemap_url": "",
+    "detail_url_re": "",
+    "api_url": ""
+  },
+  "pagination": {
+    "page_size": 0,
+    "max_pages": 0,
+    "page_param": "page"
+  },
+  "extraction": {
+    "method": "jsonld",
+    "field_map": {}
+  },
+  "drift_baseline": {
+    "extraction_method": "jsonld",
+    "expected_min_volume": 48,
+    "required_fields": [
+      "make",
+      "model",
+      "year",
+      "price"
+    ],
+    "min_nonnull_ratio": 0.6
+  }
+}
