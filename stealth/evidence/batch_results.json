@@ -1,0 +1,211 @@
+{
+  "kleinanzeigen": {
+    "label": "kleinanzeigen",
+    "url": "https://www.kleinanzeigen.de/s-autos/c216",
+    "ts": "2026-06-07 20:05:51",
+    "status": 200,
+    "verdict": "OK",
+    "block_signs": [],
+    "title": "Gebrauchtwagen kaufen | kleinanzeigen.de",
+    "content_len": 483985,
+    "listing_count": 0,
+    "elapsed_s": 63.5
+  },
+  "lacentrale": {
+    "label": "lacentrale",
+    "url": "https://www.lacentrale.fr/listing",
+    "ts": "2026-06-07 20:06:51",
+    "status": 403,
+    "verdict": "BLOCKED",
+    "block_signs": [
+      "datadome",
+      "captcha-delivery",
+      "geo.captcha"
+    ],
+    "title": "lacentrale.fr",
+    "content_len": 1497,
+    "listing_count": 0,
+    "elapsed_s": 255.7
+  },
+  "gumtree": {
+    "label": "gumtree",
+    "url": "https://www.gumtree.com/cars",
+    "ts": "2026-06-07 20:11:10",
+    "status": 200,
+    "verdict": "OK",
+    "block_signs": [],
+    "title": "Used Cars for Sale Across the UK | Gumtree",
+    "content_len": 603103,
+    "listing_count": 0,
+    "elapsed_s": 65.5
+  },
+  "as24_fr": {
+    "label": "as24_fr",
+    "url": "https://www.autoscout24.fr/lst?atype=C&page=1&size=20&sort=standard",
+    "ts": "2026-06-07 20:12:17",
+    "status": 200,
+    "verdict": "OK",
+    "block_signs": [],
+    "title": "Voitures d'occasion sur AutoScout24",
+    "content_len": 748159,
+    "state_var": "__NEXT_DATA__",
+    "listing_path": "$.props.pageProps.listings",
+    "listing_count": 20,
+    "sample": [
+      {
+        "id": "b0e3fb34-8dc9-4bae-a771-9ba1cf31a1e8",
+        "price": {
+          "priceFormatted": "€ 10 990",
+          "isVatLabelLegallyRequired": false,
+          "isPriceEvaluationEnabled": true,
+          "isConditionalPrice": false
+        },
+        "url": "/offres/opel-grandland-x-1-6-d-120ch-elite-diesel-gris-cat_ma54mo74627-b0e3fb34-8dc9-4bae-a771-9ba1cf31a1e8"
+      },
+      {
+        "id": "46764bec-8971-43f7-9937-14ba93c31205",
+        "price": {
+          "priceFormatted": "€ 29 366",
+          "priceEvaluation": 1,
+          "isVatLabelLegallyRequired": false,
+          "isPriceEvaluationEnabled": true,
+          "isConditionalPrice": false
+        },
+        "url": "/offres/ds-automobiles-ds-7-bluehdi-130-eat8-pallas-diesel-bleu-cat_ma16415mo76335-46764bec-8971-43f7-9937-14ba93c31205"
+      },
+      {
+        "id": "d5ee6b94-8a41-4dcd-834a-7d4c233e7269",
+        "price": {
+          "priceFormatted": "€ 10 990",
+          "priceEvaluation": 2,
+          "isVatLabelLegallyRequired": false,
+          "isPriceEvaluationEnabled": true,
+          "isConditionalPrice": false
+        },
+        "url": "/offres/citroen-c4-cactus-bluehdi-100ch-ss-feel-business-e6-d-temp-diesel-rouge-cat_ma21mo20406-d5ee6b94-8a41-4dcd-834a-7d4c233e7269"
+      }
+    ],
+    "elapsed_s": 71.5
+  },
+  "as24_es": {
+    "label": "as24_es",
+    "url": "https://www.autoscout24.es/lst?atype=C&page=1&size=20&sort=standard",
+    "ts": "2026-06-07 20:13:28",
+    "status": 200,
+    "verdict": "OK",
+    "block_signs": [],
+    "title": "Anuncios de coches de ocasión en AutoScout24",
+    "content_len": 647589,
+    "state_var": "__NEXT_DATA__",
+    "listing_path": "$.props.pageProps.listings",
+    "listing_count": 20,
+    "sample": [
+      {
+        "id": "930156d7-444e-482e-8fe7-f2d0c9a66611",
+        "price": {
+          "priceFormatted": "€ 17.900",
+          "priceEvaluation": 4,
+          "isVatLabelLegallyRequired": false,
+          "isPriceEvaluationEnabled": true,
+          "isConditionalPrice": false
+        },
+        "url": "/anuncios/volkswagen-t-roc-1-5-tsi-sport-gasolina-rojo-cat_ma74mo74667-930156d7-444e-482e-8fe7-f2d0c9a66611"
+      },
+      {
+        "id": "362c7e85-0802-4142-9968-bc8ba024584d",
+        "price": {
+          "priceFormatted": "€ 10.990",
+          "priceEvaluation": 2,
+          "isVatLabelLegallyRequired": false,
+          "isPriceEvaluationEnabled": true,
+          "isConditionalPrice": false
+        },
+        "url": "/anuncios/peugeot-2008-active-bluehdi-81kw-110cv-diesel-blanco-cat_ma55mo20237-362c7e85-0802-4142-9968-bc8ba024584d"
+      },
+      {
+        "id": "ba642ca6-62ec-4fe2-92ef-ad0866533f30",
+        "price": {
+          "priceFormatted": "€ 10.990",
+          "priceEvaluation": 2,
+          "isVatLabelLegallyRequired": false,
+          "isPriceEvaluationEnabled": true,
+          "isConditionalPrice": false
+        },
+        "url": "/anuncios/peugeot-3008-1-2-ss-puretech-allure-130-gasolina-gris-cat_ma55mo19217-ba642ca6-62ec-4fe2-92ef-ad0866533f30"
+      }
+    ],
+    "elapsed_s": 64.7
+  },
+  "as24_nl": {
+    "label": "as24_nl",
+    "url": "https://www.autoscout24.nl/lst?atype=C&page=1&size=20&sort=standard",
+    "ts": "2026-06-07 20:14:36",
+    "status": 200,
+    "verdict": "OK",
+    "block_signs": [],
+    "title": "Koop occasions op AutoScout24",
+    "content_len": 842111,
+    "state_var": "__NEXT_DATA__",
+    "listing_path": "$.props.pageProps.listings",
+    "listing_count": 20,
+    "sample": [
+      {
+        "id": "152dd225-b3c8-4711-95ee-9f34f123aabe",
+        "price": {
+          "priceFormatted": "€ 1.745",
+          "suggestedRetailPrice": "€ 23.758",
+          "isVatLabelLegallyRequired": false,
+          "isConditionalPrice": false
+        },
+        "url": "/aanbod/opel-astra-1-4-turbo-edition-benzine-grijs-cat_ma54mo1916-152dd225-b3c8-4711-95ee-9f34f123aabe"
+      },
+      {
+        "id": "aa5d2735-a177-426a-af13-3a7d531f1b54",
+        "price": {
+          "priceFormatted": "€ 10.880",
+          "suggestedRetailPrice": "€ 29.399",
+          "isVatLabelLegallyRequired": false,
+          "isConditionalPrice": false
+        },
+        "url": "/aanbod/opel-crossland-x-1-2-131pk-turbo-innovation-two-tone-erg-nette-en-benzine-zwart-cat_ma54mo74532-aa5d2735-a177-426a-af13-3a7d531f1b54"
+      },
+      {
+        "id": "76e72aba-9b75-47b1-96b5-11218b008f0a",
+        "price": {
+          "priceFormatted": "€ 6.800",
+          "suggestedRetailPrice": "€ 18.095",
+          "isVatLabelLegallyRequired": false,
+          "isConditionalPrice": false
+        },
+        "url": "/aanbod/renault-captur-0-9-tce-expression-trekhaak-benzine-bruin-cat_ma60mo20235-76e72aba-9b75-47b1-96b5-11218b008f0a"
+      }
+    ],
+    "elapsed_s": 69.2
+  },
+  "as24_be": {
+    "label": "as24_be",
+    "url": "https://www.autoscout24.be/lst?atype=C&page=1&size=20&sort=standard",
+    "ts": "2026-06-07 20:15:41",
+    "status": 404,
+    "verdict": "BLOCKED",
+    "block_signs": [
+      "cloudflare"
+    ],
+    "title": "Error Pages",
+    "content_len": 28345,
+    "listing_count": 0,
+    "elapsed_s": 189.8
+  },
+  "as24_ch": {
+    "label": "as24_ch",
+    "url": "https://www.autoscout24.ch/de/s?vehtyp=10",
+    "ts": "2026-06-07 20:18:50",
+    "status": 200,
+    "verdict": "OK",
+    "block_signs": [],
+    "title": "Personenwagen - Occasionen kaufen | AutoScout24",
+    "content_len": 1037156,
+    "listing_count": 0,
+    "elapsed_s": 56.0
+  }
+}

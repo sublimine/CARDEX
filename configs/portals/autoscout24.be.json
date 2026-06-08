@@ -1,0 +1,22 @@
+{
+  "source_key": "autoscout24.be",
+  "country": "BE",
+  "version": 1,
+  "strategy": "nextdata_listings",
+  "waf": "Akamai v3 (passed free by Camoufox)",
+  "access": {
+    "engine": "camoufox",
+    "warm": ["https://www.autoscout24.be/"],
+    "notes": "VERIFIED 2026-06-08: .be requires language-prefixed path /nl/lst (plain /lst gives 0 listings). Same __NEXT_DATA__ recipe as other AS24 TLDs."
+  },
+  "endpoints": {
+    "host": "www.autoscout24.be",
+    "listing_url_template": "https://www.autoscout24.be/nl/lst?atype=C&sort=age&desc=1&page={page}",
+    "state_path": "props.pageProps.listings",
+    "detail_url_re": "/(?:nl|fr)/aanbod/.*",
+    "extract": "nextdata"
+  },
+  "fields": {"title": "vehicle.make+vehicle.modelVersionInput", "price": "price.priceFormatted", "mileage": "vehicle.mileageInKm", "year": "TODO vehicleDetails"},
+  "status": "HARVESTED_VERIFIED",
+  "verified": {"date": "2026-06-08", "rows": 34, "with_price": 34, "sample": "Toyota Auris 9900EUR 102284km", "worker": "stealth/as24_be.py"}
+}

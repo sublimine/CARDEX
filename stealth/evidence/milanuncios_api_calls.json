@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://www.milanuncios.com/librarym.js?d=www.milanuncios.com",
+    "status": 200,
+    "ct": "application/json",
+    "bytes": 649
+  },
+  {
+    "url": "https://www.milanuncios.com/librarym.js?d=www.milanuncios.com",
+    "status": 200,
+    "ct": "application/json",
+    "bytes": 649
+  },
+  {
+    "url": "https://images.milanuncios.com/api/v1/ma-ad-media-pro/images/eb583bc9-2f68-4df1-90dd-51a61c4ad59b?rule=hw396_70",
+    "status": 200,
+    "ct": "image/avif",
+    "bytes": 8289
+  },
+  {
+    "url": "https://images.milanuncios.com/api/v1/ma-ad-media-pro/images/aa07b1b3-15ee-4d74-ac55-b92a5e537753?rule=hw396_70",
+    "status": 200,
+    "ct": "image/avif",
+    "bytes": 12896
+  },
+  {
+    "url": "https://images.milanuncios.com/api/v1/ma-ad-media-pro/images/f3fc8db6-aeaf-4cb3-a73c-331a6e4f1423?rule=hw396_70",
+    "status": 200,
+    "ct": "image/avif",
+    "bytes": 15061
+  },
+  {
+    "url": "https://images.milanuncios.com/api/v1/ma-ad-media-pro/images/fb6c047a-adc3-4eb9-97db-8ef210fa6c04?rule=hw396_70",
+    "status": 200,
+    "ct": "image/avif",
+    "bytes": 20594
+  },
+  {
+    "url": "https://adit.gw.coches.net/saitama/v2/display/advertised-page/site/ma/device/wde",
+    "status": 200,
+    "ct": "application/json",
+    "bytes": 468
+  },
+  {
+    "url": "https://widget.trustpilot.com/trustbox-data/5418052cfbfb950d88702476?businessUnitId=4be30e570000640005087a26&locale=es-ES&reviewLanguages=es&reviewStars=4%2C5&reviewTagValue=App&reviewsPerPage=20",
+    "status": 200,
+    "ct": "application/json; charset=utf-8",
+    "bytes": 12275
+  },
+  {
+    "url": "https://searchapi.gw.milanuncios.com/v4/classifieds?isShippable=true",
+    "status": 200,
+    "ct": "application/json; charset=utf-8",
+    "bytes": 72561
+  },
+  {
+    "url": "https://images.milanuncios.com/api/v1/ma-ad-media-pro/images/5ed2b0e1-6914-497a-bdd1-4bce9f1f9f8a?rule=hw396_70",
+    "status": 200,
+    "ct": "image/avif",
+    "bytes": 12410
+  },
+  {
+    "url": "https://images.milanuncios.com/api/v1/ma-ad-media-pro/images/612a3e93-0d55-48ce-8612-6cb4fb440659?rule=hw396_70",
+    "status": 200,
+    "ct": "image/avif",
+    "bytes": 11285
+  },
+  {
+    "url": "https://images.milanuncios.com/api/v1/ma-ad-media-pro/images/0a228a3f-4344-4453-a0d2-aa1d7d58ee73?rule=hw396_70",
+    "status": 200,
+    "ct": "image/avif",
+    "bytes": 16339
+  },
+  {
+    "url": "https://images.milanuncios.com/api/v1/ma-ad-media-pro/images/853ad77c-d4a4-4ba9-85f1-ff2a80446c96?rule=hw396_70",
+    "status": 200,
+    "ct": "image/avif",
+    "bytes": 13430
+  },
+  {
+    "url": "https://widget.trustpilot.com/trustbox-data/5418052cfbfb950d88702476?businessUnitId=4be30e570000640005087a26&locale=es-ES&reviewLanguages=es&reviewStars=4%2C5&reviewTagValue=App&reviewsPerPage=20",
+    "status": 200,
+    "ct": "application/json; charset=utf-8",
+    "bytes": 12275
+  },
+  {
+    "url": "https://www.milanuncios.com/librarym.js?d=www.milanuncios.com",
+    "status": 200,
+    "ct": "application/json",
+    "bytes": 649
+  }
+]

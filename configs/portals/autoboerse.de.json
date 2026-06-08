@@ -1,0 +1,23 @@
+{
+  "source_key": "autoboerse.de",
+  "country": "DE",
+  "version": 1,
+  "strategy": "curl_nextdata",
+  "waf": "Incapsula (serves Next.js SSR to curl_cffi chrome — NOT blocked)",
+  "access": {
+    "engine": "curl_cffi",
+    "impersonate": "chrome",
+    "warm": [],
+    "notes": "VERIFIED 2026-06-08: curl 200 + __NEXT_DATA__ at /fahrzeugsuche (NOT /gebrauchtwagen which 404s). Incapsula present but does not block this TLS. RAM-free. Corrects census 'Incapsula → defended': curl-harvestable."
+  },
+  "endpoints": {
+    "host": "www.autoboerse.de",
+    "listing_url_template": "https://www.autoboerse.de/fahrzeugsuche",
+    "state_path": "props.pageProps.classifieds.classifiedList",
+    "extract": "nextdata",
+    "worker": "stealth/curl_nextdata_harvest.py"
+  },
+  "fields": {"title": "make.name+model.name+version", "price": "price", "year": "registration", "mileage": "mileage", "url": "synthetic /ad/<id>"},
+  "status": "HARVESTED_VERIFIED",
+  "verified": {"date": "2026-06-08", "rows": 18, "with_price": 18, "with_year": 16, "sample": "Renault Clio 8449EUR 2019 137000km"}
+}

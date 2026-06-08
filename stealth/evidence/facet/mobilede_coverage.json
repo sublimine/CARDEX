@@ -1,0 +1,1055 @@
+{
+  "portal": "mobilede",
+  "ts": "2026-06-07 21:11:05",
+  "root": 1586022,
+  "sum_of_makes": 1586026,
+  "coverage_pct": 100.0,
+  "n_makes": 178,
+  "per_make": [
+    {
+      "make": "Volkswagen",
+      "id": 25200,
+      "count": 258494
+    },
+    {
+      "make": "Mercedes-Benz",
+      "id": 17200,
+      "count": 171880
+    },
+    {
+      "make": "BMW",
+      "id": 3500,
+      "count": 135825
+    },
+    {
+      "make": "Audi",
+      "id": 1900,
+      "count": 130367
+    },
+    {
+      "make": "Ford",
+      "id": 9000,
+      "count": 102568
+    },
+    {
+      "make": "Opel",
+      "id": 19000,
+      "count": 95068
+    },
+    {
+      "make": "Skoda",
+      "id": 22900,
+      "count": 64205
+    },
+    {
+      "make": "Fiat",
+      "id": 8800,
+      "count": 50623
+    },
+    {
+      "make": "Peugeot",
+      "id": 19300,
+      "count": 46440
+    },
+    {
+      "make": "Renault",
+      "id": 20700,
+      "count": 45376
+    },
+    {
+      "make": "Hyundai",
+      "id": 11600,
+      "count": 42270
+    },
+    {
+      "make": "Seat",
+      "id": 22500,
+      "count": 33392
+    },
+    {
+      "make": "Citroën",
+      "id": 5900,
+      "count": 29739
+    },
+    {
+      "make": "Kia",
+      "id": 13200,
+      "count": 29414
+    },
+    {
+      "make": "Toyota",
+      "id": 24100,
+      "count": 28376
+    },
+    {
+      "make": "Autres",
+      "id": 1400,
+      "count": 27927
+    },
+    {
+      "make": "Nissan",
+      "id": 18700,
+      "count": 23965
+    },
+    {
+      "make": "Porsche",
+      "id": 20100,
+      "count": 22746
+    },
+    {
+      "make": "Volvo",
+      "id": 25100,
+      "count": 22613
+    },
+    {
+      "make": "Mazda",
+      "id": 16800,
+      "count": 21865
+    },
+    {
+      "make": "Cupra",
+      "id": 3,
+      "count": 20621
+    },
+    {
+      "make": "MINI",
+      "id": 17500,
+      "count": 20089
+    },
+    {
+      "make": "Dacia",
+      "id": 6600,
+      "count": 16846
+    },
+    {
+      "make": "Land Rover",
+      "id": 14800,
+      "count": 15515
+    },
+    {
+      "make": "Jeep",
+      "id": 12600,
+      "count": 15470
+    },
+    {
+      "make": "Smart",
+      "id": 23000,
+      "count": 11337
+    },
+    {
+      "make": "Mitsubishi",
+      "id": 17700,
+      "count": 10767
+    },
+    {
+      "make": "Suzuki",
+      "id": 23600,
+      "count": 10747
+    },
+    {
+      "make": "Alfa Romeo",
+      "id": 900,
+      "count": 9148
+    },
+    {
+      "make": "Jaguar",
+      "id": 12400,
+      "count": 5789
+    },
+    {
+      "make": "Honda",
+      "id": 11000,
+      "count": 5575
+    },
+    {
+      "make": "MG",
+      "id": 17300,
+      "count": 4976
+    },
+    {
+      "make": "Lancia",
+      "id": 14700,
+      "count": 4667
+    },
+    {
+      "make": "Chevrolet",
+      "id": 5600,
+      "count": 4409
+    },
+    {
+      "make": "Ferrari",
+      "id": 8600,
+      "count": 3168
+    },
+    {
+      "make": "Subaru",
+      "id": 23500,
+      "count": 3065
+    },
+    {
+      "make": "Dodge",
+      "id": 7700,
+      "count": 2927
+    },
+    {
+      "make": "DS Automobiles",
+      "id": 235,
+      "count": 2255
+    },
+    {
+      "make": "Maserati",
+      "id": 16600,
+      "count": 2212
+    },
+    {
+      "make": "BYD",
+      "id": 31953,
+      "count": 1975
+    },
+    {
+      "make": "Abarth",
+      "id": 140,
+      "count": 1923
+    },
+    {
+      "make": "Tesla",
+      "id": 135,
+      "count": 1678
+    },
+    {
+      "make": "Bentley",
+      "id": 3100,
+      "count": 1595
+    },
+    {
+      "make": "Lexus",
+      "id": 15200,
+      "count": 1593
+    },
+    {
+      "make": "Lamborghini",
+      "id": 14600,
+      "count": 1470
+    },
+    {
+      "make": "Chrysler",
+      "id": 5700,
+      "count": 1300
+    },
+    {
+      "make": "Ssangyong",
+      "id": 23100,
+      "count": 1084
+    },
+    {
+      "make": "Aston Martin",
+      "id": 1700,
+      "count": 1047
+    },
+    {
+      "make": "Saab",
+      "id": 21800,
+      "count": 1010
+    },
+    {
+      "make": "GWM",
+      "id": 30006,
+      "count": 986
+    },
+    {
+      "make": "KGM",
+      "id": 32332,
+      "count": 974
+    },
+    {
+      "make": "DFSK",
+      "id": 31864,
+      "count": 842
+    },
+    {
+      "make": "Corvette",
+      "id": 6325,
+      "count": 787
+    },
+    {
+      "make": "Daihatsu",
+      "id": 7000,
+      "count": 772
+    },
+    {
+      "make": "Rolls-Royce",
+      "id": 21600,
+      "count": 650
+    },
+    {
+      "make": "ALPINA",
+      "id": 1100,
+      "count": 637
+    },
+    {
+      "make": "Cadillac",
+      "id": 4700,
+      "count": 635
+    },
+    {
+      "make": "Trabant",
+      "id": 24200,
+      "count": 632
+    },
+    {
+      "make": "Aixam",
+      "id": 800,
+      "count": 619
+    },
+    {
+      "make": "Lada",
+      "id": 14400,
+      "count": 602
+    },
+    {
+      "make": "Iveco",
+      "id": 12100,
+      "count": 601
+    },
+    {
+      "make": "Leapmotor",
+      "id": 32303,
+      "count": 599
+    },
+    {
+      "make": "BAIC",
+      "id": 31863,
+      "count": 567
+    },
+    {
+      "make": "McLaren",
+      "id": 137,
+      "count": 516
+    },
+    {
+      "make": "Lotus",
+      "id": 15900,
+      "count": 473
+    },
+    {
+      "make": "Ligier",
+      "id": 15400,
+      "count": 437
+    },
+    {
+      "make": "Isuzu",
+      "id": 11900,
+      "count": 398
+    },
+    {
+      "make": "Maxus",
+      "id": 31896,
+      "count": 362
+    },
+    {
+      "make": "MAN",
+      "id": 16500,
+      "count": 356
+    },
+    {
+      "make": "ORA",
+      "id": 31955,
+      "count": 313
+    },
+    {
+      "make": "Alpine",
+      "id": 5,
+      "count": 303
+    },
+    {
+      "make": "XPENG",
+      "id": 32208,
+      "count": 300
+    },
+    {
+      "make": "Genesis",
+      "id": 270,
+      "count": 292
+    },
+    {
+      "make": "Polestar",
+      "id": 4,
+      "count": 281
+    },
+    {
+      "make": "Piaggio",
+      "id": 19600,
+      "count": 272
+    },
+    {
+      "make": "BAW",
+      "id": 32363,
+      "count": 261
+    },
+    {
+      "make": "Infiniti",
+      "id": 11650,
+      "count": 244
+    },
+    {
+      "make": "Triumph",
+      "id": 24400,
+      "count": 228
+    },
+    {
+      "make": "Lynk&Co",
+      "id": 31934,
+      "count": 220
+    },
+    {
+      "make": "Morgan",
+      "id": 17900,
+      "count": 209
+    },
+    {
+      "make": "Hummer",
+      "id": 11050,
+      "count": 206
+    },
+    {
+      "make": "Rover",
+      "id": 21700,
+      "count": 206
+    },
+    {
+      "make": "INEOS",
+      "id": 32033,
+      "count": 194
+    },
+    {
+      "make": "GMC",
+      "id": 9900,
+      "count": 191
+    },
+    {
+      "make": "Pontiac",
+      "id": 20000,
+      "count": 136
+    },
+    {
+      "make": "Austin Healey",
+      "id": 1950,
+      "count": 128
+    },
+    {
+      "make": "Lincoln",
+      "id": 15500,
+      "count": 126
+    },
+    {
+      "make": "Microcar",
+      "id": 30011,
+      "count": 126
+    },
+    {
+      "make": "Daewoo",
+      "id": 6800,
+      "count": 104
+    },
+    {
+      "make": "Maybach",
+      "id": 16700,
+      "count": 103
+    },
+    {
+      "make": "Foton",
+      "id": 117,
+      "count": 101
+    },
+    {
+      "make": "JAECOO",
+      "id": 32381,
+      "count": 98
+    },
+    {
+      "make": "OMODA",
+      "id": 32380,
+      "count": 75
+    },
+    {
+      "make": "Wartburg",
+      "id": 25300,
+      "count": 73
+    },
+    {
+      "make": "Buick",
+      "id": 4400,
+      "count": 71
+    },
+    {
+      "make": "Wiesmann",
+      "id": 25650,
+      "count": 69
+    },
+    {
+      "make": "Microlino",
+      "id": 32044,
+      "count": 58
+    },
+    {
+      "make": "Silence",
+      "id": 31920,
+      "count": 55
+    },
+    {
+      "make": "Plymouth",
+      "id": 19800,
+      "count": 50
+    },
+    {
+      "make": "Oldsmobile",
+      "id": 18975,
+      "count": 48
+    },
+    {
+      "make": "Borgward",
+      "id": 3850,
+      "count": 45
+    },
+    {
+      "make": "NSU",
+      "id": 18875,
+      "count": 44
+    },
+    {
+      "make": "SWM",
+      "id": 247,
+      "count": 44
+    },
+    {
+      "make": "JAC",
+      "id": 30708,
+      "count": 42
+    },
+    {
+      "make": "KTM",
+      "id": 13900,
+      "count": 40
+    },
+    {
+      "make": "Tata",
+      "id": 23825,
+      "count": 39
+    },
+    {
+      "make": "NIO",
+      "id": 31954,
+      "count": 36
+    },
+    {
+      "make": "Austin",
+      "id": 2000,
+      "count": 35
+    },
+    {
+      "make": "Cobra",
+      "id": 6200,
+      "count": 32
+    },
+    {
+      "make": "Datsun",
+      "id": 30002,
+      "count": 29
+    },
+    {
+      "make": "TVR",
+      "id": 24500,
+      "count": 28
+    },
+    {
+      "make": "Lucid",
+      "id": 32172,
+      "count": 27
+    },
+    {
+      "make": "Auto Union",
+      "id": 32323,
+      "count": 25
+    },
+    {
+      "make": "LEVC",
+      "id": 31933,
+      "count": 24
+    },
+    {
+      "make": "Bugatti",
+      "id": 4350,
+      "count": 23
+    },
+    {
+      "make": "Zeekr",
+      "id": 32331,
+      "count": 23
+    },
+    {
+      "make": "Cenntro",
+      "id": 31944,
+      "count": 22
+    },
+    {
+      "make": "WEY",
+      "id": 31956,
+      "count": 22
+    },
+    {
+      "make": "Caterham",
+      "id": 5300,
+      "count": 21
+    },
+    {
+      "make": "Seres",
+      "id": 32144,
+      "count": 21
+    },
+    {
+      "make": "AC",
+      "id": 203,
+      "count": 20
+    },
+    {
+      "make": "Casalini",
+      "id": 112,
+      "count": 20
+    },
+    {
+      "make": "Changan",
+      "id": 32359,
+      "count": 20
+    },
+    {
+      "make": "Fisker",
+      "id": 172,
+      "count": 19
+    },
+    {
+      "make": "Talbot",
+      "id": 23800,
+      "count": 19
+    },
+    {
+      "make": "DeTomaso",
+      "id": 7400,
+      "count": 17
+    },
+    {
+      "make": "Elaris",
+      "id": 31932,
+      "count": 17
+    },
+    {
+      "make": "Barkas",
+      "id": 2600,
+      "count": 16
+    },
+    {
+      "make": "TYN-e",
+      "id": 32336,
+      "count": 16
+    },
+    {
+      "make": "VinFast",
+      "id": 32207,
+      "count": 16
+    },
+    {
+      "make": "e.GO",
+      "id": 31931,
+      "count": 14
+    },
+    {
+      "make": "Chatenet",
+      "id": 83,
+      "count": 13
+    },
+    {
+      "make": "Acura",
+      "id": 375,
+      "count": 12
+    },
+    {
+      "make": "Dallara",
+      "id": 32357,
+      "count": 12
+    },
+    {
+      "make": "Donkervoort",
+      "id": 255,
+      "count": 10
+    },
+    {
+      "make": "TECHART",
+      "id": 189,
+      "count": 10
+    },
+    {
+      "make": "Voyah",
+      "id": 32375,
+      "count": 10
+    },
+    {
+      "make": "Simca",
+      "id": 293,
+      "count": 9
+    },
+    {
+      "make": "Togg",
+      "id": 32369,
+      "count": 9
+    },
+    {
+      "make": "Westfield",
+      "id": 113,
+      "count": 9
+    },
+    {
+      "make": "Hongqi",
+      "id": 32228,
+      "count": 8
+    },
+    {
+      "make": "Jiayuan",
+      "id": 32305,
+      "count": 8
+    },
+    {
+      "make": "XEV",
+      "id": 32034,
+      "count": 8
+    },
+    {
+      "make": "Zhidou",
+      "id": 32032,
+      "count": 7
+    },
+    {
+      "make": "Alvis",
+      "id": 32315,
+      "count": 6
+    },
+    {
+      "make": "Asia Motors",
+      "id": 1750,
+      "count": 6
+    },
+    {
+      "make": "Packard",
+      "id": 32021,
+      "count": 6
+    },
+    {
+      "make": "Studebaker",
+      "id": 296,
+      "count": 6
+    },
+    {
+      "make": "Artega",
+      "id": 121,
+      "count": 5
+    },
+    {
+      "make": "Brilliance",
+      "id": 4025,
+      "count": 5
+    },
+    {
+      "make": "Aiways",
+      "id": 31930,
+      "count": 4
+    },
+    {
+      "make": "Delahaye",
+      "id": 32317,
+      "count": 4
+    },
+    {
+      "make": "Facel Vega",
+      "id": 32318,
+      "count": 4
+    },
+    {
+      "make": "Grecav",
+      "id": 122,
+      "count": 4
+    },
+    {
+      "make": "Mahindra",
+      "id": 16200,
+      "count": 4
+    },
+    {
+      "make": "Ruf",
+      "id": 125,
+      "count": 4
+    },
+    {
+      "make": "Koenigsegg",
+      "id": 13450,
+      "count": 3
+    },
+    {
+      "make": "Messerschmitt",
+      "id": 32321,
+      "count": 3
+    },
+    {
+      "make": "Riley",
+      "id": 32322,
+      "count": 3
+    },
+    {
+      "make": "Santana",
+      "id": 22000,
+      "count": 3
+    },
+    {
+      "make": "Ariel",
+      "id": 31876,
+      "count": 2
+    },
+    {
+      "make": "Estrima",
+      "id": 32142,
+      "count": 2
+    },
+    {
+      "make": "Heinkel",
+      "id": 32141,
+      "count": 2
+    },
+    {
+      "make": "Holden",
+      "id": 10850,
+      "count": 2
+    },
+    {
+      "make": "Spyker",
+      "id": 100,
+      "count": 2
+    },
+    {
+      "make": "Bizzarrini",
+      "id": 32316,
+      "count": 1
+    },
+    {
+      "make": "DeLorean",
+      "id": 32324,
+      "count": 1
+    },
+    {
+      "make": "Horch",
+      "id": 32319,
+      "count": 1
+    },
+    {
+      "make": "Invicta",
+      "id": 32320,
+      "count": 1
+    },
+    {
+      "make": "Landwind",
+      "id": 14845,
+      "count": 1
+    },
+    {
+      "make": "Pagani",
+      "id": 149,
+      "count": 1
+    },
+    {
+      "make": "Proton",
+      "id": 20200,
+      "count": 1
+    },
+    {
+      "make": "Rimac",
+      "id": 32368,
+      "count": 1
+    },
+    {
+      "make": "GAC Gonow",
+      "id": 205,
+      "count": 0
+    },
+    {
+      "make": "Gemballa",
+      "id": 204,
+      "count": 0
+    },
+    {
+      "make": "Hamann",
+      "id": 186,
+      "count": 0
+    },
+    {
+      "make": "speedART",
+      "id": 188,
+      "count": 0
+    },
+    {
+      "make": "Vincent",
+      "id": 31389,
+      "count": 0
+    }
+  ],
+  "deepdive": {
+    "make": "Volkswagen",
+    "make_count": 258494,
+    "sum_over_years": 239016,
+    "years": [
+      {
+        "year": "1990:1990",
+        "count": 653
+      },
+      {
+        "year": "1991:1991",
+        "count": 782
+      },
+      {
+        "year": "1992:1992",
+        "count": 576
+      },
+      {
+        "year": "1993:1993",
+        "count": 471
+      },
+      {
+        "year": "1994:1994",
+        "count": 540
+      },
+      {
+        "year": "1995:1995",
+        "count": 709
+      },
+      {
+        "year": "1996:1996",
+        "count": 767
+      },
+      {
+        "year": "1997:1997",
+        "count": 878
+      },
+      {
+        "year": "1998:1998",
+        "count": 1370
+      },
+      {
+        "year": "1999:1999",
+        "count": 1893
+      },
+      {
+        "year": "2000:2000",
+        "count": 2034
+      },
+      {
+        "year": "2001:2001",
+        "count": 2283
+      },
+      {
+        "year": "2002:2002",
+        "count": 2853
+      },
+      {
+        "year": "2003:2003",
+        "count": 3212
+      },
+      {
+        "year": "2004:2004",
+        "count": 3561
+      },
+      {
+        "year": "2005:2005",
+        "count": 4440
+      },
+      {
+        "year": "2006:2006",
+        "count": 5535
+      },
+      {
+        "year": "2007:2007",
+        "count": 5159
+      },
+      {
+        "year": "2008:2008",
+        "count": 5369
+      },
+      {
+        "year": "2009:2009",
+        "count": 6750
+      },
+      {
+        "year": "2010:2010",
+        "count": 5963
+      },
+      {
+        "year": "2011:2011",
+        "count": 7031
+      },
+      {
+        "year": "2012:2012",
+        "count": 7075
+      },
+      {
+        "year": "2013:2013",
+        "count": 6357
+      },
+      {
+        "year": "2014:2014",
+        "count": 6766
+      },
+      {
+        "year": "2015:2015",
+        "count": 7304
+      },
+      {
+        "year": "2016:2016",
+        "count": 7390
+      },
+      {
+        "year": "2017:2017",
+        "count": 7385
+      },
+      {
+        "year": "2018:2018",
+        "count": 8121
+      },
+      {
+        "year": "2019:2019",
+        "count": 9023
+      },
+      {
+        "year": "2020:2020",
+        "count": 7938
+      },
+      {
+        "year": "2021:2021",
+        "count": 11554
+      },
+      {
+        "year": "2022:2022",
+        "count": 17564
+      },
+      {
+        "year": "2023:2023",
+        "count": 17153
+      },
+      {
+        "year": "2024:2024",
+        "count": 14589
+      },
+      {
+        "year": "2025:2025",
+        "count": 35585
+      },
+      {
+        "year": "2026:2026",
+        "count": 12383
+      }
+    ]
+  }
+}

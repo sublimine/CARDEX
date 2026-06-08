@@ -1,0 +1,80 @@
+{
+  "source_key": "milanuncios.com",
+  "country": "ES",
+  "strategy": "homepage_carousel_only",
+  "version": 1,
+  "anti_bot": "PerimeterX",
+  "access": {
+    "engine": "camoufox",
+    "warm": ["https://www.milanuncios.com/"],
+    "settle": false,
+    "notes": "Category pages (coches-de-segunda-mano/) blocked by PerimeterX — status=405 'Pardon Our Interruption'. Homepage loads OK (status=200). Only window.__INITIAL_PROPS__.warrantyCarsCarousel.ads available without proxy."
+  },
+  "endpoints": {
+    "host": "www.milanuncios.com",
+    "listing_url_template": "https://www.milanuncios.com/coches-de-segunda-mano/?desde={page}&orden=date",
+    "category_url": "https://www.milanuncios.com/coches-de-segunda-mano/",
+    "sitemap_url": "",
+    "api_url": ""
+  },
+  "pagination": {
+    "page_size": 30,
+    "max_pages": 0,
+    "page_param": "desde",
+    "note": "BLOCKED — PerimeterX blocks all category pages from non-ES residential IPs"
+  },
+  "extraction": {
+    "method": "homepage_carousel",
+    "state_var": "window.__INITIAL_PROPS__",
+    "listing_path": "warrantyCarsCarousel.ads",
+    "field_map": {
+      "title": "ad.title",
+      "price_eur": "ad.price.cashPrice.value",
+      "url": "https://www.milanuncios.com/coches-de-segunda-mano/{slug}-{id}.htm",
+      "year": "regex 4-digit year in ad.description",
+      "mileage_km": "regex digits + km in ad.description"
+    },
+    "note": "warrantyCarsCarousel = ~13 warranty/certified used cars from homepage only; NOT full listing catalog"
+  },
+  "coverage": {
+    "total_oficial": null,
+    "cobertura": 13,
+    "pct": null,
+    "method": "homepage carousel only — category pages blocked by PerimeterX"
+  },
+  "drift_baseline": {
+    "extraction_method": "homepage_carousel",
+    "expected_min_volume": 13,
+    "required_fields": ["title", "price_eur", "url"],
+    "min_nonnull_ratio": 0.7
+  },
+  "block_evidence": {
+    "ts": "2026-06-08",
+    "blocked_url": "https://www.milanuncios.com/coches-de-segunda-mano/",
+    "status": 405,
+    "challenge_type": "PerimeterX 'Pardon Our Interruption'",
+    "homepage_passes": true,
+    "carousel_extracted": 13,
+    "conclusion": "PerimeterX blocks category pages. Only homepage carousel (~13 items) accessible without ES residential proxy. Not a viable full-catalog source."
+  },
+  "estado": "requiere_proxy",
+  "verified": "[PARCIAL] PerimeterX bloquea categorias. Carrusel homepage 13 items OK. Requiere proxy residencial ES para listing completo. 2026-06-08",
+  "proxy_required": {
+    "type": "residential_rotating",
+    "geo": "ES",
+    "notes": "PerimeterX blocks category pages from non-residential IPs. Homepage OK but yields only ~13 warranty cars — insufficient for production."
+  },
+  "last_carousel": {
+    "ts": "2026-06-08",
+    "volume": 13,
+    "vehicle_index_rows": 0,
+    "note": "13 rows inserted then purged (carousel-only, not production source)",
+    "price_source": "ad.price.cashPrice.value (direct EUR int)",
+    "sample_titles": [
+      "MAZDA - CX3 2.0 G 89kW 121CV 2WD AT Evolution",
+      "MERCEDES-BENZ - Clase CLA CLA 200 d",
+      "MG - MG3 Hybridplus"
+    ]
+  },
+  "purged_at": "2026-06-08"
+}

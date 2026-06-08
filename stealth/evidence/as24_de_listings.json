@@ -1,0 +1,3745 @@
+[
+  {
+    "id": "ae40bfae-5726-4140-b830-dc37f4b11248",
+    "isTrending": false,
+    "identifier": {
+      "legacyId": null,
+      "crossReferenceId": null
+    },
+    "images": [
+      "https://prod.pictures.autoscout24.net/listing-images/ae40bfae-5726-4140-b830-dc37f4b11248_1a47c1c8-5024-42e0-9329-d54e2eb70e18.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/ae40bfae-5726-4140-b830-dc37f4b11248_a5c6a717-2ecc-4289-9788-4457acb6472e.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/ae40bfae-5726-4140-b830-dc37f4b11248_f8d8fdd2-fbb8-4272-9231-fd3c573636f7.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/ae40bfae-5726-4140-b830-dc37f4b11248_658d208e-a37f-4a32-bf04-2bad6f3be971.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/ae40bfae-5726-4140-b830-dc37f4b11248_282bb130-8f9c-4981-9ca5-8c9e37c37424.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/ae40bfae-5726-4140-b830-dc37f4b11248_f8c14893-6b34-428a-9ac6-f2f4cb268f2a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/ae40bfae-5726-4140-b830-dc37f4b11248_a4fa80b8-8dc3-413e-8f03-206f5856a84a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/ae40bfae-5726-4140-b830-dc37f4b11248_4aae46c5-a0b2-4cde-8adc-ba19b4fea108.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/ae40bfae-5726-4140-b830-dc37f4b11248_d007923b-6222-4b41-96cf-ab532a08a744.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/ae40bfae-5726-4140-b830-dc37f4b11248_0f1410cd-6ad6-4920-9e59-9f2ae71e1a08.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/ae40bfae-5726-4140-b830-dc37f4b11248_66c9d16c-4e79-4fbf-97ae-8d7f6fe8d275.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/ae40bfae-5726-4140-b830-dc37f4b11248_dca5cbf5-3165-46c4-8f56-6d20aa5f0ca3.jpg/250x188.webp"
+    ],
+    "ocsImagesA": [],
+    "isOfferNew": true,
+    "price": {
+      "priceFormatted": "€ 2.190",
+      "priceEvaluation": 0,
+      "isVatLabelLegallyRequired": false,
+      "isPriceEvaluationEnabled": true,
+      "isConditionalPrice": false
+    },
+    "availableNow": true,
+    "superDeal": {
+      "oldPriceFormatted": "",
+      "isEligible": false
+    },
+    "url": "/angebote/opel-corsa-1-2-80ps-navi-tempomat-tuev-neu-benzin-silber-cat_ma54mo1918-ae40bfae-5726-4140-b830-dc37f4b11248",
+    "vehicle": {
+      "articleType": "Car",
+      "type": "Car",
+      "make": "Opel",
+      "model": "Corsa",
+      "modelGroup": "Corsa",
+      "variant": "Corsa",
+      "modelId": 1918,
+      "modelVersionInput": "1.2 80PS • Navi • Tempomat • TÜV Neu",
+      "subtitle": "HU/AU neu, Seitenairbag, Klimaanlage, Elektrische Fensterheber, Elektrische Seitenspiegel, Isofix, Multifunktionslenkrad, Nebelscheinwerfer",
+      "offerType": "U",
+      "transmission": "Schaltgetriebe",
+      "fuel": "Benzin",
+      "mileageInKm": "18.500 km"
+    },
+    "location": {
+      "countryCode": "DE",
+      "zip": "42799",
+      "city": "Leichlingen",
+      "street": "Reusrather Straße"
+    },
+    "ratings": {
+      "ratingsCount": 2,
+      "ratingsStars": 3.5,
+      "ratingsEnabled": true
+    },
+    "seller": {
+      "dealer": {
+        "maxImages": 50,
+        "hasDealerInformationOnResultList": true,
+        "isFreespeeCallTrackingEnabled": true,
+        "culture": "de-DE"
+      },
+      "id": "48362512",
+      "type": "Dealer",
+      "logo": {
+        "small": {
+          "href": "https://prod.pictures.autoscout24.net/dealer-info/48362512-original-1dd97d17-aa6c-47a6-a063-1e8ed6c924eb.jpg/resize/100x50%3E/quality/90"
+        }
+      },
+      "companyName": "Mira Cars",
+      "contactName": "Abdullah Özen",
+      "links": {
+        "infoPage": "https://www.autoscout24.de/haendler/mira-cars?atype=C",
+        "imprint": "https://www.autoscout24.de/haendler/mira-cars/impressum"
+      },
+      "phones": [
+        {
+          "phoneType": "Mobile",
+          "formattedNumber": "+49 (0)1512 - 2554716",
+          "callTo": "+4915122554716"
+        }
+      ]
+    },
+    "appliedAdTier": "T50",
+    "adTier": "T50",
+    "isOcs": false,
+    "specialConditions": [],
+    "statistics": {
+      "leadsRange": "Some"
+    },
+    "searchResultType": "Nfm",
+    "searchResultSection": "Main",
+    "tracking": {
+      "firstRegistration": "09-2007",
+      "fuelType": "b",
+      "imageContent": "no-placeholder|0.12085352949802175",
+      "isSmyleEligible": "false",
+      "mileage": "18500",
+      "priceLabel": "toolow-price ",
+      "price": "2190",
+      "orderBucket": "0",
+      "modelTaxonomy": "[make_id:54, model_group_id:1918, variant_id:3184, generation_id:264, motortype_id:625, trim_id:7128];"
+    },
+    "coverImageAttractiveness": 0.12085352949802175,
+    "vehicleDetails": [
+      {
+        "data": "18.500 km",
+        "iconName": "mileage_odometer",
+        "ariaLabel": "Kilometerstand"
+      },
+      {
+        "data": "Schaltgetriebe",
+        "iconName": "gearbox",
+        "ariaLabel": "Getriebe"
+      },
+      {
+        "data": "09/2007",
+        "iconName": "calendar",
+        "ariaLabel": "Erstzulassung"
+      },
+      {
+        "data": "Benzin",
+        "iconName": "gas_pump",
+        "ariaLabel": "Kraftstoff"
+      },
+      {
+        "data": "59 kW (80 PS)",
+        "iconName": "speedometer",
+        "ariaLabel": "Leistung"
+      },
+      {
+        "data": "6,10 l/100 km (komb.)",
+        "iconName": "water_drop",
+        "ariaLabel": "Kraftstoffverbrauch"
+      },
+      {
+        "data": "146,00 g/km (komb.)",
+        "iconName": "leaf",
+        "ariaLabel": "CO₂-Emissionen"
+      }
+    ],
+    "wltpValues": [],
+    "trackingParameters": [
+      {
+        "key": "boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "applied_boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "relevance_adjustment",
+        "value": "sponsored"
+      },
+      {
+        "key": "boosting_product",
+        "value": "mia"
+      }
+    ]
+  },
+  {
+    "id": "c182515f-e3bf-4897-b355-b9dfea76a070",
+    "evBanner": {
+      "type": "electric",
+      "label": "Elektrisch"
+    },
+    "isTrending": false,
+    "identifier": {
+      "legacyId": null,
+      "crossReferenceId": "KAPPE_13745_5349"
+    },
+    "crossReferenceId": "KAPPE_13745_5349",
+    "images": [
+      "https://prod.pictures.autoscout24.net/listing-images/c182515f-e3bf-4897-b355-b9dfea76a070_ac32ed51-aac1-4b37-b09d-7189537b274e.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/c182515f-e3bf-4897-b355-b9dfea76a070_c3e36e36-5146-4b97-b63f-886f571f672e.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/c182515f-e3bf-4897-b355-b9dfea76a070_13cb9e51-5a9a-4c12-ad11-27a003bc394b.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/c182515f-e3bf-4897-b355-b9dfea76a070_75682117-d923-473a-b2b1-ee6d0ea33ec5.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/c182515f-e3bf-4897-b355-b9dfea76a070_d3a7b2e7-d3e6-4e54-be71-b8ec5c5c5431.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/c182515f-e3bf-4897-b355-b9dfea76a070_550d0e6c-a216-467e-83d0-1c046590ec94.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/c182515f-e3bf-4897-b355-b9dfea76a070_6361b5f3-2866-4d43-9301-d68f5a2be54c.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/c182515f-e3bf-4897-b355-b9dfea76a070_6c329fe2-6b55-48a3-ad4f-04e5adf14601.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/c182515f-e3bf-4897-b355-b9dfea76a070_6f46cf01-31b5-49f9-b971-3effbba66f54.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/c182515f-e3bf-4897-b355-b9dfea76a070_aef69e5b-0fe5-4ef1-8c8b-770922ae1ba0.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/c182515f-e3bf-4897-b355-b9dfea76a070_58705fe6-deb1-488a-ad0d-acdc25575d29.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/c182515f-e3bf-4897-b355-b9dfea76a070_6e88ba25-4d7e-43d7-bf5f-017560b146ea.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/c182515f-e3bf-4897-b355-b9dfea76a070_2ce8cc52-beb3-4856-8419-ea51b7b93c57.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/c182515f-e3bf-4897-b355-b9dfea76a070_1591c7bc-7784-4b37-ba2e-32fc7cfe633a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/c182515f-e3bf-4897-b355-b9dfea76a070_bc46ab90-2d62-45ba-9ea0-e0346de95bdb.jpg/250x188.webp"
+    ],
+    "ocsImagesA": [],
+    "price": {
+      "priceFormatted": "€ 18.700",
+      "vatLabel": "inkl. MwSt.",
+      "isVatLabelLegallyRequired": false,
+      "priceSuperscriptString": "1",
+      "isPriceEvaluationEnabled": true,
+      "isConditionalPrice": false
+    },
+    "availableNow": true,
+    "superDeal": {
+      "oldPriceFormatted": "",
+      "isEligible": false
+    },
+    "url": "/angebote/renault-megane-e-tech-electric-equilibre-klima-rueckfahrkamera-elektro-schwarz-cat_ma60mo76249-c182515f-e3bf-4897-b355-b9dfea76a070",
+    "vehicle": {
+      "articleType": "Car",
+      "type": "Car",
+      "make": "Renault",
+      "model": "Megane E-Tech",
+      "modelGroup": "Megane",
+      "variant": "Megane E-Tech",
+      "modelId": 76249,
+      "modelVersionInput": "Electric Equilibre Klima Rückfahrkamera",
+      "subtitle": null,
+      "offerType": "A",
+      "transmission": "Automatik",
+      "fuel": "Elektro",
+      "mileageInKm": "41.000 km"
+    },
+    "location": {
+      "countryCode": "DE",
+      "zip": "70469",
+      "city": "Stuttgart",
+      "street": "Heilbronner Str. 305"
+    },
+    "ratings": {
+      "ratingsCount": 9,
+      "ratingsStars": 4.5,
+      "ratingsEnabled": true
+    },
+    "seller": {
+      "dealer": {
+        "maxImages": 50,
+        "isFreespeeCallTrackingEnabled": true,
+        "culture": "de-DE"
+      },
+      "id": "46514521",
+      "type": "Dealer",
+      "logo": {
+        "small": {
+          "href": "https://prod.pictures.autoscout24.net/dealer-info/46514524-original-317a7acb-aafb-4bbc-ba8a-ff3cda0f701b.png/resize/100x50%3E/quality/90"
+        }
+      },
+      "companyName": "Autohaus von der Weppen GmbH & Co. KG",
+      "contactName": "Ihr Verkaufsteam",
+      "links": {
+        "infoPage": "https://www.autoscout24.de/haendler/autohaus-von-der-weppen-gmbh-und-co-kg-stuttgart-70469-1?atype=C",
+        "imprint": "https://www.autoscout24.de/haendler/autohaus-von-der-weppen-gmbh-und-co-kg-stuttgart-70469-1/impressum"
+      },
+      "phones": [
+        {
+          "phoneType": "Office",
+          "formattedNumber": "+49 (0)711 - 268680",
+          "callTo": "+49711268680"
+        }
+      ]
+    },
+    "appliedAdTier": "T50",
+    "adTier": "T50",
+    "isOcs": false,
+    "specialConditions": [],
+    "statistics": {
+      "leadsRange": "Zero"
+    },
+    "searchResultType": "Organic",
+    "searchResultSection": "Main",
+    "tracking": {
+      "firstRegistration": "12-2022",
+      "fuelType": "e",
+      "imageContent": "no-placeholder|0.27466750373372883",
+      "isSmyleEligible": "false",
+      "mileage": "41000",
+      "priceLabel": "unknown",
+      "price": "18700",
+      "orderBucket": "unknown",
+      "modelTaxonomy": "[make_id:60, model_group_id:201267, variant_id:2902, generation_id:1153, motortype_id:4434, trim_id:3192];"
+    },
+    "coverImageAttractiveness": 0.27466750373372883,
+    "vehicleDetails": [
+      {
+        "data": "41.000 km",
+        "iconName": "mileage_odometer",
+        "ariaLabel": "Kilometerstand"
+      },
+      {
+        "data": "Automatik",
+        "iconName": "gearbox",
+        "ariaLabel": "Getriebe"
+      },
+      {
+        "data": "12/2022",
+        "iconName": "calendar",
+        "ariaLabel": "Erstzulassung"
+      },
+      {
+        "data": "Elektro",
+        "iconName": "gas_pump",
+        "ariaLabel": "Kraftstoff"
+      },
+      {
+        "data": "96 kW (131 PS)",
+        "iconName": "speedometer",
+        "ariaLabel": "Leistung"
+      },
+      {
+        "data": "300 km Reichweite",
+        "iconName": "distance",
+        "ariaLabel": "Reichweite"
+      },
+      {
+        "data": "15,8 kWh/100 km (komb.)",
+        "iconName": "lightning_bolt",
+        "ariaLabel": "Kraftstoffverbrauch"
+      },
+      {
+        "data": "0 g/km (komb.)",
+        "iconName": "leaf",
+        "ariaLabel": "CO₂-Emissionen"
+      },
+      {
+        "data": "CO₂-Klasse A (komb.)",
+        "iconName": "efficiency",
+        "ariaLabel": "CO₂-Klasse"
+      }
+    ],
+    "wltpValues": [
+      "15,8 kWh/100 km (komb.)",
+      "0 g/km (komb.)",
+      "CO₂-Klasse A (komb.)"
+    ],
+    "trackingParameters": [
+      {
+        "key": "boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "applied_boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "relevance_adjustment",
+        "value": "boost"
+      },
+      {
+        "key": "boosting_product",
+        "value": "mia"
+      }
+    ]
+  },
+  {
+    "id": "cabad11d-dd04-46d5-b434-3c27f607e189",
+    "isTrending": false,
+    "identifier": {
+      "legacyId": null,
+      "crossReferenceId": null
+    },
+    "images": [
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_bde2b2e5-b3b0-4c8e-9fa7-17e1c9890621.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_530947e3-48c2-4d9f-92fd-1113df48576b.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_db36218d-471c-4bac-862f-67288f057891.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_9d00ae68-27ea-4cf8-93da-afcc85cc8a9d.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_a76714fa-422d-44f7-9d79-11f759fff3ce.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_902ec50d-f012-40f0-820f-6e73e5403c0b.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_3b4956f6-99bc-496d-97ac-da79815f617e.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_ad598170-abcf-46e2-b6e3-f6eb768d5a10.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_4f234bb5-576f-49e1-a56e-16daf02275cb.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_521699c8-9391-49e7-b966-dd3509329133.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_03111172-4377-4494-9f12-482a4f11c75b.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_b0986e99-7970-4b09-a892-431903513c79.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_22d59e7d-0b83-495a-8b12-7d78d1ce580c.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_dc6e904c-8576-466c-8a67-ff241a41ab07.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_d2bf2090-b9fa-4b94-a083-8ccdb6204ad3.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_765e4ddd-34d9-4f89-a05a-be2894deec5a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_ddae6669-8869-4daf-be35-e879c93f1995.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_1ea4626d-35a1-4f95-bce7-7e647f189e56.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_e0a83db2-6e3f-4773-bfb2-fe04d108aa01.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_3ff8d3ec-3f50-4461-a60b-b0f8a6806672.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_6c34ebb6-816c-4d59-8ea1-0c933c17a04b.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_81650d60-2fc7-4c24-8066-96b41518684b.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_8f9aea6d-e5b4-45d3-bef5-6cf7dbe316a1.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/cabad11d-dd04-46d5-b434-3c27f607e189_ca46bdd5-417e-40de-bfff-e10f428cf19b.jpg/250x188.webp"
+    ],
+    "ocsImagesA": [],
+    "price": {
+      "priceFormatted": "€ 17.830",
+      "priceEvaluation": 3,
+      "isVatLabelLegallyRequired": false,
+      "isPriceEvaluationEnabled": true,
+      "isConditionalPrice": false
+    },
+    "availableNow": true,
+    "superDeal": {
+      "oldPriceFormatted": "",
+      "isEligible": false
+    },
+    "url": "/angebote/nissan-qashqai-n-connecta-navi-360-kamera-led-kurvenlicht-mehrzon-benzin-rot-cat_ma52mo18921-cabad11d-dd04-46d5-b434-3c27f607e189",
+    "vehicle": {
+      "articleType": "Car",
+      "type": "Car",
+      "make": "Nissan",
+      "model": "Qashqai",
+      "modelGroup": "Qashqai",
+      "variant": "Qashqai",
+      "modelId": 18921,
+      "modelVersionInput": "N-Connecta Navi 360 Kamera LED Kurvenlicht Mehrzon",
+      "subtitle": "Navigationssystem, HU/AU neu, Ambientebeleuchtung, Sitzheizung, Xenonscheinwerfer, LED-Scheinwerfer, Alufelgen, 360° Kamera",
+      "offerType": "U",
+      "transmission": "Schaltgetriebe",
+      "fuel": "Benzin",
+      "mileageInKm": "38.230 km",
+      "engineDisplacementInCCM": "1.332 cm³"
+    },
+    "location": {
+      "countryCode": "DE",
+      "zip": "65199",
+      "city": "Wiesbaden",
+      "street": "Schönbergstr.  15"
+    },
+    "seller": {
+      "dealer": {
+        "maxImages": 50,
+        "isFreespeeCallTrackingEnabled": true,
+        "culture": "de-DE"
+      },
+      "id": "60962163",
+      "type": "Dealer",
+      "logo": {
+        "small": {
+          "href": "https://prod.pictures.autoscout24.net/dealer-info/60962163-original-4d9fdf4f-64dd-4b5a-9589-8d4947af30b4.png/resize/100x50%3E/quality/90"
+        }
+      },
+      "companyName": "Autohaus Haese GmbH",
+      "contactName": "Boris Bera",
+      "links": {
+        "infoPage": "https://www.autoscout24.de/haendler/autohaus-haese-gmbh-wiesbaden-65199-4?atype=C",
+        "imprint": "https://www.autoscout24.de/haendler/autohaus-haese-gmbh-wiesbaden-65199-4/impressum"
+      },
+      "phones": [
+        {
+          "phoneType": "Office",
+          "formattedNumber": "+49 (0)611 - 942870",
+          "callTo": "+49611942870"
+        }
+      ]
+    },
+    "appliedAdTier": "T50",
+    "adTier": "T50",
+    "isOcs": false,
+    "specialConditions": [],
+    "statistics": {
+      "leadsRange": "Zero"
+    },
+    "searchResultType": "Organic",
+    "searchResultSection": "Main",
+    "tracking": {
+      "firstRegistration": "05-2020",
+      "fuelType": "b",
+      "imageContent": "no-placeholder|0.16787054578809257",
+      "isSmyleEligible": "false",
+      "mileage": "38230",
+      "priceLabel": "fair-price",
+      "price": "17830",
+      "orderBucket": "unknown",
+      "modelTaxonomy": "[make_id:52, model_group_id:201054, variant_id:3593, generation_id:1650, motortype_id:4729, trim_id:5606];"
+    },
+    "coverImageAttractiveness": 0.16787054578809257,
+    "vehicleDetails": [
+      {
+        "data": "38.230 km",
+        "iconName": "mileage_odometer",
+        "ariaLabel": "Kilometerstand"
+      },
+      {
+        "data": "Schaltgetriebe",
+        "iconName": "gearbox",
+        "ariaLabel": "Getriebe"
+      },
+      {
+        "data": "05/2020",
+        "iconName": "calendar",
+        "ariaLabel": "Erstzulassung"
+      },
+      {
+        "data": "Benzin",
+        "iconName": "gas_pump",
+        "ariaLabel": "Kraftstoff"
+      },
+      {
+        "data": "103 kW (140 PS)",
+        "iconName": "speedometer",
+        "ariaLabel": "Leistung"
+      },
+      {
+        "data": "- (l/100 km)",
+        "isPlaceholder": true,
+        "iconName": "water_drop",
+        "ariaLabel": "Kraftstoffverbrauch"
+      },
+      {
+        "data": "- (g/km)",
+        "iconName": "leaf",
+        "isPlaceholder": true,
+        "ariaLabel": "CO₂-Emissionen"
+      }
+    ],
+    "wltpValues": [],
+    "isListingBoost": false,
+    "trackingParameters": [
+      {
+        "key": "boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "applied_boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "relevance_adjustment",
+        "value": "boost"
+      },
+      {
+        "key": "boosting_product",
+        "value": "mia"
+      }
+    ]
+  },
+  {
+    "id": "41f926f7-2e45-4926-b714-ce88b225037a",
+    "isTrending": false,
+    "identifier": {
+      "legacyId": null,
+      "crossReferenceId": null
+    },
+    "images": [
+      "https://prod.pictures.autoscout24.net/listing-images/41f926f7-2e45-4926-b714-ce88b225037a_9ef29972-4ac0-46ee-bb63-cd80897ae77f.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/41f926f7-2e45-4926-b714-ce88b225037a_3d22a57f-33a7-4536-b495-107f80bfedc1.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/41f926f7-2e45-4926-b714-ce88b225037a_4752e37e-756e-4f6b-9bd0-f08d3c222b65.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/41f926f7-2e45-4926-b714-ce88b225037a_c8604857-52d3-41bd-98c5-d8fc10752ef8.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/41f926f7-2e45-4926-b714-ce88b225037a_8c9e7222-86ee-4faf-ab1c-4ed229999d06.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/41f926f7-2e45-4926-b714-ce88b225037a_6d7a4b2d-4a4b-43af-b923-86d86aab2e54.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/41f926f7-2e45-4926-b714-ce88b225037a_bbf25b7a-f3eb-45bb-8fe3-3617531f91fb.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/41f926f7-2e45-4926-b714-ce88b225037a_89420932-deb1-4976-a8d8-8dbbef2c103f.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/41f926f7-2e45-4926-b714-ce88b225037a_0a3da1c7-f855-4b5e-9ca0-3e592981295a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/41f926f7-2e45-4926-b714-ce88b225037a_e073b1cc-194e-4c96-842d-a3815ececfd2.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/41f926f7-2e45-4926-b714-ce88b225037a_6360147b-f8db-4f30-a481-a3951f770db1.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/41f926f7-2e45-4926-b714-ce88b225037a_18cfe71d-af73-492a-98d4-fa4bf6707b1a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/41f926f7-2e45-4926-b714-ce88b225037a_4f09a95f-4e0b-4348-81a6-97743f3e0cf9.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/41f926f7-2e45-4926-b714-ce88b225037a_ddc02f15-6a2c-48a1-8386-0d01b11b8995.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/41f926f7-2e45-4926-b714-ce88b225037a_803a8a9a-e859-45fd-bc7f-f6630d5652ba.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/41f926f7-2e45-4926-b714-ce88b225037a_8a478298-b105-48c3-8021-1f43afb1f95d.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/41f926f7-2e45-4926-b714-ce88b225037a_f392a18d-3f97-4e21-964a-5ffe7a0d2ef1.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/41f926f7-2e45-4926-b714-ce88b225037a_dccb46c0-c031-4bf0-a487-4bebc883c42d.jpg/250x188.webp"
+    ],
+    "ocsImagesA": [],
+    "price": {
+      "priceFormatted": "€ 13.980",
+      "priceEvaluation": 3,
+      "isVatLabelLegallyRequired": false,
+      "isPriceEvaluationEnabled": true,
+      "isConditionalPrice": false
+    },
+    "availableNow": true,
+    "superDeal": {
+      "oldPriceFormatted": "",
+      "isEligible": false
+    },
+    "url": "/angebote/hyundai-i30-1-0-t-gdi-navi-carplay-rfk-shz-benzin-schwarz-cat_ma33mo19065-41f926f7-2e45-4926-b714-ce88b225037a",
+    "vehicle": {
+      "articleType": "Car",
+      "type": "Car",
+      "make": "Hyundai",
+      "model": "i30",
+      "modelGroup": "i30",
+      "variant": "i30",
+      "modelId": 19065,
+      "modelVersionInput": "1.0 T-GDI / Navi, CarPlay, RFK, SHZ",
+      "subtitle": "Sitzheizung, Einparkhilfe Rückfahrkamera, Garantie, Navigationssystem, Beheizbares Lenkrad, Fernlichtassistent, Gepäckraumabtrennung, Lordosenstütze",
+      "offerType": "U",
+      "transmission": "Schaltgetriebe",
+      "fuel": "Benzin",
+      "mileageInKm": "78.600 km",
+      "engineDisplacementInCCM": "998 cm³"
+    },
+    "location": {
+      "countryCode": "DE",
+      "zip": "97892",
+      "city": "Kreuzwertheim",
+      "street": "Haslocher Str. 23"
+    },
+    "ratings": {
+      "ratingsCount": 27,
+      "ratingsStars": 4,
+      "ratingsEnabled": true
+    },
+    "seller": {
+      "dealer": {
+        "maxImages": 50,
+        "hasDealerInformationOnResultList": true,
+        "isFreespeeCallTrackingEnabled": true,
+        "culture": "de-DE"
+      },
+      "id": "22594",
+      "type": "Dealer",
+      "logo": {
+        "small": {
+          "href": "https://prod.pictures.autoscout24.net/dealer-info/22594-original-c7d3c078-7978-43c5-b6ba-e20ed5bb6e86.jpg/resize/100x50%3E/quality/90"
+        }
+      },
+      "companyName": "Autohaus Spindler Kreuzwertheim GmbH & Co. KG",
+      "contactName": "Ihr Verkaufsteam",
+      "links": {
+        "infoPage": "https://www.autoscout24.de/haendler/autohaus-spindler-kreuzwertheim-gmbh-und-co-kg?atype=C",
+        "imprint": "https://www.autoscout24.de/haendler/autohaus-spindler-kreuzwertheim-gmbh-und-co-kg/impressum"
+      },
+      "phones": [
+        {
+          "phoneType": "Office",
+          "formattedNumber": "+49 (0)9342 - 96646951",
+          "callTo": "+49934296646951"
+        }
+      ]
+    },
+    "appliedAdTier": "T50",
+    "adTier": "T50",
+    "isOcs": false,
+    "specialConditions": [],
+    "statistics": {
+      "leadsRange": "Zero"
+    },
+    "searchResultType": "Organic",
+    "searchResultSection": "Main",
+    "tracking": {
+      "firstRegistration": "08-2020",
+      "fuelType": "b",
+      "imageContent": "no-placeholder|0.1684875844187046",
+      "isSmyleEligible": "false",
+      "mileage": "78600",
+      "priceLabel": "fair-price",
+      "price": "13980",
+      "orderBucket": "unknown",
+      "modelTaxonomy": "[make_id:33, model_group_id:19065, variant_id:3257, generation_id:513, motortype_id:879, trim_id:506];"
+    },
+    "coverImageAttractiveness": 0.1684875844187046,
+    "vehicleDetails": [
+      {
+        "data": "78.600 km",
+        "iconName": "mileage_odometer",
+        "ariaLabel": "Kilometerstand"
+      },
+      {
+        "data": "Schaltgetriebe",
+        "iconName": "gearbox",
+        "ariaLabel": "Getriebe"
+      },
+      {
+        "data": "08/2020",
+        "iconName": "calendar",
+        "ariaLabel": "Erstzulassung"
+      },
+      {
+        "data": "Benzin",
+        "iconName": "gas_pump",
+        "ariaLabel": "Kraftstoff"
+      },
+      {
+        "data": "88 kW (120 PS)",
+        "iconName": "speedometer",
+        "ariaLabel": "Leistung"
+      },
+      {
+        "data": "- (l/100 km)",
+        "isPlaceholder": true,
+        "iconName": "water_drop",
+        "ariaLabel": "Kraftstoffverbrauch"
+      },
+      {
+        "data": "- (g/km)",
+        "iconName": "leaf",
+        "isPlaceholder": true,
+        "ariaLabel": "CO₂-Emissionen"
+      }
+    ],
+    "wltpValues": [],
+    "trackingParameters": [
+      {
+        "key": "boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "applied_boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "relevance_adjustment",
+        "value": "boost"
+      },
+      {
+        "key": "boosting_product",
+        "value": "mia"
+      }
+    ]
+  },
+  {
+    "id": "2accce34-7a31-4613-aca9-875c7b5c877d",
+    "identifier": {
+      "legacyId": null,
+      "crossReferenceId": null
+    },
+    "images": [
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_3accdf05-ef88-4303-92b4-412cffb0246d.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_27980c7a-aa60-47af-aca2-0a227820c902.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_b9f3a2f0-73f5-4a5b-b97c-3f771b9422be.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_213bf098-b41e-4e3e-8fe2-82118416e79d.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_9ec6c90c-e34e-4a56-8937-080be7d75341.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_8ff16b6a-37af-4506-ab0b-7e8f9cb4ada5.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_dbfc10b4-83d1-4146-a12a-41e379aef0c2.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_1bbdf01d-be33-41e3-877b-ae820672132a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_0cbf41c5-afd5-481a-b64f-08fab46dd5d8.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_ab80c0d7-e48c-4311-baae-7b37c78d0ac9.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_80b0d7a1-b6b8-4f38-a0b5-86d5ce563314.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_f5ff7bc9-cd11-4f3e-a4c5-ccada2d12c90.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_34fc1d84-8eba-4bc3-8334-f7644deef102.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_09892214-76b5-4fe6-8d0a-fb80e502acd5.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_0be928c0-918d-4c57-ad0f-1221de71949e.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_060dbe0f-a678-4db7-9476-1865a83d30f5.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_19e8804d-fe73-4177-9fa7-11e37830cbdd.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_9a44badd-a252-4344-aed5-5049c139be0a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_98bf0c76-b686-4cab-9559-51e8d93ea32d.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_fb4c116c-360b-4fa3-be55-4cc96fec1077.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_4f28d8ae-2da3-4167-855d-898073be27ec.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_04f5c598-9c94-4f6f-baa6-e133ea1009c9.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_78de8913-a722-45cd-9db0-45b7342084da.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/2accce34-7a31-4613-aca9-875c7b5c877d_c35da9f9-ec66-4d4c-85e3-aaaf5ae23ce8.jpg/250x188.webp"
+    ],
+    "ocsImagesA": [],
+    "hasVideo": true,
+    "price": {
+      "priceFormatted": "€ 25.940",
+      "priceEvaluation": 1,
+      "vatLabel": "inkl. MwSt.",
+      "isVatLabelLegallyRequired": false,
+      "priceSuperscriptString": "1",
+      "isPriceEvaluationEnabled": true,
+      "isConditionalPrice": false
+    },
+    "availableNow": true,
+    "superDeal": {
+      "oldPriceFormatted": "",
+      "isEligible": false
+    },
+    "url": "/angebote/volkswagen-tiguan-life-1-5-tsi-dsg-benzin-grau-cat_ma74mo19063-2accce34-7a31-4613-aca9-875c7b5c877d",
+    "vehicle": {
+      "articleType": "Car",
+      "type": "Car",
+      "make": "Volkswagen",
+      "model": "Tiguan",
+      "modelGroup": "Tiguan",
+      "variant": "Tiguan",
+      "modelId": 19063,
+      "modelVersionInput": "Life 1.5 TSI DSG",
+      "subtitle": "Anhängerkupplung, Sitzheizung, Elektrische Heckklappe, 360° Kamera, Einparkhilfe Rückfahrkamera, Navigationssystem, Abstandstempomat, Spurhalteassistent",
+      "offerType": "U",
+      "transmission": "Automatik",
+      "fuel": "Benzin",
+      "mileageInKm": "67.532 km",
+      "engineDisplacementInCCM": "1.498 cm³"
+    },
+    "location": {
+      "countryCode": "DE",
+      "zip": "97424",
+      "city": "Schweinfurt",
+      "street": "Robert-Bosch-Str. 7"
+    },
+    "ratings": {
+      "ratingsCount": 91,
+      "ratingsStars": 4.5,
+      "ratingsEnabled": true
+    },
+    "seller": {
+      "dealer": {
+        "maxImages": 50,
+        "isFreespeeCallTrackingEnabled": true,
+        "culture": "de-DE"
+      },
+      "id": "23927",
+      "type": "Dealer",
+      "logo": {
+        "small": {
+          "href": "https://prod.pictures.autoscout24.net/dealer-info/25282-original-4a5bfb00-d187-4c0f-ad26-2f980042c313.jpg/resize/100x50%3E/quality/90"
+        }
+      },
+      "companyName": "DB Autohaus Schweinfurt",
+      "contactName": "Verkauf Test",
+      "links": {
+        "infoPage": "https://www.autoscout24.de/haendler/db-autohaus-schweinfurt?atype=C",
+        "imprint": "https://www.autoscout24.de/haendler/db-autohaus-schweinfurt/impressum"
+      },
+      "phones": [
+        {
+          "phoneType": "Office",
+          "formattedNumber": "+49 (0)9721 - 65040",
+          "callTo": "+49972165040"
+        }
+      ]
+    },
+    "appliedAdTier": "T50",
+    "adTier": "T50",
+    "isOcs": false,
+    "specialConditions": [],
+    "statistics": {
+      "leadsRange": "Some"
+    },
+    "searchResultType": "Organic",
+    "searchResultSection": "Main",
+    "tracking": {
+      "firstRegistration": "03-2023",
+      "fuelType": "b",
+      "imageContent": "no-placeholder|0.13042905906393099",
+      "isSmyleEligible": "false",
+      "mileage": "67532",
+      "priceLabel": "top-price",
+      "price": "25940",
+      "orderBucket": "unknown",
+      "modelTaxonomy": "[make_id:74, model_group_id:100158, variant_id:3371, generation_id:162, motortype_id:261, trim_id:150];"
+    },
+    "coverImageAttractiveness": 0.13042905906393099,
+    "vehicleDetails": [
+      {
+        "data": "67.532 km",
+        "iconName": "mileage_odometer",
+        "ariaLabel": "Kilometerstand"
+      },
+      {
+        "data": "Automatik",
+        "iconName": "gearbox",
+        "ariaLabel": "Getriebe"
+      },
+      {
+        "data": "03/2023",
+        "iconName": "calendar",
+        "ariaLabel": "Erstzulassung"
+      },
+      {
+        "data": "Benzin",
+        "iconName": "gas_pump",
+        "ariaLabel": "Kraftstoff"
+      },
+      {
+        "data": "110 kW (150 PS)",
+        "iconName": "speedometer",
+        "ariaLabel": "Leistung"
+      },
+      {
+        "data": "- (l/100 km)",
+        "isPlaceholder": true,
+        "iconName": "water_drop",
+        "ariaLabel": "Kraftstoffverbrauch"
+      },
+      {
+        "data": "- (g/km)",
+        "iconName": "leaf",
+        "isPlaceholder": true,
+        "ariaLabel": "CO₂-Emissionen"
+      }
+    ],
+    "wltpValues": [],
+    "trackingParameters": [
+      {
+        "key": "boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "applied_boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "relevance_adjustment",
+        "value": "boost"
+      },
+      {
+        "key": "boosting_product",
+        "value": "mia"
+      }
+    ]
+  },
+  {
+    "id": "a550f730-656a-47e4-940e-92a9dca451c6",
+    "isTrending": false,
+    "identifier": {
+      "legacyId": null,
+      "crossReferenceId": "12657812"
+    },
+    "crossReferenceId": "12657812",
+    "images": [
+      "https://prod.pictures.autoscout24.net/listing-images/a550f730-656a-47e4-940e-92a9dca451c6_76041841-2b9d-43a0-9f28-0cab727a8758.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/a550f730-656a-47e4-940e-92a9dca451c6_ecaf92ab-394a-49be-b95c-38d4d623e5a5.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/a550f730-656a-47e4-940e-92a9dca451c6_0df38779-b6bd-4602-8e75-a4bacbfc5d4d.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/a550f730-656a-47e4-940e-92a9dca451c6_78329bd5-60c6-4fed-b0a2-2541d1141aa6.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/a550f730-656a-47e4-940e-92a9dca451c6_db9fd91c-0e6b-4446-8362-ed4a689264cc.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/a550f730-656a-47e4-940e-92a9dca451c6_28f70170-b171-45ae-a546-e986b0fa02cc.jpg/250x188.webp"
+    ],
+    "ocsImagesA": [],
+    "isOfferNew": true,
+    "price": {
+      "priceFormatted": "€ 18.700",
+      "priceEvaluation": 1,
+      "vatLabel": "inkl. MwSt.",
+      "isVatLabelLegallyRequired": false,
+      "priceSuperscriptString": "1",
+      "isPriceEvaluationEnabled": true,
+      "isConditionalPrice": false
+    },
+    "availableNow": true,
+    "superDeal": {
+      "oldPriceFormatted": "",
+      "isEligible": false
+    },
+    "url": "/angebote/skoda-octavia-combi-2-0-tdi-dsg-style-kamera-ahk-hud-style-diesel-grau-cat_ma65mo15222-a550f730-656a-47e4-940e-92a9dca451c6",
+    "vehicle": {
+      "articleType": "Car",
+      "type": "Car",
+      "make": "Skoda",
+      "model": "Octavia",
+      "modelGroup": "Octavia",
+      "variant": "Combi",
+      "modelId": 15222,
+      "modelVersionInput": "Combi 2.0 TDI DSG Style KAMERA AHK HUD Style",
+      "subtitle": "- Ihre Zufriedenheit ist unser Antrieb -",
+      "offerType": "U",
+      "transmission": "Automatik",
+      "fuel": "Diesel",
+      "mileageInKm": "120.000 km",
+      "engineDisplacementInCCM": "1.968 cm³"
+    },
+    "location": {
+      "countryCode": "DE",
+      "zip": "26203",
+      "city": "Wardenburg",
+      "street": "Neuengland 2"
+    },
+    "ratings": {
+      "ratingsCount": 464,
+      "ratingsStars": 5,
+      "ratingsEnabled": true
+    },
+    "seller": {
+      "dealer": {
+        "maxImages": 50,
+        "isFreespeeCallTrackingEnabled": true,
+        "culture": "de-DE"
+      },
+      "id": "7212671",
+      "type": "Dealer",
+      "logo": {
+        "small": {
+          "href": "https://prod.pictures.autoscout24.net/dealer-info/7212671-original-23786fbd-1400-4ea8-9a3f-483f94f3f29a.jpg/resize/100x50%3E/quality/90"
+        }
+      },
+      "companyName": "Auto Zentrum Wardenburg",
+      "contactName": "Konstantin Hense",
+      "links": {
+        "infoPage": "https://www.autoscout24.de/haendler/auto-zentrum-wardenburg?atype=C",
+        "imprint": "https://www.autoscout24.de/haendler/auto-zentrum-wardenburg/impressum"
+      },
+      "phones": [
+        {
+          "phoneType": "Office",
+          "formattedNumber": "+49 (0)4407 - 9136740",
+          "callTo": "+4944079136740"
+        },
+        {
+          "phoneType": "Mobile",
+          "formattedNumber": "+49 (0)175 - 2855490",
+          "callTo": "+491752855490"
+        },
+        {
+          "phoneType": "Whatsapp",
+          "formattedNumber": "+49 (0)175 - 2855490",
+          "callTo": null
+        }
+      ]
+    },
+    "appliedAdTier": "T50",
+    "adTier": "T50",
+    "isOcs": false,
+    "specialConditions": [],
+    "statistics": {
+      "leadsRange": "Some"
+    },
+    "searchResultType": "Organic",
+    "searchResultSection": "Main",
+    "tracking": {
+      "firstRegistration": "03-2023",
+      "fuelType": "d",
+      "imageContent": "no-placeholder|0.19409451591422988",
+      "isSmyleEligible": "false",
+      "mileage": "120000",
+      "priceLabel": "top-price",
+      "price": "18700",
+      "orderBucket": "unknown",
+      "modelTaxonomy": "[make_id:65, model_group_id:15222, variant_id:287, generation_id:294, motortype_id:658, trim_id:7482];"
+    },
+    "coverImageAttractiveness": 0.19409451591422988,
+    "vehicleDetails": [
+      {
+        "data": "120.000 km",
+        "iconName": "mileage_odometer",
+        "ariaLabel": "Kilometerstand"
+      },
+      {
+        "data": "Automatik",
+        "iconName": "gearbox",
+        "ariaLabel": "Getriebe"
+      },
+      {
+        "data": "03/2023",
+        "iconName": "calendar",
+        "ariaLabel": "Erstzulassung"
+      },
+      {
+        "data": "Diesel",
+        "iconName": "gas_pump",
+        "ariaLabel": "Kraftstoff"
+      },
+      {
+        "data": "110 kW (150 PS)",
+        "iconName": "speedometer",
+        "ariaLabel": "Leistung"
+      },
+      {
+        "data": "3,80 l/100 km (komb.)",
+        "iconName": "water_drop",
+        "ariaLabel": "Kraftstoffverbrauch"
+      },
+      {
+        "data": "98,00 g/km (komb.)",
+        "iconName": "leaf",
+        "ariaLabel": "CO₂-Emissionen"
+      }
+    ],
+    "wltpValues": [],
+    "trackingParameters": [
+      {
+        "key": "boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "applied_boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "relevance_adjustment",
+        "value": "boost"
+      },
+      {
+        "key": "boosting_product",
+        "value": "mia"
+      }
+    ]
+  },
+  {
+    "id": "aaf72b9f-a32f-4f14-89f3-9134e5525f92",
+    "evBanner": {
+      "type": "electric",
+      "label": "Elektrisch"
+    },
+    "isTrending": false,
+    "identifier": {
+      "legacyId": null,
+      "crossReferenceId": "457396990"
+    },
+    "crossReferenceId": "457396990",
+    "images": [
+      "https://prod.pictures.autoscout24.net/listing-images/aaf72b9f-a32f-4f14-89f3-9134e5525f92_09d0af33-0d5f-4532-8076-cfa9a005be42.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/aaf72b9f-a32f-4f14-89f3-9134e5525f92_c60f3ea7-9b1e-466d-8b0c-f5acd5c0743a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/aaf72b9f-a32f-4f14-89f3-9134e5525f92_6b718392-b7eb-4f62-bfa1-212aa10623c9.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/aaf72b9f-a32f-4f14-89f3-9134e5525f92_3a425f67-8677-4422-86f6-0b47bf067194.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/aaf72b9f-a32f-4f14-89f3-9134e5525f92_215bfedd-f578-4b07-8291-4fba7d980f70.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/aaf72b9f-a32f-4f14-89f3-9134e5525f92_cd4be712-12fe-4dc0-9565-d7fa6100fea5.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/aaf72b9f-a32f-4f14-89f3-9134e5525f92_92653634-9030-4eee-9daf-0154f15e43c3.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/aaf72b9f-a32f-4f14-89f3-9134e5525f92_bdf84759-2dec-4e06-a3d6-166db4879c69.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/aaf72b9f-a32f-4f14-89f3-9134e5525f92_6975aa4b-bfa2-49ae-8772-169adeb55d80.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/aaf72b9f-a32f-4f14-89f3-9134e5525f92_52d8a25a-54e3-4de7-b2a2-b679ca1aa596.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/aaf72b9f-a32f-4f14-89f3-9134e5525f92_c3aee46b-48fa-4f08-95c7-de6ecd913332.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/aaf72b9f-a32f-4f14-89f3-9134e5525f92_0bb106b0-1484-4986-9dd6-9ca60cae1cf8.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/aaf72b9f-a32f-4f14-89f3-9134e5525f92_13484f74-ae30-45ec-8a2e-f1145b52c9e7.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/aaf72b9f-a32f-4f14-89f3-9134e5525f92_493967fc-ee3d-4961-85d5-942c75a1d8c7.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/aaf72b9f-a32f-4f14-89f3-9134e5525f92_fa60055a-7a56-4179-8fcc-368d899ce80c.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/aaf72b9f-a32f-4f14-89f3-9134e5525f92_11d38246-25ff-4492-92ca-925d86994d11.jpg/250x188.webp"
+    ],
+    "ocsImagesA": [],
+    "isOfferNew": true,
+    "price": {
+      "priceFormatted": "€ 28.990",
+      "priceEvaluation": 4,
+      "vatLabel": "inkl. MwSt.",
+      "isVatLabelLegallyRequired": false,
+      "priceSuperscriptString": "1",
+      "isPriceEvaluationEnabled": true,
+      "isConditionalPrice": false
+    },
+    "availableNow": true,
+    "superDeal": {
+      "oldPriceFormatted": "",
+      "isEligible": false
+    },
+    "url": "/angebote/kia-niro-e-niro-vision-64-8kwh-acc-navi-kamera-carplay-elektro-grau-cat_ma39mo74327-aaf72b9f-a32f-4f14-89f3-9134e5525f92",
+    "vehicle": {
+      "articleType": "Car",
+      "type": "Car",
+      "make": "Kia",
+      "model": "Niro",
+      "modelGroup": "Niro",
+      "variant": "Niro",
+      "modelId": 74327,
+      "modelVersionInput": "e-Niro Vision (64,8kWh) ACC|Navi|Kamera|CarPlay",
+      "subtitle": "Sitzheizung, Ambientebeleuchtung, Navigationssystem, Garantie, Beheizbares Lenkrad, Berganfahrassistent, Einparkhilfe Rückfahrkamera, LED-Scheinwerfer",
+      "offerType": "U",
+      "transmission": "Automatik",
+      "fuel": "Elektro",
+      "mileageInKm": "34.156 km"
+    },
+    "location": {
+      "countryCode": "DE",
+      "zip": "42287",
+      "city": "Wuppertal - Barmen",
+      "street": "Obere Lichtenplatzer Str. 304"
+    },
+    "ratings": {
+      "ratingsCount": 52,
+      "ratingsStars": 4,
+      "ratingsEnabled": true
+    },
+    "seller": {
+      "dealer": {
+        "maxImages": 50,
+        "isFreespeeCallTrackingEnabled": true,
+        "culture": "de-DE"
+      },
+      "id": "43347756",
+      "type": "Dealer",
+      "logo": {
+        "small": {
+          "href": "https://prod.pictures.autoscout24.net/dealer-info/43347756-original-5ab334c5-4c70-4603-b89e-3bdcca74bd81.png/resize/100x50%3E/quality/90"
+        }
+      },
+      "companyName": "autohaus24",
+      "contactName": "Team Wuppertal",
+      "links": {
+        "infoPage": "https://www.autoscout24.de/haendler/autohaus24-wuppertal-barmen?atype=C",
+        "imprint": "https://www.autoscout24.de/haendler/autohaus24-wuppertal-barmen/impressum"
+      },
+      "phones": [
+        {
+          "phoneType": "Office",
+          "formattedNumber": "+49 (0)89 - 708084042",
+          "callTo": "+4989708084042"
+        }
+      ]
+    },
+    "appliedAdTier": "T50",
+    "adTier": "T50",
+    "isOcs": false,
+    "specialConditions": [],
+    "statistics": {
+      "leadsRange": "Zero"
+    },
+    "searchResultType": "Organic",
+    "searchResultSection": "Main",
+    "tracking": {
+      "firstRegistration": "04-2023",
+      "fuelType": "e",
+      "imageContent": "no-placeholder|0.24132791254071895",
+      "isSmyleEligible": "true",
+      "mileage": "34156",
+      "priceLabel": "somewhat-expensive",
+      "price": "28990",
+      "orderBucket": "unknown",
+      "modelTaxonomy": "[make_id:39, model_group_id:200745, variant_id:3514, generation_id:971, motortype_id:12501, trim_id:8334];"
+    },
+    "coverImageAttractiveness": 0.24132791254071895,
+    "vehicleDetails": [
+      {
+        "data": "34.156 km",
+        "iconName": "mileage_odometer",
+        "ariaLabel": "Kilometerstand"
+      },
+      {
+        "data": "Automatik",
+        "iconName": "gearbox",
+        "ariaLabel": "Getriebe"
+      },
+      {
+        "data": "04/2023",
+        "iconName": "calendar",
+        "ariaLabel": "Erstzulassung"
+      },
+      {
+        "data": "Elektro",
+        "iconName": "gas_pump",
+        "ariaLabel": "Kraftstoff"
+      },
+      {
+        "data": "150 kW (204 PS)",
+        "iconName": "speedometer",
+        "ariaLabel": "Leistung"
+      },
+      {
+        "data": "400 km Reichweite",
+        "iconName": "distance",
+        "ariaLabel": "Reichweite"
+      },
+      {
+        "data": "0 g/km (komb.)",
+        "iconName": "leaf",
+        "ariaLabel": "CO₂-Emissionen"
+      }
+    ],
+    "wltpValues": [],
+    "trackingParameters": [
+      {
+        "key": "boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "applied_boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "relevance_adjustment",
+        "value": "boost"
+      },
+      {
+        "key": "boosting_product",
+        "value": "mia"
+      }
+    ]
+  },
+  {
+    "id": "0864b614-1ab5-4afe-a13e-8d361a89ba93",
+    "identifier": {
+      "legacyId": null,
+      "crossReferenceId": null
+    },
+    "images": [
+      "https://prod.pictures.autoscout24.net/listing-images/0864b614-1ab5-4afe-a13e-8d361a89ba93_157fd1ee-fa67-4777-9326-1f37469b43e1.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/0864b614-1ab5-4afe-a13e-8d361a89ba93_5ad0014d-a7d9-4d6d-a327-0052358ca7e2.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/0864b614-1ab5-4afe-a13e-8d361a89ba93_986170b6-2522-4632-8800-07d0abd5fed7.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/0864b614-1ab5-4afe-a13e-8d361a89ba93_5524c5a3-f422-4542-a0d4-a3c27db53bd3.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/0864b614-1ab5-4afe-a13e-8d361a89ba93_6cf4d2f9-6da3-4847-bfab-c825ccef6e25.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/0864b614-1ab5-4afe-a13e-8d361a89ba93_3db81d34-125d-4c5c-9278-3c4db1052fa8.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/0864b614-1ab5-4afe-a13e-8d361a89ba93_0ba42287-eeb3-4948-9ea5-860a461b9cb4.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/0864b614-1ab5-4afe-a13e-8d361a89ba93_7f7b6a56-8b93-463a-8fdf-0e8334359213.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/0864b614-1ab5-4afe-a13e-8d361a89ba93_7acf8bc8-957d-4d88-92f9-d485c41f2064.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/0864b614-1ab5-4afe-a13e-8d361a89ba93_6f0681eb-e4f8-4166-b030-97916393cfee.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/0864b614-1ab5-4afe-a13e-8d361a89ba93_6cc20094-2d46-4099-b5a4-494c2c9b9533.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/0864b614-1ab5-4afe-a13e-8d361a89ba93_e961971f-e9fa-4a6f-81a5-e8a0d3a1112b.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/0864b614-1ab5-4afe-a13e-8d361a89ba93_01b64416-ede3-4188-9aed-0fc681b68a05.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/0864b614-1ab5-4afe-a13e-8d361a89ba93_cc90d8ae-2a7a-4aa2-b172-835cf05e80e8.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/0864b614-1ab5-4afe-a13e-8d361a89ba93_b6cd6a77-d592-4cbf-9510-fde699baf02f.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/0864b614-1ab5-4afe-a13e-8d361a89ba93_3a70470a-f193-4556-9a18-fee338ca4489.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/0864b614-1ab5-4afe-a13e-8d361a89ba93_88461881-66a4-4494-8072-d585036de949.jpg/250x188.webp"
+    ],
+    "ocsImagesA": [],
+    "price": {
+      "priceFormatted": "€ 17.800",
+      "priceEvaluation": 0,
+      "vatLabel": "inkl. MwSt.",
+      "isVatLabelLegallyRequired": false,
+      "priceSuperscriptString": "1",
+      "isPriceEvaluationEnabled": true,
+      "isConditionalPrice": false
+    },
+    "availableNow": true,
+    "superDeal": {
+      "oldPriceFormatted": "",
+      "isEligible": false
+    },
+    "url": "/angebote/cupra-formentor-2-0-tdi-ahk-pano-rfk-shz-pdc-keyless-diesel-rot-cat_ma51802mo75545-0864b614-1ab5-4afe-a13e-8d361a89ba93",
+    "vehicle": {
+      "articleType": "Car",
+      "type": "Car",
+      "make": "CUPRA",
+      "model": "Formentor",
+      "modelGroup": "Formentor",
+      "variant": "Formentor",
+      "modelId": 75545,
+      "modelVersionInput": "2.0 TDI AHK Pano RFK SHZ PDC KeyLess",
+      "subtitle": "Schiebedach, Sitzheizung, Alufelgen, Anhängerkupplung, Einparkhilfe Rückfahrkamera, Navigationssystem, Armlehne, 3-Zonen-Klimaautomatik",
+      "offerType": "U",
+      "transmission": "Schaltgetriebe",
+      "fuel": "Diesel",
+      "mileageInKm": "103.122 km",
+      "engineDisplacementInCCM": "1.968 cm³"
+    },
+    "location": {
+      "countryCode": "DE",
+      "zip": "34560",
+      "city": "Fritzlar",
+      "street": "Im Wehrengrund 1"
+    },
+    "seller": {
+      "dealer": {
+        "maxImages": 50,
+        "isFreespeeCallTrackingEnabled": true,
+        "culture": "de-DE"
+      },
+      "id": "60287376",
+      "type": "Dealer",
+      "companyName": "Autohaus Ostmann GmbH & Co. KG",
+      "contactName": "Jakob Simon",
+      "links": {
+        "infoPage": "https://www.autoscout24.de/haendler/autohaus-ostmann-gmbh-und-co-kg-fritzlar-34560?atype=C",
+        "imprint": "https://www.autoscout24.de/haendler/autohaus-ostmann-gmbh-und-co-kg-fritzlar-34560/impressum"
+      },
+      "phones": [
+        {
+          "phoneType": "Office",
+          "formattedNumber": "+49 (0)5622 - 79799130",
+          "callTo": "+49562279799130"
+        }
+      ]
+    },
+    "appliedAdTier": "T50",
+    "adTier": "T50",
+    "isOcs": false,
+    "specialConditions": [],
+    "statistics": {
+      "leadsRange": "Some"
+    },
+    "searchResultType": "Organic",
+    "searchResultSection": "Main",
+    "tracking": {
+      "firstRegistration": "09-2023",
+      "fuelType": "d",
+      "imageContent": "no-placeholder|0.26203097521068264",
+      "isSmyleEligible": "false",
+      "mileage": "103122",
+      "priceLabel": "toolow-price ",
+      "price": "17800",
+      "orderBucket": "unknown",
+      "modelTaxonomy": "[make_id:51802, model_group_id:200362, variant_id:3433, generation_id:783, motortype_id:6296, trim_id:];"
+    },
+    "coverImageAttractiveness": 0.26203097521068264,
+    "vehicleDetails": [
+      {
+        "data": "103.122 km",
+        "iconName": "mileage_odometer",
+        "ariaLabel": "Kilometerstand"
+      },
+      {
+        "data": "Schaltgetriebe",
+        "iconName": "gearbox",
+        "ariaLabel": "Getriebe"
+      },
+      {
+        "data": "09/2023",
+        "iconName": "calendar",
+        "ariaLabel": "Erstzulassung"
+      },
+      {
+        "data": "Diesel",
+        "iconName": "gas_pump",
+        "ariaLabel": "Kraftstoff"
+      },
+      {
+        "data": "110 kW (150 PS)",
+        "iconName": "speedometer",
+        "ariaLabel": "Leistung"
+      },
+      {
+        "data": "5,0 l/100 km (komb.)",
+        "iconName": "water_drop",
+        "ariaLabel": "Kraftstoffverbrauch"
+      },
+      {
+        "data": "131 g/km (komb.)",
+        "iconName": "leaf",
+        "ariaLabel": "CO₂-Emissionen"
+      },
+      {
+        "data": "CO₂-Klasse D (komb.)",
+        "iconName": "efficiency",
+        "ariaLabel": "CO₂-Klasse"
+      }
+    ],
+    "wltpValues": [
+      "5,0 l/100 km (komb.)",
+      "131 g/km (komb.)",
+      "CO₂-Klasse D (komb.)"
+    ],
+    "trackingParameters": [
+      {
+        "key": "boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "applied_boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "relevance_adjustment",
+        "value": "boost"
+      },
+      {
+        "key": "boosting_product",
+        "value": "mia"
+      }
+    ]
+  },
+  {
+    "id": "01b2cd78-3643-4dae-b476-a8107652d347",
+    "isTrending": false,
+    "identifier": {
+      "legacyId": null,
+      "crossReferenceId": "457247124"
+    },
+    "crossReferenceId": "457247124",
+    "images": [
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_d5ab3052-7cb9-443d-b08c-a476d9805a04.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_77ee3d9c-9033-416a-9efd-fd38cdd0d4a3.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_3d929302-c980-4a29-99fe-d44be1368e80.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_bae4c84c-8f23-4bfc-8409-ead73ed3d5a0.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_12c283c6-d187-44a8-b1a1-698211c02438.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_5d0e8341-c8bd-4d65-9ae7-ec7814ac721b.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_ae89f232-ae1b-4cc4-868b-f9f6cbc4545a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_46073abf-01ac-4995-bf1a-70965be5720c.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_043685ba-0a86-45a9-88dc-5740c6870dfe.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_e0904244-6711-41dc-b7ff-30d525f2c198.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_611b792f-e9e3-4e9f-b069-728280977ea5.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_ee67c198-dfaa-422a-98d0-12e11ad21dc4.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_0a030722-f7a6-4913-b326-73442b801942.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_43f42dc5-9a7f-4640-b87e-9292b55e6511.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_ada288c0-7a7e-4f1b-b22e-ff126157ae7a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_c499a0e0-dda6-4f54-9c70-db8b9385e5f7.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_8cec49a1-cabf-4c1b-9aa9-463fd7fe7db6.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_2ef84fc9-daaf-415b-8f0f-c9795929c0a4.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_ac8a5472-eb32-4648-a4e6-27c9914b8d0b.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_8f7e4e0c-3b0c-40b1-934b-208d1f67e60f.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_777c0a5c-e067-4262-adc0-72e1778caaab.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_2afec450-e0af-4d8c-8b55-ec0fac444749.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_e4886090-5e4f-4378-b7f3-434a680bdcae.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_5ef44160-e342-40dc-a598-71651fff980e.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_2f61d291-2e16-4e6b-a86b-fe84e40f47df.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_6d79a326-c7ec-470b-ac6d-5314d4bcaf8b.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_f7622880-8770-425d-b05f-bbec78eff5c6.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_61a9f44d-1e9e-4637-bd5b-b3163d2b82e3.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_298565b2-0b8e-4349-97e1-706787530a2b.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_1a14b7ce-eae9-495c-9d14-f5c1ab86fa15.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_f3d6c4e8-5801-403f-8e77-2f24ac3e386f.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/01b2cd78-3643-4dae-b476-a8107652d347_28f15036-4e2a-4fbc-957c-ddfcb5bf3f52.jpg/250x188.webp"
+    ],
+    "ocsImagesA": [],
+    "price": {
+      "priceFormatted": "€ 39.990",
+      "priceEvaluation": 1,
+      "vatLabel": "inkl. MwSt.",
+      "isVatLabelLegallyRequired": false,
+      "priceSuperscriptString": "1",
+      "isPriceEvaluationEnabled": true,
+      "isConditionalPrice": false
+    },
+    "availableNow": true,
+    "superDeal": {
+      "oldPriceFormatted": "",
+      "isEligible": false
+    },
+    "url": "/angebote/skoda-kodiaq-1-5-tsi-selection-ahk-panodach-matrix-benzin-weiss-cat_ma65mo74375-01b2cd78-3643-4dae-b476-a8107652d347",
+    "vehicle": {
+      "articleType": "Car",
+      "type": "Car",
+      "make": "Skoda",
+      "model": "Kodiaq",
+      "modelGroup": "Kodiaq",
+      "variant": "Kodiaq",
+      "modelId": 74375,
+      "modelVersionInput": "1.5 TSI  Selection AHK*Panodach*Matrix",
+      "subtitle": "Anhängerkupplung, Sportsitze, Navigationssystem, Elektrische Sitze, Blendfreies Fernlicht, Garantie, Elektrische Heckklappe, Beheizbare Frontscheibe",
+      "offerType": "U",
+      "transmission": "Automatik",
+      "fuel": "Benzin",
+      "mileageInKm": "1.075 km",
+      "engineDisplacementInCCM": "1.498 cm³"
+    },
+    "location": {
+      "countryCode": "DE",
+      "zip": "21228",
+      "city": "Harmstorf",
+      "street": "Hauptstraße 17"
+    },
+    "ratings": {
+      "ratingsCount": 99,
+      "ratingsStars": 4.5,
+      "ratingsEnabled": true
+    },
+    "seller": {
+      "dealer": {
+        "maxImages": 50,
+        "hasDealerInformationOnResultList": true,
+        "isFreespeeCallTrackingEnabled": true,
+        "culture": "de-DE"
+      },
+      "id": "33688",
+      "type": "Dealer",
+      "logo": {
+        "small": {
+          "href": "https://prod.pictures.autoscout24.net/dealer-info/33688-original-eb78a4d6-b307-44e2-8b35-221040a2fe49.png/resize/100x50%3E/quality/90"
+        }
+      },
+      "companyName": "Autohaus Harmstorf GmbH & Co. KG",
+      "contactName": "Ihr Verkaufsteam",
+      "links": {
+        "infoPage": "https://www.autoscout24.de/haendler/autohaus-harmstorf-gmbh-und-co-kg?atype=C",
+        "imprint": "https://www.autoscout24.de/haendler/autohaus-harmstorf-gmbh-und-co-kg/impressum"
+      },
+      "phones": [
+        {
+          "phoneType": "Office",
+          "formattedNumber": "+49 (0)4105 - 613350",
+          "callTo": "+494105613350"
+        },
+        {
+          "phoneType": "Mobile",
+          "formattedNumber": "+49 (0)163 - 2207303",
+          "callTo": "+491632207303"
+        },
+        {
+          "phoneType": "Whatsapp",
+          "formattedNumber": "+49 (0)163 - 2207303",
+          "callTo": null
+        }
+      ]
+    },
+    "appliedAdTier": "T50",
+    "adTier": "T50",
+    "isOcs": false,
+    "specialConditions": [],
+    "statistics": {
+      "leadsRange": "Some"
+    },
+    "searchResultType": "Organic",
+    "searchResultSection": "Main",
+    "tracking": {
+      "firstRegistration": "01-2026",
+      "fuelType": "b",
+      "imageContent": "no-placeholder|0.2775959678772536",
+      "isSmyleEligible": "true",
+      "mileage": "1075",
+      "priceLabel": "top-price",
+      "price": "39990",
+      "orderBucket": "unknown",
+      "modelTaxonomy": "[make_id:65, model_group_id:74375, variant_id:3301, generation_id:532, motortype_id:12579, trim_id:528];"
+    },
+    "coverImageAttractiveness": 0.2775959678772536,
+    "vehicleDetails": [
+      {
+        "data": "1.075 km",
+        "iconName": "mileage_odometer",
+        "ariaLabel": "Kilometerstand"
+      },
+      {
+        "data": "Automatik",
+        "iconName": "gearbox",
+        "ariaLabel": "Getriebe"
+      },
+      {
+        "data": "01/2026",
+        "iconName": "calendar",
+        "ariaLabel": "Erstzulassung"
+      },
+      {
+        "data": "Benzin",
+        "iconName": "gas_pump",
+        "ariaLabel": "Kraftstoff"
+      },
+      {
+        "data": "110 kW (150 PS)",
+        "iconName": "speedometer",
+        "ariaLabel": "Leistung"
+      },
+      {
+        "data": "- (l/100 km)",
+        "isPlaceholder": true,
+        "iconName": "water_drop",
+        "ariaLabel": "Kraftstoffverbrauch"
+      },
+      {
+        "data": "- (g/km)",
+        "iconName": "leaf",
+        "isPlaceholder": true,
+        "ariaLabel": "CO₂-Emissionen"
+      }
+    ],
+    "wltpValues": [],
+    "trackingParameters": [
+      {
+        "key": "boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "applied_boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "relevance_adjustment",
+        "value": "boost"
+      },
+      {
+        "key": "boosting_product",
+        "value": "mia"
+      }
+    ]
+  },
+  {
+    "id": "702b35bb-84fc-44d2-b70e-f0d1e295da6e",
+    "isTrending": false,
+    "identifier": {
+      "legacyId": null,
+      "crossReferenceId": "68979960-52cf-40f0-a2af-85232e87839d"
+    },
+    "crossReferenceId": "68979960-52cf-40f0-a2af-85232e87839d",
+    "images": [
+      "https://prod.pictures.autoscout24.net/listing-images/702b35bb-84fc-44d2-b70e-f0d1e295da6e_30517b7a-0e89-407c-80f2-019aafebd575.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/702b35bb-84fc-44d2-b70e-f0d1e295da6e_6a04cf0e-ff8c-4090-9d11-0a166fd14e4e.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/702b35bb-84fc-44d2-b70e-f0d1e295da6e_1e3a161b-a21a-42ea-928c-dbc42ce8e949.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/702b35bb-84fc-44d2-b70e-f0d1e295da6e_29b89f63-3631-4102-8e62-31dfc34bcc74.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/702b35bb-84fc-44d2-b70e-f0d1e295da6e_6d967f37-4b7f-44a4-ab25-d9a823d962c9.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/702b35bb-84fc-44d2-b70e-f0d1e295da6e_b6ed9e95-2769-4038-869c-e1b8e15b1f3e.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/702b35bb-84fc-44d2-b70e-f0d1e295da6e_6e1c6d49-16b2-48c7-b1a8-45827c1a2d06.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/702b35bb-84fc-44d2-b70e-f0d1e295da6e_129f78b5-463a-41dc-8cf9-10f99b7f114e.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/702b35bb-84fc-44d2-b70e-f0d1e295da6e_a9373da8-eb6a-491e-aec6-a80c4e34ce50.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/702b35bb-84fc-44d2-b70e-f0d1e295da6e_ed442bdd-be7f-45e0-b448-710e35caaefb.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/702b35bb-84fc-44d2-b70e-f0d1e295da6e_83f1fa38-dee2-4603-9441-6f64e33ee024.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/702b35bb-84fc-44d2-b70e-f0d1e295da6e_3238821e-e03b-40f9-b570-a747539287c3.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/702b35bb-84fc-44d2-b70e-f0d1e295da6e_46ec53c8-1cc5-45a6-8070-00fdbd278208.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/702b35bb-84fc-44d2-b70e-f0d1e295da6e_0d988645-3e5b-4a7a-bb91-2b04c5bdccb7.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/702b35bb-84fc-44d2-b70e-f0d1e295da6e_c7593f1f-bbeb-448a-971f-2551ef78470d.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/702b35bb-84fc-44d2-b70e-f0d1e295da6e_b748a614-e284-4136-a6a7-b431c91857dc.jpg/250x188.webp"
+    ],
+    "ocsImagesA": [],
+    "price": {
+      "priceFormatted": "€ 18.280",
+      "vatLabel": "inkl. MwSt.",
+      "isVatLabelLegallyRequired": false,
+      "priceSuperscriptString": "1",
+      "isPriceEvaluationEnabled": true,
+      "isConditionalPrice": false
+    },
+    "availableNow": true,
+    "superDeal": {
+      "oldPriceFormatted": "",
+      "isEligible": false
+    },
+    "url": "/angebote/opel-corsa-corsa-f-edition-at8-klima-pp-hi-lhz+shz-vo-benzin-silber-cat_ma54mo1918-702b35bb-84fc-44d2-b70e-f0d1e295da6e",
+    "vehicle": {
+      "articleType": "Car",
+      "type": "Car",
+      "make": "Opel",
+      "model": "Corsa",
+      "modelGroup": "Corsa",
+      "variant": "Corsa",
+      "modelId": 1918,
+      "modelVersionInput": "Corsa F Edition*AT8*Klima*PP hi.*LHZ+SHZ vo*",
+      "subtitle": null,
+      "offerType": "U",
+      "transmission": "Automatik",
+      "fuel": "Benzin",
+      "mileageInKm": "8.479 km",
+      "engineDisplacementInCCM": "1.199 cm³"
+    },
+    "location": {
+      "countryCode": "DE",
+      "zip": "97762",
+      "city": "Hammelburg",
+      "street": "Kissinger Str. 63"
+    },
+    "ratings": {
+      "ratingsCount": 3,
+      "ratingsStars": 5,
+      "ratingsEnabled": true
+    },
+    "seller": {
+      "dealer": {
+        "maxImages": 50,
+        "hasDealerInformationOnResultList": true,
+        "isFreespeeCallTrackingEnabled": true,
+        "culture": "de-DE"
+      },
+      "id": "48683857",
+      "type": "Dealer",
+      "logo": {
+        "small": {
+          "href": "https://prod.pictures.autoscout24.net/dealer-info/48683857-original-91b8b2f3-f205-4d75-8426-3f638f753f3e.jpg/resize/100x50%3E/quality/90"
+        }
+      },
+      "companyName": "Autohaus Graf GmbH",
+      "contactName": "Siegfried Herfurth",
+      "links": {
+        "infoPage": "https://www.autoscout24.de/haendler/autohaus-graf-gmbh-hammelburg-97762-1?atype=C",
+        "imprint": "https://www.autoscout24.de/haendler/autohaus-graf-gmbh-hammelburg-97762-1/impressum"
+      },
+      "phones": [
+        {
+          "phoneType": "Office",
+          "formattedNumber": "+49 (0)9732 - 91910",
+          "callTo": "+49973291910"
+        },
+        {
+          "phoneType": "Office",
+          "formattedNumber": "+49 (0)971 - 730730",
+          "callTo": "+49971730730"
+        },
+        {
+          "phoneType": "Whatsapp",
+          "formattedNumber": "+49 (0)9732 - 91910",
+          "callTo": null
+        }
+      ]
+    },
+    "appliedAdTier": "T50",
+    "adTier": "T50",
+    "isOcs": false,
+    "specialConditions": [],
+    "statistics": {
+      "leadsRange": "Zero"
+    },
+    "searchResultType": "Organic",
+    "searchResultSection": "Main",
+    "tracking": {
+      "firstRegistration": "02-2025",
+      "fuelType": "b",
+      "imageContent": "no-placeholder|0.11402499735705218",
+      "isSmyleEligible": "true",
+      "mileage": "8479",
+      "priceLabel": "unknown",
+      "price": "18280",
+      "orderBucket": "unknown",
+      "modelTaxonomy": "[make_id:54, model_group_id:1918, variant_id:3184, generation_id:266, motortype_id:, trim_id:];"
+    },
+    "coverImageAttractiveness": 0.11402499735705218,
+    "vehicleDetails": [
+      {
+        "data": "8.479 km",
+        "iconName": "mileage_odometer",
+        "ariaLabel": "Kilometerstand"
+      },
+      {
+        "data": "Automatik",
+        "iconName": "gearbox",
+        "ariaLabel": "Getriebe"
+      },
+      {
+        "data": "02/2025",
+        "iconName": "calendar",
+        "ariaLabel": "Erstzulassung"
+      },
+      {
+        "data": "Benzin",
+        "iconName": "gas_pump",
+        "ariaLabel": "Kraftstoff"
+      },
+      {
+        "data": "74 kW (101 PS)",
+        "iconName": "speedometer",
+        "ariaLabel": "Leistung"
+      },
+      {
+        "data": "- (l/100 km)",
+        "isPlaceholder": true,
+        "iconName": "water_drop",
+        "ariaLabel": "Kraftstoffverbrauch"
+      },
+      {
+        "data": "- (g/km)",
+        "iconName": "leaf",
+        "isPlaceholder": true,
+        "ariaLabel": "CO₂-Emissionen"
+      }
+    ],
+    "wltpValues": [],
+    "trackingParameters": [
+      {
+        "key": "boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "applied_boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "relevance_adjustment",
+        "value": "boost"
+      },
+      {
+        "key": "boosting_product",
+        "value": "mia"
+      }
+    ]
+  },
+  {
+    "id": "9fa65781-5364-46d0-85c4-55c4946cddde",
+    "isTrending": false,
+    "identifier": {
+      "legacyId": null,
+      "crossReferenceId": null
+    },
+    "images": [
+      "https://prod.pictures.autoscout24.net/listing-images/9fa65781-5364-46d0-85c4-55c4946cddde_e22a2c84-ec8a-448f-8045-00e79a8aef09.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/9fa65781-5364-46d0-85c4-55c4946cddde_af63b570-8bcc-433f-b5c0-59f2b71a4f93.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/9fa65781-5364-46d0-85c4-55c4946cddde_4fa25f80-4672-4756-8b58-8fdff3f7b8b8.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/9fa65781-5364-46d0-85c4-55c4946cddde_14001dae-7b57-414c-835a-c9c06aad407e.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/9fa65781-5364-46d0-85c4-55c4946cddde_b0e78a85-a4c6-4bde-ac67-166cdd09dfc5.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/9fa65781-5364-46d0-85c4-55c4946cddde_a178133c-325e-4185-9aef-9d77bd73931a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/9fa65781-5364-46d0-85c4-55c4946cddde_9c352024-52cf-4e68-a421-ff75797c6fc3.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/9fa65781-5364-46d0-85c4-55c4946cddde_87ea43fa-4c12-4b18-a5cd-32c348ef5194.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/9fa65781-5364-46d0-85c4-55c4946cddde_6ff37ab9-1e14-45b4-94ed-0e8475dc2fa7.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/9fa65781-5364-46d0-85c4-55c4946cddde_ef1785cb-1996-45f0-b196-e89d320017aa.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/9fa65781-5364-46d0-85c4-55c4946cddde_7ac35098-2024-47e5-bebe-35df4aece3e6.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/9fa65781-5364-46d0-85c4-55c4946cddde_91784d67-6b8f-4fad-8ca0-d85b5d784807.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/9fa65781-5364-46d0-85c4-55c4946cddde_bc282fee-a27a-4635-b538-a96acd4e9e71.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/9fa65781-5364-46d0-85c4-55c4946cddde_3d51ccf8-ddb6-47e0-aace-bbabc9aa82ce.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/9fa65781-5364-46d0-85c4-55c4946cddde_3cc217f7-de18-4512-83ae-e98900192c2e.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/9fa65781-5364-46d0-85c4-55c4946cddde_0359daf4-f3c9-41fd-9f91-c0a6f6f58fd7.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/9fa65781-5364-46d0-85c4-55c4946cddde_e26310f4-3645-4e31-a5cd-f6af1061ce14.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/9fa65781-5364-46d0-85c4-55c4946cddde_9d6a76c9-e3c4-4fc3-9fe5-0a64a7a1d13f.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/9fa65781-5364-46d0-85c4-55c4946cddde_5e23163a-9c5f-4495-91c2-bc36b663bf4c.jpg/250x188.webp"
+    ],
+    "ocsImagesA": [],
+    "price": {
+      "priceFormatted": "€ 14.900",
+      "priceEvaluation": 1,
+      "isVatLabelLegallyRequired": false,
+      "isPriceEvaluationEnabled": true,
+      "isConditionalPrice": false
+    },
+    "superDeal": {
+      "oldPriceFormatted": "",
+      "isEligible": false
+    },
+    "url": "/angebote/renault-scenic-energy-tce140-edc-intens-benzin-weiss-cat_ma60mo14786-9fa65781-5364-46d0-85c4-55c4946cddde",
+    "vehicle": {
+      "articleType": "Car",
+      "type": "Car",
+      "make": "Renault",
+      "model": "Scenic",
+      "modelGroup": "Scenic",
+      "variant": "Scenic Grand Scenic",
+      "modelId": 14786,
+      "modelVersionInput": "ENERGY TCe140 EDC INTENS",
+      "subtitle": "1 Jahr Gebrauchtwagengarantie",
+      "offerType": "U",
+      "transmission": "Automatik",
+      "fuel": "Benzin",
+      "mileageInKm": "23.700 km",
+      "engineDisplacementInCCM": "1.330 cm³"
+    },
+    "location": {
+      "countryCode": "DE",
+      "zip": "30827",
+      "city": "Garbsen-Berenbostel",
+      "street": "Bremer Str. 53-55"
+    },
+    "ratings": {
+      "ratingsCount": 4,
+      "ratingsStars": 5,
+      "ratingsEnabled": true
+    },
+    "seller": {
+      "dealer": {
+        "maxImages": 50,
+        "hasDealerInformationOnResultList": true,
+        "isFreespeeCallTrackingEnabled": true,
+        "culture": "de-DE"
+      },
+      "id": "51706498",
+      "type": "Dealer",
+      "logo": {
+        "small": {
+          "href": "https://prod.pictures.autoscout24.net/dealer-info/51706498-original-3c350cbe-329d-4db6-b7be-e8360230636b.png/resize/100x50%3E/quality/90"
+        }
+      },
+      "companyName": "Ferdinand Nobbe GmbH",
+      "contactName": "Unser Verkaufs-Team Garbsen",
+      "links": {
+        "infoPage": "https://www.autoscout24.de/haendler/ferdinand-nobbe-gmbh-garbsen-berenbostel?atype=C",
+        "imprint": "https://www.autoscout24.de/haendler/ferdinand-nobbe-gmbh-garbsen-berenbostel/impressum"
+      },
+      "phones": [
+        {
+          "phoneType": "Office",
+          "formattedNumber": "+49 (0)5131 - 705840",
+          "callTo": "+495131705840"
+        }
+      ]
+    },
+    "appliedAdTier": "T50",
+    "adTier": "T50",
+    "isOcs": false,
+    "specialConditions": [],
+    "statistics": {
+      "leadsRange": "Zero"
+    },
+    "searchResultType": "Organic",
+    "searchResultSection": "Main",
+    "tracking": {
+      "firstRegistration": "05-2018",
+      "fuelType": "b",
+      "imageContent": "no-placeholder|0.1652885527940816",
+      "isSmyleEligible": "false",
+      "mileage": "23700",
+      "priceLabel": "top-price",
+      "price": "14900",
+      "orderBucket": "unknown",
+      "modelTaxonomy": "[make_id:60, model_group_id:201272, variant_id:1884, generation_id:1169, motortype_id:4926, trim_id:4624];"
+    },
+    "coverImageAttractiveness": 0.1652885527940816,
+    "vehicleDetails": [
+      {
+        "data": "23.700 km",
+        "iconName": "mileage_odometer",
+        "ariaLabel": "Kilometerstand"
+      },
+      {
+        "data": "Automatik",
+        "iconName": "gearbox",
+        "ariaLabel": "Getriebe"
+      },
+      {
+        "data": "05/2018",
+        "iconName": "calendar",
+        "ariaLabel": "Erstzulassung"
+      },
+      {
+        "data": "Benzin",
+        "iconName": "gas_pump",
+        "ariaLabel": "Kraftstoff"
+      },
+      {
+        "data": "103 kW (140 PS)",
+        "iconName": "speedometer",
+        "ariaLabel": "Leistung"
+      },
+      {
+        "data": "5,50 l/100 km (komb.)",
+        "iconName": "water_drop",
+        "ariaLabel": "Kraftstoffverbrauch"
+      },
+      {
+        "data": "122,00 g/km (komb.)",
+        "iconName": "leaf",
+        "ariaLabel": "CO₂-Emissionen"
+      }
+    ],
+    "wltpValues": [],
+    "trackingParameters": [
+      {
+        "key": "boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "applied_boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "relevance_adjustment",
+        "value": "boost"
+      },
+      {
+        "key": "boosting_product",
+        "value": "mia"
+      }
+    ]
+  },
+  {
+    "id": "970fc00d-1b62-4350-b7f7-0064c2ea48c7",
+    "evBanner": {
+      "type": "electric",
+      "label": "Elektrisch"
+    },
+    "isTrending": false,
+    "identifier": {
+      "legacyId": null,
+      "crossReferenceId": "457516619"
+    },
+    "crossReferenceId": "457516619",
+    "images": [
+      "https://prod.pictures.autoscout24.net/listing-images/970fc00d-1b62-4350-b7f7-0064c2ea48c7_35ae9d02-74e6-4e45-b62e-205eeda90ef5.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/970fc00d-1b62-4350-b7f7-0064c2ea48c7_ac9ce9fa-0a18-4717-8010-b9a42cdccd80.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/970fc00d-1b62-4350-b7f7-0064c2ea48c7_c230decf-6b6d-4757-8abf-fbbd1ecae9e4.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/970fc00d-1b62-4350-b7f7-0064c2ea48c7_ddcfab17-bf40-4648-bbd0-7135d4197ed0.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/970fc00d-1b62-4350-b7f7-0064c2ea48c7_6e6bb595-b470-4180-8766-7eb104a9c6e1.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/970fc00d-1b62-4350-b7f7-0064c2ea48c7_61967806-88eb-449e-b49a-0de7bff41d6f.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/970fc00d-1b62-4350-b7f7-0064c2ea48c7_06066f5a-57c5-48e1-a36a-dba51990cf9b.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/970fc00d-1b62-4350-b7f7-0064c2ea48c7_3deb99c8-0339-438b-bd04-c36ad0d705aa.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/970fc00d-1b62-4350-b7f7-0064c2ea48c7_76df1a88-2e37-4fd6-ab90-4373bb733006.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/970fc00d-1b62-4350-b7f7-0064c2ea48c7_c365e2ed-4228-4535-88d3-3ea1d9f7242d.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/970fc00d-1b62-4350-b7f7-0064c2ea48c7_b685ff8f-09cc-4e0b-b5c1-0fc30e956cf3.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/970fc00d-1b62-4350-b7f7-0064c2ea48c7_076b18c2-41bd-4410-9a55-a45c544d1540.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/970fc00d-1b62-4350-b7f7-0064c2ea48c7_095cb311-9533-41f9-b50b-9691c21c8bb4.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/970fc00d-1b62-4350-b7f7-0064c2ea48c7_404eb12d-21f6-4fb5-a211-ba7f6e07ff35.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/970fc00d-1b62-4350-b7f7-0064c2ea48c7_b823f4f4-139c-4ce6-9eff-1a27e9742efd.jpg/250x188.webp"
+    ],
+    "ocsImagesA": [],
+    "isOfferNew": true,
+    "price": {
+      "priceFormatted": "€ 32.900",
+      "priceEvaluation": 4,
+      "vatLabel": "inkl. MwSt.",
+      "isVatLabelLegallyRequired": false,
+      "priceSuperscriptString": "1",
+      "isPriceEvaluationEnabled": true,
+      "isConditionalPrice": false
+    },
+    "availableNow": true,
+    "superDeal": {
+      "oldPriceFormatted": "",
+      "isEligible": false
+    },
+    "url": "/angebote/polestar-2-long-range-single-+-78kwh-+-pilot-+-plus-+-ahk-elektro-schwarz-cat_ma51817mo75397-970fc00d-1b62-4350-b7f7-0064c2ea48c7",
+    "vehicle": {
+      "articleType": "Car",
+      "type": "Car",
+      "make": "Polestar",
+      "model": "2",
+      "modelGroup": "2",
+      "variant": "2 Polestar 2",
+      "modelId": 75397,
+      "modelVersionInput": "Long Range Single + 78kwH + Pilot + Plus + AHK",
+      "subtitle": "Panoramadach, Garantie, Beheizbares Lenkrad, Anhängerkupplung, Elektrische Heckklappe, Abstandstempomat, Ambientebeleuchtung, Standheizung",
+      "offerType": "U",
+      "transmission": "Automatik",
+      "fuel": "Elektro",
+      "mileageInKm": "49.500 km"
+    },
+    "location": {
+      "countryCode": "DE",
+      "zip": "44803",
+      "city": "Bochum",
+      "street": "Wittenerstr. 254-256"
+    },
+    "ratings": {
+      "ratingsCount": 400,
+      "ratingsStars": 5,
+      "ratingsEnabled": true
+    },
+    "seller": {
+      "dealer": {
+        "maxImages": 50,
+        "culture": "de-DE"
+      },
+      "id": "27351",
+      "type": "Dealer",
+      "logo": {
+        "small": {
+          "href": "https://prod.pictures.autoscout24.net/dealer-info/27351-original-c1d4feb8-89e5-497d-85b7-b64e776bc248.png/resize/100x50%3E/quality/90"
+        }
+      },
+      "companyName": "Auto Schiller",
+      "contactName": "Dirk Schiller",
+      "links": {
+        "infoPage": "https://www.autoscout24.de/haendler/auto-schiller?atype=C",
+        "imprint": "https://www.autoscout24.de/haendler/auto-schiller/impressum"
+      },
+      "phones": [
+        {
+          "phoneType": "Office",
+          "formattedNumber": "+49 (0)234 - 357676",
+          "callTo": "+49234357676"
+        },
+        {
+          "phoneType": "Whatsapp",
+          "formattedNumber": "+49 (0)234 - 357676",
+          "callTo": null
+        }
+      ]
+    },
+    "appliedAdTier": "T50",
+    "adTier": "T50",
+    "isOcs": false,
+    "specialConditions": [],
+    "statistics": {
+      "leadsRange": "Zero"
+    },
+    "searchResultType": "Organic",
+    "searchResultSection": "Main",
+    "tracking": {
+      "firstRegistration": "04-2022",
+      "fuelType": "e",
+      "imageContent": "no-placeholder|0.25221324107688303",
+      "isSmyleEligible": "true",
+      "mileage": "49500",
+      "priceLabel": "somewhat-expensive",
+      "price": "32900",
+      "orderBucket": "unknown",
+      "modelTaxonomy": "[make_id:51817, model_group_id:201234, variant_id:1799, generation_id:1584, motortype_id:, trim_id:];"
+    },
+    "coverImageAttractiveness": 0.25221324107688303,
+    "vehicleDetails": [
+      {
+        "data": "49.500 km",
+        "iconName": "mileage_odometer",
+        "ariaLabel": "Kilometerstand"
+      },
+      {
+        "data": "Automatik",
+        "iconName": "gearbox",
+        "ariaLabel": "Getriebe"
+      },
+      {
+        "data": "04/2022",
+        "iconName": "calendar",
+        "ariaLabel": "Erstzulassung"
+      },
+      {
+        "data": "Elektro",
+        "iconName": "gas_pump",
+        "ariaLabel": "Kraftstoff"
+      },
+      {
+        "data": "170 kW (231 PS)",
+        "iconName": "speedometer",
+        "ariaLabel": "Leistung"
+      },
+      {
+        "data": "420 km Reichweite",
+        "iconName": "distance",
+        "footnotes": "7",
+        "ariaLabel": "Reichweite"
+      },
+      {
+        "data": "- (l/100 km)",
+        "isPlaceholder": true,
+        "iconName": "water_drop",
+        "ariaLabel": "Kraftstoffverbrauch"
+      },
+      {
+        "data": "0 g/km (komb.)",
+        "iconName": "leaf",
+        "ariaLabel": "CO₂-Emissionen"
+      }
+    ],
+    "wltpValues": [
+      "- (l/100 km)",
+      "0 g/km (komb.)"
+    ],
+    "trackingParameters": [
+      {
+        "key": "boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "applied_boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "relevance_adjustment",
+        "value": "boost"
+      },
+      {
+        "key": "boosting_product",
+        "value": "mia"
+      }
+    ]
+  },
+  {
+    "id": "e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c",
+    "evBanner": {
+      "type": "electric",
+      "label": "Elektrisch"
+    },
+    "isTrending": false,
+    "identifier": {
+      "legacyId": null,
+      "crossReferenceId": null
+    },
+    "images": [
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_d672fb40-f988-4bc5-89a8-cf033361f1ee.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_6c23045f-7545-4cc5-839b-e85f5d1fd5f9.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_89a7f8d7-fec2-41a0-bebe-a59f160020cd.png/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_a0bb900f-1f87-403f-b366-77537e6f5c5f.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_88654753-68a7-4945-ad64-0d17e3da12b5.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_ef08a0b3-f792-44dc-b693-88ce9b6647c2.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_5319e357-93d6-4bfc-ad5d-5c8f329569a1.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_bb33cc36-dbcb-4baa-a9da-9aa48d456279.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_6856d2ca-d082-4dba-b232-8b9a968503e6.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_77176f8b-2669-429a-9f1b-264a2ad7247c.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_3347d575-7d18-4afb-b667-9886c7edc6a5.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_d937a909-7905-4799-8d35-581bf5428dcf.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_d6381612-1d43-4013-b528-e83b36cc9c9b.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_52f91ac5-b47c-4913-8f2b-f8ab3a40f547.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_08e3640a-0675-447a-928a-2a2e667d2c09.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_36c10784-6063-4b4f-b532-a3ce0fae20f5.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_50257130-f162-4f3e-a6c3-43bc076db580.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_9ad3e56c-9814-4acc-960d-bb50a22d0096.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_01cacdd7-c55b-4163-8f92-a49b24e0aa06.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_6c0a09e9-aaf6-4ae5-8ebc-75823bd3f160.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_5954d8dd-e4cc-4f68-a9cc-0b2c51f8e3aa.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_54a7b0e1-23a5-46e7-b48d-adcb2c70d21b.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_e0d68b73-0da5-47a7-bf4a-2ac1b92af530.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_6f3e2344-9c49-4385-ad64-456cd755a5b4.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c_9849f18b-aa2d-4079-b5ce-b21ef0856256.jpg/250x188.webp"
+    ],
+    "ocsImagesA": [],
+    "price": {
+      "priceFormatted": "€ 19.819",
+      "priceEvaluation": 2,
+      "vatLabel": "inkl. MwSt.",
+      "isVatLabelLegallyRequired": false,
+      "priceSuperscriptString": "1",
+      "isPriceEvaluationEnabled": true,
+      "isConditionalPrice": false
+    },
+    "seals": [
+      {
+        "id": 322,
+        "image": "https://www.autoscout24.de/seal-images/322/SgrhQeB4RMwoVLrnVLZrTXiCeGVL4iwr/1fUVYFFqo6VuG95kvDHMfymDIzIba2oA.png",
+        "culture": "de-DE"
+      }
+    ],
+    "availableNow": true,
+    "superDeal": {
+      "oldPriceFormatted": "",
+      "isEligible": false
+    },
+    "url": "/angebote/peugeot-2008-e-gt-pack-acc-led-navi-tot-winkel-shz-apple-elektro-weiss-cat_ma55mo20237-e2bc50e6-da1e-4e51-bce5-b3ef8b49fe3c",
+    "vehicle": {
+      "articleType": "Car",
+      "type": "Car",
+      "make": "Peugeot",
+      "model": "2008",
+      "modelGroup": "2008",
+      "variant": "2008 Elektro",
+      "modelId": 20237,
+      "modelVersionInput": "e- GT Pack ACC*LED*Navi*Tot Winkel*SHZ*Apple",
+      "subtitle": "Einparkhilfe Sensoren vorne, Sitzheizung, Totwinkel-Assistent, Fernlichtassistent, Ambientebeleuchtung, Abstandstempomat, Schlüssellose Zentralverriegelung, Navigationssystem",
+      "offerType": "U",
+      "transmission": "Automatik",
+      "fuel": "Elektro",
+      "mileageInKm": "17.397 km"
+    },
+    "location": {
+      "countryCode": "DE",
+      "zip": "96052",
+      "city": "Bamberg",
+      "street": "Rodezstr. 2"
+    },
+    "ratings": {
+      "ratingsCount": 1559,
+      "ratingsStars": 5,
+      "ratingsEnabled": true
+    },
+    "seller": {
+      "dealer": {
+        "maxImages": 50,
+        "hasDealerInformationOnResultList": true,
+        "isFreespeeCallTrackingEnabled": true,
+        "culture": "de-DE"
+      },
+      "id": "5791813",
+      "type": "Dealer",
+      "logo": {
+        "small": {
+          "href": "https://prod.pictures.autoscout24.net/dealer-info/5791813-original-c2fd1c1e-de1f-41eb-8497-90a598a8d8cc/resize/100x50%3E/quality/90"
+        }
+      },
+      "companyName": "Autohaus Aventi GmbH",
+      "contactName": "Ihr Vertriebsteam",
+      "links": {
+        "infoPage": "https://www.autoscout24.de/haendler/autohaus-aventi-gmbh?atype=C",
+        "imprint": "https://www.autoscout24.de/haendler/autohaus-aventi-gmbh/impressum"
+      },
+      "phones": [
+        {
+          "phoneType": "Office",
+          "formattedNumber": "+49 (0)951 - 9332960",
+          "callTo": "+499519332960"
+        }
+      ]
+    },
+    "appliedAdTier": "T50",
+    "adTier": "T50",
+    "isOcs": false,
+    "specialConditions": [],
+    "statistics": {
+      "leadsRange": "Some"
+    },
+    "searchResultType": "Organic",
+    "searchResultSection": "Main",
+    "tracking": {
+      "firstRegistration": "02-2022",
+      "fuelType": "e",
+      "imageContent": "no-placeholder|0.19493744237048982",
+      "isSmyleEligible": "true",
+      "mileage": "17397",
+      "priceLabel": "good-price",
+      "price": "19819",
+      "orderBucket": "unknown",
+      "modelTaxonomy": "[make_id:55, model_group_id:201152, variant_id:1766, generation_id:1068, motortype_id:9051, trim_id:4242];"
+    },
+    "coverImageAttractiveness": 0.19493744237048982,
+    "vehicleDetails": [
+      {
+        "data": "17.397 km",
+        "iconName": "mileage_odometer",
+        "ariaLabel": "Kilometerstand"
+      },
+      {
+        "data": "Automatik",
+        "iconName": "gearbox",
+        "ariaLabel": "Getriebe"
+      },
+      {
+        "data": "02/2022",
+        "iconName": "calendar",
+        "ariaLabel": "Erstzulassung"
+      },
+      {
+        "data": "Elektro",
+        "iconName": "gas_pump",
+        "ariaLabel": "Kraftstoff"
+      },
+      {
+        "data": "100 kW (136 PS)",
+        "iconName": "speedometer",
+        "ariaLabel": "Leistung"
+      },
+      {
+        "data": "342 km Reichweite",
+        "iconName": "distance",
+        "ariaLabel": "Reichweite"
+      },
+      {
+        "data": "16,1 kWh/100 km (komb.)",
+        "iconName": "lightning_bolt",
+        "ariaLabel": "Kraftstoffverbrauch"
+      },
+      {
+        "data": "0 g/km (komb.)",
+        "iconName": "leaf",
+        "ariaLabel": "CO₂-Emissionen"
+      },
+      {
+        "data": "CO₂-Klasse A (komb.)",
+        "iconName": "efficiency",
+        "ariaLabel": "CO₂-Klasse"
+      }
+    ],
+    "wltpValues": [
+      "16,1 kWh/100 km (komb.)",
+      "0 g/km (komb.)",
+      "CO₂-Klasse A (komb.)"
+    ],
+    "trackingParameters": [
+      {
+        "key": "boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "applied_boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "relevance_adjustment",
+        "value": "boost"
+      },
+      {
+        "key": "boosting_product",
+        "value": "mia"
+      }
+    ]
+  },
+  {
+    "id": "6c8bb448-3648-4d6e-b706-710f35bbcf93",
+    "isTrending": false,
+    "identifier": {
+      "legacyId": null,
+      "crossReferenceId": "6a0cc2c98ba9b32e2408afc5"
+    },
+    "crossReferenceId": "6a0cc2c98ba9b32e2408afc5",
+    "images": [
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_f5dee82f-23dd-4750-b4b3-433d177b3444.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_6c5b808a-0aae-4952-bf1d-4c482ec6f21a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_403274e8-a31e-44d0-b2cb-d5ebb7409896.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_0e9845d3-4491-4670-a8cf-f4aaa3fd5490.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_293046b2-a365-4cf3-af3e-2ba5aaf18d56.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_f1e42db5-0395-4720-a378-08f9b77d7471.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_08db79c3-87ca-4189-9ac5-fd1b91011704.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_df8b1993-e4fc-440d-a9cf-b270483e822d.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_6b4f8552-8a46-4d28-8651-f5c2040d7e9e.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_5327ccbd-73c6-4566-af9d-9c878b3ba2e5.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_7bc7d6bc-9c30-402e-a55c-48266bedcec0.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_93f9fdbe-1571-431c-b3b6-95c1e71219cf.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_00916ce6-85a1-4828-bc44-2b5dfa20914a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_5e6bbb85-488d-401d-a89e-1537472aa4a9.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_a771c7f0-ae66-490c-b00f-9fc467872141.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_2cbff1a3-793b-4386-b599-93ea59869e31.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_30ec55fc-8847-44c0-8b60-0235e2622346.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_75b0c978-37ba-4802-a345-5756a33cb411.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_db6838b4-2ebd-4c8d-af4a-1c63d9e337bc.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_a0831514-1b48-43f2-9ed2-f66a00dcec71.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_36f39ad5-c3dd-452d-b398-aeb505d1c4e2.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_cbfa2bd1-a1fe-491f-a70a-9dffb06f89d5.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_d84b2072-d52a-45f1-93fa-a4022775531d.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/6c8bb448-3648-4d6e-b706-710f35bbcf93_a614fd16-0502-4390-ad5f-1ff9abd0a186.jpg/250x188.webp"
+    ],
+    "ocsImagesA": [],
+    "price": {
+      "priceFormatted": "€ 30.790",
+      "vatLabel": "inkl. MwSt.",
+      "isVatLabelLegallyRequired": false,
+      "priceSuperscriptString": "1",
+      "isPriceEvaluationEnabled": true,
+      "isConditionalPrice": false
+    },
+    "seals": [
+      {
+        "id": 292,
+        "image": "https://www.autoscout24.de/seal-images/292/o5ksjTzEOZXLeIAYDDFDPpCJuOrY0rF3/7IAiUNBSnYIbEb3NgwM6fHh1bLCK60Rn.png",
+        "culture": "de-DE"
+      }
+    ],
+    "availableNow": true,
+    "superDeal": {
+      "oldPriceFormatted": "",
+      "isEligible": false
+    },
+    "url": "/angebote/hyundai-i30-kombi-1-6-tgdi-dct-n-line-x-vollausstattung-benzin-grau-cat_ma33mo19065-6c8bb448-3648-4d6e-b706-710f35bbcf93",
+    "vehicle": {
+      "articleType": "Car",
+      "type": "Car",
+      "make": "Hyundai",
+      "model": "i30",
+      "modelGroup": "i30",
+      "variant": "i30 Kombi",
+      "modelId": 19065,
+      "modelVersionInput": "Kombi 1.6 TGDI DCT N-Line X VOLLAUSSTATTUNG",
+      "subtitle": "Günstige Finanzierung! Wir kaufen Ihr Auto!",
+      "offerType": "U",
+      "transmission": "Automatik",
+      "fuel": "Benzin",
+      "engineDisplacementInCCM": "1.582 cm³"
+    },
+    "location": {
+      "countryCode": "DE",
+      "zip": "55252",
+      "city": "Mainz-Kastel",
+      "street": "Peter-Sander-Straße 45"
+    },
+    "ratings": {
+      "ratingsCount": 74,
+      "ratingsStars": 4.5,
+      "ratingsEnabled": true
+    },
+    "seller": {
+      "dealer": {
+        "isFreespeeCallTrackingEnabled": true,
+        "culture": "de-DE"
+      },
+      "id": "2571748",
+      "type": "Dealer",
+      "logo": {
+        "small": {
+          "href": "https://prod.pictures.autoscout24.net/dealer-info/2571748-original-8d302d1c-9af4-404e-9fc3-a7248fa66ceb.jpg/resize/100x50%3E/quality/90"
+        }
+      },
+      "companyName": "Delta Automobile GmbH & Co. KG",
+      "contactName": "Ihr Verkaufsteam",
+      "links": {
+        "infoPage": "https://www.autoscout24.de/haendler/delta-automobile-gmbh-und-co-kg?atype=C",
+        "imprint": "https://www.autoscout24.de/haendler/delta-automobile-gmbh-und-co-kg/impressum"
+      },
+      "phones": [
+        {
+          "phoneType": "Office",
+          "formattedNumber": "+49 (0)6134 - 2580",
+          "callTo": "+4961342580"
+        }
+      ]
+    },
+    "appliedAdTier": "T50",
+    "adTier": "T50",
+    "isOcs": false,
+    "specialConditions": [],
+    "statistics": {
+      "leadsRange": "Zero"
+    },
+    "searchResultType": "Organic",
+    "searchResultSection": "Main",
+    "tracking": {
+      "firstRegistration": "02-2026",
+      "fuelType": "b",
+      "imageContent": "no-placeholder|0.27469825382971225",
+      "isSmyleEligible": "unknown",
+      "mileage": "unknown",
+      "priceLabel": "unknown",
+      "price": "30790",
+      "orderBucket": "unknown",
+      "modelTaxonomy": "[make_id:33, model_group_id:19065, variant_id:417, generation_id:513, motortype_id:, trim_id:];"
+    },
+    "coverImageAttractiveness": 0.27469825382971225,
+    "vehicleDetails": [
+      {
+        "data": "- km",
+        "isPlaceholder": true,
+        "iconName": "mileage_odometer",
+        "ariaLabel": "Kilometerstand"
+      },
+      {
+        "data": "Automatik",
+        "iconName": "gearbox",
+        "ariaLabel": "Getriebe"
+      },
+      {
+        "data": "02/2026",
+        "iconName": "calendar",
+        "ariaLabel": "Erstzulassung"
+      },
+      {
+        "data": "Benzin",
+        "iconName": "gas_pump",
+        "ariaLabel": "Kraftstoff"
+      },
+      {
+        "data": "110 kW (150 PS)",
+        "iconName": "speedometer",
+        "ariaLabel": "Leistung"
+      },
+      {
+        "data": "6,4 l/100 km (komb.)",
+        "iconName": "water_drop",
+        "ariaLabel": "Kraftstoffverbrauch"
+      },
+      {
+        "data": "145 g/km (komb.)",
+        "iconName": "leaf",
+        "ariaLabel": "CO₂-Emissionen"
+      },
+      {
+        "data": "CO₂-Klasse E (komb.)",
+        "iconName": "efficiency",
+        "ariaLabel": "CO₂-Klasse"
+      }
+    ],
+    "wltpValues": [
+      "6,4 l/100 km (komb.)",
+      "145 g/km (komb.)",
+      "CO₂-Klasse E (komb.)"
+    ],
+    "trackingParameters": [
+      {
+        "key": "boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "applied_boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "relevance_adjustment",
+        "value": "boost"
+      },
+      {
+        "key": "boosting_product",
+        "value": "mia"
+      }
+    ]
+  },
+  {
+    "id": "da6b13b5-bc7b-41cf-a164-87254d649e7f",
+    "evBanner": {
+      "type": "electric",
+      "label": "Elektrisch"
+    },
+    "isTrending": false,
+    "identifier": {
+      "legacyId": null,
+      "crossReferenceId": "BS-2244"
+    },
+    "crossReferenceId": "BS-2244",
+    "images": [
+      "https://prod.pictures.autoscout24.net/listing-images/da6b13b5-bc7b-41cf-a164-87254d649e7f_1bd5d7b4-2382-4f15-98e8-f8b58d6948a0.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/da6b13b5-bc7b-41cf-a164-87254d649e7f_c6f0498d-8a0f-4828-b0cf-eaff3c89edbc.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/da6b13b5-bc7b-41cf-a164-87254d649e7f_a2d3149d-c5cd-4175-8cca-d8e9ea2079be.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/da6b13b5-bc7b-41cf-a164-87254d649e7f_b9af8c25-3d6d-4d51-8685-4fad3fbb0d91.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/da6b13b5-bc7b-41cf-a164-87254d649e7f_6b36efe0-748c-4df9-8c05-061f6387e0ae.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/da6b13b5-bc7b-41cf-a164-87254d649e7f_7ed3afa3-90d3-484a-a08f-bae62c0e1d9e.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/da6b13b5-bc7b-41cf-a164-87254d649e7f_2067db41-0e03-40f5-aab5-3b127755d87e.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/da6b13b5-bc7b-41cf-a164-87254d649e7f_b5c5c89f-10ea-4241-8cd1-df1adb50528f.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/da6b13b5-bc7b-41cf-a164-87254d649e7f_f0bead41-4998-431f-8eee-603a104db834.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/da6b13b5-bc7b-41cf-a164-87254d649e7f_e47a3cc5-8c2e-4eb5-bfad-8ee1c9ffc7a9.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/da6b13b5-bc7b-41cf-a164-87254d649e7f_15c2c1cc-0384-4a32-b458-37619f713878.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/da6b13b5-bc7b-41cf-a164-87254d649e7f_7256ee0b-81c5-416d-9bd8-4d6b07440ee9.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/da6b13b5-bc7b-41cf-a164-87254d649e7f_67c97e1d-7509-46b6-b101-d54ee36dcf6d.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/da6b13b5-bc7b-41cf-a164-87254d649e7f_16aae230-69ce-4775-aff0-65ccae007312.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/da6b13b5-bc7b-41cf-a164-87254d649e7f_d2b2cc4e-e5ef-4d96-9c2c-89b50f137236.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/da6b13b5-bc7b-41cf-a164-87254d649e7f_13a2da76-3dd3-4944-93e1-e9bbe21c32c4.jpg/250x188.webp"
+    ],
+    "ocsImagesA": [],
+    "isOfferNew": true,
+    "price": {
+      "priceFormatted": "€ 80.900",
+      "suggestedRetailPrice": "€ 84.600",
+      "priceEvaluation": 1,
+      "vatLabel": "inkl. MwSt.",
+      "isVatLabelLegallyRequired": false,
+      "priceSuperscriptString": "1",
+      "isPriceEvaluationEnabled": true,
+      "isConditionalPrice": false
+    },
+    "availableNow": true,
+    "superDeal": {
+      "oldPriceFormatted": "",
+      "isEligible": false
+    },
+    "url": "/angebote/porsche-macan-electric-4-elektro-grau-cat_ma57mo20311-da6b13b5-bc7b-41cf-a164-87254d649e7f",
+    "vehicle": {
+      "articleType": "Car",
+      "type": "Car",
+      "make": "Porsche",
+      "model": "Macan",
+      "modelGroup": "Macan",
+      "variant": "Macan",
+      "modelId": 20311,
+      "modelVersionInput": "Electric 4",
+      "subtitle": "Fahrerairbag, Panoramadach, Sportsitze, Sportpaket, Abstandstempomat, Navigationssystem, Scheckheftgepflegt, Soundsystem",
+      "offerType": "U",
+      "transmission": "Automatik",
+      "fuel": "Elektro",
+      "mileageInKm": "7.522 km"
+    },
+    "location": {
+      "countryCode": "DE",
+      "zip": "23795",
+      "city": "Bad Segeberg ( bei Hamburg)",
+      "street": "Asternweg 2"
+    },
+    "seller": {
+      "dealer": {
+        "maxImages": 50,
+        "hasDealerInformationOnResultList": true,
+        "isFreespeeCallTrackingEnabled": true,
+        "culture": "de-DE"
+      },
+      "id": "44791653",
+      "type": "Dealer",
+      "logo": {
+        "small": {
+          "href": "https://prod.pictures.autoscout24.net/dealer-info/44791653-original-15840b44-d646-4521-a0cd-9be6bba2195d.png/resize/100x50%3E/quality/90"
+        }
+      },
+      "companyName": "H&S Automobile Hamburg GmbH",
+      "contactName": "Mirko Hartz",
+      "links": {
+        "infoPage": "https://www.autoscout24.de/haendler/h-und-s-automobile-hamburg-gmbh-bad-segeberg-bei-hamburg?atype=C",
+        "imprint": "https://www.autoscout24.de/haendler/h-und-s-automobile-hamburg-gmbh-bad-segeberg-bei-hamburg/impressum"
+      },
+      "phones": [
+        {
+          "phoneType": "Mobile",
+          "formattedNumber": "+49 (0)176 - 22578171",
+          "callTo": "+4917622578171"
+        },
+        {
+          "phoneType": "Whatsapp",
+          "formattedNumber": "+49 (0)176 - 22578171",
+          "callTo": null
+        }
+      ]
+    },
+    "appliedAdTier": "T50",
+    "adTier": "T50",
+    "isOcs": false,
+    "specialConditions": [],
+    "statistics": {
+      "leadsRange": "Zero"
+    },
+    "searchResultType": "Organic",
+    "searchResultSection": "Main",
+    "tracking": {
+      "firstRegistration": "02-2026",
+      "fuelType": "e",
+      "imageContent": "no-placeholder|0.23404658442400295",
+      "isSmyleEligible": "false",
+      "mileage": "7522",
+      "priceLabel": "top-price",
+      "price": "80900",
+      "orderBucket": "unknown",
+      "modelTaxonomy": "[make_id:57, model_group_id:20311, variant_id:3290, generation_id:1578, motortype_id:4372, trim_id:];"
+    },
+    "coverImageAttractiveness": 0.23404658442400295,
+    "vehicleDetails": [
+      {
+        "data": "7.522 km",
+        "iconName": "mileage_odometer",
+        "ariaLabel": "Kilometerstand"
+      },
+      {
+        "data": "Automatik",
+        "iconName": "gearbox",
+        "ariaLabel": "Getriebe"
+      },
+      {
+        "data": "02/2026",
+        "iconName": "calendar",
+        "ariaLabel": "Erstzulassung"
+      },
+      {
+        "data": "Elektro",
+        "iconName": "gas_pump",
+        "ariaLabel": "Kraftstoff"
+      },
+      {
+        "data": "300 kW (408 PS)",
+        "iconName": "speedometer",
+        "ariaLabel": "Leistung"
+      },
+      {
+        "data": "516 km Reichweite",
+        "iconName": "distance",
+        "footnotes": "7",
+        "ariaLabel": "Reichweite"
+      },
+      {
+        "data": "3,0 kWh/100 km (komb.)",
+        "iconName": "lightning_bolt",
+        "ariaLabel": "Kraftstoffverbrauch"
+      },
+      {
+        "data": "0 g/km (komb.)",
+        "iconName": "leaf",
+        "ariaLabel": "CO₂-Emissionen"
+      },
+      {
+        "data": "CO₂-Klasse A (komb.)",
+        "iconName": "efficiency",
+        "ariaLabel": "CO₂-Klasse"
+      }
+    ],
+    "wltpValues": [
+      "3,0 kWh/100 km (komb.)",
+      "0 g/km (komb.)",
+      "CO₂-Klasse A (komb.)"
+    ],
+    "trackingParameters": [
+      {
+        "key": "boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "applied_boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "relevance_adjustment",
+        "value": "boost"
+      },
+      {
+        "key": "boosting_product",
+        "value": "mia"
+      }
+    ]
+  },
+  {
+    "id": "5598918d-e0e3-419a-a1c4-6b6cbb8ea120",
+    "isTrending": false,
+    "identifier": {
+      "legacyId": null,
+      "crossReferenceId": null
+    },
+    "images": [
+      "https://prod.pictures.autoscout24.net/listing-images/5598918d-e0e3-419a-a1c4-6b6cbb8ea120_73eaee62-3dd8-4043-aead-e6cfd329e09e.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/5598918d-e0e3-419a-a1c4-6b6cbb8ea120_80719bc0-b7c7-4fa6-a39f-cd6b31b97f9c.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/5598918d-e0e3-419a-a1c4-6b6cbb8ea120_3383e2ab-ca1f-4e47-a411-0e78e5415833.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/5598918d-e0e3-419a-a1c4-6b6cbb8ea120_3fb82f56-ac85-40b1-ae0d-6cc2875eb12c.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/5598918d-e0e3-419a-a1c4-6b6cbb8ea120_310dc714-8151-4517-86ec-70255d748043.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/5598918d-e0e3-419a-a1c4-6b6cbb8ea120_ec34cc16-075e-458d-8507-319a55120b49.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/5598918d-e0e3-419a-a1c4-6b6cbb8ea120_2fdf90fc-6c7d-43d5-bb96-4c150aefad3b.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/5598918d-e0e3-419a-a1c4-6b6cbb8ea120_1038b5ce-f7c2-423e-8c4d-747af1638a00.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/5598918d-e0e3-419a-a1c4-6b6cbb8ea120_c9c0d64f-457f-4150-9cba-cbb6b0f58680.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/5598918d-e0e3-419a-a1c4-6b6cbb8ea120_b1ca0f56-b634-4b5b-8ec7-b1aa87c79b8d.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/5598918d-e0e3-419a-a1c4-6b6cbb8ea120_e8444ad4-2ece-435f-b60d-772b43ec5ea8.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/5598918d-e0e3-419a-a1c4-6b6cbb8ea120_d3a6817f-878d-4ff9-a51e-f415cbcf5b70.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/5598918d-e0e3-419a-a1c4-6b6cbb8ea120_a6c3d6da-05a9-4ea2-bcea-a48bcc75c2b5.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/5598918d-e0e3-419a-a1c4-6b6cbb8ea120_27bfb58d-bc6d-42ed-b7a2-476797cd8276.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/5598918d-e0e3-419a-a1c4-6b6cbb8ea120_169947e3-88d3-4b5d-ad17-33a620b6bc76.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/5598918d-e0e3-419a-a1c4-6b6cbb8ea120_8b05d766-69a0-4b48-b2fa-a5348057c673.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/5598918d-e0e3-419a-a1c4-6b6cbb8ea120_1e6ee973-08ba-4280-a0bd-1439bc621331.jpg/250x188.webp"
+    ],
+    "ocsImagesA": [],
+    "price": {
+      "priceFormatted": "€ 46.330",
+      "priceEvaluation": 1,
+      "vatLabel": "inkl. MwSt.",
+      "isVatLabelLegallyRequired": false,
+      "priceSuperscriptString": "1",
+      "isPriceEvaluationEnabled": true,
+      "isConditionalPrice": false
+    },
+    "seals": [
+      {
+        "id": 162,
+        "image": "https://www.autoscout24.de/seal-images/162/NfKCXaOyf39H35WFGWGbxhgneymK7s8v/p9lgQ38rklD926gFPidxl71Qx31HhL8q.png",
+        "culture": "de-DE"
+      }
+    ],
+    "availableNow": true,
+    "superDeal": {
+      "oldPriceFormatted": "",
+      "isEligible": false
+    },
+    "url": "/angebote/bmw-520-i-m-sport-lueft-acc-pas+360-haka-4xshz-el-si-benzin-grau-cat_ma13mo1648-5598918d-e0e3-419a-a1c4-6b6cbb8ea120",
+    "vehicle": {
+      "articleType": "Car",
+      "type": "Car",
+      "make": "BMW",
+      "model": "520",
+      "modelGroup": "5er",
+      "variant": "Limousine",
+      "modelId": 1648,
+      "modelVersionInput": "i M Sport Lüft|ACC|PAs+360°|ha&ka|4xSHZ|el.Si",
+      "subtitle": "Sportpaket, Sportfahrwerk, Anhängerkupplung, Elektrische Sitze, Sitzbelüftung, Sportsitze, Abstandstempomat, Soundsystem",
+      "offerType": "U",
+      "transmission": "Automatik",
+      "fuel": "Benzin",
+      "mileageInKm": "17.132 km",
+      "engineDisplacementInCCM": "1.998 cm³"
+    },
+    "location": {
+      "countryCode": "DE",
+      "zip": "85748",
+      "city": "Garching",
+      "street": "Gutenbergstr. 4"
+    },
+    "ratings": {
+      "ratingsCount": 180,
+      "ratingsStars": 4,
+      "ratingsEnabled": true
+    },
+    "seller": {
+      "dealer": {
+        "maxImages": 50,
+        "isFreespeeCallTrackingEnabled": true,
+        "culture": "de-DE"
+      },
+      "id": "13500568",
+      "type": "Dealer",
+      "logo": {
+        "small": {
+          "href": "https://prod.pictures.autoscout24.net/dealer-info/13500568-original-a34e3d07-6033-45c8-be6e-22c0627ef420.png/resize/100x50%3E/quality/90"
+        }
+      },
+      "companyName": "Sixt Car Sales",
+      "contactName": "Sixt Car Sales Verkaufsteam Garching",
+      "links": {
+        "infoPage": "https://www.autoscout24.de/haendler/sixt-car-sales-garching?atype=C",
+        "imprint": "https://www.autoscout24.de/haendler/sixt-car-sales-garching/impressum"
+      },
+      "phones": [
+        {
+          "phoneType": "Office",
+          "formattedNumber": "+49 (0)89 - 32198321",
+          "callTo": "+498932198321"
+        }
+      ]
+    },
+    "appliedAdTier": "T50",
+    "adTier": "T50",
+    "isOcs": false,
+    "specialConditions": [],
+    "statistics": {
+      "leadsRange": "Some"
+    },
+    "searchResultType": "Organic",
+    "searchResultSection": "Main",
+    "tracking": {
+      "firstRegistration": "04-2025",
+      "fuelType": "b",
+      "imageContent": "no-placeholder|0.1647820781083662",
+      "isSmyleEligible": "true",
+      "mileage": "17132",
+      "priceLabel": "top-price",
+      "price": "46330",
+      "orderBucket": "unknown",
+      "modelTaxonomy": "[make_id:13, model_group_id:100039, variant_id:108, generation_id:128, motortype_id:477, trim_id:];"
+    },
+    "coverImageAttractiveness": 0.1647820781083662,
+    "vehicleDetails": [
+      {
+        "data": "17.132 km",
+        "iconName": "mileage_odometer",
+        "ariaLabel": "Kilometerstand"
+      },
+      {
+        "data": "Automatik",
+        "iconName": "gearbox",
+        "ariaLabel": "Getriebe"
+      },
+      {
+        "data": "04/2025",
+        "iconName": "calendar",
+        "ariaLabel": "Erstzulassung"
+      },
+      {
+        "data": "Benzin",
+        "iconName": "gas_pump",
+        "ariaLabel": "Kraftstoff"
+      },
+      {
+        "data": "140 kW (190 PS)",
+        "iconName": "speedometer",
+        "ariaLabel": "Leistung"
+      },
+      {
+        "data": "6,4 l/100 km (komb.)",
+        "iconName": "water_drop",
+        "ariaLabel": "Kraftstoffverbrauch"
+      },
+      {
+        "data": "144 g/km (komb.)",
+        "iconName": "leaf",
+        "ariaLabel": "CO₂-Emissionen"
+      },
+      {
+        "data": "CO₂-Klasse E (komb.)",
+        "iconName": "efficiency",
+        "ariaLabel": "CO₂-Klasse"
+      }
+    ],
+    "wltpValues": [
+      "6,4 l/100 km (komb.)",
+      "144 g/km (komb.)",
+      "CO₂-Klasse E (komb.)"
+    ],
+    "trackingParameters": [
+      {
+        "key": "boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "applied_boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "relevance_adjustment",
+        "value": "boost"
+      },
+      {
+        "key": "boosting_product",
+        "value": "mia"
+      }
+    ]
+  },
+  {
+    "id": "7f329865-3fdb-47ab-9db9-9e03ba937fbf",
+    "evBanner": {
+      "type": "hybrid",
+      "label": "Hybrid"
+    },
+    "identifier": {
+      "legacyId": null,
+      "crossReferenceId": null
+    },
+    "images": [
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_c0d5a243-c4c4-4d96-b259-95e1cdc351a4.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_21de45aa-7b4b-43f0-8b90-698c26a0dcf7.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_1c0ae346-7866-441b-9cc2-ec96fa362feb.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_383e053a-c065-4e6c-abcb-11138ad90610.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_3f9f82b8-e5cd-485a-8706-4de5945c0c38.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_60480e35-9152-46db-9190-dfd6c03fbc5b.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_9a8a2a27-e538-470b-bc87-5bc069abfcb2.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_006178ae-e532-4094-971b-b9ad84e6bde1.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_edc0596a-4d13-4c75-a1fe-b0df1f7ec148.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_0484ca10-b77e-4667-8ac5-a4cd20eec33e.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_435a0256-1c27-421d-9a43-2c7e5e017374.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_50edf85b-bb99-468b-ab37-68ede672e2dd.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_1de2c299-e848-4ed5-bb6d-ff334ecea982.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_395c840a-52dd-4cce-8a58-fd2c0e7232f3.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_d0f0769b-77d5-4932-b727-e03ede51864c.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_80994f62-110c-4562-953e-9092454817e5.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_f5fdf8c4-7dc9-413e-b2e4-ff9ef8183f8a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_40745bf1-bfeb-4deb-80fe-43830e0abe8d.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_6405a134-e854-452a-b149-9995a49075f3.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_7e74223a-c479-421e-ab26-58de52d5e29a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_cb6d7c8d-8c67-4d30-82d0-b4913dfcfd4a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_e8f713b6-37e4-4788-9d98-9232d0a4f2e5.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_a18805e9-3bcc-440b-93c9-36631adeb986.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_24274a0d-6948-4b2c-a138-802a22461486.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_34a6d4fc-886d-40ec-ab31-ed2adc66b667.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_da60fd06-7dc5-4a31-818e-b5a0d9bd8af8.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_cbc8af4f-4e81-4d8c-b8e5-351352457eab.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_1ea89292-a52f-4c99-aaa9-33b87ce4cc56.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/7f329865-3fdb-47ab-9db9-9e03ba937fbf_449d9142-7a4e-4ccc-8c1d-493cfcdf5a4a.jpg/250x188.webp"
+    ],
+    "ocsImagesA": [],
+    "price": {
+      "priceFormatted": "€ 28.490",
+      "vatLabel": "inkl. MwSt.",
+      "isVatLabelLegallyRequired": false,
+      "priceSuperscriptString": "1",
+      "isPriceEvaluationEnabled": true,
+      "isConditionalPrice": false
+    },
+    "availableNow": true,
+    "superDeal": {
+      "oldPriceFormatted": "",
+      "isEligible": false
+    },
+    "url": "/angebote/byd-atto-2-dm-i-boost-elektro-benzin-blau-cat_ma16379mo77130-7f329865-3fdb-47ab-9db9-9e03ba937fbf",
+    "vehicle": {
+      "articleType": "Car",
+      "type": "Car",
+      "make": "BYD",
+      "model": "Atto 2",
+      "modelGroup": "Atto 2",
+      "variant": null,
+      "modelId": 77130,
+      "modelVersionInput": "DM-i Boost",
+      "subtitle": null,
+      "offerType": "N",
+      "transmission": "Automatik",
+      "fuel": "Elektro/Benzin",
+      "mileageInKm": "0 km"
+    },
+    "location": {
+      "countryCode": "DE",
+      "zip": "92289",
+      "city": "Ursensollen",
+      "street": "Juraallee 1-3"
+    },
+    "ratings": {
+      "ratingsCount": 64,
+      "ratingsStars": 4.5,
+      "ratingsEnabled": true
+    },
+    "seller": {
+      "dealer": {
+        "maxImages": 50,
+        "isFreespeeCallTrackingEnabled": true,
+        "culture": "de-DE"
+      },
+      "id": "8748486",
+      "type": "Dealer",
+      "logo": {
+        "small": {
+          "href": "https://prod.pictures.autoscout24.net/dealer-info/8748486-original-522d9f94-c626-45d6-97d7-ad3dd062d2a6.png/resize/100x50%3E/quality/90"
+        }
+      },
+      "companyName": "Fischer Automobile GmbH & Co. KG",
+      "links": {
+        "infoPage": "https://www.autoscout24.de/haendler/fischer-automobile-gmbh-und-co-kg?atype=C",
+        "imprint": "https://www.autoscout24.de/haendler/fischer-automobile-gmbh-und-co-kg/impressum"
+      },
+      "phones": [
+        {
+          "phoneType": "Office",
+          "formattedNumber": "+49 (0)9628 - 923760",
+          "callTo": "+499628923760"
+        }
+      ]
+    },
+    "appliedAdTier": "T50",
+    "adTier": "T50",
+    "isOcs": false,
+    "specialConditions": [],
+    "statistics": {
+      "leadsRange": "Some"
+    },
+    "searchResultType": "Organic",
+    "searchResultSection": "Main",
+    "tracking": {
+      "firstRegistration": "new",
+      "fuelType": "2",
+      "imageContent": "no-placeholder|0.24807670617434474",
+      "isSmyleEligible": "unknown",
+      "mileage": "0",
+      "priceLabel": "unknown",
+      "price": "28490",
+      "orderBucket": "unknown",
+      "modelTaxonomy": "[make_id:16379, model_group_id:77130, variant_id:, generation_id:11021, motortype_id:12179, trim_id:479125];"
+    },
+    "coverImageAttractiveness": 0.24807670617434474,
+    "vehicleDetails": [
+      {
+        "data": "0 km",
+        "iconName": "mileage_odometer",
+        "ariaLabel": "Kilometerstand"
+      },
+      {
+        "data": "Automatik",
+        "iconName": "gearbox",
+        "ariaLabel": "Getriebe"
+      },
+      {
+        "data": "- (Erstzulassung)",
+        "isPlaceholder": true,
+        "iconName": "calendar",
+        "ariaLabel": "Erstzulassung"
+      },
+      {
+        "data": "Elektro/Benzin",
+        "iconName": "gas_pump",
+        "ariaLabel": "Kraftstoff"
+      },
+      {
+        "data": "156 kW (212 PS)",
+        "iconName": "speedometer",
+        "ariaLabel": "Leistung"
+      },
+      {
+        "data": "90 km Reichweite",
+        "iconName": "distance",
+        "ariaLabel": "Reichweite"
+      },
+      {
+        "data": "11,2 kWh/100 km (gewichtet, komb.)",
+        "iconName": "lightning_bolt",
+        "ariaLabel": "Energieverbrauch"
+      },
+      {
+        "data": "1,8 l/100 km (gewichtet, komb.) | 5,1 l/100 km (entladen, komb.)",
+        "iconName": "water_drop",
+        "ariaLabel": "Kraftstoffverbrauch"
+      },
+      {
+        "data": "41 g/km (gew., komb.)",
+        "iconName": "leaf",
+        "ariaLabel": "CO₂-Emissionen"
+      },
+      {
+        "data": "CO₂-Klasse B (gew., komb.) / C (entladen, komb.)",
+        "iconName": "efficiency",
+        "ariaLabel": "CO₂-Klasse"
+      }
+    ],
+    "wltpValues": [
+      "1,8 l/100 km (gewichtet, komb.) + 11,2 kWh/100 km (gewichtet, komb.)",
+      "5,1 l/100 km (entladen, komb.)",
+      "41 g/km (gew., komb.)",
+      "CO₂-Klasse B (gew., komb.) / C (entladen, komb.)"
+    ],
+    "trackingParameters": [
+      {
+        "key": "boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "applied_boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "relevance_adjustment",
+        "value": "boost"
+      },
+      {
+        "key": "boosting_product",
+        "value": "mia"
+      }
+    ]
+  },
+  {
+    "id": "12d01ed7-952b-4635-8d02-f749453591cf",
+    "isTrending": false,
+    "identifier": {
+      "legacyId": null,
+      "crossReferenceId": null
+    },
+    "images": [
+      "https://prod.pictures.autoscout24.net/listing-images/12d01ed7-952b-4635-8d02-f749453591cf_12c56294-766c-40ae-b0d9-c99d764b559b.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/12d01ed7-952b-4635-8d02-f749453591cf_c5110e86-83f7-44d1-9d49-ce1b1e389ed2.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/12d01ed7-952b-4635-8d02-f749453591cf_2c55f833-ccaf-4bb5-9bad-91557305006a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/12d01ed7-952b-4635-8d02-f749453591cf_7a9b879b-bda6-4ad0-8ae8-d930dfd16dd0.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/12d01ed7-952b-4635-8d02-f749453591cf_3edfc419-318b-4fa1-8de3-e12cb43b3ea2.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/12d01ed7-952b-4635-8d02-f749453591cf_f1f51d3c-928c-42e5-a873-86ea87a19a70.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/12d01ed7-952b-4635-8d02-f749453591cf_928c1543-538c-480b-9a7e-707aa11e4824.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/12d01ed7-952b-4635-8d02-f749453591cf_31895782-e5d8-4874-a1f5-5d0ea2bf9fb2.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/12d01ed7-952b-4635-8d02-f749453591cf_fc630211-2a4d-438b-879f-aa8ab7721fcb.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/12d01ed7-952b-4635-8d02-f749453591cf_41f32fbc-f4f1-49bf-a1da-a0444b38e824.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/12d01ed7-952b-4635-8d02-f749453591cf_58b273ee-bc6a-4bdc-91b9-8489c08b576d.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/12d01ed7-952b-4635-8d02-f749453591cf_8135b6ed-1a76-4e3a-b11e-89332c8efebb.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/12d01ed7-952b-4635-8d02-f749453591cf_29f49f7e-e98d-4143-9670-e3625c12134a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/12d01ed7-952b-4635-8d02-f749453591cf_2d3ba074-0af9-4c65-a0ca-5ed28bc47f4a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/12d01ed7-952b-4635-8d02-f749453591cf_da664a35-936b-41d6-8920-d46e09cf5157.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/12d01ed7-952b-4635-8d02-f749453591cf_4aab1ce9-5eff-4c43-bb7d-01b4d5e47a34.jpg/250x188.webp"
+    ],
+    "ocsImagesA": [],
+    "price": {
+      "priceFormatted": "€ 31.880",
+      "priceEvaluation": 3,
+      "vatLabel": "inkl. MwSt.",
+      "isVatLabelLegallyRequired": false,
+      "priceSuperscriptString": "1",
+      "isPriceEvaluationEnabled": true,
+      "isConditionalPrice": false
+    },
+    "seals": [
+      {
+        "id": 162,
+        "image": "https://www.autoscout24.de/seal-images/162/NfKCXaOyf39H35WFGWGbxhgneymK7s8v/p9lgQ38rklD926gFPidxl71Qx31HhL8q.png",
+        "culture": "de-DE"
+      }
+    ],
+    "availableNow": true,
+    "superDeal": {
+      "oldPriceFormatted": "",
+      "isEligible": false
+    },
+    "url": "/angebote/bmw-120-i-m-sport-pro-acc-hud-360-ad-led-m-sitze-nav-benzin-grau-cat_ma13mo18482-12d01ed7-952b-4635-8d02-f749453591cf",
+    "vehicle": {
+      "articleType": "Car",
+      "type": "Car",
+      "make": "BMW",
+      "model": "120",
+      "modelGroup": "1er",
+      "variant": "Limousine",
+      "modelId": 18482,
+      "modelVersionInput": "i M Sport Pro|ACC|HUD|360°|ad-LED|M Sitze|NAV",
+      "subtitle": "Sportsitze, Sportpaket, Schaltwippen, Abstandstempomat, Blendfreies Fernlicht, Head-up display, Sitzheizung, Beheizbares Lenkrad",
+      "offerType": "U",
+      "transmission": "Automatik",
+      "fuel": "Benzin",
+      "mileageInKm": "34.001 km",
+      "engineDisplacementInCCM": "1.499 cm³"
+    },
+    "location": {
+      "countryCode": "DE",
+      "zip": "85748",
+      "city": "Garching",
+      "street": "Gutenbergstr. 4"
+    },
+    "ratings": {
+      "ratingsCount": 180,
+      "ratingsStars": 4,
+      "ratingsEnabled": true
+    },
+    "seller": {
+      "dealer": {
+        "maxImages": 50,
+        "isFreespeeCallTrackingEnabled": true,
+        "culture": "de-DE"
+      },
+      "id": "13500568",
+      "type": "Dealer",
+      "logo": {
+        "small": {
+          "href": "https://prod.pictures.autoscout24.net/dealer-info/13500568-original-a34e3d07-6033-45c8-be6e-22c0627ef420.png/resize/100x50%3E/quality/90"
+        }
+      },
+      "companyName": "Sixt Car Sales",
+      "contactName": "Sixt Car Sales Verkaufsteam Garching",
+      "links": {
+        "infoPage": "https://www.autoscout24.de/haendler/sixt-car-sales-garching?atype=C",
+        "imprint": "https://www.autoscout24.de/haendler/sixt-car-sales-garching/impressum"
+      },
+      "phones": [
+        {
+          "phoneType": "Office",
+          "formattedNumber": "+49 (0)89 - 32198321",
+          "callTo": "+498932198321"
+        }
+      ]
+    },
+    "appliedAdTier": "T50",
+    "adTier": "T50",
+    "isOcs": false,
+    "specialConditions": [],
+    "statistics": {
+      "leadsRange": "Zero"
+    },
+    "searchResultType": "Organic",
+    "searchResultSection": "Main",
+    "tracking": {
+      "firstRegistration": "04-2025",
+      "fuelType": "b",
+      "imageContent": "no-placeholder|0.19833261400131352",
+      "isSmyleEligible": "true",
+      "mileage": "34001",
+      "priceLabel": "fair-price",
+      "price": "31880",
+      "orderBucket": "unknown",
+      "modelTaxonomy": "[make_id:13, model_group_id:100037, variant_id:194, generation_id:193, motortype_id:519, trim_id:7142];"
+    },
+    "coverImageAttractiveness": 0.19833261400131352,
+    "vehicleDetails": [
+      {
+        "data": "34.001 km",
+        "iconName": "mileage_odometer",
+        "ariaLabel": "Kilometerstand"
+      },
+      {
+        "data": "Automatik",
+        "iconName": "gearbox",
+        "ariaLabel": "Getriebe"
+      },
+      {
+        "data": "04/2025",
+        "iconName": "calendar",
+        "ariaLabel": "Erstzulassung"
+      },
+      {
+        "data": "Benzin",
+        "iconName": "gas_pump",
+        "ariaLabel": "Kraftstoff"
+      },
+      {
+        "data": "125 kW (170 PS)",
+        "iconName": "speedometer",
+        "ariaLabel": "Leistung"
+      },
+      {
+        "data": "5,8 l/100 km (komb.)",
+        "iconName": "water_drop",
+        "ariaLabel": "Kraftstoffverbrauch"
+      },
+      {
+        "data": "132 g/km (komb.)",
+        "iconName": "leaf",
+        "ariaLabel": "CO₂-Emissionen"
+      },
+      {
+        "data": "CO₂-Klasse D (komb.)",
+        "iconName": "efficiency",
+        "ariaLabel": "CO₂-Klasse"
+      }
+    ],
+    "wltpValues": [
+      "5,8 l/100 km (komb.)",
+      "132 g/km (komb.)",
+      "CO₂-Klasse D (komb.)"
+    ],
+    "trackingParameters": [
+      {
+        "key": "boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "applied_boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "relevance_adjustment",
+        "value": "boost"
+      },
+      {
+        "key": "boosting_product",
+        "value": "mia"
+      }
+    ]
+  },
+  {
+    "id": "af46dca7-382d-418f-b6e0-815c072a8e85",
+    "evBanner": {
+      "type": "electric",
+      "label": "Elektrisch"
+    },
+    "isTrending": false,
+    "identifier": {
+      "legacyId": null,
+      "crossReferenceId": null
+    },
+    "images": [
+      "https://prod.pictures.autoscout24.net/listing-images/af46dca7-382d-418f-b6e0-815c072a8e85_4b47f1f7-1698-4ba0-9aa1-4cb6d27b5997.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/af46dca7-382d-418f-b6e0-815c072a8e85_c93b787c-2f44-4d37-b170-97b8c7ae0eda.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/af46dca7-382d-418f-b6e0-815c072a8e85_061c09ac-d371-4f3c-95d2-afad6eaf1c77.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/af46dca7-382d-418f-b6e0-815c072a8e85_2f272c8e-6718-477f-8eb1-ca00707316f2.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/af46dca7-382d-418f-b6e0-815c072a8e85_ae868ea7-e3f5-49aa-a5c6-9466e2232e51.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/af46dca7-382d-418f-b6e0-815c072a8e85_665b5ea4-2d6a-4215-9bc0-2c8631b613bf.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/af46dca7-382d-418f-b6e0-815c072a8e85_669a4816-37b7-468d-bf4d-44385822946a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/af46dca7-382d-418f-b6e0-815c072a8e85_e24d8191-3d3a-40b3-ba0c-833eb1163dd0.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/af46dca7-382d-418f-b6e0-815c072a8e85_383cd2a2-7e6e-4a30-a579-bfb43fb64acd.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/af46dca7-382d-418f-b6e0-815c072a8e85_b265f540-f2a2-4a6c-9604-9f6957167e31.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/af46dca7-382d-418f-b6e0-815c072a8e85_62d48448-18ab-448b-8e5e-298483efe571.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/af46dca7-382d-418f-b6e0-815c072a8e85_db581aaa-e1f0-40b2-889c-16c1bbe4cdcc.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/af46dca7-382d-418f-b6e0-815c072a8e85_4085e7de-c639-4a9d-8794-b808d9137a8a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/af46dca7-382d-418f-b6e0-815c072a8e85_a791541a-29ba-428f-ac0f-d6c487810099.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/af46dca7-382d-418f-b6e0-815c072a8e85_286defdd-1473-4c9a-aa41-424b0a6eeba9.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/af46dca7-382d-418f-b6e0-815c072a8e85_6444ddd8-a07d-4882-868d-94122f50f4bc.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/af46dca7-382d-418f-b6e0-815c072a8e85_80047930-8fae-44b0-8506-e1a2c2772187.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/af46dca7-382d-418f-b6e0-815c072a8e85_03adf5aa-d38c-4dd8-9318-d15e15334ae0.jpg/250x188.webp"
+    ],
+    "ocsImagesA": [],
+    "isOfferNew": true,
+    "price": {
+      "priceFormatted": "€ 31.950",
+      "priceEvaluation": 2,
+      "vatLabel": "inkl. MwSt.",
+      "isVatLabelLegallyRequired": false,
+      "priceSuperscriptString": "1",
+      "isPriceEvaluationEnabled": true,
+      "isConditionalPrice": false
+    },
+    "seals": [
+      {
+        "id": 160,
+        "image": "https://www.autoscout24.de/seal-images/160/J4LDGnSMb15tsAMppAEl1cpzsiZzrntV/jx5PAVjV5HmKFICIDUu50QY88nmthddy.jpg",
+        "culture": "de-DE"
+      }
+    ],
+    "availableNow": true,
+    "superDeal": {
+      "oldPriceFormatted": "",
+      "isEligible": false
+    },
+    "url": "/angebote/volvo-ec40-ultimate-recharge-pure-electric-awd-standhzg-ahk-p-elektro-schwarz-cat_ma73mo76731-af46dca7-382d-418f-b6e0-815c072a8e85",
+    "vehicle": {
+      "articleType": "Car",
+      "type": "Car",
+      "make": "Volvo",
+      "model": "EC40",
+      "modelGroup": "EC40",
+      "variant": null,
+      "modelId": 76731,
+      "modelVersionInput": "Ultimate Recharge Pure Electric AWD StandHZG AHK P",
+      "subtitle": "Anhängerkupplung, Fahrerairbag, Sitzheizung, Xenonscheinwerfer, Elektrische Sitze, Winterpaket, 360° Kamera, Bi-Xenon Scheinwerfer",
+      "offerType": "U",
+      "transmission": "Automatik",
+      "fuel": "Elektro",
+      "mileageInKm": "73.734 km",
+      "engineDisplacementInCCM": "0 cm³"
+    },
+    "location": {
+      "countryCode": "DE",
+      "zip": "34123",
+      "city": "Kassel",
+      "street": "Heiligenröder Straße 27"
+    },
+    "ratings": {
+      "ratingsCount": 22,
+      "ratingsStars": 4.5,
+      "ratingsEnabled": true
+    },
+    "seller": {
+      "dealer": {
+        "maxImages": 50,
+        "hasDealerInformationOnResultList": true,
+        "isFreespeeCallTrackingEnabled": true,
+        "culture": "de-DE"
+      },
+      "id": "16823106",
+      "type": "Dealer",
+      "logo": {
+        "small": {
+          "href": "https://prod.pictures.autoscout24.net/dealer-info/5554-original-afd079d1-b166-4930-b5e9-83385dcae8b9.png/resize/100x50%3E/quality/90"
+        }
+      },
+      "companyName": "Hetzler-Automobile Vertriebs GmbH & Co. KG",
+      "contactName": "Alexander Host",
+      "links": {
+        "infoPage": "https://www.autoscout24.de/haendler/hetzler-automobile-vertriebs-gmbh-und-co-kg?atype=C",
+        "imprint": "https://www.autoscout24.de/haendler/hetzler-automobile-vertriebs-gmbh-und-co-kg/impressum"
+      },
+      "phones": [
+        {
+          "phoneType": "Office",
+          "formattedNumber": "+49 (0)561 - 570090",
+          "callTo": "+49561570090"
+        }
+      ]
+    },
+    "appliedAdTier": "T50",
+    "adTier": "T50",
+    "isOcs": false,
+    "specialConditions": [],
+    "statistics": {
+      "leadsRange": "Zero"
+    },
+    "searchResultType": "Organic",
+    "searchResultSection": "Main",
+    "tracking": {
+      "firstRegistration": "08-2022",
+      "fuelType": "e",
+      "imageContent": "no-placeholder|0.20253047919682687",
+      "isSmyleEligible": "false",
+      "mileage": "73734",
+      "priceLabel": "good-price",
+      "price": "31950",
+      "orderBucket": "unknown",
+      "modelTaxonomy": "[make_id:73, model_group_id:201542, variant_id:, generation_id:, motortype_id:, trim_id:];"
+    },
+    "coverImageAttractiveness": 0.20253047919682687,
+    "vehicleDetails": [
+      {
+        "data": "73.734 km",
+        "iconName": "mileage_odometer",
+        "ariaLabel": "Kilometerstand"
+      },
+      {
+        "data": "Automatik",
+        "iconName": "gearbox",
+        "ariaLabel": "Getriebe"
+      },
+      {
+        "data": "08/2022",
+        "iconName": "calendar",
+        "ariaLabel": "Erstzulassung"
+      },
+      {
+        "data": "Elektro",
+        "iconName": "gas_pump",
+        "ariaLabel": "Kraftstoff"
+      },
+      {
+        "data": "300 kW (408 PS)",
+        "iconName": "speedometer",
+        "ariaLabel": "Leistung"
+      },
+      {
+        "data": "450 km Reichweite",
+        "iconName": "distance",
+        "ariaLabel": "Reichweite"
+      },
+      {
+        "data": "21,0 kWh/100 km (komb.)",
+        "iconName": "lightning_bolt",
+        "ariaLabel": "Kraftstoffverbrauch"
+      },
+      {
+        "data": "0 g/km (komb.)",
+        "iconName": "leaf",
+        "ariaLabel": "CO₂-Emissionen"
+      }
+    ],
+    "wltpValues": [
+      "21,0 kWh/100 km (komb.)",
+      "0 g/km (komb.)"
+    ],
+    "trackingParameters": [
+      {
+        "key": "boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "applied_boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "relevance_adjustment",
+        "value": "boost"
+      },
+      {
+        "key": "boosting_product",
+        "value": "mia"
+      }
+    ]
+  },
+  {
+    "id": "f9ffab6f-38fb-4655-9d66-0c1cfc866f72",
+    "isTrending": false,
+    "identifier": {
+      "legacyId": null,
+      "crossReferenceId": "437158812"
+    },
+    "crossReferenceId": "437158812",
+    "images": [
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_b2f5bf1e-42c4-425d-b939-88f7e2f5792f.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_c73a6dfe-5e78-4bf5-9b1b-0e41a1c6d7b5.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_176dad57-0558-4fb4-8fd5-6c5afacb7e2c.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_d9bad030-dbff-49ef-8b83-b73c69e8ff7f.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_e77542c8-ff50-4d2d-888d-7e0c2dc4ec01.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_725089d3-b286-4b5e-92f5-52c435721696.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_f4c19006-7116-4a57-bd02-148216ad6e6e.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_e106ba47-753a-4cb4-8358-eabd43e0cf75.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_6404b36f-2068-4188-bbb9-878e736be2af.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_af533549-e52b-446e-bfff-22d997b90363.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_efe1a158-1539-48f4-b180-1c2406f55bdc.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_3968f305-43d0-4122-bad4-46a2a654f9a3.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_b84a445f-3f9b-45ae-b47a-7a13bbc8fe43.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_b822940f-1f68-402b-a0e3-6556b0005988.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_3d746ad4-ae38-4e16-b286-d9e6aa2e527a.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_135a021e-a6a9-4cb8-b3d5-1d582ad37c0c.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_d9f730a7-790b-468a-93bd-42be552f4d3b.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_33c9bbbb-2bd7-4bb4-b1ef-9786fbff03e7.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_0f5860c7-f61e-4529-be2e-d02e19a41d80.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_c4667cd8-bc91-4226-bdd3-8f55206f5503.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_de020e45-0d13-4d6a-88d5-4b31e4819902.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_140a9985-6ace-4380-a1bf-fe55e050445c.jpg/250x188.webp",
+      "https://prod.pictures.autoscout24.net/listing-images/f9ffab6f-38fb-4655-9d66-0c1cfc866f72_0c5d8d9d-0f68-4305-9a4a-cfac09a0a440.jpg/250x188.webp"
+    ],
+    "ocsImagesA": [],
+    "isOfferNew": true,
+    "price": {
+      "priceFormatted": "€ 26.450",
+      "priceEvaluation": 3,
+      "vatLabel": "inkl. MwSt.",
+      "isVatLabelLegallyRequired": false,
+      "priceSuperscriptString": "1",
+      "isPriceEvaluationEnabled": true,
+      "isConditionalPrice": false
+    },
+    "availableNow": true,
+    "superDeal": {
+      "oldPriceFormatted": "",
+      "isEligible": false
+    },
+    "url": "/angebote/hyundai-tucson-voll-led-scheinw-climatr-alu-sitzhzg-benzin-grau-cat_ma33mo18493-f9ffab6f-38fb-4655-9d66-0c1cfc866f72",
+    "vehicle": {
+      "articleType": "Car",
+      "type": "Car",
+      "make": "Hyundai",
+      "model": "TUCSON",
+      "modelGroup": "Tucson",
+      "variant": null,
+      "modelId": 18493,
+      "modelVersionInput": "Voll-LED-Scheinw.,Climatr.,Alu,Sitzhzg.",
+      "subtitle": "ÜBER 1000 EU-NEUWAGEN, JAHRES- & GEBRAUCHTWAGEN",
+      "offerType": "U",
+      "transmission": "Schaltgetriebe",
+      "fuel": "Benzin",
+      "mileageInKm": "7.211 km",
+      "engineDisplacementInCCM": "1.598 cm³"
+    },
+    "location": {
+      "countryCode": "DE",
+      "zip": "38444",
+      "city": "Wolfsburg Heiligendorf",
+      "street": "Neue Straße 53"
+    },
+    "ratings": {
+      "ratingsCount": 556,
+      "ratingsStars": 4.5,
+      "ratingsEnabled": true
+    },
+    "seller": {
+      "dealer": {
+        "maxImages": 50,
+        "hasDealerInformationOnResultList": true,
+        "culture": "de-DE"
+      },
+      "id": "17031",
+      "type": "Dealer",
+      "logo": {
+        "small": {
+          "href": "https://prod.pictures.autoscout24.net/dealer-info/17031-original-fa2e99be-4ad7-4b4e-90a8-81fbb824679c.png/resize/100x50%3E/quality/90"
+        }
+      },
+      "companyName": "Hoffmann Automobile",
+      "contactName": "Team Verkauf",
+      "links": {
+        "infoPage": "https://www.autoscout24.de/haendler/hoffmann-automobile?atype=C",
+        "imprint": "https://www.autoscout24.de/haendler/hoffmann-automobile/impressum"
+      },
+      "phones": [
+        {
+          "phoneType": "Office",
+          "formattedNumber": "+49 (0)5365 - 96062",
+          "callTo": "+49536596062"
+        }
+      ]
+    },
+    "appliedAdTier": "T50",
+    "adTier": "T50",
+    "isOcs": false,
+    "specialConditions": [],
+    "statistics": {
+      "leadsRange": "Zero"
+    },
+    "searchResultType": "Organic",
+    "searchResultSection": "Main",
+    "tracking": {
+      "firstRegistration": "11-2023",
+      "fuelType": "b",
+      "imageContent": "no-placeholder|0.2624820020164128",
+      "isSmyleEligible": "true",
+      "mileage": "7211",
+      "priceLabel": "fair-price",
+      "price": "26450",
+      "orderBucket": "unknown",
+      "modelTaxonomy": "[make_id:33, model_group_id:18493, variant_id:, generation_id:949, motortype_id:2326, trim_id:5576];"
+    },
+    "coverImageAttractiveness": 0.2624820020164128,
+    "vehicleDetails": [
+      {
+        "data": "7.211 km",
+        "iconName": "mileage_odometer",
+        "ariaLabel": "Kilometerstand"
+      },
+      {
+        "data": "Schaltgetriebe",
+        "iconName": "gearbox",
+        "ariaLabel": "Getriebe"
+      },
+      {
+        "data": "11/2023",
+        "iconName": "calendar",
+        "ariaLabel": "Erstzulassung"
+      },
+      {
+        "data": "Benzin",
+        "iconName": "gas_pump",
+        "ariaLabel": "Kraftstoff"
+      },
+      {
+        "data": "132 kW (179 PS)",
+        "iconName": "speedometer",
+        "ariaLabel": "Leistung"
+      },
+      {
+        "data": "6,5 l/100 km (komb.)",
+        "iconName": "water_drop",
+        "ariaLabel": "Kraftstoffverbrauch"
+      },
+      {
+        "data": "148 g/km (komb.)",
+        "iconName": "leaf",
+        "ariaLabel": "CO₂-Emissionen"
+      },
+      {
+        "data": "CO₂-Klasse E (komb.)",
+        "iconName": "efficiency",
+        "ariaLabel": "CO₂-Klasse"
+      }
+    ],
+    "wltpValues": [
+      "6,5 l/100 km (komb.)",
+      "148 g/km (komb.)",
+      "CO₂-Klasse E (komb.)"
+    ],
+    "trackingParameters": [
+      {
+        "key": "boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "applied_boost_level",
+        "value": "t50"
+      },
+      {
+        "key": "relevance_adjustment",
+        "value": "boost"
+      },
+      {
+        "key": "boosting_product",
+        "value": "mia"
+      }
+    ]
+  }
+]

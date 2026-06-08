@@ -1,0 +1,15 @@
+# Bulky raw evidence — regenerable, not committed. Keep extracted samples + reports.
+evidence/*.html
+evidence/*.png
+evidence/*_next_data.json
+evidence/*_initial_props.json
+evidence/*_captured_bodies.json
+evidence/coches_api_full_page.json
+evidence/*.log
+evidence/*.err
+evidence/*.pid
+evidence/dumps/*_harvest.jsonl
+evidence/seam_snapshots/
+evidence/facet/*_enum_snapshot.json
+__pycache__/
+*.pyc

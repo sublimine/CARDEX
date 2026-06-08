@@ -1,0 +1,70 @@
+{
+  "source_key": "autoscout24.de",
+  "country": "DE",
+  "strategy": "faceted_ssr",
+  "version": 1,
+  "anti_bot": "Akamai",
+  "platform": "Next.js search-funnel (shared by .fr/.es/.nl/.be; .ch is Nuxt = separate config)",
+  "access": {
+    "engine": "camoufox",
+    "warm": ["https://www.autoscout24.de/"],
+    "settle": false
+  },
+  "endpoints": {
+    "host": "www.autoscout24.de",
+    "listing_url_template": "https://www.autoscout24.de/lst?atype=C&sort=standard&ustate=N%2CU{filters}&page={page}",
+    "detail_url_re": "/angebote/([a-z0-9-]+)",
+    "sitemap_url": "",
+    "api_url": ""
+  },
+  "pagination": {
+    "page_size": 20,
+    "max_pages": 200,
+    "page_param": "page",
+    "cap_results": 4000,
+    "note": "numberOfPages=200 -> hard cap 4.000/query; faceting MUST keep each leaf <= 4.000"
+  },
+  "count": {
+    "method": "ssr_total",
+    "state_var": "__NEXT_DATA__",
+    "total_path": "props.pageProps.numberOfResults"
+  },
+  "facet_axes": [
+    {"axis": "make", "param": "[PENDIENTE recon]", "note": "AS24 funnel make param; recon from as24_de_listings URLs / network tab"},
+    {"axis": "year", "param": "fregfrom/fregto"},
+    {"axis": "price", "param": "pricefrom/priceto"}
+  ],
+  "leaf_cap": 4000,
+  "extraction": {
+    "method": "ssr_state",
+    "state_var": "__NEXT_DATA__",
+    "listing_path": "props.pageProps.listings",
+    "url_base": "https://www.autoscout24.de",
+    "field_map": {
+      "id": "id", "make": "vehicle.make", "model": "vehicle.model",
+      "price": "price.priceRaw", "url": "url"
+    }
+  },
+  "coverage": {
+    "total_oficial": 831463, "cobertura": null, "pct": null,
+    "method": "sum counts over facets (pending make-param recon)",
+    "evidence": "stealth/evidence/as24_de.html __NEXT_DATA__ (numberOfResults=831463, numberOfPages=200)"
+  },
+  "drift_baseline": {
+    "extraction_method": "ssr_state",
+    "expected_min_volume": 500000,
+    "required_fields": ["make", "model", "price", "url"],
+    "min_nonnull_ratio": 0.7
+  },
+  "estado": "pipeline_e2e_verified",
+  "verified": "[VERIFICADO] Akamai bypassed via Camoufox warm + seam_write 2026-06-08",
+  "last_ok": {
+    "ts": "2026-06-08",
+    "volume": 20,
+    "vehicle_index_rows": 20,
+    "price_sample_eur": [1790, 11490, 22892, 23780, 38605],
+    "year_note": "firstRegistrationDate absent in overview items; available on detail page only",
+    "worker": "stealth/portal_harvest_runner.py as24_de"
+  },
+  "purged_at": "2026-06-08"
+}
