@@ -5,10 +5,14 @@
   "version": 1,
   "anti_bot": "DataDome",
   "access": {
-    "engine": "camoufox",
-    "warm": ["https://www.leboncoin.fr/"],
-    "settle": true,
-    "sitemap_network_layer": true
+    "engine": "curl_cffi",
+    "engine_fallback": "camoufox",
+    "impersonate": "chrome",
+    "warm": [],
+    "settle": false,
+    "sitemap_network_layer": true,
+    "curl_no_browser": "VERIFIED 2026-06-08: curl_cffi impersonate=chrome gets HTTP 200 + full __NEXT_DATA__ from this host — DataDome does NOT block this TLS profile. RAM-free, no browser, no proxy. Preferred over camoufox.",
+    "worker_curl": "stealth/lbc_curl_harvest.py"
   },
   "endpoints": {
     "host": "www.leboncoin.fr",
@@ -59,12 +63,14 @@
   "verified": "[VERIFICADO] DataDome bypassed via Camoufox from local IP (no proxy) + seam_write 2026-06-08",
   "last_ok": {
     "ts": "2026-06-08",
-    "volume": 35,
-    "vehicle_index_rows": 35,
-    "price_sample_eur": [7990, 8700, 19000, 21999, 63990],
-    "year_sample": [2015, 2016, 2019, 2020, 2020],
-    "worker": "stealth/lbc_harvest_worker.py",
-    "datadome_note": "bypassed headless Camoufox warm=50s settle=0 rounds (no challenge from this IP); residential proxy not required from BE/FR ISP"
+    "volume": 70,
+    "vehicle_index_rows": 70,
+    "with_price": 70,
+    "with_year": 70,
+    "price_sample_eur": [16299, 28900, 15800, 7500, 15490],
+    "year_sample": [2025, 2024, 2021, 2010, 2015],
+    "worker": "stealth/lbc_curl_harvest.py (curl, no browser)",
+    "datadome_note": "curl_cffi impersonate chrome = 200 + __NEXT_DATA__; NO browser, NO proxy. 70 rows price+year+km verified then purged."
   },
   "purged_at": "2026-06-08"
 }
