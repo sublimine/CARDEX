@@ -56,6 +56,9 @@ _PRICE_FLOOR_EUR = Decimal(500)
 _PRICE_CEIL_EUR = Decimal(2_000_000)
 
 _INSERT_VEHICLE_SQL = """
+WITH prior AS (
+    SELECT last_price_eur AS prev FROM vehicles WHERE fingerprint_sha256 = $2
+)
 INSERT INTO vehicles (
     vehicle_ulid, fingerprint_sha256, vin, source_id, source_platform, ingestion_channel,
     source_url, source_country, photo_urls, listing_status,
@@ -87,8 +90,16 @@ ON CONFLICT (fingerprint_sha256) DO UPDATE SET
     last_price_eur          = EXCLUDED.gross_physical_cost_eur
 RETURNING vehicle_ulid, thumb_url,
           (xmax = 0) AS is_insert,
-          (gross_physical_cost_eur < last_price_eur AND xmax != 0) AS price_dropped,
-          last_price_eur AS prev_price_eur
+          -- Compare the NEW price against the PRIOR snapshot (the CTE), NOT the post-UPDATE
+          -- row: the SET above already overwrote last_price_eur, so an in-row compare is
+          -- ALWAYS false (gross == last_price_eur). ``price_changed`` fires on ANY change
+          -- (drop OR rise — a rise is a real live change too); ``prev_price_eur`` is the
+          -- true previous price. (``price_drop_count`` in the SET still uses the old value.)
+          (xmax != 0 AND (SELECT prev FROM prior) IS NOT NULL
+                     AND gross_physical_cost_eur < (SELECT prev FROM prior)) AS price_dropped,
+          (xmax != 0 AND (SELECT prev FROM prior) IS NOT NULL
+                     AND gross_physical_cost_eur <> (SELECT prev FROM prior)) AS price_changed,
+          (SELECT prev FROM prior) AS prev_price_eur
 """
 
 
@@ -223,13 +234,14 @@ def build_insert_args(
 
 
 class PersistResult:
-    __slots__ = ("ulid", "fingerprint", "is_insert", "price_dropped", "prev_price_eur", "eur")
+    __slots__ = ("ulid", "fingerprint", "is_insert", "price_dropped", "price_changed", "prev_price_eur", "eur")
 
-    def __init__(self, ulid, fingerprint, is_insert, price_dropped, prev_price_eur, eur):
+    def __init__(self, ulid, fingerprint, is_insert, price_dropped, price_changed, prev_price_eur, eur):
         self.ulid = ulid
         self.fingerprint = fingerprint
         self.is_insert = is_insert
         self.price_dropped = price_dropped
+        self.price_changed = price_changed
         self.prev_price_eur = prev_price_eur
         self.eur = eur
 
@@ -259,7 +271,7 @@ async def persist_one(
             return None, "insert_no_row"
         result = PersistResult(
             row["vehicle_ulid"], fingerprint, row["is_insert"],
-            row["price_dropped"], row["prev_price_eur"], eur,
+            row["price_dropped"], row["price_changed"], row["prev_price_eur"], eur,
         )
         if p.get("vin"):
             await _write_vin_history(conn, p, result, source)
@@ -286,10 +298,13 @@ async def _write_vin_history(conn, p: dict, result: PersistResult, source: str) 
             vin, event_date, data, source,
         )
 
-    if result.price_dropped and result.prev_price_eur and eur is not None:
+    if result.price_changed and result.prev_price_eur and eur is not None:
+        delta = float(eur) - float(result.prev_price_eur)   # <0 = drop, >0 = rise
         data = json.dumps({
             "price_eur_prev": float(result.prev_price_eur), "price_eur_new": float(eur),
-            "price_drop_eur": float(result.prev_price_eur - eur),
+            "price_delta_eur": delta,
+            "price_drop_eur": -delta,                        # kept for back-compat (>0 on a drop)
+            "direction": "drop" if delta < 0 else "rise",
             "source_platform": source, "source_country": p.get("source_country"),
             "mileage_km": mileage,
         })

@@ -151,9 +151,12 @@ def test_nl_listing_without_currency_defaults_to_eur():
 class FakePool:
     """asyncpg pool double — captures the INSERT and returns a synthetic row."""
 
-    def __init__(self, *, is_insert=True):
+    def __init__(self, *, is_insert=True, price_changed=False, price_dropped=False, prev_price_eur=None):
         self.executed: list = []
         self._is_insert = is_insert
+        self._price_changed = price_changed
+        self._price_dropped = price_dropped
+        self._prev_price_eur = prev_price_eur
 
     def acquire(self):
         pool = self
@@ -176,8 +179,12 @@ class _Conn:
         self._pool.executed.append(("fetchrow", args))
         return {
             "vehicle_ulid": args[0], "thumb_url": None,
-            "is_insert": self._pool._is_insert, "price_dropped": False,
-            "prev_price_eur": args[22],
+            "is_insert": self._pool._is_insert,
+            "price_dropped": self._pool._price_dropped,
+            "price_changed": self._pool._price_changed,
+            "prev_price_eur": (
+                self._pool._prev_price_eur if self._pool._prev_price_eur is not None else args[22]
+            ),
         }
 
     async def execute(self, sql, *args):
@@ -266,6 +273,32 @@ def test_process_message_writes_vin_history_on_insert():
     kinds = [k for k, _ in pool.executed]
     assert kinds.count("fetchrow") == 1
     assert kinds.count("execute") == 2
+
+
+@pytest.mark.unit
+def test_price_change_emits_event_any_direction():
+    # An UPDATE (not insert) whose price changed → PRICE_CHANGE + MILEAGE = 2 executes.
+    # (Regression guard for the always-false price_dropped bug: the event must fire.)
+    pool = FakePool(is_insert=False, price_changed=True, prev_price_eur=Decimal(18000))
+    rdb, stats = FakeRedis(), RichStats()
+    env = {"payload": json.dumps(_payload(vin="WAUZZZ8E56A123456", price_raw=18500.0)),  # rise
+           "source": "gaspedaal.nl", "channel": "SCRAPER"}
+    _run(rc.process_message(pool, rdb, "5-0", env, stats, rates={"EUR": Decimal(1)}))
+    kinds = [k for k, _ in pool.executed]
+    assert kinds.count("fetchrow") == 1
+    assert kinds.count("execute") == 2     # PRICE_CHANGE + MILEAGE (no LISTING: it is an update)
+
+
+@pytest.mark.unit
+def test_no_price_change_suppresses_event():
+    # An UPDATE with no price change → only MILEAGE = 1 execute (no PRICE_CHANGE).
+    pool = FakePool(is_insert=False, price_changed=False, prev_price_eur=Decimal(18500))
+    rdb, stats = FakeRedis(), RichStats()
+    env = {"payload": json.dumps(_payload(vin="WAUZZZ8E56A123456", price_raw=18500.0)),
+           "source": "gaspedaal.nl", "channel": "SCRAPER"}
+    _run(rc.process_message(pool, rdb, "6-0", env, stats, rates={"EUR": Decimal(1)}))
+    kinds = [k for k, _ in pool.executed]
+    assert kinds.count("execute") == 1     # MILEAGE only
 
 
 @pytest.mark.unit
