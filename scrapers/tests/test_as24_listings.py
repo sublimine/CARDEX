@@ -74,3 +74,28 @@ def test_parse_listings_empty_and_malformed():
     # a listing with no url is skipped (can't seam it)
     nd = {"props": {"pageProps": {"listings": [{"vehicle": {"make": "X"}}]}}}
     assert a24.parse_listings(nd, base_url="https://x") == []
+
+
+# ── facet-partition planner (beat the ~4000/segment cap) ──
+@pytest.mark.unit
+def test_plan_price_partitions_bisects_until_under_cap():
+    DENSITY = 0.1  # cars per euro, uniform → 100k over [0, 1_000_000)
+    def count_fn(lo, hi):
+        return round((hi - lo) * DENSITY)
+    segs = a24.plan_price_partitions(count_fn, lo=0, hi=1_000_000, cap=4000)
+    assert segs
+    assert all(c < 4000 for _, _, c in segs)                 # every leaf under the cap
+    assert segs[0][0] == 0 and segs[-1][1] == 1_000_000      # full coverage
+    for (a1, b1, _), (a2, b2, _) in zip(segs, segs[1:]):
+        assert b1 == a2                                      # contiguous, no gaps/overlaps
+    assert abs(sum(c for _, _, c in segs) - 100_000) <= len(segs)  # sum ~ total (rounding)
+
+
+@pytest.mark.unit
+def test_plan_price_partitions_drops_empty_and_terminates_on_dense_spike():
+    def count_fn(lo, hi):
+        return 0 if lo >= 500_000 else 999_999  # empty upper half; absurd spike lower half
+    segs = a24.plan_price_partitions(count_fn, lo=0, hi=1_000_000, cap=4000, min_width=250)
+    assert segs                                              # terminates
+    assert all(b <= 500_000 for _, b, _ in segs)            # empty half dropped
+    assert all((b - a) <= 250 for a, b, _ in segs)          # dense spike floored at min_width

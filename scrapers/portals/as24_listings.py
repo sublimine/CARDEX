@@ -60,6 +60,50 @@ def _int_or_none(v: Any) -> int | None:
     return int(digits) if digits else None
 
 
+def plan_price_partitions(
+    count_fn,
+    *,
+    lo: int = 0,
+    hi: int = 1_000_000,
+    cap: int = 4000,
+    min_width: int = 250,
+    max_segments: int = 4000,
+) -> list[tuple[int, int, int]]:
+    """
+    Plan price-range segments each below the source's hard result cap, by recursive bisection.
+
+    AS24 (like most T1) caps deep pagination at ~4.000 results/segment (200 pages × 20). To
+    enumerate ALL of a 90k+ inventory you partition the price axis until every segment's own
+    ``numberOfResults`` is < ``cap``, then enumerate each segment's pages and union+dedup.
+
+    ``count_fn(lo, hi) -> int`` returns the source's declared count for the price filter
+    ``[lo, hi)`` (the caller wires it to a live ``/lst?pricefrom=lo&priceto=hi`` fetch +
+    ``number_of_results``). Pure control flow otherwise → unit-testable with a mock count_fn.
+    A bucket that stays >= cap below ``min_width`` is kept anyway (a price spike denser than the
+    cap — accept the small leak, log at the call site) so the planner always terminates.
+
+    Returns leaf ``(lo, hi, count)`` segments with count > 0. The count_verify gate then checks
+    ``sum(counts)`` against the unfiltered base count.
+    """
+    segments: list[tuple[int, int, int]] = []
+    stack: list[tuple[int, int]] = [(lo, hi)]
+    while stack and len(segments) < max_segments:
+        a, b = stack.pop()
+        if b <= a:
+            continue
+        count = count_fn(a, b)
+        if count <= 0:
+            continue
+        if count < cap or (b - a) <= min_width:
+            segments.append((a, b, count))
+        else:
+            mid = a + (b - a) // 2
+            stack.append((mid, b))
+            stack.append((a, mid))
+    segments.sort()
+    return segments
+
+
 def parse_listings(next_data: dict, *, base_url: str, currency: str = "EUR") -> list[dict]:
     """
     Normalize AS24 ``__NEXT_DATA__`` listings into seam-ready vehicle dicts.
