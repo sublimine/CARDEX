@@ -77,3 +77,8 @@
 **Neto T1 (verificado, todo insertado+purgado):** mobile.de ~1.49M enumerable · AS24×6 = 217 (con año) · leboncoin 70 (año/km) · autoboerse 18 (año/km) · coches 8 (año/km) · kleinanzeigen 27 + zoomcar 24 (URL). **= ~364 anuncios reales + 1.49M mobile.de.**
 **Muro de pago REAL (reducido):** lacentrale (DataDome), milanuncios (PerimeterX), nederlandmobiel (CF-challenge). Todo lo demás = receta/URL, no dinero.
 **Pendiente lote-4:** precio/año kleinanzeigen (selector card) + zoomcar; URLs vlan/gocar/autowereld/autoweek; coches buscador full.
+
+### LOTE-3 cierre (precio/año)
+- **kleinanzeigen.de** ✅ **RE-VERIFICADO con precio+año+km** (27/27): selector preciso `.aditem-main--middle--price-shipping--price` + simpletags (NO el primer €). Honda Civic 3749€/2009/212591km, Skoda Octavia 13950€/2020. (El "€19" del intento previo era envío — corregido.)
+- **zoomcar.fr** ❌ precio: ouestfrance no expuso `__NEXT_DATA__` ni JSON-LD de coches en el render → 24 URLs siguen sin precio. Pendiente (otra vía de extracción).
+- **NETO actualizado:** kleinanzeigen pasa de URL-only a precio+año. Total con atributos completos: AS24×6 (217, precio+km+año) · leboncoin 70 · autoboerse 18 · coches 8 · **kleinanzeigen 27** (precio+año) = **340 con precio**; + zoomcar 24 (URL) + mobile.de ~1.49M enumerable.

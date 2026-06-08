@@ -56,12 +56,15 @@
   "verified": "[VERIFICADO] No WAF. HTML SSR extraction + seam_write 2026-06-08",
   "last_ok": {
     "ts": "2026-06-08",
-    "volume": 25,
-    "vehicle_index_rows": 25,
-    "price_sample_eur": [6000, 9250, 32999, 37999, 48499],
-    "year_sample": [2010, 2019, 2019, 2022, 2022],
-    "km_sample": [68120, 80971, 287500],
-    "worker": "stealth/kaz_harvest_worker.py"
+    "volume": 27,
+    "vehicle_index_rows": 27,
+    "with_price": 27,
+    "with_year": 27,
+    "price_sample_eur": [3749, 13950, 15340, 10490, 1099],
+    "year_sample": [2009, 2020, 2018, 2018, 2003],
+    "km_sample": [212591, 178979, 85731],
+    "worker": "stealth/kleinanzeigen_zoomcar.py (precise card selector) | stealth/kaz_harvest_worker.py",
+    "note": "RE-VERIFIED 2026-06-08: price via .aditem-main--middle--price-shipping--price (NOT first euro), year/km via simpletags. 27/27 with price+year."
   },
   "purged_at": "2026-06-08"
 }
