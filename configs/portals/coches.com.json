@@ -1,0 +1,23 @@
+{
+  "source_key": "coches.com",
+  "country": "ES",
+  "version": 1,
+  "strategy": "curl_nextdata",
+  "waf": "Incapsula (serves Next.js SSR to curl_cffi chrome — landing carousel only)",
+  "access": {
+    "engine": "curl_cffi",
+    "impersonate": "chrome",
+    "warm": [],
+    "notes": "VERIFIED 2026-06-08: curl 200 + __NEXT_DATA__. The category landing exposes only props.pageProps.popularClassified.classifiedList (8 cars). Full search list needs the search API/params (TODO). RAM-free, no browser."
+  },
+  "endpoints": {
+    "host": "www.coches.com",
+    "listing_url_template": "https://www.coches.com/coches-segunda-mano/",
+    "state_path": "props.pageProps.popularClassified.classifiedList",
+    "extract": "nextdata"
+  },
+  "fields": {"title": "make.name+model.name+version.name", "price": "price|priceOffer", "year": "registration", "mileage": "mileage", "url": "synthetic /ad/<id> (no slug in carousel data)"},
+  "status": "HARVESTED_VERIFIED_PARTIAL",
+  "verified": {"date": "2026-06-08", "rows": 8, "with_price": 8, "with_year": 8, "sample": "CITROEN C4 12990EUR 2021 90000km"},
+  "todo": "find full search-results endpoint (classifiedList beyond the 8 popular)"
+}

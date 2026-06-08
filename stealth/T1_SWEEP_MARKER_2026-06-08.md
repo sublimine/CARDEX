@@ -45,3 +45,18 @@
 **Incidente hardware (declarado):** durante el sweep AS24 (6 TLD Camoufox) el OOM-killer reapó meili/grafana/prometheus (Exit 137) AUNQUE estaban pausados — el pause congela CPU pero no libera RAM. Reiniciados (`docker start`), estado restaurado. pg+Redis intactos. **Lección: en este host, 1 Camoufox de 6 navegaciones largas ya roza el OOM; el barrido masivo necesita VPS o lotes más cortos.**
 
 **Pendiente next iteration (sin proxy):** autoscout24.be (path), parseo year AS24 (vehicleDetails), leboncoin (__NEXT_DATA__), kleinanzeigen+zoomcar (añadir precio/año a la card), coches.com/autowereld/autoweek (receta), vlan/autoboerse/gocar (URL listado correcta).
+
+## LOTE-2 RECETAS (2026-06-08, lotes de 1 portal RAM-safe: docker stop→1 Camoufox→start)
+| Portal | Vía | Filas reales | Atributos | Estado |
+|---|---|--:|---|---|
+| **leboncoin.fr** | curl_cffi __NEXT_DATA__ (RAM-cero) | **70** | precio+año+km | ✅ — DataDome NO bloquea curl chrome; corrige "requiere proxy" |
+| **autoscout24.be** | Camoufox, path `/nl/lst` | **34** | precio+km | ✅ — path con prefijo idioma |
+| **coches.com** | curl_cffi __NEXT_DATA__ popularClassified | **8** | precio+año+km | ✅ parcial (solo carrusel; full search = API TODO) |
+| ouestfrance/zoomcar attrs | curl SSR = 0 JSON-LD (necesita render) | — | — | ⚠️ camoufox p/ precio |
+| autowereld.nl / autoweek.nl | curl = shell 7.9KB | 0 | — | ⚠️ URL listado real TBD |
+| vlan.be | curl soft-404 (SPA Angular) | 0 | — | ⚠️ camoufox/API |
+| autoboerse.de | curl Next.js presente, /gebrauchtwagen 404 | 0 | — | ⚠️ path TBD (Incapsula, no bloquea curl) |
+| gocar.be | curl 403 cf-chl | 0 | — | ⚠️ camoufox (CF challenge) |
+
+**Aprendizaje clave del lote:** varios "T1 con proxy" resultan **curl-harvestables** (leboncoin, coches.com, autoboerse parcial) — DataDome/Incapsula sirven el SSR a curl_cffi chrome desde este host. El muro real de pago se reduce a DataDome-agresivo (lacentrale), PerimeterX (milanuncios) y CF-challenge (gocar/nederlandmobiel).
+**Pendiente lote-3:** kleinanzeigen+zoomcar precio/año (camoufox card), AS24 year (vehicleDetails), autowereld/autoweek/vlan/autoboerse URLs, gocar (camoufox).
