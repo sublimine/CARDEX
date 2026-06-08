@@ -88,6 +88,14 @@ def _meta_map(html: str) -> dict[str, str]:
     return out
 
 
+# Marques whose name is two whitespace-separated tokens — taking only the first
+# token mislabels the model ("Alfa Romeo Stelvio" → make=Alfa, model=Romeo). The
+# hyphenated forms (Mercedes-Benz, Rolls-Royce) are already a single token.
+_TWO_WORD_MAKES: frozenset[str] = frozenset({
+    "alfa romeo", "land rover", "aston martin", "rolls royce", "mercedes benz",
+})
+
+
 def _split_make_model(title: str) -> tuple[str | None, str | None]:
     """Heuristic make/model from a title head ('SKODA Kamiq 1.5 TSI …')."""
     # cut trailing noise (price / 'gebraucht'/'occasion'/'kaufen'/site name)
@@ -98,6 +106,10 @@ def _split_make_model(title: str) -> tuple[str | None, str | None]:
     toks = [t for t in re.split(r"\s+", head.strip()) if t]
     if not toks:
         return None, None
+    if len(toks) >= 2 and f"{toks[0]} {toks[1]}".lower() in _TWO_WORD_MAKES:
+        make = f"{toks[0]} {toks[1]}"
+        model = toks[2] if len(toks) > 2 else None
+        return make, model
     make = toks[0]
     model = toks[1] if len(toks) > 1 else None
     return make, model
