@@ -45,9 +45,12 @@ def _uniq(hosts: list[str]) -> list[str]:
     return out
 
 
-async def _get(session, url: str) -> str:
+async def _get(session, url: str, proxy: str | None = None) -> str:
+    kw: dict = {"timeout": 20, "allow_redirects": True}
+    if proxy:  # route this fetch through a rotating proxy (IP-block bypass)
+        kw["proxies"] = {"http": proxy, "https": proxy}
     try:
-        resp = await session.get(url, timeout=20, allow_redirects=True)
+        resp = await session.get(url, **kw)
     except Exception as exc:  # noqa: BLE001 — a directory miss must not break resolution
         log.debug("directory get failed %s: %s", url, type(exc).__name__)
         return ""
@@ -56,11 +59,11 @@ async def _get(session, url: str) -> str:
     return resp.text or ""
 
 
-async def _pagesjaunes(session, name: str, city: str) -> list[str]:
+async def _pagesjaunes(session, name: str, city: str, proxy: str | None = None) -> list[str]:
     q = urllib.parse.quote(clean_name(name))
     ou = urllib.parse.quote(city or "")
     url = f"https://www.pagesjaunes.fr/annuaire/chercherlespros?quoiqui={q}&ou={ou}&proximite=0"
-    html = await _get(session, url)
+    html = await _get(session, url, proxy=proxy)
     if not html:
         return []
     cands = []

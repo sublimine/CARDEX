@@ -40,7 +40,7 @@ import asyncpg
 
 from scrapers.discovery.domain_resolution.candidate import email_apex, ranked_candidates
 from scrapers.discovery.domain_resolution.directories import directory_candidates
-from scrapers.discovery.domain_resolution.search import PROVIDER_ORDER, fetch_search_html
+from scrapers.discovery.domain_resolution.search import fetch_search_html, ordered_providers
 from scrapers.discovery.domain_resolution.validate import validate_automotive, validate_domain
 
 log = logging.getLogger("domres_worker")
@@ -155,7 +155,9 @@ async def _candidates(session, row) -> tuple[list[tuple[str, str, bool]], int]:
         out.append((f"directory:{_prov}", h, True))
 
     search_pages = 0
-    for provider in PROVIDER_ORDER:
+    # ROTATE the provider order by dealer id so the first hit spreads across engines
+    # (DDG→Mojeek→Startpage→SearXNG) instead of throttling DDG on every dealer.
+    for provider in ordered_providers(row.get("id") or 0):
         html = await fetch_search_html(session, name, city, provider)
         if not html or len(html) <= 1000:
             continue

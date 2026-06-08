@@ -25,7 +25,8 @@ COUNTRY_TLD: dict[str, str] = {
 _EXCLUDE: tuple[str, ...] = (
     # search / generic
     "duckduckgo", "mojeek", "bing.", "google", "googleusercontent", "startpage",
-    "search.brave", "yahoo", "ecosia", "qwant", "yandex", "baidu",
+    "search.brave", "brave.com", "yahoo", "ecosia", "qwant", "yandex", "baidu",
+    "searx", "searxng",
     # social / media
     "facebook", "instagram", "linkedin", "youtube", "twitter", "x.com", "tiktok",
     "pinterest", "mastodon", "reddit", "wikipedia", "wikimedia", "fandom",
