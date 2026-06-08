@@ -1,0 +1,27 @@
+# syntax=docker/dockerfile:1
+# CARDEX Entity Inventory API — lean read-only image (no browser, no scraper deps).
+# Build context = repo root (needs services/entity_api). ~80 MB layer beyond python:slim.
+FROM python:3.11-slim-bookworm
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app
+
+RUN pip install --no-cache-dir \
+        "fastapi>=0.110" \
+        "uvicorn[standard]>=0.27" \
+        "asyncpg>=0.29.0"
+
+RUN useradd -u 10002 -g users -m -s /usr/sbin/nologin apiuser \
+    && mkdir -p /app && chown -R apiuser:users /app
+
+COPY --chown=apiuser:users services/entity_api /app/services/entity_api
+
+USER apiuser
+WORKDIR /app
+EXPOSE 8088
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD ["python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8088/v1/health',timeout=4).status==200 else 1)"]
+
+CMD ["python", "-m", "uvicorn", "services.entity_api.app:app", "--host", "0.0.0.0", "--port", "8088", "--log-level", "warning"]
