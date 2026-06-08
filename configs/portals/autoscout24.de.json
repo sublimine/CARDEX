@@ -56,6 +56,15 @@
     "required_fields": ["make", "model", "price", "url"],
     "min_nonnull_ratio": 0.7
   },
-  "estado": "config parcial · falta recon param de marca + medir cobertura",
-  "verified": "[VERIFICADO] total 831.463, cap 200 pag/4.000, listings path, field_map; [PENDIENTE] facet make param"
+  "estado": "pipeline_e2e_verified",
+  "verified": "[VERIFICADO] Akamai bypassed via Camoufox warm + seam_write 2026-06-08",
+  "last_ok": {
+    "ts": "2026-06-08",
+    "volume": 20,
+    "vehicle_index_rows": 20,
+    "price_sample_eur": [1790, 11490, 22892, 23780, 38605],
+    "year_note": "firstRegistrationDate absent in overview items; available on detail page only",
+    "worker": "stealth/portal_harvest_runner.py as24_de"
+  },
+  "purged_at": "2026-06-08"
 }

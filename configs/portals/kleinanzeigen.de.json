@@ -1,0 +1,67 @@
+{
+  "source_key": "kleinanzeigen.de",
+  "country": "DE",
+  "strategy": "html_scrape",
+  "version": 1,
+  "anti_bot": "none",
+  "access": {
+    "engine": "camoufox",
+    "warm": ["https://www.kleinanzeigen.de/"],
+    "settle": false,
+    "notes": "No WAF detected. Plain PHP SSR, no Next.js state. No challenge from local IP."
+  },
+  "endpoints": {
+    "host": "www.kleinanzeigen.de",
+    "listing_url_template": "https://www.kleinanzeigen.de/s-autos/c216/seite:{page}",
+    "page_1_url": "https://www.kleinanzeigen.de/s-autos/c216",
+    "detail_url_re": "/s-anzeige/([^/]+)/(\\d+)-",
+    "sitemap_url": ""
+  },
+  "pagination": {
+    "page_size": 27,
+    "max_pages": 0,
+    "page_param": "seite",
+    "page_url_pattern": "https://www.kleinanzeigen.de/s-autos/c216/seite:{page}"
+  },
+  "extraction": {
+    "method": "html_dom",
+    "selector": "article[data-adid]",
+    "title_source": "script[type=application/ld+json] -> .title",
+    "url_source": "article[data-href]",
+    "price_source": "article.innerText regex (\\d[\\d.]*(?:,\\d{2})?)\\s*€",
+    "mileage_source": "article.innerText regex (\\d[\\d.]*)\\s*km",
+    "year_source": "article.innerText regex EZ\\s+(?:\\d{2}/)?(19|20\\d{2})",
+    "field_map": {
+      "title": "jld_data.title",
+      "price_eur": "parse_de_number(euro_match)",
+      "mileage_km": "parse_de_number(km_match)",
+      "year": "int(ez_match)",
+      "url": "BASE_URL + data-href"
+    }
+  },
+  "coverage": {
+    "total_oficial": null,
+    "cobertura": null,
+    "pct": null,
+    "method": "HTML pagination c216 (Autos category); total unknown",
+    "note": "~27 ads/page; estimate ~100K+ listings based on category depth"
+  },
+  "drift_baseline": {
+    "extraction_method": "html_dom",
+    "expected_min_volume": 50000,
+    "required_fields": ["title", "url"],
+    "min_nonnull_ratio": 0.8
+  },
+  "estado": "pipeline_e2e_verified",
+  "verified": "[VERIFICADO] No WAF. HTML SSR extraction + seam_write 2026-06-08",
+  "last_ok": {
+    "ts": "2026-06-08",
+    "volume": 25,
+    "vehicle_index_rows": 25,
+    "price_sample_eur": [6000, 9250, 32999, 37999, 48499],
+    "year_sample": [2010, 2019, 2019, 2022, 2022],
+    "km_sample": [68120, 80971, 287500],
+    "worker": "stealth/kaz_harvest_worker.py"
+  },
+  "purged_at": "2026-06-08"
+}

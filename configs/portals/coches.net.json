@@ -57,6 +57,15 @@
     "required_fields": ["title", "price", "url"],
     "min_nonnull_ratio": 0.7
   },
-  "estado": "pendiente de verificación",
-  "verified": "[VERIFICADO] root total 249.963, brand-page totalResults, SSR items; [PENDIENTE] depurar make-list"
+  "estado": "pipeline_e2e_verified",
+  "verified": "[VERIFICADO] DataDome bypassed via Camoufox warm + seam_write 2026-06-08",
+  "last_ok": {
+    "ts": "2026-06-08",
+    "volume": 30,
+    "vehicle_index_rows": 30,
+    "price_sample_eur": [6000, 6500, 8500, 8500, 27900],
+    "year_sample": [2014, 2014, 2015, 2016, 2023],
+    "worker": "stealth/portal_harvest_runner.py coches"
+  },
+  "purged_at": "2026-06-08"
 }

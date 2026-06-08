@@ -1,0 +1,59 @@
+{
+  "source_key": "lacentrale.fr",
+  "country": "FR",
+  "strategy": "faceted_ssr",
+  "version": 1,
+  "anti_bot": "DataDome",
+  "access": {
+    "engine": "camoufox",
+    "warm": ["https://www.lacentrale.fr/"],
+    "settle": true,
+    "notes": "DataDome blocks HOMEPAGE itself (rt=i inline challenge, status=403). More aggressive policy than leboncoin.fr. IP/ASN flagged. Requires residential FR/EU proxy."
+  },
+  "endpoints": {
+    "host": "www.lacentrale.fr",
+    "listing_url_template": "https://www.lacentrale.fr/listing?makesModelsCommercialNames=&gearbox=&searchCountry=FR&pageNumber={page}",
+    "sitemap_url": "",
+    "api_url": ""
+  },
+  "pagination": {
+    "page_size": 25,
+    "max_pages": 0,
+    "page_param": "pageNumber"
+  },
+  "extraction": {
+    "method": "ssr_state",
+    "state_var": "__NEXT_DATA__",
+    "listing_path": "PENDING — blocked before extraction",
+    "field_map": {}
+  },
+  "coverage": {
+    "total_oficial": null,
+    "cobertura": null,
+    "pct": null,
+    "method": "PENDING — blocked"
+  },
+  "drift_baseline": {
+    "extraction_method": "ssr_state",
+    "expected_min_volume": 300000,
+    "required_fields": ["title", "price", "url"],
+    "min_nonnull_ratio": 0.7
+  },
+  "block_evidence": {
+    "ts": "2026-06-08",
+    "status": 403,
+    "challenge_type": "DataDome rt=i (inline JavaScript challenge)",
+    "challenge_hash": "36C95FCC733A6BF92F5AC434FF65D7",
+    "blocked_at": "homepage + search page (both 403)",
+    "leboncoin_passed": true,
+    "conclusion": "lacentrale DataDome policy stricter than leboncoin. Same IP/ASN = homepage-blocked here but not on leboncoin."
+  },
+  "estado": "requiere_proxy",
+  "verified": "[BLOQUEADO] DataDome bloquea homepage. Requiere proxy residencial FR/EU. 2026-06-08",
+  "proxy_required": {
+    "type": "residential_rotating",
+    "geo": "FR",
+    "trust_min": 7.0,
+    "notes": "DataDome trust score must be >= 7.0 for inline challenge bypass"
+  }
+}
