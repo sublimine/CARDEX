@@ -41,38 +41,72 @@ def uhash(u: str) -> str:
 
 
 def extract_price(raw) -> float | None:
-    """Extract EUR gross amount from multiple price shapes."""
+    """Extract EUR gross amount from multiple price shapes including German-format strings."""
     if isinstance(raw, (int, float)):
-        return float(raw)
+        # svc/s/ x.p is a float in kEUR (e.g., 18.8 = €18,800)
+        v = float(raw)
+        return v * 1000.0 if v > 0 else None
     if isinstance(raw, dict):
         for k in ("grossAmount", "amount", "value", "brutto", "gross"):
             v = raw.get(k)
             if isinstance(v, (int, float)):
                 return float(v)
+            if isinstance(v, str):
+                raw = v  # fall through to string parser below
+                break
+    if isinstance(raw, str):
+        # German format strings: "12.500 €", "1\xa0€", "12.500,50 €" — already in EUR
+        import re as _re
+        s = _re.sub(r"[^\d,.]", "", raw)  # keep digits, comma, dot
+        if not s:
+            return None
+        # if comma present as decimal separator: "12.500,50" -> remove dots, replace comma
+        if "," in s:
+            s = s.replace(".", "").replace(",", ".")
+        else:
+            # dots only: either thousands ("12.500") or decimal ("12.5")
+            parts = s.split(".")
+            if len(parts) > 1 and len(parts[-1]) == 3:
+                s = s.replace(".", "")
+        try:
+            v = float(s)
+            return v if v > 0 else None
+        except ValueError:
+            return None
     return None
 
 
 def extract_year(item: dict) -> int | None:
     attr = item.get("attr") or {}
     if isinstance(attr, dict):
-        for k in ("year", "constructionYear", "firstRegistration"):
+        for k in ("year", "constructionYear", "firstRegistration", "fr"):
             v = attr.get(k)
             if isinstance(v, int) and 1970 <= v <= 2030:
                 return v
-            if isinstance(v, str) and len(v) >= 4 and v[:4].isdigit():
-                y = int(v[:4])
-                if 1970 <= y <= 2030:
-                    return y
+            if isinstance(v, str):
+                # "MM/YYYY" (mobile.de svc/s/ attr.fr) or "YYYY-MM-DD" or "YYYY"
+                import re as _re
+                m = _re.search(r"\b(19[7-9]\d|20[012]\d)\b", v)
+                if m:
+                    return int(m.group(1))
     return None
 
 
 def extract_mileage(item: dict) -> int | None:
     attr = item.get("attr") or {}
     if isinstance(attr, dict):
-        for k in ("mileage", "km", "kilometers", "kilometerstand"):
+        for k in ("mileage", "km", "kilometers", "kilometerstand", "ml"):
             v = attr.get(k)
             if isinstance(v, int) and v >= 0:
                 return v
+            if isinstance(v, str):
+                # "115 400\xa0km" or "115.400 km" — strip all non-digits
+                import re as _re
+                digits = _re.sub(r"\D", "", v)
+                if digits:
+                    km = int(digits)
+                    if 0 <= km <= 2_000_000:
+                        return km
     return None
 
 
@@ -100,7 +134,7 @@ def normalize(item: dict, source_domain: str, country: str) -> dict:
         "make": make_str,
         "model": model_str,
         "title": title[:300],
-        "price_eur": extract_price(item.get("price")),
+        "price_eur": extract_price(item.get("rawPrice")),
         "year": extract_year(item),
         "mileage_km": extract_mileage(item),
     }
@@ -114,7 +148,8 @@ async (url) => { try {
   const t = await r.text(); let j=null; try{j=JSON.parse(t)}catch(e){}
   return JSON.stringify({status:r.status, total: j&&j.numResultsTotal,
     items: j&&(j.items||[]).map(x=>({id:x.id, makeId:x.makeId, modelId:x.modelId,
-      make:x.make, model:x.model, title:x.title, price:x.price, url:x.url, attr:x.attr})) });
+      make:x.make, model:x.model, title:x.shortTitle||x.title,
+      rawPrice:x.p, url:x.url, attr:x.attr})) });
 } catch(e){ return JSON.stringify({error:String(e)}); } }
 """
 

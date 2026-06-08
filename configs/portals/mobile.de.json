@@ -57,13 +57,16 @@
     "min_nonnull_ratio": 0.7
   },
   "estado": "pipeline_e2e_verified",
-  "verified": "[VERIFICADO] count/total/makes-refdata/axes ms,fr,ml/enumerate route + seam_write 2026-06-08",
+  "verified": "[VERIFICADO] count/total/makes-refdata/axes ms,fr,ml/enumerate route + seam_write + price_eur_fixed 2026-06-08",
   "last_ok": {
     "ts": "2026-06-08",
     "make_validated": "Caterham",
     "make_id": "5300",
     "volume": 20,
     "vehicle_index_rows": 20,
+    "price_sample_eur": [18800, 19999, 21999, 25000, 27900],
+    "price_note": "x.p is float kEUR; extract_price multiplies by 1000",
+    "year_sample": [1986, 1992, 1995, 2009, 2025],
     "worker": "stealth/t1_harvest_worker.py"
   },
   "purged_at": "2026-06-08"
