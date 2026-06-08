@@ -45,6 +45,14 @@ SSL_CTX = ssl.create_default_context()
 SSL_CTX.check_hostname = False
 SSL_CTX.verify_mode = ssl.CERT_NONE
 
+# HARD SCOPE GUARD — strictly the 6 target countries, never IT/AT or any out-of-scope
+# country/domain. Discovery contaminated discovery_candidates with IT/AT; this clause keeps
+# the probe + harvest + funnel inside scope. Invariant: zero out-of-scope rows touched.
+IN_SCOPE_SQL = (
+    "country IN ('ES','FR','DE','BE','NL','CH') "
+    "AND domain NOT ILIKE '%.it' AND domain NOT ILIKE '%.at'"
+)
+
 
 @dataclass
 class ProbeResult:
@@ -208,6 +216,7 @@ async def claim_pending_batch(pg, size: int) -> list[dict]:
     rows = await pg.fetch(
         "SELECT id, domain, country FROM discovery_candidates "
         "WHERE domain IS NOT NULL AND domain<>'' AND sitemap_status='pending' "
+        f"AND {IN_SCOPE_SQL} "
         "ORDER BY country, id LIMIT $1", size)
     return [dict(r) for r in rows]
 

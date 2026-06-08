@@ -25,8 +25,10 @@ import asyncpg
 import redis.asyncio as aioredis
 
 from scrapers.dealer_scraping.inventory_harvester import harvest_t2_dealer
-from scrapers.dealer_scraping.inventory_probe import (claim_pending_batch, run_probes,
-                                                      write_results)
+from scrapers.dealer_scraping.inventory_probe import (IN_SCOPE_SQL, claim_pending_batch,
+                                                      run_probes, write_results)
+
+_SCOPE_COUNTRIES = "('ES','FR','DE','BE','NL','CH')"
 
 log = logging.getLogger("probe_scale")
 PG_DSN = os.environ.get("DATABASE_URL", "postgresql://cardex:cardex_dev_only@localhost:5432/cardex")
@@ -54,11 +56,12 @@ async def _funnel(pg) -> dict:
         " count(*) FILTER (WHERE inventory_tier='T2') AS t2, "
         " count(*) FILTER (WHERE inventory_tier='T1') AS t1, "
         " count(*) FILTER (WHERE domain IS NOT NULL AND domain<>'' AND sitemap_status='pending') AS pending "
-        "FROM discovery_candidates")
+        f"FROM discovery_candidates WHERE {IN_SCOPE_SQL}")
     caged = await pg.fetchval(
         "SELECT count(*) FROM vehicle_index vi JOIN source_entities se USING(entity_ulid) "
-        "WHERE se.kind='dealer'")
-    dealers_live = await pg.fetchval("SELECT count(*) FROM source_entities WHERE kind='dealer'")
+        f"WHERE se.kind='dealer' AND se.country IN {_SCOPE_COUNTRIES}")
+    dealers_live = await pg.fetchval(
+        f"SELECT count(*) FROM source_entities WHERE kind='dealer' AND country IN {_SCOPE_COUNTRIES}")
     return {**dict(row), "caged_pointers": caged, "dealer_entities": dealers_live}
 
 

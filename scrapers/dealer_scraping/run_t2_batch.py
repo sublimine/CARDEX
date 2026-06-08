@@ -20,6 +20,7 @@ import asyncpg
 import redis.asyncio as aioredis
 
 from scrapers.dealer_scraping.inventory_harvester import harvest_t2_dealer
+from scrapers.dealer_scraping.inventory_probe import IN_SCOPE_SQL
 
 log = logging.getLogger("t2_batch")
 PG_DSN = os.environ.get("DATABASE_URL", "postgresql://cardex:cardex_dev_only@localhost:5432/cardex")
@@ -33,6 +34,7 @@ async def run(*, concurrency: int = 15, limit: int = 0) -> None:
     try:
         q = ("SELECT domain, country FROM discovery_candidates "
              "WHERE inventory_tier='T2' AND domain IS NOT NULL AND domain<>'' "
+             f"AND {IN_SCOPE_SQL} "
              "ORDER BY country, md5(domain)")
         if limit:
             q += f" LIMIT {limit}"
