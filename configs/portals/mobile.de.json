@@ -56,6 +56,15 @@
     "required_fields": ["make", "model", "price", "url"],
     "min_nonnull_ratio": 0.7
   },
-  "estado": "pendiente de verificación",
-  "verified": "[VERIFICADO] count/total/makes-refdata/axes ms,fr,ml/enumerate route"
+  "estado": "pipeline_e2e_verified",
+  "verified": "[VERIFICADO] count/total/makes-refdata/axes ms,fr,ml/enumerate route + seam_write 2026-06-08",
+  "last_ok": {
+    "ts": "2026-06-08",
+    "make_validated": "Caterham",
+    "make_id": "5300",
+    "volume": 20,
+    "vehicle_index_rows": 20,
+    "worker": "stealth/t1_harvest_worker.py"
+  },
+  "purged_at": "2026-06-08"
 }
