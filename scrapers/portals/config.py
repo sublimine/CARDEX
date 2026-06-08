@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields as dataclass_fields
 from pathlib import Path
 
 # Versioned store root — git-tracked JSON, one file per source_key.
@@ -54,6 +54,8 @@ STRATEGIES = (
     "socrata",            # open-data Socrata API (discovery, e.g. RDW)
     "playwright_meta",    # E07: JS/SPA — render in a browser, parse SEO meta (autolina)
     "playwright_xhr",     # E07: JS/SPA — render + intercept the SPA's data XHR/JSON
+    "faceted_ssr",        # T1 anti-bot SSR walked by year×price facets to beat the
+                          # hard result cap (autoscout24.de, coches.net, lacentrale.fr)
 )
 
 # Strategies that require the browser renderer (E07). A source with one of these
@@ -79,6 +81,7 @@ class Pagination:
     page_size: int = 0
     max_pages: int = 0
     page_param: str = "page"
+    cap_results: int = 0             # hard per-query ceiling (faceting must split below it)
 
 
 @dataclass(frozen=True)
@@ -147,21 +150,29 @@ def _dealer_path(source_key: str) -> Path:
     return p
 
 
+def _only(cls, d: dict) -> dict:
+    """Keep only keys that are real fields of ``cls`` — free-form annotation keys
+    (e.g. a ``note`` documenting a hard cap) live in the JSON for humans but must
+    not break the splat into a frozen dataclass."""
+    known = {f.name for f in dataclass_fields(cls)}
+    return {k: v for k, v in (d or {}).items() if k in known}
+
+
 def from_dict(d: dict) -> ExtractionConfig:
-    """Build an ExtractionConfig from a parsed JSON dict (tolerant of missing blocks)."""
+    """Build an ExtractionConfig from a parsed JSON dict (tolerant of missing blocks
+    and of human-annotation keys like ``note`` that are not dataclass fields)."""
+    drift = _only(DriftBaseline, d.get("drift_baseline", {}))
+    if "required_fields" in drift:
+        drift["required_fields"] = tuple(drift["required_fields"])
     return ExtractionConfig(
         source_key=d["source_key"],
         country=d["country"],
         strategy=d["strategy"],
         version=int(d.get("version", 1)),
-        endpoints=Endpoints(**d.get("endpoints", {})),
-        pagination=Pagination(**d.get("pagination", {})),
-        extraction=Extraction(**d.get("extraction", {})),
-        drift_baseline=DriftBaseline(**{
-            **d.get("drift_baseline", {}),
-            "required_fields": tuple(d.get("drift_baseline", {}).get(
-                "required_fields", DriftBaseline.required_fields)),
-        }),
+        endpoints=Endpoints(**_only(Endpoints, d.get("endpoints", {}))),
+        pagination=Pagination(**_only(Pagination, d.get("pagination", {}))),
+        extraction=Extraction(**_only(Extraction, d.get("extraction", {}))),
+        drift_baseline=DriftBaseline(**drift),
     )
 
 
