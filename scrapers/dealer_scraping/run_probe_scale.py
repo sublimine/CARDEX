@@ -65,7 +65,9 @@ async def _funnel(pg) -> dict:
     return {**dict(row), "caged_pointers": caged, "dealer_entities": dealers_live}
 
 
-async def run(*, batches: int, size: int, conc: int, timeout: int, harvest: bool) -> None:
+async def run(*, batches: int, size: int, conc: int, timeout: int, harvest: bool,
+              country: str | None = None,
+              ram_soft: int = RAM_SOFT_MB, ram_hard: int = RAM_HARD_MB) -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     pg = await asyncpg.create_pool(PG_DSN, min_size=2, max_size=8)
     rdb = aioredis.from_url(REDIS_URL, decode_responses=False)
@@ -82,16 +84,16 @@ async def run(*, batches: int, size: int, conc: int, timeout: int, harvest: bool
                  "T2=%(t2)d caged=%(caged_pointers)d", f0)
         for b in range(1, batches + 1):
             avail = _avail_mb()
-            if avail < RAM_HARD_MB:
-                log.warning("RAM HARD %d MB < %d — GC+pause, then abort if still low", avail, RAM_HARD_MB)
+            if avail < ram_hard:
+                log.warning("RAM HARD %d MB < %d — GC+pause, then abort if still low", avail, ram_hard)
                 gc.collect(); await asyncio.sleep(10)
-                if _avail_mb() < RAM_HARD_MB:
+                if _avail_mb() < ram_hard:
                     log.error("RAM still critical — aborting to protect sibling services"); break
-            cur_conc = conc if avail >= RAM_SOFT_MB else max(8, conc // 2)
+            cur_conc = conc if avail >= ram_soft else max(4, conc // 2)
             if cur_conc != conc:
                 log.warning("RAM soft %d MB — concurrency %d→%d", avail, conc, cur_conc)
 
-            rows = await claim_pending_batch(pg, size)
+            rows = await claim_pending_batch(pg, size, country)
             if not rows:
                 log.info("no pending dealers left — universe exhausted"); break
 
@@ -152,6 +154,10 @@ if __name__ == "__main__":
     ap.add_argument("--conc", type=int, default=15)
     ap.add_argument("--timeout", type=int, default=15)
     ap.add_argument("--no-harvest", action="store_true")
+    ap.add_argument("--country", default=None, help="scope probe to one country (e.g. NL, CH)")
+    ap.add_argument("--ram-soft", type=int, default=RAM_SOFT_MB, help="MB free below which conc drops")
+    ap.add_argument("--ram-hard", type=int, default=RAM_HARD_MB, help="MB free below which it pauses/aborts")
     a = ap.parse_args()
-    asyncio.run(run(batches=a.batches, size=a.size, conc=a.conc, timeout=a.timeout,
+    asyncio.run(run(batches=a.batches, size=a.size, conc=a.conc, timeout=a.timeout, country=a.country,
+                    ram_soft=a.ram_soft, ram_hard=a.ram_hard,
                     harvest=not a.no_harvest))

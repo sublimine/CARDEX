@@ -212,12 +212,13 @@ async def probe(session: aiohttp.ClientSession, domain: str, country: str,
 
 
 # ── DB layer (asyncpg, batched over pending) ────────────────────────────────────
-async def claim_pending_batch(pg, size: int) -> list[dict]:
+async def claim_pending_batch(pg, size: int, country: str | None = None) -> list[dict]:
     rows = await pg.fetch(
         "SELECT id, domain, country FROM discovery_candidates "
         "WHERE domain IS NOT NULL AND domain<>'' AND sitemap_status='pending' "
         f"AND {IN_SCOPE_SQL} "
-        "ORDER BY country, id LIMIT $1", size)
+        "AND ($2::text IS NULL OR country=$2) "
+        "ORDER BY country, id LIMIT $1", size, country)
     return [dict(r) for r in rows]
 
 
