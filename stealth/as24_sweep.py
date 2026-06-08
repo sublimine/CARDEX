@@ -22,6 +22,11 @@ def find_year(item):
         if m: return int(m.group(1))
     # vehicleDetails list of {label/value} or dict
     vd=item.get("vehicleDetails")
+    if isinstance(vd,list):
+        for d in vd:
+            if isinstance(d,dict) and d.get("iconName")=="calendar":
+                m=re.search(r"(19[7-9]\d|20[0-2]\d)", str(d.get("data") or ""))
+                if m: return int(m.group(1))
     blob=json.dumps(vd,ensure_ascii=False) if vd else ""
     m=re.search(r'"(?:firstRegistration|registration)[^"]*"\s*:\s*"[^"]*?(19[7-9]\d|20[0-2]\d)', blob)
     if m: return int(m.group(1))

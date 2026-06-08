@@ -60,3 +60,20 @@
 
 **Aprendizaje clave del lote:** varios "T1 con proxy" resultan **curl-harvestables** (leboncoin, coches.com, autoboerse parcial) — DataDome/Incapsula sirven el SSR a curl_cffi chrome desde este host. El muro real de pago se reduce a DataDome-agresivo (lacentrale), PerimeterX (milanuncios) y CF-challenge (gocar/nederlandmobiel).
 **Pendiente lote-3:** kleinanzeigen+zoomcar precio/año (camoufox card), AS24 year (vehicleDetails), autowereld/autoweek/vlan/autoboerse URLs, gocar (camoufox).
+
+## LOTE-3 (2026-06-08)
+| Item | Resultado |
+|---|---|
+| **autoboerse.de** | ✅ curl `/fahrzeugsuche` __NEXT_DATA__ → **18 reales precio+año+km** (Renault Clio 8449€/2019) |
+| **AS24 year** | ✅ **ARREGLADO+verificado**: `vehicleDetails[iconName=calendar].data` ("04/2016"). AS24.de re-harvest 20/20 con año (Mercedes 30850€/2025). Aplica a los 6 TLDs (parche en `as24_sweep.py`). |
+| coches.com full search | ⚠️ `/buscador?or=4` da __NEXT_DATA__ pero shape no casó mi walker (los 8 del carrusel siguen ✅) |
+| kleinanzeigen precio/año | ❌ regex de card cazó "€19" (envío), no el precio; año no en título → **URLs reales OK (27), precio/año pendiente** (selector preciso) |
+| zoomcar precio/año | ❌ JSON-LD render = 0 Car/offers → **24 URLs OK, precio pendiente** |
+| vlan.be | ⚠️ Camoufox 404 **sin bloqueo** (SPA, URL/recipe TBD) — NO proxy |
+| gocar.be | ⚠️ Camoufox 404 **SIN bloqueo (pasó CF!)** — NO proxy, solo URL TBD. Corrige censo "CF-challenge=muro" |
+| nederlandmobiel.nl | ⛔ CF "just a moment" **incluso con Camoufox** (warm+reload) → requiere proxy/solver |
+| curl en nederlandmobiel/milanuncios/lacentrale | ⛔ siguen bloqueados a curl (CF/PX/DataDome) |
+
+**Neto T1 (verificado, todo insertado+purgado):** mobile.de ~1.49M enumerable · AS24×6 = 217 (con año) · leboncoin 70 (año/km) · autoboerse 18 (año/km) · coches 8 (año/km) · kleinanzeigen 27 + zoomcar 24 (URL). **= ~364 anuncios reales + 1.49M mobile.de.**
+**Muro de pago REAL (reducido):** lacentrale (DataDome), milanuncios (PerimeterX), nederlandmobiel (CF-challenge). Todo lo demás = receta/URL, no dinero.
+**Pendiente lote-4:** precio/año kleinanzeigen (selector card) + zoomcar; URLs vlan/gocar/autowereld/autoweek; coches buscador full.
