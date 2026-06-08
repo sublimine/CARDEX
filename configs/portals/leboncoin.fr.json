@@ -55,6 +55,16 @@
     "required_fields": ["title", "price", "url"],
     "min_nonnull_ratio": 0.7
   },
-  "estado": "pendiente de verificación",
-  "verified": "[VERIFICADO] sitemap 900K real ad URLs, detail __NEXT_DATA__.ad, search ads array, seam delta"
+  "estado": "pipeline_e2e_verified",
+  "verified": "[VERIFICADO] DataDome bypassed via Camoufox from local IP (no proxy) + seam_write 2026-06-08",
+  "last_ok": {
+    "ts": "2026-06-08",
+    "volume": 35,
+    "vehicle_index_rows": 35,
+    "price_sample_eur": [7990, 8700, 19000, 21999, 63990],
+    "year_sample": [2015, 2016, 2019, 2020, 2020],
+    "worker": "stealth/lbc_harvest_worker.py",
+    "datadome_note": "bypassed headless Camoufox warm=50s settle=0 rounds (no challenge from this IP); residential proxy not required from BE/FR ISP"
+  },
+  "purged_at": "2026-06-08"
 }
