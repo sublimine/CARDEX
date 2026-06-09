@@ -35,6 +35,31 @@ _DSN = os.environ.get("DATABASE_URL", "postgres://cardex:cardex_dev_only@localho
 _PAGE_SIZE = 20          # AS24 listings per page
 _MAX_PAGE = 200          # AS24 hard cap: 200 pages/segment
 
+# Concurrent page fetching makes the big TLDs tractable (AS24-DE=833k is ~7h/pass sequential).
+# A GLOBAL token-bucket caps aggregate req/s regardless of concurrency (lesson from the gov-API
+# throttle). AS24 (commercial, curl_cffi) tolerates more than the gov API, but stay bounded.
+_GIANT_CONC = int(os.environ.get("GIANT_CONC", "6"))     # concurrent page fetches in flight
+_GIANT_RATE = float(os.environ.get("GIANT_RATE", "8.0")) # global requests/sec ceiling
+
+
+class _RateLimiter:
+    """Global async token bucket — serializes the START of every request to <= rate/sec."""
+
+    def __init__(self, rate: float):
+        self._min_interval = 1.0 / rate if rate > 0 else 0.0
+        self._lock = asyncio.Lock()
+        self._next = 0.0
+
+    async def acquire(self) -> None:
+        import time
+        async with self._lock:
+            now = time.monotonic()
+            wait = self._next - now
+            if wait > 0:
+                await asyncio.sleep(wait)
+                now = time.monotonic()
+            self._next = max(now, self._next) + self._min_interval
+
 
 def _lst(base: str, *, lo: int | None = None, hi: int | None = None, page: int | None = None) -> str:
     # sort=age&desc=0 (oldest-first) is the STABLE order for deep pagination: new listings
@@ -83,28 +108,40 @@ async def harvest(domain: str, country: str, *, base: str, currency: str,
     segments.sort()
     print(f"{domain}: {len(segments)} segments (all <{cap}), planned sum={sum(c for *_, c in segments)}")
 
-    pool = await asyncpg.create_pool(_DSN, min_size=1, max_size=4)
+    pool = await asyncpg.create_pool(_DSN, min_size=2, max_size=8)
     persisted = 0
     rejected: dict[str, int] = {}
+    limiter = _RateLimiter(_GIANT_RATE)
+    sem = asyncio.Semaphore(_GIANT_CONC)
+
+    async def _fetch_page_rows(lo: int, hi: int, page: int):
+        """Rate-limited + concurrency-bounded fetch+parse of one listing page."""
+        await limiter.acquire()
+        async with sem:
+            r = await _safe_fetch(fetcher, _lst(base, lo=lo, hi=hi - 1, page=page))
+        if r is None or r.status_code != 200:
+            return None
+        return a24.parse_listings(a24.extract_next_data(r.text or ""),
+                                  base_url=base, currency=currency)
+
     try:
         # Multi-pass union: deep pagination of a LIVE list drifts (~12% missed in one pass).
         # Persist is idempotent (ON CONFLICT by URL fingerprint), so re-enumerating unions the
         # drift-missed listings. Stop when a pass adds < 0.5% (converged -> "no falta ni uno").
+        # Within a segment, pages are fetched CONCURRENTLY (page count is known from seg_count),
+        # bounded by the global rate limiter — makes 833k-class TLDs tractable.
         prev_in_db = 0
         in_db = 0
         for pass_no in range(1, passes + 1):
             for (lo, hi, seg_count) in segments:
+                if not keep and limit and persisted >= limit:
+                    break
                 pages = min(_MAX_PAGE, (seg_count // _PAGE_SIZE) + 1)
-                for page in range(1, pages + 1):
-                    if not keep and limit and persisted >= limit:
-                        break
-                    r = await _safe_fetch(fetcher, _lst(base, lo=lo, hi=hi - 1, page=page))
-                    if r is None or r.status_code != 200:
-                        break
-                    rows = a24.parse_listings(a24.extract_next_data(r.text or ""),
-                                              base_url=base, currency=currency)
+                page_results = await asyncio.gather(
+                    *[_fetch_page_rows(lo, hi, pg) for pg in range(1, pages + 1)])
+                for rows in page_results:
                     if not rows:
-                        break
+                        continue
                     for p in rows:
                         p["source_country"] = country
                         res, reason = await rc.persist_one(
@@ -113,9 +150,8 @@ async def harvest(domain: str, country: str, *, base: str, currency: str,
                             persisted += 1
                         else:
                             rejected[reason] = rejected.get(reason, 0) + 1
-                    await asyncio.sleep(0.6)
-                if not keep and limit and persisted >= limit:
-                    break
+                    if not keep and limit and persisted >= limit:
+                        break
             async with pool.acquire() as conn:
                 in_db = await conn.fetchval(
                     "SELECT count(*) FROM vehicles WHERE source_platform=$1", platform)
