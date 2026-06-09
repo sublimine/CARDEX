@@ -90,6 +90,14 @@ JOBS: list[tuple] = [
      {}, 12 * 3600, False),
     ("quality_audit", "scrapers.discovery.quality_audit",
      {}, 3600, False),
+    # discovery orchestrator (FASE A — cierra el hueco real: el docstring lo prometía pero
+    # NO estaba en JOBS). Fan-out de fuentes -> discovery_candidates. Runs once then sleeps 24h.
+    # Resiliente: corre como subproceso aislado (un crash NO tumba el scheduler) y el propio
+    # orchestrator try/except-a cada fuente (un fallo de fuente no aborta el barrido).
+    # consolidate(12h)/verify(6h) se cablearán en FASE E/G cuando existan sus runners (hoy NO
+    # existen como módulo -m runnable -> no se programan para no crashear el job en bucle).
+    ("discovery_sweep", "scrapers.discovery.orchestrator",
+     {}, 24 * 3600, False),
 ]
 
 
