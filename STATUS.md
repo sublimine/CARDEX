@@ -49,7 +49,7 @@ Ninguno declarado a fecha 2026-04-27. Auditar contra el estado del repo y abrir 
 ## Dependencias externas críticas
 
 - Proveedores de scraping de listings (rotación 90d).
-- llama.cpp local en :8081 (Qwen2.5-Coder-7B Q5_K_M) — clasificación fiscal.
+- LLM local vía Ollama en :11434 (modelo `qwen2.5:3b` por defecto) — micro-decisiones difusas del pipeline (clasificación/normalización), fail-open. Config: `OLLAMA_URL` / `OLLAMA_MODEL` (ver `scrapers/llm/ollama_client.py`). [reconciliado 2026-06-09: el doc decía llama.cpp:8081/Qwen2.5-Coder-7B — el código manda]
 - nomic-embed-text local en :8082 — embeddings.
 - PostgreSQL 16, Redis Streams, ClickHouse vía Docker Compose.
 
