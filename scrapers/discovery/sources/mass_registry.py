@@ -40,8 +40,11 @@ _FR_CODES = [c.strip() for c in os.environ.get("MASS_CODES", "45.11Z,45.19Z,45.2
 # bursts (even conc=4) blow past it during pagination -> ConnectTimeout + silently dropped
 # slices = missing dealers. The real control is a GLOBAL token-bucket rate limiter (not
 # concurrency): every request, from any slice, waits its turn so we never exceed _RATE req/s.
-_CONC = int(os.environ.get("MASS_CONC", "5"))
-_RATE = float(os.environ.get("MASS_RATE", "5.0"))  # global requests/sec ceiling (< API's 7/s)
+_CONC = int(os.environ.get("MASS_CONC", "3"))
+# Even 5/s tripped the API (429 -> ConnectTimeout) under our (penalised) IP. 2/s is the safe
+# floor for the API path. For a COMPLETE FR census without the rate-limit war, prefer the bulk
+# SIRENE StockEtablissement dump (data.gouv.fr) — no per-request limit. See PROGRESO bulk-pivot.
+_RATE = float(os.environ.get("MASS_RATE", "2.0"))  # global requests/sec ceiling
 _PER_PAGE = 25  # FR API hard max
 
 
