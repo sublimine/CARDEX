@@ -64,12 +64,21 @@ async def ensure_group(rdb: aioredis.Redis, stream: str, group: str) -> None:
             raise
 
 
-async def _recent_remediations(pg: asyncpg.Connection, entity_ulid: str) -> int:
+async def _recent_remediations(pg: asyncpg.Connection, entity_ulid: str | None, source_key: str) -> int:
+    """Recent re-scrape remediations for a source, keyed by source_key (always stored).
+
+    entity_ulid is NULL in operator_alerts when the source has no source_entities row yet —
+    the dominant case for freshly-discovered dealers (operator_events writes entity_ulid only
+    when the row exists). Counting by entity_ulid alone returned 0 there, so MAX_REMEDIATIONS
+    NEVER fired and a permanently-broken new dealer could livelock the remediator at scale.
+    Match EITHER key so the anti-churn cap works for registered and unregistered sources alike.
+    """
     return await pg.fetchval(
         f"""SELECT count(*) FROM operator_alerts
-            WHERE entity_ulid=$1 AND remediation_action='re-scrape'
+            WHERE (source_key = $2::text OR ($1::text IS NOT NULL AND entity_ulid = $1::text))
+              AND remediation_action='re-scrape'
               AND updated_at > now() - interval '{WINDOW}'""",
-        entity_ulid) or 0
+        entity_ulid, source_key) or 0
 
 
 async def _set_alert(pg, alert_id, *, status, action=None, result=None):
@@ -96,7 +105,7 @@ async def handle_event(
     country = await pg.fetchval("SELECT country FROM source_entities WHERE entity_ulid=$1", entity_ulid) or ""
 
     if signal == "volume_drift":
-        attempts = await _recent_remediations(pg, entity_ulid)
+        attempts = await _recent_remediations(pg, entity_ulid, source_key)
         if attempts >= MAX_REMEDIATIONS:
             await rdb.xadd(DLQ_STREAM, {**f, "agent": "remediation_dispatcher", "reason": "max_remediations"})
             await _set_alert(pg, alert_id, status="dlq", action="re-scrape",
