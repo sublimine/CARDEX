@@ -1,12 +1,17 @@
 """
 wallapop.com — Spain, general marketplace with ~large car inventory.
 
-T0 bypass: wallapop.com's web frontend is protected by PerimeterX, but the
-mobile API at api.wallapop.com is unprotected.  A GET to the v3 general search
-endpoint with a mobile User-Agent returns clean JSON — no challenge, no token,
-no cookie dance.
+!!! STALE — the GET bypass below NO LONGER WORKS [re-verified live 2026-06-09] !!!
+  api.wallapop.com is now behind CloudFront WAF. Findings 2026-06-09:
+   - GET without app headers -> 403 CloudFront "Request blocked" (even with curl_cffi Chrome TLS).
+   - GET WITH app headers (X-AppVersion / X-DeviceOS / X-DeviceID / MPID + mobile UA) -> 200,
+     BUT the query params are IGNORED (returns search_objects:[] + a random search_point) — i.e.
+     the GET query interface is dead; the current app uses a POST/JSON-body search.
+  => This scraper's GET model is broken. To recover: reverse the wallapop app's CURRENT search
+     request (POST endpoint + JSON body + required headers/signature) — focused RE task, staged.
+     PerimeterX still guards the WEB; the mobile-API was the bypass and it has evolved.
 
-Gold nuggets [research 2026-06-04]:
+Gold nuggets [research 2026-06-04 — STALE, see warning above]:
 
   Search URL  GET https://api.wallapop.com/api/v3/general/search
                   ?keywords=coches&category_ids=100

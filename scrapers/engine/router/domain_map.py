@@ -108,7 +108,7 @@ REGISTRY: list[PortalSpec] = [
     PortalSpec("mobile.de", Tier.T2, WAF.AKAMAI_V3, can_escalate_to=Tier.T3, countries=["DE"]),
     PortalSpec("kleinanzeigen.de", Tier.T2, WAF.AKAMAI_V3, can_escalate_to=Tier.T3, countries=["DE"]),
     PortalSpec("autoscout24.*", Tier.T2, WAF.AKAMAI_V3, can_escalate_to=Tier.T3, countries=["DE","ES","FR","NL","BE","CH"]),
-    PortalSpec("wallapop.com", Tier.T0, WAF.PERIMETER_X, countries=["ES"], notes="T2->T0 bypass: mobile API api.wallapop.com/api/v3 bypasses PerimeterX [VERIFIED 2026-06-04]"),
+    PortalSpec("wallapop.com", Tier.T0, WAF.PERIMETER_X, countries=["ES"], notes="mobile-API bypass ROTTED [re-verified 2026-06-09]: api.wallapop.com now CloudFront-WAF. 403 without app headers; 200 WITH X-AppVersion/DeviceOS/DeviceID/MPID BUT the GET param interface is DEAD (params ignored -> empty results + random search_point) => current API is POST/JSON-body, needs app-request RE. The 2026-06-04 GET bypass no longer works; treat as needs-research."),
     PortalSpec("gocar.be", Tier.T2, WAF.CF_BUSINESS, countries=["BE"]),
     PortalSpec("comparis.ch", Tier.T1, WAF.NONE, countries=["CH"], notes="T2->T1 bypass: SSR HTML no WAF, meta-aggregator ~214k listings [VERIFIED 2026-06-04]"),
     PortalSpec("autohero.com", Tier.T0, WAF.NONE, countries=["DE","IT","FR","ES","AT","PL","NL","SE"], notes="T2->T0 bypass: GraphQL API /v1/retail-customer-gateway/graphql/ no auth [VERIFIED 2026-06-04]"),
