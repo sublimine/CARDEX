@@ -71,59 +71,33 @@ _SKIP_DOMAINS = frozenset({
 #
 # Reality check 2026-04-10: most portal dealer directories are either
 # hallucinated URLs (404) or Cloudflare-gated (403). Only AutoScout24 DE
-# publishes a reachable public dealer directory. The rest are commented
-# out with the observed HTTP status — if a portal later opens up or we
-# get a residential proxy, uncomment and re-verify.
+# published a reachable public HTML dealer directory.
 #
-# Verified 2026-04-10:
-#   AS24 DE  → 200 (/haendler/ OK)
-#   AS24 ES  → 404 (path does not exist)
-#   AS24 FR  → 404 (no public dealer directory)
-#   AS24 NL  → 404
-#   AS24 BE  → 404
-#   AS24 CH  → 403 (Cloudflare)
-#   mobile.de → 403
-#   LeBonCoin → 403
-#   Coches.net → 403
-#   Marktplaats → 404
-#   2dehands → 404
+# ROT 2026-06-09: AS24 retired the /haendler/ SSR directory for a Next.js app
+# (/dealer-search) whose dealer list is a JSON XHR API. /haendler/ now returns
+# HTTP 200 but ZERO dealer-profile hrefs (the markup moved). This HTML-regex
+# connector is therefore SUPERSEDED for AS24 by scrapers/discovery/sources/
+# as24_dealers.py (AS24DealerSource), which reads the new dealer-search API
+# directly (≈34.5k identities across DE/FR/ES/NL/BE, verified live coste-cero).
+# The autoscout24 entry below is disabled to avoid running a dead path; PORTALS
+# is now empty until a real, re-verified portal HTML directory is wired.
+#
+# Verified 2026-04-10 (HTML directories — all dead or blocked today):
+#   AS24 DE  → 200 (/haendler/) — ROTTED 2026-06-09 (Next.js, 0 profile hrefs)
+#   AS24 ES/FR/NL/BE → 404      mobile.de → 403   LeBonCoin → 403
+#   Coches.net → 403 (Cloudflare)   Marktplaats → 404   2dehands → 404
 
 PORTALS: dict[str, dict[str, Any]] = {
-    "autoscout24": {
-        "directories": {
-            "DE": "https://www.autoscout24.de/haendler/",
-        },
-        "domain": {
-            "DE": "https://www.autoscout24.de",
-        },
-        "max_pages": 500,
-        "profile_re": re.compile(
-            r'href="((?:/(?:haendler|dealers?|concession[a-z]*|concessionnaire[a-z]*)/)[^"?#]+)"',
-            re.I,
-        ),
-        "website_re": [
-            re.compile(
-                r'href="(https?://(?!(?:www\.)?autoscout24)[^"]+)"[^>]*>\s*'
-                r'(?:Website|Webseite|Sitio\s*web|Site\s*web|Visiter|Besuchen|Bekijken)',
-                re.I,
-            ),
-            re.compile(r'"url"\s*:\s*"(https?://(?!(?:www\.)?autoscout24)[^"]+)"'),
-            re.compile(
-                r'class="[^"]*(?:dealer-?website|homepage|extern|website-link)[^"]*"[^>]*'
-                r'href="(https?://(?!(?:www\.)?autoscout24)[^"]+)"',
-                re.I,
-            ),
-        ],
-    },
-    # The following portals are blocked (403) or 404 from a residential
-    # client connection. Left commented-out for reference; re-enable only
-    # after verifying the directory endpoint is reachable again.
+    # "autoscout24": ROTTED 2026-06-09 — /haendler/ SSR directory gone (Next.js
+    #   /dealer-search now). Use as24_dealers.AS24DealerSource (dealer-search API)
+    #   instead. Kept here as a tombstone, not loaded.
     #
-    # "mobile_de"   : mobile.de/haendler                  HTTP 403
-    # "leboncoin"   : leboncoin.fr/boutiques/voitures     HTTP 403
-    # "coches_net"  : coches.net/concesionarios           HTTP 403 (Cloudflare)
-    # "marktplaats" : marktplaats.nl/verkopers/autos      HTTP 404
-    # "2dehands"    : 2dehands.be/verkopers/autos         HTTP 404
+    # Blocked/404 from a residential client (re-verify before re-enabling):
+    #   "mobile_de"   : mobile.de/haendler                  HTTP 403
+    #   "leboncoin"   : leboncoin.fr/boutiques/voitures     HTTP 403
+    #   "coches_net"  : coches.net/concesionarios           HTTP 403 (Cloudflare)
+    #   "marktplaats" : marktplaats.nl/verkopers/autos      HTTP 404
+    #   "2dehands"    : 2dehands.be/verkopers/autos         HTTP 404
 }
 
 

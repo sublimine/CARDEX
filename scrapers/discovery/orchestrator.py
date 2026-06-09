@@ -39,6 +39,7 @@ from typing import Any, AsyncIterator, Awaitable, Callable
 import asyncpg
 import httpx
 
+from scrapers.discovery.sources.as24_dealers import AS24DealerSource
 from scrapers.discovery.sources.ch_zefix import ZefixSource
 from scrapers.discovery.sources.common_crawl import CommonCrawlSource
 from scrapers.discovery.sources.fr_sirene import SireneSource
@@ -102,6 +103,8 @@ _SOURCES: list[tuple[str, SourceFactory, Callable[[str], bool]]] = [
     ("oem_bmw",       BMWDealerSource,        lambda c: c in _DEFAULT_COUNTRIES),
     # Layer 2 — Portal aggregators (each portal self-filters by country)
     ("portal",        PortalAggregatorSource, lambda c: True),
+    # Layer 2 — AS24 dealer-search API (≈34.5k identities, 5 countries; verified live coste-cero)
+    ("as24_dealers",  AS24DealerSource,       lambda c: c in {"DE", "FR", "ES", "NL", "BE"}),
     # Layer 3 — Registries (national, no-auth open APIs only)
     ("sirene",        SireneSource,           lambda c: c == "FR"),
     ("zefix",         ZefixSource,            lambda c: c == "CH"),
