@@ -36,7 +36,10 @@ logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO").upper(),
 _DSN = os.environ.get("DATABASE_URL", "postgres://cardex:cardex_dev_only@localhost:5432/cardex")
 _FR_API = "https://recherche-entreprises.api.gouv.fr/search"
 _FR_CODES = [c.strip() for c in os.environ.get("MASS_CODES", "45.11Z,45.19Z,45.20A").split(",") if c.strip()]
-_CONC = int(os.environ.get("MASS_CONC", "12"))
+# Robustness over speed: conc=4 + politeness delay keeps us UNDER the gov API's rate ceiling.
+# conc=12 got our IP throttled (ConnectError) and silently dropped slices = missing dealers.
+_CONC = int(os.environ.get("MASS_CONC", "4"))
+_REQ_DELAY = float(os.environ.get("MASS_REQ_DELAY", "0.2"))  # polite gap between page fetches
 _PER_PAGE = 25  # FR API hard max
 _HDR = {"Accept": "application/json", "User-Agent": "cardex-discovery/1.0 (open-data)"}
 
@@ -129,6 +132,7 @@ async def harvest_fr_slice(client: httpx.AsyncClient, pool: asyncpg.Pool,
         if page >= total_pages:
             break
         page += 1
+        await asyncio.sleep(_REQ_DELAY)  # politeness — stay under the gov API rate ceiling
     stats[f"{code}:{dept}"] = written
     if written:
         log.info("FR %s dept=%s -> %d", code, dept, written)
@@ -139,7 +143,8 @@ async def run_fr() -> int:
     sem = asyncio.Semaphore(_CONC)
     stats: dict[str, int] = {}
     try:
-        async with httpx.AsyncClient(timeout=45.0) as client:
+        limits = httpx.Limits(max_connections=_CONC + 2, max_keepalive_connections=_CONC)
+        async with httpx.AsyncClient(timeout=45.0, limits=limits) as client:
             async def _slice(code: str, dept: str) -> None:
                 async with sem:
                     try:
