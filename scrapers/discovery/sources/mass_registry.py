@@ -36,11 +36,35 @@ logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO").upper(),
 _DSN = os.environ.get("DATABASE_URL", "postgres://cardex:cardex_dev_only@localhost:5432/cardex")
 _FR_API = "https://recherche-entreprises.api.gouv.fr/search"
 _FR_CODES = [c.strip() for c in os.environ.get("MASS_CODES", "45.11Z,45.19Z,45.20A").split(",") if c.strip()]
-# Robustness over speed: conc=4 + politeness delay keeps us UNDER the gov API's rate ceiling.
-# conc=12 got our IP throttled (ConnectError) and silently dropped slices = missing dealers.
-_CONC = int(os.environ.get("MASS_CONC", "4"))
-_REQ_DELAY = float(os.environ.get("MASS_REQ_DELAY", "0.2"))  # polite gap between page fetches
+# Robustness over speed. recherche-entreprises enforces a HARD ~7 req/s per IP; concurrency
+# bursts (even conc=4) blow past it during pagination -> ConnectTimeout + silently dropped
+# slices = missing dealers. The real control is a GLOBAL token-bucket rate limiter (not
+# concurrency): every request, from any slice, waits its turn so we never exceed _RATE req/s.
+_CONC = int(os.environ.get("MASS_CONC", "5"))
+_RATE = float(os.environ.get("MASS_RATE", "5.0"))  # global requests/sec ceiling (< API's 7/s)
 _PER_PAGE = 25  # FR API hard max
+
+
+class _RateLimiter:
+    """Global async token bucket — serializes the START of every request to <= rate/sec."""
+
+    def __init__(self, rate: float):
+        self._min_interval = 1.0 / rate if rate > 0 else 0.0
+        self._lock = asyncio.Lock()
+        self._next = 0.0
+
+    async def acquire(self) -> None:
+        import time
+        async with self._lock:
+            now = time.monotonic()
+            wait = self._next - now
+            if wait > 0:
+                await asyncio.sleep(wait)
+                now = time.monotonic()
+            self._next = max(now, self._next) + self._min_interval
+
+
+_LIMITER = _RateLimiter(_RATE)
 _HDR = {"Accept": "application/json", "User-Agent": "cardex-discovery/1.0 (open-data)"}
 
 # FR departments: 01-19, 21-95, 2A, 2B (Corsica), 971-976 (DOM).
@@ -90,6 +114,7 @@ def fr_to_candidate(rec: dict, code: str) -> dict | None:
 async def _get(client: httpx.AsyncClient, params: dict, *, retries: int = 4) -> dict:
     for attempt in range(retries + 1):
         try:
+            await _LIMITER.acquire()  # global rate gate — every request waits its turn
             r = await client.get(_FR_API, params=params, headers=_HDR)
             if r.status_code == 429 and attempt < retries:
                 await asyncio.sleep(1.0 * (2 ** attempt))
@@ -132,7 +157,7 @@ async def harvest_fr_slice(client: httpx.AsyncClient, pool: asyncpg.Pool,
         if page >= total_pages:
             break
         page += 1
-        await asyncio.sleep(_REQ_DELAY)  # politeness — stay under the gov API rate ceiling
+        # pacing is handled globally by _LIMITER in _get (token bucket), not per-slice
     stats[f"{code}:{dept}"] = written
     if written:
         log.info("FR %s dept=%s -> %d", code, dept, written)
