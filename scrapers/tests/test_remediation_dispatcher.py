@@ -73,6 +73,20 @@ def test_volume_drift_under_cap_remediates():
 
 
 @pytest.mark.unit
+def test_make_deps_provider_yields_full_fleet():
+    # Closes build_real_deps: the factory must return a provider yielding the 4 deps remediate()
+    # needs (lazy connections -> no live infra). seam runs on a throwaway redis with isolate=True.
+    provider = rd.make_deps_provider(object(), throwaway_redis_url="redis://localhost:6379")
+    deps = provider()
+    assert set(deps) == {"static_fetcher", "e07_fetcher", "seam_runner", "purger", "limit"}
+    assert callable(deps["static_fetcher"])
+    assert callable(deps["seam_runner"])
+    assert callable(deps["purger"])
+    assert deps["e07_fetcher"] is None       # headless dispatcher: no Playwright per event
+    assert deps["limit"] == 12
+
+
+@pytest.mark.unit
 def test_waf_block_escalates_without_remediating():
     conn = _Conn(count=0)
     rdb = _Redis()

@@ -43,16 +43,34 @@ DepsProvider = Callable[[], dict]
 RemediateFn = Callable[..., Awaitable]
 
 
-def build_real_deps() -> dict:
-    """Production deps for remediate(). Lazy so importing the dispatcher stays cheap.
+def make_deps_provider(pg: asyncpg.Pool, *, throwaway_redis_url: str | None = None) -> DepsProvider:
+    """Production deps factory for remediate(), capturing the pool once.
 
-    The fetchers/seam/purger come from the existing harvester fleet; building them here
-    keeps the dispatcher decoupled from how they are constructed. In a no-network context
-    (this front's demo) callers inject fakes instead.
+    remediate() re-harvests a SAMPLE through the seam and PURGES it — it VALIDATES that a
+    regenerated recipe yields inventory, it does NOT fill production. So the seam runs on a
+    THROWAWAY redis (isolate=True, SEPARATE from this dispatcher's live stream redis, so the
+    remediation re-harvest never touches in-flight work) and persists to the real PG for the
+    ``recovered = persisted > 0`` check. Imports are lazy so importing the dispatcher stays
+    cheap; the demo/tests inject fakes instead of calling this.
     """
-    raise NotImplementedError(
-        "inject a deps_provider that returns {static_fetcher, e07_fetcher, seam_runner, purger}; "
-        "production wires the harvester fleet, the demo injects in-memory fakes")
+    from scrapers.dealer_scraping.harvester import make_dealer_fetcher
+    from scrapers.dealer_scraping.seam import make_live_purger, make_live_seam
+
+    tw_url = throwaway_redis_url or os.environ.get("THROWAWAY_REDIS_URL", REDIS_URL)
+    tw_rdb = aioredis.from_url(tw_url, decode_responses=False)
+    static_fetcher = make_dealer_fetcher()
+    # e07_fetcher=None: the headless dispatcher does not open Playwright per event (RAM); a
+    # render-only dealer escalates rather than render-remediating here.
+    seam_runner = make_live_seam(
+        tw_rdb, static_fetcher, None, redis_url=tw_url, db_url=PG_DSN, isolate=True
+    )
+    purger = make_live_purger(pg)
+
+    def provider() -> dict:
+        return {"static_fetcher": static_fetcher, "e07_fetcher": None,
+                "seam_runner": seam_runner, "purger": purger, "limit": 12}
+
+    return provider
 
 
 async def ensure_group(rdb: aioredis.Redis, stream: str, group: str) -> None:
@@ -142,10 +160,13 @@ async def handle_event(
     return {"alert_id": alert_id, "action": "retry_backoff"}
 
 
-async def run(*, deps_provider: DepsProvider = build_real_deps, oneshot: bool = False,
+async def run(*, deps_provider: DepsProvider | None = None, oneshot: bool = False,
               max_idle_polls: int = 0) -> None:
     pg = await asyncpg.create_pool(PG_DSN, min_size=1, max_size=4)
     rdb = aioredis.from_url(REDIS_URL, decode_responses=False)
+    # Build the production deps from the live pool when none is injected (the demo/tests inject).
+    if deps_provider is None:
+        deps_provider = make_deps_provider(pg)
     consumer = f"{socket.gethostname()}:{os.getpid()}"
     await ensure_group(rdb, EVENTS_STREAM, GROUP)
     log.info("remediation_dispatcher up consumer=%s", consumer)
