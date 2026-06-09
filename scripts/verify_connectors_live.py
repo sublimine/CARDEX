@@ -112,23 +112,32 @@ def _giant_diag(status: int, nd: dict, total, rows: list, sample) -> str:
 # Re-verify each brand against one representative country (DE — every brand serves
 # it). Reuses the module's own fetch_* so we test the EXACT production path.
 async def verify_oem() -> list[dict]:
+    from scrapers.discovery.sources import oem_brands_ext as bx
     from scrapers.discovery.sources import oem_locators as oem
+    from scrapers.discovery.sources import oem_wave2 as w2
 
-    brand_country = [("vw", "DE"), ("audi", "DE"), ("skoda", "DE"),
-                     ("toyota", "DE"), ("hyundai", "DE"), ("kia", "DE")]
-    results: list[dict] = []
-    async with httpx.AsyncClient(timeout=45.0, follow_redirects=True,
-                                 headers={"User-Agent": _BROWSER_UA}) as client:
-        for brand, country in brand_country:
-            entry = oem.BRANDS.get(brand)
-            rec: dict[str, Any] = {"target": f"oem:{brand}", "country": country, "kind": "oem"}
-            if not entry:
-                rec.update(ok=False, error="brand not in BRANDS registry")
-                results.append(rec)
-                continue
+    # (label, async fetch coroutine factory) — all probed against DE (every brand serves it).
+    # oem_locators is registry-driven; wave2/brands_ext expose per-brand fetchers directly.
+    probes: list[tuple[str, Callable[[httpx.AsyncClient], Awaitable[list]]]] = []
+    for brand in ("vw", "audi", "skoda", "toyota", "hyundai", "kia"):
+        entry = oem.BRANDS.get(brand)
+        if entry:
             fetch, _ = entry
+            probes.append((f"oem:{brand}", lambda c, f=fetch: f(c, "DE")))
+    probes += [
+        ("oem:renault", lambda c: w2.fetch_renault_country(c, "DE", "renault")),
+        ("oem:dacia",   lambda c: w2.fetch_renault_country(c, "DE", "dacia")),
+        ("oem:seat",    lambda c: w2.fetch_seat_country(c, "DE")),
+        ("oem:cupra",   lambda c: bx.fetch_cupra(c, "DE")),
+    ]
+
+    results: list[dict] = []
+    async with httpx.AsyncClient(timeout=60.0, follow_redirects=True,
+                                 headers={"User-Agent": _BROWSER_UA}) as client:
+        for label, fetch in probes:
+            rec: dict[str, Any] = {"target": label, "country": "DE", "kind": "oem"}
             try:
-                cands = await fetch(client, country)
+                cands = await fetch(client)
             except Exception as exc:  # noqa: BLE001 — report, never abort the sweep
                 rec.update(ok=False, error=f"{type(exc).__name__}: {str(exc)[:160]}")
                 results.append(rec)

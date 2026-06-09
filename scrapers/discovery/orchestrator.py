@@ -116,14 +116,23 @@ _SOURCES: list[tuple[str, SourceFactory, Callable[[str], bool]]] = [
 ]
 
 # Standalone sources self-sink to PG over their own transport (crt.sh
-# Postgres, curl_cffi) instead of yielding to the httpx fan-out, so they
-# cannot use the `discover(country)` contract above. Each iterates its own
+# Postgres, curl_cffi, geo-sweep, XML) instead of yielding to the httpx fan-out,
+# so they cannot use the `discover(country)` contract above. Each iterates its own
 # country set internally and runs once per orchestrator invocation. Set
 # DISCOVERY_STANDALONE=0 to skip them (httpx fan-out only). Imports are lazy
 # so a missing optional dep (e.g. curl_cffi) disables only its own runner.
+#
+# OEM dealer-locator sweeps (oem_locators: vw/audi/skoda/toyota/hyundai/kia;
+# oem_wave2: renault/dacia/seat; oem_brands_ext: cupra) are self-sinking run()
+# modules — re-verified live 2026-06-09 (DE: vw1903 audi1233 skoda1251 toyota511
+# hyundai498 kia400 renault719 dacia787 seat1218 cupra59) and wired here so the
+# franchise long-tail (~6 countries × 10 brands) enters the production sweep.
 _STANDALONE_ENABLED = os.environ.get("DISCOVERY_STANDALONE", "1") != "0"
 
-_STANDALONE_RUNNERS: tuple[str, ...] = ("ct_logs", "trustpilot", "bovag")
+_STANDALONE_RUNNERS: tuple[str, ...] = (
+    "ct_logs", "trustpilot", "bovag",
+    "oem_locators", "oem_wave2", "oem_brands_ext",
+)
 
 
 async def _run_standalone(name: str) -> None:
