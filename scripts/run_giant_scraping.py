@@ -113,8 +113,15 @@ async def harvest(domain: str, country: str, *, base: str, currency: str,
         verdict = cv.cross_check(base_total, {"persisted_deduped": in_db}) if keep else None
         print(f"{domain}: persisted={persisted} deduped_in_db={in_db} rejected={rejected}")
         if verdict:
-            print(f"{domain}: GATE base vs deduped -> "
-                  f"{'TRUSTWORTHY' if verdict.trustworthy else 'PARTIAL/CHECK'} ({verdict.detail})")
+            coverage = (in_db / base_total) if base_total else 0.0
+            # Show COVERAGE (in_db/declared), not just the divergence in detail — anti-lie clarity.
+            print(f"{domain}: GATE base={base_total} deduped={in_db} -> "
+                  f"coverage={coverage:.1%} "
+                  f"{'TRUSTWORTHY' if verdict.trustworthy else 'PARTIAL/CHECK'} "
+                  f"(divergence {verdict.max_divergence * 100:.1f}%)")
+            if not verdict.trustworthy:
+                print(f"{domain}: SHORTFALL {base_total - in_db} listings ({(1 - coverage) * 100:.1f}%) — "
+                      f"deep-pagination drift on a live list; needs multi-pass union + stable sort to close.")
 
         if not keep:
             async with pool.acquire() as conn:
