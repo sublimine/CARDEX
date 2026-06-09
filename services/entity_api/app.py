@@ -163,6 +163,38 @@ async def entity_delta(
                      {"entity_ulid": ulid, "domain": ent["domain"], "count": len(rows)})
 
 
+@app.get("/v1/entities/{ulid}/price-changes")
+async def entity_price_changes(
+    ulid: str,
+    since: str | None = Query(None, description="ISO timestamp; default last 30 days"),
+    limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
+) -> dict:
+    """Live PRICE-change feed for one entity (alta/baja is ``/delta``; this is price moves).
+
+    Reads the PRICE_CHANGE events the rich_consumer emits (prev/new/delta/direction) into
+    ``vin_history_cache``, scoped to the entity by source platform. Completes the 'inventario
+    vivo con cambios de precio' surface alongside ``/delta`` (SEEN/GONE).
+    """
+    async with _pool.acquire() as conn:
+        ent = await _entity_or_404(conn, ulid)
+        rows = await conn.fetch(
+            f"""SELECT vin, event_date,
+                       (data->>'price_eur_prev')::float  AS price_eur_prev,
+                       (data->>'price_eur_new')::float   AS price_eur_new,
+                       (data->>'price_delta_eur')::float AS price_delta_eur,
+                       data->>'direction'                AS direction,
+                       created_at
+                  FROM vin_history_cache
+                 WHERE event_type = 'PRICE_CHANGE'
+                   AND (source = $1 OR data->>'source_platform' = $1)
+                   AND created_at >= COALESCE($2::timestamptz, now() - interval '30 days')
+                 ORDER BY created_at DESC
+                 LIMIT {limit}""",
+            ent["domain"], since)
+    return _envelope([dict(r) for r in rows],
+                     {"entity_ulid": ulid, "domain": ent["domain"], "count": len(rows)})
+
+
 @app.get("/v1/inventory")
 async def global_inventory(
     country: str | None = None,
