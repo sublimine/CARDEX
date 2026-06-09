@@ -1,10 +1,10 @@
 {
-  "source_key": "autodijkwel.nl",
+  "source_key": "heuts.nl",
   "country": "NL",
-  "strategy": "sitemap_listing",
-  "version": 2,
+  "strategy": "playwright_meta",
+  "version": 1,
   "endpoints": {
-    "host": "www.autodijkwel.nl",
+    "host": "www.heuts.nl",
     "listing_url_template": "",
     "sitemap_url": "",
     "detail_url_re": "",
@@ -17,18 +17,18 @@
     "cap_results": 0
   },
   "extraction": {
-    "method": "jsonld",
+    "method": "og",
     "field_map": {}
   },
   "drift_baseline": {
-    "extraction_method": "jsonld",
-    "expected_min_volume": 50,
+    "extraction_method": "og",
+    "expected_min_volume": 1,
     "required_fields": [
       "make",
       "model",
       "year",
       "price"
     ],
-    "min_nonnull_ratio": 0.7
+    "min_nonnull_ratio": 0.6
   }
 }

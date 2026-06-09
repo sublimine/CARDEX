@@ -1,11 +1,11 @@
 {
-  "source_key": "autodijkwel.nl",
-  "country": "NL",
+  "source_key": "hnosroyo.es",
+  "country": "ES",
   "strategy": "sitemap_listing",
-  "version": 2,
+  "version": 1,
   "endpoints": {
-    "host": "www.autodijkwel.nl",
-    "listing_url_template": "",
+    "host": "www.hnosroyo.es",
+    "listing_url_template": "https://hnosroyo.es/coches/",
     "sitemap_url": "",
     "detail_url_re": "",
     "api_url": ""
@@ -29,6 +29,6 @@
       "year",
       "price"
     ],
-    "min_nonnull_ratio": 0.7
+    "min_nonnull_ratio": 0.6
   }
 }

@@ -1,11 +1,11 @@
 {
-  "source_key": "autodijkwel.nl",
-  "country": "NL",
+  "source_key": "audi-lille.fr",
+  "country": "FR",
   "strategy": "sitemap_listing",
-  "version": 2,
+  "version": 1,
   "endpoints": {
-    "host": "www.autodijkwel.nl",
-    "listing_url_template": "",
+    "host": "www.audi-lille.fr",
+    "listing_url_template": "https://audi-lille.fr/occasion",
     "sitemap_url": "",
     "detail_url_re": "",
     "api_url": ""
@@ -22,13 +22,13 @@
   },
   "drift_baseline": {
     "extraction_method": "jsonld",
-    "expected_min_volume": 50,
+    "expected_min_volume": 384,
     "required_fields": [
       "make",
       "model",
       "year",
       "price"
     ],
-    "min_nonnull_ratio": 0.7
+    "min_nonnull_ratio": 0.6
   }
 }

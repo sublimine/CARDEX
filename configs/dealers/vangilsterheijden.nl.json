@@ -1,11 +1,11 @@
 {
-  "source_key": "autodijkwel.nl",
+  "source_key": "vangilsterheijden.nl",
   "country": "NL",
   "strategy": "sitemap_listing",
-  "version": 2,
+  "version": 1,
   "endpoints": {
-    "host": "www.autodijkwel.nl",
-    "listing_url_template": "",
+    "host": "www.vangilsterheijden.nl",
+    "listing_url_template": "https://www.vangilsterheijden.nl/wp-content/plugins/vwe-autovoorraad/assets/css/vwe-global.min.css?ver=2.2.01",
     "sitemap_url": "",
     "detail_url_re": "",
     "api_url": ""
@@ -22,13 +22,13 @@
   },
   "drift_baseline": {
     "extraction_method": "jsonld",
-    "expected_min_volume": 50,
+    "expected_min_volume": 25,
     "required_fields": [
       "make",
       "model",
       "year",
       "price"
     ],
-    "min_nonnull_ratio": 0.7
+    "min_nonnull_ratio": 0.6
   }
 }

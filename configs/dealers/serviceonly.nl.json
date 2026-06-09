@@ -1,11 +1,11 @@
 {
-  "source_key": "autodijkwel.nl",
+  "source_key": "serviceonly.nl",
   "country": "NL",
-  "strategy": "sitemap_listing",
-  "version": 2,
+  "strategy": "playwright_meta",
+  "version": 1,
   "endpoints": {
-    "host": "www.autodijkwel.nl",
-    "listing_url_template": "",
+    "host": "www.serviceonly.nl",
+    "listing_url_template": "https://serviceonly.nl/services/apk/alles-over-de-verschillen-in-apk-tussen-diesels-en-benzine-auto-s/",
     "sitemap_url": "",
     "detail_url_re": "",
     "api_url": ""
@@ -17,18 +17,18 @@
     "cap_results": 0
   },
   "extraction": {
-    "method": "jsonld",
+    "method": "og",
     "field_map": {}
   },
   "drift_baseline": {
-    "extraction_method": "jsonld",
-    "expected_min_volume": 50,
+    "extraction_method": "og",
+    "expected_min_volume": 2,
     "required_fields": [
       "make",
       "model",
       "year",
       "price"
     ],
-    "min_nonnull_ratio": 0.7
+    "min_nonnull_ratio": 0.6
   }
 }

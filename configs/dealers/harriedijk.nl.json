@@ -1,10 +1,10 @@
 {
-  "source_key": "autodijkwel.nl",
+  "source_key": "harriedijk.nl",
   "country": "NL",
-  "strategy": "sitemap_listing",
-  "version": 2,
+  "strategy": "jsonld_detail",
+  "version": 1,
   "endpoints": {
-    "host": "www.autodijkwel.nl",
+    "host": "www.harriedijk.nl",
     "listing_url_template": "",
     "sitemap_url": "",
     "detail_url_re": "",
@@ -22,13 +22,13 @@
   },
   "drift_baseline": {
     "extraction_method": "jsonld",
-    "expected_min_volume": 50,
+    "expected_min_volume": 27,
     "required_fields": [
       "make",
       "model",
       "year",
       "price"
     ],
-    "min_nonnull_ratio": 0.7
+    "min_nonnull_ratio": 0.6
   }
 }

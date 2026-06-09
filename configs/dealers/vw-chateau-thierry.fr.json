@@ -1,11 +1,11 @@
 {
-  "source_key": "autodijkwel.nl",
-  "country": "NL",
-  "strategy": "sitemap_listing",
-  "version": 2,
+  "source_key": "vw-chateau-thierry.fr",
+  "country": "FR",
+  "strategy": "jsonld_detail",
+  "version": 1,
   "endpoints": {
-    "host": "www.autodijkwel.nl",
-    "listing_url_template": "",
+    "host": "www.vw-chateau-thierry.fr",
+    "listing_url_template": "https://vw-chateau-thierry.fr/vehicules-professionnels-volkswagen-fr-fr.htm",
     "sitemap_url": "",
     "detail_url_re": "",
     "api_url": ""
@@ -22,13 +22,13 @@
   },
   "drift_baseline": {
     "extraction_method": "jsonld",
-    "expected_min_volume": 50,
+    "expected_min_volume": 346,
     "required_fields": [
       "make",
       "model",
       "year",
       "price"
     ],
-    "min_nonnull_ratio": 0.7
+    "min_nonnull_ratio": 0.6
   }
 }

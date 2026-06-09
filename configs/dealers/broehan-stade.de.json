@@ -1,11 +1,11 @@
 {
-  "source_key": "audi-thionville.com",
-  "country": "FR",
+  "source_key": "broehan-stade.de",
+  "country": "DE",
   "strategy": "sitemap_listing",
-  "version": 2,
+  "version": 1,
   "endpoints": {
-    "host": "www.audi-thionville.com",
-    "listing_url_template": "https://audi-thionville.com/occasion",
+    "host": "www.broehan-stade.de",
+    "listing_url_template": "https://broehan-stade.de/fahrzeuge/?make=&#038;post_id=2966&#038;set_last_search=1&#038;wpcsp=1&#038;orderby=date&#038;order=desc&#038;model=&#038;condition=NEW&#038;fuel=&#038;gearbox=&#038;door_count=&#038;climatisation=&#038;price_max=%23&#038;mileage_max=%23&#038;first_registration_min=%23#wpcs_vehicles",
     "sitemap_url": "",
     "detail_url_re": "",
     "api_url": ""
@@ -22,7 +22,7 @@
   },
   "drift_baseline": {
     "extraction_method": "jsonld",
-    "expected_min_volume": 245,
+    "expected_min_volume": 109,
     "required_fields": [
       "make",
       "model",

@@ -1,11 +1,11 @@
 {
-  "source_key": "autodijkwel.nl",
-  "country": "NL",
-  "strategy": "sitemap_listing",
-  "version": 2,
+  "source_key": "kiamalaga.es",
+  "country": "ES",
+  "strategy": "playwright_meta",
+  "version": 1,
   "endpoints": {
-    "host": "www.autodijkwel.nl",
-    "listing_url_template": "",
+    "host": "www.kiamalaga.es",
+    "listing_url_template": "https://www.ocasion.kiamalaga.es/coches-ocasion/",
     "sitemap_url": "",
     "detail_url_re": "",
     "api_url": ""
@@ -17,18 +17,18 @@
     "cap_results": 0
   },
   "extraction": {
-    "method": "jsonld",
+    "method": "og",
     "field_map": {}
   },
   "drift_baseline": {
-    "extraction_method": "jsonld",
-    "expected_min_volume": 50,
+    "extraction_method": "og",
+    "expected_min_volume": 8,
     "required_fields": [
       "make",
       "model",
       "year",
       "price"
     ],
-    "min_nonnull_ratio": 0.7
+    "min_nonnull_ratio": 0.6
   }
 }

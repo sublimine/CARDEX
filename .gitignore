@@ -33,6 +33,14 @@ scrapers/engine.db
 pytest-cache-files-*/
 .pytest_cache/
 
+# Run artifacts at repo root (harness outputs, NOT the dealer recipes under configs/)
+/inv_*.json
+/close_*.json
+/*_results.json
+/proof_*.json
+/dealer_scraping_results.json
+logs/
+
 # Machine-specific operational scratch (hardcoded local paths, OOM workarounds,
 # monitor loops that emit the already-ignored *.log files)
 .audit_run.ps1

@@ -1,11 +1,11 @@
 {
-  "source_key": "autodijkwel.nl",
+  "source_key": "diks.net",
   "country": "NL",
-  "strategy": "sitemap_listing",
-  "version": 2,
+  "strategy": "playwright_meta",
+  "version": 1,
   "endpoints": {
-    "host": "www.autodijkwel.nl",
-    "listing_url_template": "",
+    "host": "www.diks.net",
+    "listing_url_template": "https://diks.net/en/vehicles/1/passenger-cars",
     "sitemap_url": "",
     "detail_url_re": "",
     "api_url": ""
@@ -17,18 +17,18 @@
     "cap_results": 0
   },
   "extraction": {
-    "method": "jsonld",
+    "method": "og",
     "field_map": {}
   },
   "drift_baseline": {
-    "extraction_method": "jsonld",
-    "expected_min_volume": 50,
+    "extraction_method": "og",
+    "expected_min_volume": 168,
     "required_fields": [
       "make",
       "model",
       "year",
       "price"
     ],
-    "min_nonnull_ratio": 0.7
+    "min_nonnull_ratio": 0.6
   }
 }
