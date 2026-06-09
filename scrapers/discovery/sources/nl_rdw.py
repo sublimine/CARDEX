@@ -190,5 +190,33 @@ async def run(limit: int = 0) -> int:
     return inserted
 
 
+class NLRDWSource:
+    """Orchestrator Source adapter: RDW Erkende Bedrijven → NL dealer identity candidates.
+
+    Reuses the verified ``fetch_dealer_volgnummers``/``fetch_companies``/``to_candidate`` and
+    YIELDS candidates (the orchestrator's idempotent sink upserts them) — unlike ``run()`` which
+    upserts directly for standalone use. NL-only (RDW is the Dutch register). This wires the
+    coste-cero NL anchor into the production discovery sweep (breaks the FR/SIRENE monoculture).
+    """
+
+    COUNTRY = "NL"
+
+    def __init__(self, client: httpx.AsyncClient):
+        self._client = client
+
+    async def discover(self, country: str):
+        if country != self.COUNTRY:
+            return
+        dealers = await fetch_dealer_volgnummers(self._client, limit=0)
+        companies = await fetch_companies(self._client, list(dealers.keys()))
+        for vn, erk in dealers.items():
+            company = companies.get(vn)
+            if company is None:
+                continue
+            cand = to_candidate(company, erk)
+            if cand.get("registry_id"):
+                yield cand
+
+
 if __name__ == "__main__":
     asyncio.run(run(limit=int(os.environ.get("RDW_LIMIT", "0"))))

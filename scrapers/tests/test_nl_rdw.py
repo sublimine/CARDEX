@@ -1,9 +1,11 @@
 """nl_rdw discovery source — pure transform tests (no network)."""
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
-from scrapers.discovery.sources.nl_rdw import _DEALER_ERKENNINGEN, to_candidate
+from scrapers.discovery.sources.nl_rdw import NLRDWSource, _DEALER_ERKENNINGEN, to_candidate
 
 
 @pytest.mark.unit
@@ -39,3 +41,51 @@ def test_dealer_filter_is_stock_and_plate():
     assert "Bedrijfsvoorraad" in _DEALER_ERKENNINGEN
     assert "Handelaarskenteken" in _DEALER_ERKENNINGEN
     assert "Fotograaf Bemand" not in _DEALER_ERKENNINGEN
+
+
+# ── NLRDWSource (orchestrator adapter): yields candidates for NL, skips others ──
+class _FakeResp:
+    def __init__(self, data):
+        self._data = data
+
+    def raise_for_status(self):
+        pass
+
+    def json(self):
+        return self._data
+
+
+class _FakeClient:
+    """httpx-shaped double: routes by RDW dataset id; paginates erkenningen once."""
+
+    def __init__(self, erkenningen, companies):
+        self._erk, self._comp = erkenningen, companies
+
+    async def get(self, url, params=None, headers=None):
+        if "nmwb-dqkz" in url:                        # erkenningen (paginated)
+            return _FakeResp(self._erk if (params or {}).get("$offset", 0) == 0 else [])
+        if "5k74-3jha" in url:                        # companies
+            return _FakeResp(self._comp)
+        return _FakeResp([])
+
+
+async def _collect(agen):
+    return [x async for x in agen]
+
+
+@pytest.mark.unit
+def test_nlrdw_source_yields_nl_candidates():
+    erk = [{"volgnummer": "1", "erkenning": "Bedrijfsvoorraad"},
+           {"volgnummer": "2", "erkenning": "Handelaarskenteken"}]
+    comp = [{"volgnummer": "1", "naam_bedrijf": "Auto Uno B.V.", "plaats": "AMSTERDAM"},
+            {"volgnummer": "2", "naam_bedrijf": "Garage Dos", "plaats": "ROTTERDAM"}]
+    cands = asyncio.run(_collect(NLRDWSource(_FakeClient(erk, comp)).discover("NL")))
+    assert len(cands) == 2
+    assert {c["registry_id"] for c in cands} == {"1", "2"}
+    assert all(c["country"] == "NL" and c["source"] == "rdw_erkende_bedrijven" for c in cands)
+    assert all(c["domain"] is None for c in cands)     # identity rows (domain resolved later)
+
+
+@pytest.mark.unit
+def test_nlrdw_source_skips_non_nl():
+    assert asyncio.run(_collect(NLRDWSource(_FakeClient([], [])).discover("DE"))) == []

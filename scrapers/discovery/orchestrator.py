@@ -42,6 +42,7 @@ import httpx
 from scrapers.discovery.sources.ch_zefix import ZefixSource
 from scrapers.discovery.sources.common_crawl import CommonCrawlSource
 from scrapers.discovery.sources.fr_sirene import SireneSource
+from scrapers.discovery.sources.nl_rdw import NLRDWSource
 from scrapers.discovery.sources.oem_bmw import BMWDealerSource
 from scrapers.discovery.sources.osm import OSMSource
 from scrapers.discovery.sources.portal_aggregator import PortalAggregatorSource
@@ -104,6 +105,7 @@ _SOURCES: list[tuple[str, SourceFactory, Callable[[str], bool]]] = [
     # Layer 3 — Registries (national, no-auth open APIs only)
     ("sirene",        SireneSource,           lambda c: c == "FR"),
     ("zefix",         ZefixSource,            lambda c: c == "CH"),
+    ("nl_rdw",        NLRDWSource,            lambda c: c == "NL"),  # RDW Socrata, verified live coste-cero
     # Layer 4 — OSM
     ("osm",           OSMSource,              lambda c: True),
     # Layer 5 — Common Crawl
