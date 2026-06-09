@@ -1,0 +1,224 @@
+# CARDEX — Source Matrix (FASE A del master plan)
+# Matriz DECLARATIVA fuente×país que gobierna el discovery. El orquestador-líder (FASE E) la lee
+# para: rankear fuentes por país, encadenar fallbacks cuando una cae, y saber qué fuente puede
+# servir de AUTORIDAD DE CENSO (denominador poblacional para el motor de completitud).
+#
+# Campos por fuente:
+#   module          módulo Python real (scrapers.discovery.sources.X) — debe existir y ser invocable.
+#   layer           1=OEM · 2=portal/agregador · 3=registro · 4=geo(OSM) · 5=web-scale(CommonCrawl/CT).
+#   role            census_authority | dealer_directory | domain_carrier | geo_anchor | aux
+#   countries       países que cubre.
+#   rank            prioridad por país (1=primaria). El orquestador usa la de menor rank primero.
+#   census_authority  true si puede dar el "cuántos EXISTEN" (denominador) por país/actividad.
+#   status          live | fragile | blocked | needs_credential | unverified  (HONESTO; el código manda)
+#   notes           verificación/contexto.
+#
+# Regla: status NUNCA se pone 'live' sin verificación real este ciclo; lo no comprobado = 'unverified'.
+
+version: 1
+updated: 2026-06-09
+
+sources:
+  # ── Layer 3 · Registros gov (autoridad de censo) ─────────────────────────────────────────
+  sirene_dump:
+    module: scripts.sirene_ods_load        # opendatasoft SIRENE v3 export stream
+    layer: 3
+    role: census_authority
+    countries: [FR]
+    rank: 1
+    census_authority: true
+    status: live
+    notes: "Verificado 2026-06-09: export csv sin tope; ~505k establecimientos auto FR (45.11Z 256k, 45.20A 234k). Host opendatasoft (no penalizado). PRIMARIA censo FR."
+  mass_registry:
+    module: scrapers.discovery.sources.mass_registry  # recherche-entreprises API
+    layer: 3
+    role: census_authority
+    countries: [FR]
+    rank: 3
+    census_authority: true
+    status: fragile
+    notes: "API gov: cap 10k/query + rate-limit duro (IP penalizada 3x). Rate-limiter 2/s. Fallback de sirene_dump, NO primaria."
+  nl_rdw:
+    module: scrapers.discovery.sources.nl_rdw
+    layer: 3
+    role: census_authority
+    countries: [NL]
+    rank: 1
+    census_authority: true
+    status: live
+    notes: "RDW erkende bedrijven (Socrata abierto). Verificado. PRIMARIA censo NL."
+  ch_zefix_allcantons:
+    module: scrapers.discovery.sources.ch_zefix_allcantons
+    layer: 3
+    role: census_authority
+    countries: [CH]
+    rank: 2
+    census_authority: true
+    status: needs_credential
+    notes: "Zefix requiere ZEFIX_USER/PASS. Mirror all-cantons existe. Plan: registrar cuenta gratis (acción owner) o mirror CSV."
+  be_kbo:
+    module: scrapers.discovery.sources.be_kbo
+    layer: 3
+    role: census_authority
+    countries: [BE]
+    rank: 2
+    census_authority: true
+    status: needs_credential
+    notes: "KBO/BCE Open Data requiere cuenta email. Plan: registrar (acción owner) → bundle CSV NACEBEL 45.x."
+  de_offeneregister:
+    module: scrapers.discovery.sources.de_offeneregister
+    layer: 3
+    role: census_authority
+    countries: [DE]
+    rank: 3
+    census_authority: true
+    status: blocked
+    notes: "API datasette 502 + dump SQLite 773MB (procesar en VPS). Buscar mirror/OpenCorporates como alt."
+
+  # ── Layer 2 · Portales / agregadores (directorio de dealers + dominios) ──────────────────
+  as24_dealers:
+    module: scrapers.discovery.sources.as24_dealers
+    layer: 2
+    role: dealer_directory
+    countries: [DE, FR, ES, NL, BE]
+    rank: 1
+    census_authority: false
+    status: live
+    notes: "AS24 dealer-search API. Verificado: DE 19766 FR 1999 ES 2936 NL 6019 BE 3843. httpx plano, sin captcha."
+  portal_aggregator:
+    module: scrapers.discovery.sources.portal_aggregator
+    layer: 2
+    role: dealer_directory
+    countries: [DE, FR, ES, NL, BE, CH]
+    rank: 5
+    census_authority: false
+    status: blocked
+    notes: "Directorios HTML rotados (AS24 /haendler/ → SPA). Superseded por as24_dealers. Tombstone."
+
+  # ── Layer 1 · OEM dealer-locators (franquicia) ───────────────────────────────────────────
+  oem_locators:
+    module: scrapers.discovery.sources.oem_locators
+    layer: 1
+    role: domain_carrier
+    countries: [DE, FR, ES, NL, BE, CH]
+    rank: 2
+    census_authority: false
+    status: live
+    notes: "vw/audi/skoda/toyota/hyundai/kia. Verificado 2026-06-09 (DE 6/6 vivos). Algunos traen dominio propio."
+  oem_wave2:
+    module: scrapers.discovery.sources.oem_wave2
+    layer: 1
+    role: domain_carrier
+    countries: [DE, FR, ES, NL, BE, CH]
+    rank: 2
+    census_authority: false
+    status: live
+    notes: "renault/dacia/seat (geo-sweep). Verificado DE (renault 719, dacia 787, seat 1218)."
+  oem_brands_ext:
+    module: scrapers.discovery.sources.oem_brands_ext
+    layer: 1
+    role: domain_carrier
+    countries: [DE, FR, ES, NL, BE, CH]
+    rank: 2
+    census_authority: false
+    status: live
+    notes: "cupra (SNW/D'Ieteren). Verificado DE 59. Ampliar a mercedes/ford/opel/peugeot/citroen/etc (FASE D research)."
+  oem_bmw:
+    module: scrapers.discovery.sources.oem_bmw
+    layer: 1
+    role: domain_carrier
+    countries: [DE, FR, ES, NL, BE, CH]
+    rank: 2
+    census_authority: false
+    status: live
+    notes: "BMW STOLO. Verificado."
+
+  # ── Layer 4 · OSM (ancla geográfica universal) ───────────────────────────────────────────
+  osm:
+    module: scrapers.discovery.sources.osm
+    layer: 4
+    role: geo_anchor
+    countries: [DE, FR, ES, NL, BE, CH]
+    rank: 2
+    census_authority: false
+    status: live
+    notes: "Overpass full (shop=car/car_dealer/car_repair/... craft/office/amenity). Multi-endpoint fallback. ~10% con web. Cubre CH/gov-bloqueados."
+  osm_full:
+    module: scrapers.discovery.sources.osm_full
+    layer: 4
+    role: geo_anchor
+    countries: [DE, FR, ES, NL, BE, CH]
+    rank: 3
+    census_authority: false
+    status: unverified
+    notes: "Barrido por sub-área (provincia) cuando el país entero excede timeout. Verificar antes de primar."
+
+  # ── Layer 2-3 · Directorios profesionales / páginas amarillas (dominios long-tail) ───────
+  fr_pagesjaunes:
+    module: scrapers.discovery.sources.fr_pagesjaunes
+    layer: 2
+    role: domain_carrier
+    countries: [FR]
+    rank: 4
+    census_authority: false
+    status: unverified
+    notes: "PagesJaunes (DataDome). Requiere proxy pool + anti-bot. Verificar vía fr_resolver (ya bypassa PJ)."
+  de_gelbeseiten:
+    module: scrapers.discovery.sources.de_gelbeseiten
+    layer: 2
+    role: domain_carrier
+    countries: [DE]
+    rank: 4
+    census_authority: false
+    status: unverified
+    notes: "GelbeSeiten. Verificar live + anti-bot."
+  de_11880:
+    module: scrapers.discovery.sources.de_11880
+    layer: 2
+    role: domain_carrier
+    countries: [DE]
+    rank: 4
+    census_authority: false
+    status: unverified
+  ch_agvs:
+    module: scrapers.discovery.sources.ch_agvs
+    layer: 3
+    role: dealer_directory
+    countries: [CH]
+    rank: 1
+    census_authority: false
+    status: unverified
+    notes: "AGVS/UPSA (asociación garajes CH). Verificar — candidata a primaria CH junto a OSM."
+  nl_bovag:
+    module: scrapers.discovery.sources.nl_bovag
+    layer: 3
+    role: dealer_directory
+    countries: [NL]
+    rank: 2
+    census_authority: false
+    status: unverified
+    notes: "BOVAG (asociación NL)."
+
+  # ── Layer 5 · Web-scale (aux, complemento) ───────────────────────────────────────────────
+  common_crawl:
+    module: scrapers.discovery.sources.common_crawl
+    layer: 5
+    role: aux
+    countries: [DE, FR, ES, NL, BE, CH]
+    rank: 6
+    census_authority: false
+    status: unverified
+  ct_logs:
+    module: scrapers.discovery.sources.ct_logs
+    layer: 5
+    role: aux
+    countries: [DE, FR, ES, NL, BE, CH]
+    rank: 6
+    census_authority: false
+    status: unverified
+    notes: "Certificate Transparency: dominios con TLS. Standalone runner."
+
+# Pendiente de construir (master plan, no en repo aún):
+#   ES: no hay dump CNAE libre fiable → cubrir por OSM + directorios (paginas amarillas) + OEM + AS24.
+#   DE: Handelsregister/OpenCorporates dump (VPS). BE/CH: registrar credenciales (acción owner).
+#   Maps (Google/Bing Places) como ancla de pago futura. Asociaciones FEBIAC/FACONAUTO/ZDK/CNPA.
