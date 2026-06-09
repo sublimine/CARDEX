@@ -37,18 +37,22 @@ _MAX_PAGE = 200          # AS24 hard cap: 200 pages/segment
 
 
 def _lst(base: str, *, lo: int | None = None, hi: int | None = None, page: int | None = None) -> str:
-    q = []
+    # sort=age&desc=0 (oldest-first) is the STABLE order for deep pagination: new listings
+    # append at the end, so paging from page 1 doesn't reshuffle under us (the relevance/
+    # default sort reshuffles every refresh -> drift -> missed listings). Cuts the single-pass
+    # shortfall that the count gate flagged on AS24-FR (82230/93841 = 87.6%).
+    q = ["sort=age", "desc=0"]
     if lo is not None:
         q.append(f"pricefrom={lo}")
     if hi is not None:
         q.append(f"priceto={hi}")           # HALF-OPEN: caller passes hi-1 to avoid overlap
     if page is not None:
         q.append(f"page={page}")
-    return f"{base}/lst" + ("?" + "&".join(q) if q else "")
+    return f"{base}/lst?" + "&".join(q)
 
 
 async def harvest(domain: str, country: str, *, base: str, currency: str,
-                  limit: int, cap: int, max_price: int, keep: bool) -> int:
+                  limit: int, cap: int, max_price: int, keep: bool, passes: int = 1) -> int:
     fetcher = make_dealer_fetcher()
     platform = domain
 
@@ -83,33 +87,46 @@ async def harvest(domain: str, country: str, *, base: str, currency: str,
     persisted = 0
     rejected: dict[str, int] = {}
     try:
-        for (lo, hi, seg_count) in segments:
-            pages = min(_MAX_PAGE, (seg_count // _PAGE_SIZE) + 1)
-            for page in range(1, pages + 1):
+        # Multi-pass union: deep pagination of a LIVE list drifts (~12% missed in one pass).
+        # Persist is idempotent (ON CONFLICT by URL fingerprint), so re-enumerating unions the
+        # drift-missed listings. Stop when a pass adds < 0.5% (converged -> "no falta ni uno").
+        prev_in_db = 0
+        in_db = 0
+        for pass_no in range(1, passes + 1):
+            for (lo, hi, seg_count) in segments:
+                pages = min(_MAX_PAGE, (seg_count // _PAGE_SIZE) + 1)
+                for page in range(1, pages + 1):
+                    if not keep and limit and persisted >= limit:
+                        break
+                    r = await _safe_fetch(fetcher, _lst(base, lo=lo, hi=hi - 1, page=page))
+                    if r is None or r.status_code != 200:
+                        break
+                    rows = a24.parse_listings(a24.extract_next_data(r.text or ""),
+                                              base_url=base, currency=currency)
+                    if not rows:
+                        break
+                    for p in rows:
+                        p["source_country"] = country
+                        res, reason = await rc.persist_one(
+                            pool, p, source=platform, channel="SCRAPER", rates={"EUR": Decimal(1)})
+                        if res:
+                            persisted += 1
+                        else:
+                            rejected[reason] = rejected.get(reason, 0) + 1
+                    await asyncio.sleep(0.6)
                 if not keep and limit and persisted >= limit:
                     break
-                r = await _safe_fetch(fetcher, _lst(base, lo=lo, hi=hi - 1, page=page))
-                if r is None or r.status_code != 200:
-                    break
-                rows = a24.parse_listings(a24.extract_next_data(r.text or ""),
-                                          base_url=base, currency=currency)
-                if not rows:
-                    break
-                for p in rows:
-                    p["source_country"] = country
-                    res, reason = await rc.persist_one(
-                        pool, p, source=platform, channel="SCRAPER", rates={"EUR": Decimal(1)})
-                    if res:
-                        persisted += 1
-                    else:
-                        rejected[reason] = rejected.get(reason, 0) + 1
-                await asyncio.sleep(0.6)
+            async with pool.acquire() as conn:
+                in_db = await conn.fetchval(
+                    "SELECT count(*) FROM vehicles WHERE source_platform=$1", platform)
+            new = in_db - prev_in_db
+            print(f"{domain}: pass {pass_no}/{passes} -> in_db={in_db} (+{new})")
+            prev_in_db = in_db
             if not keep and limit and persisted >= limit:
                 break
-
-        async with pool.acquire() as conn:
-            in_db = await conn.fetchval(
-                "SELECT count(*) FROM vehicles WHERE source_platform=$1", platform)
+            if pass_no > 1 and new < max(1, int(base_total * 0.005)):
+                print(f"{domain}: converged (pass added <0.5%) — stopping at pass {pass_no}")
+                break
         verdict = cv.cross_check(base_total, {"persisted_deduped": in_db}) if keep else None
         print(f"{domain}: persisted={persisted} deduped_in_db={in_db} rejected={rejected}")
         if verdict:
@@ -144,9 +161,11 @@ async def _main() -> None:
     ap.add_argument("--max-price", type=int, default=1_000_000)
     ap.add_argument("--full", action="store_true", help="enumerate everything (VPS); implies no slice cap")
     ap.add_argument("--keep", action="store_true", help="do NOT purge (production fill); also enables the gate")
+    ap.add_argument("--passes", type=int, default=1, help="multi-pass union to beat pagination drift (converges, stops <0.5% new)")
     args = ap.parse_args()
     base = args.base_url or f"https://www.{args.domain}"
     await harvest(args.domain, args.country.upper()[:2], base=base, currency=args.currency,
+                  passes=args.passes,
                   limit=0 if args.full else args.limit, cap=args.cap, max_price=args.max_price,
                   keep=args.keep)
 
