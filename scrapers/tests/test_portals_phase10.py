@@ -512,7 +512,11 @@ class TestComparisCH:
     def test_domain_map(self) -> None:
         spec = domain_get("comparis.ch")
         assert spec is not None
-        assert spec.tier is Tier.T1
+        # Re-verified live 2026-06-09: comparis.ch is DataDome-protected (x-datadome:protected,
+        # captcha body, 403 to curl_cffi Chrome), NOT the stale 'T1 / no-WAF' the 2026-06-04 note
+        # claimed. The DOSSIER had it right. Test corrected to the verified truth (no vender mentiras).
+        assert spec.tier is Tier.T3
+        assert spec.waf is WAF.DATADOME
 
     def test_partition_params_year_x_price(self) -> None:
         s = ComparisCHScraper()
