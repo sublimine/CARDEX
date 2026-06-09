@@ -101,3 +101,24 @@ def check_drift(
         (new_fp, extraction_method, ts, ts, portal),
     )
     return DriftResult(portal=portal, changed=True, old_fp=old_fp, new_fp=new_fp)
+
+
+def compare_drift(conn: sqlite3.Connection, portal: str, new_fp: str) -> DriftResult:
+    """
+    Read-only drift comparison against the stored baseline — NEVER writes.
+
+    For the monitoring SWEEP (self-healing §3.3). The mutating ``check_drift`` overwrites the
+    baseline with the (possibly broken) current fp on a change, so a sweep that used it would
+    see a breakage ONCE and then treat the broken fp as the new baseline (changed=False
+    thereafter) — the rotura goes INVISIBLE after one cycle. The sweep must compare against the
+    last frozen-sane fp without advancing it; only a confirmed-good ingest (``check_drift``)
+    moves the baseline. First observation (no row) → changed=False (nothing to compare yet).
+    """
+    row = conn.execute(
+        "SELECT schema_fp FROM schema_registry WHERE portal = ?", (portal,)
+    ).fetchone()
+    old_fp = row["schema_fp"] if row is not None else None
+    return DriftResult(
+        portal=portal, changed=(old_fp is not None and old_fp != new_fp),
+        old_fp=old_fp, new_fp=new_fp,
+    )

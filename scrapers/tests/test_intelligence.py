@@ -218,3 +218,37 @@ def test_check_drift_detects_change(conn):
     row = conn.execute("SELECT schema_fp, last_change_at FROM schema_registry WHERE portal=?", ("autoscout24.de",)).fetchone()
     assert row["schema_fp"] == fp2
     assert row["last_change_at"] == 3000
+
+
+@pytest.mark.unit
+def test_compare_drift_first_observation_no_row(conn):
+    fp = schema.schema_fingerprint({"make": "BMW"}, extraction_method="jsonld")
+    result = schema.compare_drift(conn, "never-seen.de", fp)
+    assert result.changed is False and result.old_fp is None
+    # read-only: nothing was inserted
+    assert conn.execute("SELECT count(*) FROM schema_registry WHERE portal=?", ("never-seen.de",)).fetchone()[0] == 0
+
+
+@pytest.mark.unit
+def test_compare_drift_is_read_only_and_never_blinds(conn):
+    """The sweep must keep detecting a breakage every cycle — compare_drift must NOT mutate
+    the baseline (which is what blinded the mutating check_drift after one detection)."""
+    sane = schema.schema_fingerprint({"make": "BMW", "model": "x"}, extraction_method="jsonld")
+    broken = schema.schema_fingerprint({"make": "BMW"}, extraction_method="jsonld")  # model lost
+    schema.check_drift(conn, "autoscout24.de", sane, "jsonld", now=1000)  # freeze sane baseline
+
+    # Two consecutive sweep checks of the SAME broken fp: both must report changed=True.
+    r1 = schema.compare_drift(conn, "autoscout24.de", broken)
+    r2 = schema.compare_drift(conn, "autoscout24.de", broken)
+    assert r1.changed is True and r2.changed is True          # never blinded
+    assert r1.old_fp == sane and r2.old_fp == sane
+    # baseline untouched by the read-only sweep
+    row = conn.execute("SELECT schema_fp FROM schema_registry WHERE portal=?", ("autoscout24.de",)).fetchone()
+    assert row["schema_fp"] == sane
+
+
+@pytest.mark.unit
+def test_compare_drift_same_fp_not_changed(conn):
+    fp = schema.schema_fingerprint({"make": "BMW", "model": "x"}, extraction_method="jsonld")
+    schema.check_drift(conn, "autoscout24.de", fp, "jsonld", now=1000)
+    assert schema.compare_drift(conn, "autoscout24.de", fp).changed is False
