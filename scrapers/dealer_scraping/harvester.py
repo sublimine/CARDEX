@@ -21,6 +21,7 @@ in the test hot path — exactly like ``generic_extractor``.
 """
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 import gc
 import logging
@@ -42,6 +43,14 @@ SAMPLE_LIMIT = 12            # detail pages actually extracted+persisted in vali
 E07_CONCURRENCY = 2          # browser renders in flight — the OOM footgun ceiling
 STATIC_CONCURRENCY = 4       # static curl_cffi fetches in flight
 BATCH_SIZE = 20              # dealers per RAM batch (fetchers/browser reused, then freed)
+
+# In-fetcher retry on transient throttle. Dealers rate-limit under load and return
+# curl transport faults / 429 / 5xx; recovering here (sub-second backoff) is far cheaper
+# than letting the enrich reclaim re-deliver after reclaim_idle_ms (~8 s/URL) — that
+# 8 s-per-transient round-trip is what blew the full-dealer enumeration past its timeout.
+_FETCH_RETRIES = 3
+_FETCH_BACKOFF_S = 0.5       # base; doubled per attempt (0.5 / 1 / 2 s)
+_RETRY_STATUS = frozenset({429, 500, 502, 503, 504})
 
 # A persist callback: (domain, country, urls, is_e07) -> rows persisted to `vehicles`.
 SeamRunner = Callable[[str, str, list[str], bool], Awaitable[int]]
@@ -100,13 +109,28 @@ def make_dealer_fetcher(*, impersonate: str = "chrome131", timeout: float = 20.0
         if session is None:
             session = AsyncSession(impersonate=impersonate)
             sessions[domain] = session
-        resp = await session.get(url, timeout=timeout, allow_redirects=True)
-        try:
-            body = resp.content or b""
-        except MemoryError:  # pragma: no cover - host-pressure only
-            log.warning("MemoryError materializing %s — degrading to empty body", url)
-            body = b""
-        return FetchResult(url=str(getattr(resp, "url", url)), status_code=int(resp.status_code), body=body)
+        last_exc: Exception | None = None
+        for attempt in range(_FETCH_RETRIES + 1):
+            try:
+                resp = await session.get(url, timeout=timeout, allow_redirects=True)
+            except Exception as exc:  # noqa: BLE001 — curl transport faults are retryable
+                last_exc = exc
+                if attempt < _FETCH_RETRIES:
+                    await asyncio.sleep(_FETCH_BACKOFF_S * (2 ** attempt))
+                    continue
+                raise
+            # Retry transient throttle statuses in-place; on the last attempt fall
+            # through and return whatever status came back (caller classifies it).
+            if resp.status_code in _RETRY_STATUS and attempt < _FETCH_RETRIES:
+                await asyncio.sleep(_FETCH_BACKOFF_S * (2 ** attempt))
+                continue
+            try:
+                body = resp.content or b""
+            except MemoryError:  # pragma: no cover - host-pressure only
+                log.warning("MemoryError materializing %s — degrading to empty body", url)
+                body = b""
+            return FetchResult(url=str(getattr(resp, "url", url)), status_code=int(resp.status_code), body=body)
+        raise last_exc if last_exc else RuntimeError(f"fetch failed: {url}")
 
     async def aclose() -> None:
         for s in list(sessions.values()):

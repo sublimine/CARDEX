@@ -31,6 +31,8 @@ def make_live_seam(rdb, static_fetcher, e07_fetcher, *, redis_url: str, db_url: 
     a production redis with isolate=True or it deletes live work).
     """
     async def run(domain: str, country: str, urls: list[str], is_e07: bool) -> int:
+        if not urls:
+            return 0  # nothing discovered → A6/A7 batch_size=0 would crash xreadgroup
         if isolate:
             for s in (a6.ENRICH_STREAM, a6.INGESTION_STREAM):
                 await rdb.delete(s)  # bound RAM + isolate dealers (throwaway redis)
