@@ -72,7 +72,14 @@ async def run(*, batches: int, size: int, conc: int, timeout: int, harvest: bool
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     pg = await asyncpg.create_pool(PG_DSN, min_size=2, max_size=8)
     rdb = aioredis.from_url(REDIS_URL, decode_responses=False)
-    connector = aiohttp.TCPConnector(limit=conc + 10, ssl=False, ttl_dns_cache=300)
+    # Public async DNS (bypasses the home router's resolver): sustained probe bursts
+    # (~1.4k lookups/batch + dead-domain retries) degrade consumer-router DNS until
+    # EVERYTHING times out — that minted the false-DEAD epidemics of 2026-06-10
+    # (CH 97%, ES 87%; samples 26/30 and 8/10 ALIVE minutes later). c-ares via
+    # aiodns + 1.1.1.1/8.8.8.8 keeps lookups off the router entirely.
+    connector = aiohttp.TCPConnector(
+        limit=conc + 10, ssl=False, ttl_dns_cache=300,
+        resolver=aiohttp.AsyncResolver(nameservers=["1.1.1.1", "8.8.8.8"]))
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                              "(KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"}
     session = aiohttp.ClientSession(connector=connector, headers=headers)

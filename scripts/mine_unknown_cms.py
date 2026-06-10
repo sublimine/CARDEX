@@ -77,7 +77,11 @@ async def run(*, country: str | None, tiers: list[str], conc: int, timeout: int,
     log.info("mining %d unknown dealers (tiers=%s country=%s conc=%d update_db=%s)",
              len(rows), ",".join(tiers), country or "ALL", conc, update_db)
 
-    connector = aiohttp.TCPConnector(limit=conc + 5, ssl=False, ttl_dns_cache=300)
+    # Public async DNS — same rationale as run_probe_scale: keep lookup bursts off
+    # the home router's resolver (false-DEAD epidemic root cause, 2026-06-10).
+    connector = aiohttp.TCPConnector(
+        limit=conc + 5, ssl=False, ttl_dns_cache=300,
+        resolver=aiohttp.AsyncResolver(nameservers=["1.1.1.1", "8.8.8.8"]))
     per_domain: dict[str, frozenset] = {}
     refingerprinted: list[tuple[str, str, str]] = []
     fetched = 0
