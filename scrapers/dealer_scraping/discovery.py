@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import logging
 import re
+from typing import Callable
 from urllib.parse import urlparse
 
 from scrapers.common.net_guard import is_safe_public_url
@@ -28,8 +29,12 @@ from scrapers.pipeline.generic_extractor import (
     Fetcher,
     _host,
     _safe_fetch,
+    decode_sitemap,
     discover_sitemap_listings,
     discover_wp_listings,
+    is_sitemap_index,
+    looks_like_sitemap,
+    parse_sitemap_locs,
 )
 
 log = logging.getLogger(__name__)
@@ -37,6 +42,7 @@ log = logging.getLogger(__name__)
 DISCOVERY_CAP = 150
 MAX_CATALOG_EXPAND = 4       # catalog pages followed for inner detail links
 MAX_RENDER_EXPAND = 2        # catalog pages RENDERED when static follow is empty (RAM)
+MAX_SITEMAP_FETCHES = 100    # sitemap files fetched per walk_sitemap (index + shards)
 
 # A detail page usually carries an id/slug: a 2+ digit run in the last path segment,
 # or a path deeper than a single index segment. ``/fahrzeuge`` (index) → False;
@@ -89,6 +95,67 @@ async def expand_catalogs(
                 out.append(v)
                 if len(out) >= cap:
                     return out
+    return out
+
+
+async def walk_sitemap(
+    fetcher: Fetcher,
+    sitemap_url: str,
+    *,
+    cap: int,
+    max_sitemaps: int = MAX_SITEMAP_FETCHES,
+    keep: Callable[[str], bool] | None = None,
+) -> list[str]:
+    """
+    Walk ONE declared sitemap recursively → the page URLs it (transitively) lists.
+
+    Breadth-first through nested ``<sitemapindex>`` levels, gzip-tolerant (magic-byte
+    gunzip via ``decode_sitemap``), SSRF-guarded on every fetched URL, deduplicated
+    and cycle-safe. Unlike ``generic_extractor.discover_sitemap_listings`` (which
+    probes robots.txt/fallback paths and bakes in the vehicle-path-token heuristic),
+    this walks exactly the sitemap the caller names and applies only the caller's
+    ``keep`` predicate — so a recipe-pinned platform whose detail paths carry no
+    vehicle token (e.g. datamotive ``/p/<slug>-<id>``) still enumerates fully.
+
+    ``cap`` counts KEPT urls (so a noise shard ordered first can never exhaust the
+    budget before the vehicle shards are reached); ``max_sitemaps`` bounds the number
+    of sitemap files fetched so a pathological index never runs unbounded. Transport
+    is the injected ``fetcher``; per-file transport faults are swallowed.
+    """
+    queue: list[str] = [sitemap_url]
+    visited: set[str] = set()
+    kept_seen: set[str] = set()
+    out: list[str] = []
+    fetched = 0
+    while queue and fetched < max_sitemaps and len(out) < cap:
+        url = queue.pop(0)
+        if url in visited:
+            continue
+        visited.add(url)
+        # SSRF: the entry URL comes from a recipe but every CHILD <loc> is
+        # attacker-controlled sitemap content — validate before each fetch.
+        if not is_safe_public_url(url):
+            continue
+        result = await _safe_fetch(fetcher, url)
+        if result is None or result.status_code != 200:
+            continue
+        fetched += 1
+        xml = decode_sitemap(result)
+        if not looks_like_sitemap(xml):
+            continue
+        locs = parse_sitemap_locs(xml)
+        if is_sitemap_index(xml):
+            queue.extend(loc for loc in locs if loc not in visited)
+            continue
+        for loc in locs:
+            if keep is not None and not keep(loc):
+                continue
+            if loc in kept_seen:
+                continue
+            kept_seen.add(loc)
+            out.append(loc)
+            if len(out) >= cap:
+                break
     return out
 
 

@@ -30,8 +30,8 @@ from dataclasses import dataclass, field
 from typing import Awaitable, Callable, Sequence
 
 from scrapers.dealer_scraping.detector import DetectionResult, build_config, detect_web_type
-from scrapers.dealer_scraping.discovery import discover_detail_urls
-from scrapers.pipeline.generic_extractor import Fetcher, FetchResult
+from scrapers.dealer_scraping.discovery import discover_detail_urls, walk_sitemap
+from scrapers.pipeline.generic_extractor import Fetcher, FetchResult, _host, _same_site
 from scrapers.portals import config as portal_config
 from scrapers.portals.config import PLAYWRIGHT_STRATEGIES, ExtractionConfig
 
@@ -100,8 +100,6 @@ def make_dealer_fetcher(*, impersonate: str = "chrome131", timeout: float = 20.0
     from curl_cffi.requests import AsyncSession
 
     sessions: dict[str, AsyncSession] = {}
-
-    from scrapers.pipeline.generic_extractor import _host
 
     async def fetch(url: str) -> FetchResult:
         domain = _host(url)
@@ -219,6 +217,41 @@ async def resolve_or_detect_config(
     return cfg, detection, True
 
 
+# Strategies whose recipe pins the SITEMAP as the discovery surface. Only a recipe
+# carrying one of these (plus a sitemap_url AND a detail_url_re) takes the
+# recipe-sitemap walk below — detector-built per-dealer configs never set
+# detail_url_re (see ``detector.build_config``), so they keep the generic cascade.
+_SITEMAP_STRATEGIES = frozenset({"sitemap_listing"})
+
+
+def _compile_detail_re(domain: str, cfg: ExtractionConfig) -> re.Pattern[str] | None:
+    """The recipe's compiled ``detail_url_re``, or None when absent/invalid (logged)."""
+    pattern = (cfg.endpoints.detail_url_re or "").strip()
+    if not pattern:
+        return None
+    try:
+        return re.compile(pattern)
+    except re.error as exc:
+        log.warning("discover %s: invalid detail_url_re %r (%s) — skipping filter", domain, pattern, exc)
+        return None
+
+
+def _recipe_sitemap_url(domain: str, cfg: ExtractionConfig) -> str:
+    """
+    The absolute sitemap URL a recipe declares, or "" when it declares none.
+
+    ``endpoints.sitemap_url`` is used as-is when absolute (family instantiation and
+    detection both store absolute URLs); a bare path (a family ``sitemap_hint`` that
+    reached the endpoint un-absolutized) is built onto the dealer's https host.
+    """
+    raw = (cfg.endpoints.sitemap_url or "").strip()
+    if not raw:
+        return ""
+    if raw.startswith(("http://", "https://")):
+        return raw
+    return f"https://{domain}{raw if raw.startswith('/') else '/' + raw}"
+
+
 async def discover_dealer_urls(
     domain: str,
     cfg: ExtractionConfig,
@@ -228,12 +261,46 @@ async def discover_dealer_urls(
     cap: int = DISCOVERY_CAP,
 ) -> list[str]:
     """
-    Enumerate a dealer's vehicle DETAIL URLs (catalog-aware, render-fallback).
+    Enumerate a dealer's vehicle DETAIL URLs (recipe-sitemap first, catalog-aware,
+    render-fallback).
 
-    Delegates to ``discovery.discover_detail_urls`` so harvest reaches the same real
-    detail pages detection proved on: sitemap → wp → catalog → catalog-follow →
-    render-follow. The browser (when supplied) is reused, bounded by ``cap``.
+    Recipe-pinned sitemap walk (additive, opt-in by the recipe): when the recipe's
+    strategy is sitemap-based AND it pins both a sitemap and a ``detail_url_re``
+    (family recipes do — e.g. datamotive), the DECLARED sitemap is walked
+    recursively (sitemapindex → sub-sitemaps → <loc>, gzip-tolerant) and filtered
+    to same-site URLs matching the recipe regex. The generic cascade cannot reach
+    these: its sitemap layer keeps only vehicle-token paths, so a platform whose
+    detail pages live at ``/p/<slug>-<id>`` enumerates 0 there and degrades to a
+    handful of catalog links. A walk that yields 0 (sitemap down / unexpected
+    structure) FALLS BACK to the generic cascade — never zeroing a live dealer.
+
+    Every other recipe (no sitemap strategy, or no detail_url_re — every
+    detector-built per-dealer config) behaves IDENTICALLY to before: delegate to
+    ``discovery.discover_detail_urls`` (sitemap → wp → catalog → catalog-follow →
+    render-follow) with the optional ``detail_url_re`` filter applied on top.
     """
+    rx = _compile_detail_re(domain, cfg)
+
+    if cfg.strategy in _SITEMAP_STRATEGIES and rx is not None:
+        sitemap_url = _recipe_sitemap_url(domain, cfg)
+        if sitemap_url:
+            base_host = _host(f"https://{domain}")
+
+            def _keep(url: str) -> bool:
+                return bool(rx.search(url)) and _same_site(url, base_host)
+
+            details = await walk_sitemap(static_fetcher, sitemap_url, cap=cap, keep=_keep)
+            if details:
+                log.info(
+                    "discover %s: recipe sitemap walk → %d detail URLs (method=recipe_sitemap, sitemap=%s)",
+                    domain, len(details), sitemap_url,
+                )
+                return details
+            log.warning(
+                "discover %s: recipe sitemap walk yielded 0 (sitemap=%s) — falling back to generic cascade",
+                domain, sitemap_url,
+            )
+
     details, method, _home, _catalog = await discover_detail_urls(
         domain, static_fetcher=static_fetcher, e07_fetcher=e07_fetcher, cap=cap
     )
@@ -241,22 +308,16 @@ async def discover_dealer_urls(
     # URLs matching it — separating real vehicle PDPs from the catalog/category index pages the
     # sitemap also lists (e.g. dacia ``/stock/…-fr-fr.htm`` PDP vs ``/occasion-{make}-`` index).
     # Additive: an empty detail_url_re (the default) preserves the prior heuristic behavior.
-    pattern = (cfg.endpoints.detail_url_re or "").strip()
-    if pattern:
-        try:
-            rx = re.compile(pattern)
-        except re.error as exc:
-            log.warning("discover %s: invalid detail_url_re %r (%s) — skipping filter", domain, pattern, exc)
-        else:
-            kept = [u for u in details if rx.search(u)]
-            if kept:
-                log.info("discover %s: detail_url_re kept %d/%d (method=%s)", domain, len(kept), len(details), method)
-                details = kept
-            elif details:
-                # Fail-loud, never silent: a recipe regex matching nothing is broken. Keep the
-                # unfiltered set so a live dealer is never zeroed, but make the fault visible.
-                log.warning("discover %s: detail_url_re %r matched 0/%d — recipe regex likely broken, using unfiltered",
-                            domain, pattern, len(details))
+    if rx is not None:
+        kept = [u for u in details if rx.search(u)]
+        if kept:
+            log.info("discover %s: detail_url_re kept %d/%d (method=%s)", domain, len(kept), len(details), method)
+            details = kept
+        elif details:
+            # Fail-loud, never silent: a recipe regex matching nothing is broken. Keep the
+            # unfiltered set so a live dealer is never zeroed, but make the fault visible.
+            log.warning("discover %s: detail_url_re %r matched 0/%d — recipe regex likely broken, using unfiltered",
+                        domain, rx.pattern, len(details))
     return details
 
 
