@@ -70,6 +70,80 @@ def split_details_and_catalogs(urls: list[str]) -> tuple[list[str], list[str]]:
     return details, catalogs
 
 
+MAX_LISTING_PAGES = 80       # paginated listing pages followed (availability surface)
+_PAGE_PARAM_RE = re.compile(r"[?&][A-Za-z_]*(?:page|pagina)[A-Za-z_]*=\d+", re.I)
+_HREF_RE = re.compile(r'href=["\']([^"\']+)["\']', re.I)
+
+
+def _same_site_host(url: str, base_host: str) -> bool:
+    h = _host(url)
+    return h == base_host or h.endswith("." + base_host)
+
+
+async def walk_listing_pagination(
+    fetcher: Fetcher,
+    listing_url: str,
+    *,
+    detail_url_re: str,
+    cap: int,
+    max_pages: int = MAX_LISTING_PAGES,
+) -> list[str]:
+    """
+    Enumerate the AVAILABLE vehicle detail URLs by crawling the paginated LISTING.
+
+    The sitemap lists every PDP a dealer ever had — including SOLD/RESERVED cars whose
+    page still returns 200 (verified live on dificar.com 2026-06-10: sitemap 235 vs
+    available 123). The live listing only paginates what is on sale, so enumerating it
+    yields the AVAILABLE set — the truth CARDEX must serve. The recipe's ``detail_url_re``
+    defines a PDP; pagination is followed via ``?page=``/``?…page=`` links found on each
+    page. Same-site + SSRF guarded, bounded by ``cap`` (kept URLs) and ``max_pages``.
+
+    Returns [] when no listing URL / regex is given (caller falls back to the sitemap).
+    """
+    if not listing_url or not detail_url_re:
+        return []
+    try:
+        rx = re.compile(detail_url_re)
+    except re.error:
+        return []
+    base_host = _host(listing_url)
+    seen: set[str] = set()
+    out: list[str] = []
+    visited: set[str] = set()
+    queue: list[str] = [listing_url]
+    pages = 0
+    while queue and pages < max_pages and len(out) < cap:
+        url = queue.pop(0)
+        if url in visited or not is_safe_public_url(url):
+            continue
+        visited.add(url)
+        page = await _safe_fetch(fetcher, url)
+        if page is None or page.status_code != 200:
+            continue
+        pages += 1
+        html = page.text
+        for m in _HREF_RE.finditer(html):
+            href = m.group(1)
+            absu = href if href.startswith("http") else _join(url, href)
+            if rx.search(absu):
+                clean = absu.split("?")[0].split("#")[0]
+                if clean not in seen:
+                    seen.add(clean)
+                    out.append(clean)
+                    if len(out) >= cap:
+                        break
+            elif _PAGE_PARAM_RE.search(absu) and _same_site_host(absu, base_host):
+                nxt = absu.split("#")[0]
+                if nxt not in visited:
+                    queue.append(nxt)
+    return out
+
+
+def _join(base: str, href: str) -> str:
+    from urllib.parse import urljoin
+    return urljoin(base, href)
+
+
 async def expand_catalogs(
     catalogs: list[str],
     fetcher: Fetcher,

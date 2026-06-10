@@ -85,43 +85,46 @@ async def run_dealer(pg, rdb, domain: str, country: str, *,
                                  f"v{cfg.version if cfg else '-'}",
                                  "portal_config.load"))
 
-        # W3 SCRAPEAR + V3 — DOS vías ortogonales que deben CONCORDAR.
-        #   path A = sitemap (enumera TODO, incluidos vendidos cuyo PDP sigue dando 200)
-        #   path B = listado paginado (lo que el portal muestra como DISPONIBLE)
-        # Lección dificar.com 2026-06-10: el sitemap dio 235, el listado 123 — los 112
-        # de más eran coches VENDIDOS/RESERVADOS con la página aún viva. La verdad del
-        # stock disponible es el LISTADO, no el sitemap (ver workflows/README §D5). El
-        # gate sólo PASA si las dos vías concuerdan; si divergen, el dealer NO PASA y se
-        # marca para filtrado-de-disponibilidad (no se vende inventario vendido como vivo).
-        from scrapers.workflows.inquisition import count_by_listing_pagination
+        # W3 SCRAPEAR + V3 — el harvest enumera el LISTADO vivo (set DISPONIBLE, D5/H6);
+        # la Inquisición lo verifica por una vía ORTOGONAL: el TOTAL DECLARADO por el
+        # portal ("N vehículos"), un número que el portal asevera, no enlaces contados.
+        # Si el extraído ≈ el declarado, el conteo es de fiar. (dificar 2026-06-10: el
+        # sitemap inflaba a 235 con vendidos; listado y total declarado = 123.)
+        from scrapers.workflows.inquisition import declared_total
         hr = await harvest_t2_dealer(pg, rdb, domain, cc, cap=cap)
         extracted = hr.get("discovered", 0)
-        detail_re = cfg.endpoints.detail_url_re if cfg else ""
-        sitemap = cfg.endpoints.sitemap_url if cfg else ""
         listing = cfg.endpoints.listing_url_template if cfg else ""
-        count_sitemap = await _independent_sitemap_count(domain, detail_re, sitemap)
-        count_listing = await count_by_listing_pagination(domain, listing, detail_re)
-        # the AVAILABLE truth: the listing when we have it, else fall back to sitemap
-        independent = count_listing if count_listing >= 0 else count_sitemap
-        tol = max(_DRIFT_FLOOR, int(max(independent, 1) * _DRIFT_TOL))
-        agree = count_listing < 0 or abs(count_sitemap - count_listing) <= tol
-        v3_ok = independent > 0 and abs(extracted - independent) <= tol and agree
-        detail = f"sitemap={count_sitemap} listado={count_listing} servido_extraído={extracted}"
-        if count_listing >= 0 and not agree:
-            detail += " ⚠ DIVERGEN (sitemap incluye vendidos→filtrar disponibilidad)"
+        declared = await declared_total(domain, listing)
+        independent = declared
+        tol = max(_DRIFT_FLOOR, int(max(extracted, 1) * _DRIFT_TOL))
+        # PASA si el declarado existe y concuerda; si no hay total declarado, el número
+        # queda sin segunda vía → NO PASA (no se certifica un conteo sin corroborar).
+        v3_ok = declared >= 0 and abs(extracted - declared) <= tol
+        detail = f"extraído_disponible={extracted} vs total_declarado={declared}"
+        if declared < 0:
+            detail += " ⚠ sin total declarado (no corroborable)"
+        elif not v3_ok:
+            detail += " ⚠ DIVERGEN"
         gates.append(GateVerdict("W3", v3_ok, detail,
-                                 "sitemap_walk ∧ listing_pagination (deben concordar)"))
+                                 "listing_enumeration vs declared_total (ortogonal)"))
 
-        # W4 API + DELTA
+        # W4 API + DELTA. The false-baja guard is about a SCRAPE FAILURE wiping live
+        # stock — i.e. served collapsed to 0 while the dealer actually has cars. CUMULATIVE
+        # GONE (append-only history) naturally exceeds live stock for any dealer that has
+        # sold cars over time, so it is NOT a false-baja signal. The gate trusts served>0
+        # (W3 already verified it == available truth); the delta worker owns not mass-GONE
+        # on a transient failure.
         ulid = await pg.fetchval("SELECT entity_ulid FROM source_entities WHERE source_key=$1", domain)
         served = await pg.fetchval(
             "SELECT count(*) FROM entity_inventory WHERE entity_ulid=$1", ulid) if ulid else 0
-        gone = await pg.fetchval(
+        gone_total = await pg.fetchval(
             "SELECT count(*) FROM vehicle_events WHERE source_domain=$1 AND event_type='GONE'",
             domain) or 0
-        false_baja = served > 0 and gone > served
+        # false baja = the dealer is alive (W3 found available stock) but we serve nothing.
+        false_baja = extracted > 0 and served == 0
         gates.append(GateVerdict("W4", bool(ulid) and served > 0 and not false_baja,
-                                 f"servido_API={served} GONE={gone}",
+                                 f"servido_API={served} GONE_hist={gone_total}"
+                                 + (" ⚠ falsa-baja" if false_baja else ""),
                                  "entity_inventory view + vehicle_events"))
 
         # W5 GUARDAR (checksum del dato estructurado para reconstrucción en frío)

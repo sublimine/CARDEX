@@ -30,7 +30,8 @@ from dataclasses import dataclass, field
 from typing import Awaitable, Callable, Sequence
 
 from scrapers.dealer_scraping.detector import DetectionResult, build_config, detect_web_type
-from scrapers.dealer_scraping.discovery import discover_detail_urls, walk_sitemap
+from scrapers.dealer_scraping.discovery import (discover_detail_urls, walk_listing_pagination,
+                                                walk_sitemap)
 from scrapers.pipeline.generic_extractor import Fetcher, FetchResult, _host, _same_site
 from scrapers.portals import config as portal_config
 from scrapers.portals.config import PLAYWRIGHT_STRATEGIES, ExtractionConfig
@@ -280,6 +281,26 @@ async def discover_dealer_urls(
     render-follow) with the optional ``detail_url_re`` filter applied on top.
     """
     rx = _compile_detail_re(domain, cfg)
+
+    # AVAILABILITY-FIRST (D5/H6, 2026-06-10): when the recipe pins a paginated LISTING,
+    # enumerate THAT first — it yields only cars ON SALE. The sitemap lists sold/reserved
+    # PDPs too (their page still 200s), so caging from the sitemap serves sold cars as
+    # live (dificar.com: sitemap 235 vs available 123). The listing is the available
+    # truth; the sitemap stays as the fallback discovery surface when the listing yields 0.
+    listing_url = (cfg.endpoints.listing_url_template or "").strip()
+    if listing_url and rx is not None:
+        live = await walk_listing_pagination(
+            static_fetcher, listing_url, detail_url_re=cfg.endpoints.detail_url_re or "", cap=cap)
+        if live:
+            log.info(
+                "discover %s: listing pagination → %d AVAILABLE detail URLs (method=listing, url=%s)",
+                domain, len(live), listing_url,
+            )
+            return live
+        log.warning(
+            "discover %s: listing pagination yielded 0 (url=%s) — falling back to sitemap/cascade",
+            domain, listing_url,
+        )
 
     if cfg.strategy in _SITEMAP_STRATEGIES and rx is not None:
         sitemap_url = _recipe_sitemap_url(domain, cfg)

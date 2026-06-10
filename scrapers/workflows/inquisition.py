@@ -92,20 +92,46 @@ async def count_by_listing_pagination(domain: str, listing_url: str, detail_url_
         await cs.close()
 
 
+async def declared_total(domain: str, listing_url: str) -> int:
+    """ORTHOGONAL to enumeration — read the portal's OWN stated count ("N vehículos" /
+    data-total / JSON-LD numberOfItems) off the listing page. Since W3 now enumerates
+    the listing links, the Inquisition must verify by a DIFFERENT read: the declared
+    integer (a number the portal asserts, not links we count). -1 if none is stated."""
+    from curl_cffi.requests import AsyncSession
+    if not listing_url:
+        return -1
+    cs = AsyncSession(impersonate="chrome131", verify=False)
+    try:
+        r = await cs.get(listing_url, timeout=20, allow_redirects=True)
+        if r.status_code != 200:
+            return -1
+        h = (r.content or b"").decode("utf-8", "ignore")
+        cands: list[int] = []
+        for pat in (r'"numberOfItems"\s*:\s*"?(\d+)', r'data-total[^0-9]{0,10}(\d+)',
+                    r'(\d+)\s*(?:veh[ií]culos?|coches?|resultados?|annonces?|voitures?|fahrzeuge?)'):
+            cands += [int(x) for x in re.findall(pat, h, re.I)]
+        # the declared total is the LARGEST plausible "N <noun>" on the page (filters
+        # per-card counts like "1 foto"); bounded to a sane dealer-stock ceiling.
+        plausible = [n for n in cands if 1 <= n <= 100_000]
+        return max(plausible) if plausible else -1
+    except Exception:  # noqa: BLE001
+        return -1
+    finally:
+        await cs.close()
+
+
 async def inquire_dealer(pg, domain: str, peer_counts: tuple[int, ...] = ()) -> InquisitionVerdict:
-    """Re-certify ONE dealer's served count by the orthogonal listing path."""
+    """Re-certify ONE dealer's served count by the orthogonal DECLARED-TOTAL path."""
     ulid = await pg.fetchval("SELECT entity_ulid FROM source_entities WHERE source_key=$1", domain)
     served = await pg.fetchval(
         "SELECT count(*) FROM entity_inventory WHERE entity_ulid=$1", ulid) if ulid else 0
     cfg = portal_config.load(domain)
     listing = cfg.endpoints.listing_url_template if cfg else ""
-    detail_re = cfg.endpoints.detail_url_re if cfg else ""
-    indep = await count_by_listing_pagination(domain, listing, detail_re)
+    indep = await declared_total(domain, listing)
     flags = reverify_triggers(served, peer_counts)
     if indep < 0:
-        # no orthogonal surface available → the number stays UNVERIFIED (not trusted blindly)
-        return InquisitionVerdict(domain, served, -1, "listing_pagination:unavailable", flags)
-    return InquisitionVerdict(domain, served, indep, "listing_pagination", flags)
+        return InquisitionVerdict(domain, served, -1, "declared_total:unavailable", flags)
+    return InquisitionVerdict(domain, served, indep, "declared_total", flags)
 
 
 def _verdict_label(v: InquisitionVerdict) -> str:
