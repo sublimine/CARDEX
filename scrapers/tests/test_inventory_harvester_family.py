@@ -202,6 +202,17 @@ def test_no_cms_keeps_generic_route(isolated_stores, recording_cage, monkeypatch
     assert (dealer_dir / "plain.example.json").exists()
 
 
+# ── enrich field guards ────────────────────────────────────────────────────────────
+@pytest.mark.unit
+def test_km_range_guard_drops_concatenated_garbage():
+    # Arrange/Act/Assert — "2018 68.875" collapses to 201868875 via _digits and
+    # overflowed PG int4 live (NL re-harvest 2026-06-10); the guard must drop it.
+    assert ih._km("2018 68.875") is None       # year+km concatenated → garbage
+    assert ih._km("68.875 km") == 68875        # real odometer survives
+    assert ih._km("0 km") == 0
+    assert ih._km(None) is None
+
+
 # ── 4b. a MINIMAL auto-generated recipe never shadows an accepting family ─────────
 @pytest.mark.unit
 def test_minimal_auto_recipe_is_outranked_by_family(

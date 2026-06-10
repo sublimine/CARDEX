@@ -59,6 +59,14 @@ def _price(v) -> int | None:
     return n if n and 100 <= n <= 5_000_000 else None
 
 
+def _km(v) -> int | None:
+    # Range-guarded like _year/_price: a malformed mileage string ("2018 | 68.875")
+    # collapses through _digits into year+km concatenated (201868875) and overflows
+    # PG's int4 — anything beyond a plausible odometer is parse garbage, not data.
+    n = _digits(v)
+    return n if n is not None and 0 <= n <= 2_000_000 else None
+
+
 def _entity_ulid(domain: str) -> str:
     return "se_" + hashlib.md5(domain.encode("utf-8")).hexdigest()
 
@@ -194,7 +202,7 @@ async def harvest_t2_dealer(pg, rdb, domain: str, country: str, *,
                     title = (f"{rec.get('make') or ''} {rec.get('model') or ''}").strip() or None
                     li = by_url[u]
                     li["title"], li["price"] = title, _price(rec.get("price"))
-                    li["year"], li["km"] = _year(rec.get("year")), _digits(rec.get("mileage"))
+                    li["year"], li["km"] = _year(rec.get("year")), _km(rec.get("mileage"))
                     if li["price"] or li["year"]:
                         enriched += 1
             except Exception:  # noqa: BLE001 — one bad page never aborts the dealer

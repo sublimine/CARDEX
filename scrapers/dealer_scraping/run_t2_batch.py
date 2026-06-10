@@ -26,7 +26,8 @@ PG_DSN = os.environ.get("DATABASE_URL", "postgresql://cardex:cardex_dev_only@loc
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:56390")
 
 
-async def run(*, concurrency: int = 15, limit: int = 0, cap: int = 0, country: str | None = None) -> None:
+async def run(*, concurrency: int = 15, limit: int = 0, cap: int = 0, country: str | None = None,
+              tiers: tuple[str, ...] = ("T2",)) -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     pg = await asyncpg.create_pool(PG_DSN, min_size=2, max_size=8)
     rdb = aioredis.from_url(REDIS_URL, decode_responses=False)
@@ -35,11 +36,11 @@ async def run(*, concurrency: int = 15, limit: int = 0, cap: int = 0, country: s
              "       COALESCE(inventory_signals->>'cms','') AS cms, "
              "       COALESCE(inventory_signals->>'cms_confidence','') AS cms_confidence "
              "FROM discovery_candidates "
-             "WHERE inventory_tier='T2' AND domain IS NOT NULL AND domain<>'' "
+             "WHERE inventory_tier = ANY($1::text[]) AND domain IS NOT NULL AND domain<>'' "
              f"AND {IN_SCOPE_SQL} ")
-        args: list = []
+        args: list = [list(tiers)]
         if country:
-            q += "AND country=$1 "
+            q += "AND country=$2 "
             args.append(country.upper()[:2])
         q += "ORDER BY country, md5(domain)"
         if limit:
@@ -103,5 +104,10 @@ if __name__ == "__main__":
                     help="detail URLs caged per dealer (0 = module default; raise for "
                          "family-recipe platforms whose full sitemap should be caged)")
     ap.add_argument("--country", default=None, help="scope to one country (e.g. NL)")
+    ap.add_argument("--tiers", default="T2",
+                    help="comma list of inventory tiers to harvest (family recipes make "
+                         "T3/T1 platform members harvestable too — the probe under-tiers "
+                         "dealer groups whose homepage shows no stock)")
     a = ap.parse_args()
-    asyncio.run(run(concurrency=a.conc, limit=a.limit, cap=a.cap, country=a.country))
+    asyncio.run(run(concurrency=a.conc, limit=a.limit, cap=a.cap, country=a.country,
+                    tiers=tuple(t.strip().upper() for t in a.tiers.split(",") if t.strip())))
