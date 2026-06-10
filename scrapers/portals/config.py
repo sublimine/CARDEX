@@ -45,6 +45,17 @@ _DEALER_DIR = Path(_DEALER_ENV_DIR) if _DEALER_ENV_DIR else (
     Path(__file__).resolve().parents[2] / "configs" / "dealers"
 )
 
+# Family recipes are PARAMETRIC: one recipe per web platform/CMS (the family key
+# is ``cms_fingerprint.CmsVerdict.cms``, e.g. 'wordpress', 'dealer_com'), with NO
+# concrete host inside. ``instantiate_family`` fills a dealer's host into the
+# platform's endpoint patterns at resolve time. This is the CMS multiplier:
+# one verified family recipe serves EVERY dealer built on that platform, so this
+# store scales with the number of platforms, not with the ~30k dealer long-tail.
+_FAMILY_ENV_DIR = os.environ.get("CARDEX_FAMILY_CONFIG_DIR", "").strip()
+_FAMILY_DIR = Path(_FAMILY_ENV_DIR) if _FAMILY_ENV_DIR else (
+    Path(__file__).resolve().parents[2] / "configs" / "families"
+)
+
 # Recognised extraction strategies (how the source exposes its inventory).
 STRATEGIES = (
     "portal_paginated",   # search/listing pages with N-page pagination (autotrack)
@@ -129,6 +140,78 @@ class ExtractionConfig:
             raise ValueError("source_key and country are required")
 
 
+@dataclass(frozen=True)
+class FamilyMatch:
+    """Which fingerprint verdicts a family recipe claims to cover."""
+
+    cms: str = ""                    # cms_fingerprint family key this recipe serves
+    min_confidence: str = "medium"   # 'medium' | 'high' (cms_fingerprint scale)
+
+
+@dataclass(frozen=True)
+class FamilyEndpoints:
+    """
+    Host-INDEPENDENT endpoint patterns of a platform/CMS.
+
+    No field carries a concrete dealer host — ``instantiate_family`` combines
+    these patterns with a host into a concrete ``Endpoints`` at resolve time.
+    """
+
+    sitemap_hint: str = ""                       # path → endpoints.sitemap_url
+    catalog_path_tokens: tuple[str, ...] = ()    # first token → listing_url_template
+    detail_url_re: str = ""                      # host-independent detail deep-link regex
+    api_path_hint: str = ""                      # path → endpoints.api_url (e.g. wp_rest)
+
+
+@dataclass(frozen=True)
+class Provenance:
+    """Honest verification trail — which REAL dealers proved this family recipe."""
+
+    verified_on_dealers: tuple[str, ...] = ()
+    verified_count: int = 0
+    verified_date: str | None = None
+    tool: str = ""
+
+
+# Confidence ladder shared with cms_fingerprint ('unknown' < 'medium' < 'high').
+_CONFIDENCE_RANK = {"unknown": 0, "medium": 1, "high": 2}
+
+
+@dataclass(frozen=True)
+class FamilyRecipe:
+    """
+    A parametric extraction recipe for a whole platform family (no host inside).
+
+    One file per CMS in ``configs/families/<cms>.json``. Instantiated per dealer
+    via ``instantiate_family`` — the multiplier "1 recipe = N sites of the same
+    platform". ``provenance`` records which real dealers proved the recipe.
+    """
+
+    family_key: str
+    strategy: str
+    kind: str = "family"
+    version: int = 1
+    matches: FamilyMatch = field(default_factory=FamilyMatch)
+    endpoints: FamilyEndpoints = field(default_factory=FamilyEndpoints)
+    extraction: Extraction = field(default_factory=Extraction)
+    drift_baseline: DriftBaseline = field(default_factory=DriftBaseline)
+    provenance: Provenance = field(default_factory=Provenance)
+
+    def __post_init__(self) -> None:
+        if self.strategy not in STRATEGIES:
+            raise ValueError(f"unknown strategy {self.strategy!r} (one of {STRATEGIES})")
+        if not self.family_key:
+            raise ValueError("family_key is required")
+
+    def accepts(self, cms: str, confidence: str = "medium") -> bool:
+        """True when a fingerprint verdict ``(cms, confidence)`` is covered by
+        this recipe's ``matches`` block (cms equal, confidence at/above floor)."""
+        if self.matches.cms and self.matches.cms != cms:
+            return False
+        floor = _CONFIDENCE_RANK.get(self.matches.min_confidence, 1)
+        return _CONFIDENCE_RANK.get(confidence, 0) >= floor
+
+
 def _config_path(source_key: str) -> Path:
     # source_key is a domain ("autotrack.nl") → flat file name.
     safe = source_key.replace("/", "_")
@@ -147,6 +230,21 @@ def _dealer_path(source_key: str) -> Path:
     p = (_DEALER_DIR / f"{safe}.json").resolve()
     if not p.is_relative_to(_DEALER_DIR.resolve()):
         raise ValueError(f"path traversal rejected for source_key {source_key!r}")
+    return p
+
+
+def _family_path(cms: str) -> Path:
+    """
+    Path of a family recipe in the per-CMS store.
+
+    The family key normally comes from ``cms_fingerprint`` (a controlled
+    vocabulary), but apply the same traversal defense as ``_dealer_path`` —
+    defense-in-depth against a hostile ``..``-bearing key reaching this layer.
+    """
+    safe = cms.replace("/", "_")
+    p = (_FAMILY_DIR / f"{safe}.json").resolve()
+    if not p.is_relative_to(_FAMILY_DIR.resolve()):
+        raise ValueError(f"path traversal rejected for family key {cms!r}")
     return p
 
 
@@ -183,17 +281,145 @@ def to_dict(cfg: ExtractionConfig) -> dict:
     return d
 
 
-def load(source_key: str) -> ExtractionConfig | None:
+def family_from_dict(d: dict) -> FamilyRecipe:
+    """Build a FamilyRecipe from a parsed JSON dict (tolerant of missing blocks
+    and of human-annotation keys, exactly like ``from_dict``)."""
+    drift = _only(DriftBaseline, d.get("drift_baseline", {}))
+    if "required_fields" in drift:
+        drift["required_fields"] = tuple(drift["required_fields"])
+    ep = _only(FamilyEndpoints, d.get("endpoints", {}))
+    if "catalog_path_tokens" in ep:
+        ep["catalog_path_tokens"] = tuple(ep["catalog_path_tokens"])
+    prov = _only(Provenance, d.get("provenance", {}))
+    if "verified_on_dealers" in prov:
+        prov["verified_on_dealers"] = tuple(prov["verified_on_dealers"])
+    return FamilyRecipe(
+        family_key=d["family_key"],
+        strategy=d["strategy"],
+        kind=d.get("kind", "family"),
+        version=int(d.get("version", 1)),
+        matches=FamilyMatch(**_only(FamilyMatch, d.get("matches", {}))),
+        endpoints=FamilyEndpoints(**ep),
+        extraction=Extraction(**_only(Extraction, d.get("extraction", {}))),
+        drift_baseline=DriftBaseline(**drift),
+        provenance=Provenance(**prov),
+    )
+
+
+def family_to_dict(recipe: FamilyRecipe) -> dict:
+    """Serialise a family recipe to a JSON-ready dict (tuples → lists)."""
+    d = asdict(recipe)
+    d["endpoints"]["catalog_path_tokens"] = list(recipe.endpoints.catalog_path_tokens)
+    d["drift_baseline"]["required_fields"] = list(recipe.drift_baseline.required_fields)
+    d["provenance"]["verified_on_dealers"] = list(recipe.provenance.verified_on_dealers)
+    return d
+
+
+def load_family(cms: str) -> FamilyRecipe | None:
+    """Load the family recipe for a CMS key, or None when none exists."""
+    path = _family_path(cms)
+    if not path.exists():
+        return None
+    return family_from_dict(json.loads(path.read_text(encoding="utf-8")))
+
+
+def save_family(recipe: FamilyRecipe) -> Path:
+    """Persist a family recipe to the per-CMS store (creates the dir on first write)."""
+    path = _family_path(recipe.family_key)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(family_to_dict(recipe), indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    return path
+
+
+# host TLD → ISO-2 country for the six CARDEX countries; anything else maps to
+# the ISO 3166-1 user-assigned 'ZZ' (country unknown) — honest, never invented.
+_TLD_COUNTRY = {"nl": "NL", "de": "DE", "es": "ES", "fr": "FR", "be": "BE", "ch": "CH"}
+_UNKNOWN_COUNTRY = "ZZ"
+
+
+def _normalize_host(host: str) -> str:
+    """Bare lowercase hostname: scheme and any path/trailing slash stripped."""
+    h = host.strip().lower()
+    for scheme in ("https://", "http://"):
+        if h.startswith(scheme):
+            h = h[len(scheme):]
+    return h.split("/", 1)[0]
+
+
+def _country_from_tld(domain: str) -> str:
+    return _TLD_COUNTRY.get(domain.rsplit(".", 1)[-1], _UNKNOWN_COUNTRY)
+
+
+def _abs_path(path: str) -> str:
+    return path if path.startswith("/") else f"/{path}"
+
+
+def instantiate_family(
+    recipe: FamilyRecipe, host: str, *, country: str = ""
+) -> ExtractionConfig:
+    """
+    Fill a dealer's host into a family recipe → a concrete, usable ExtractionConfig.
+
+    The platform's host-independent patterns become per-dealer endpoints:
+      * ``sitemap_hint``            → ``sitemap_url = https://<host><hint>``
+      * first ``catalog_path_token``→ ``listing_url_template = https://<host>/<token>``
+      * ``api_path_hint``           → ``api_url = https://<host><hint>``
+      * ``detail_url_re``           → copied as-is (already host-independent)
+
+    ``source_key`` is the host minus any leading ``www.`` (the canonical
+    discovery domain form); ``country`` falls back to the host TLD, else 'ZZ'.
+    The instantiated config is NOT persisted — it is a resolve-time view, so the
+    family file stays the single point of repair for the whole platform.
+    """
+    h = _normalize_host(host)
+    if not h:
+        raise ValueError("host is required to instantiate a family recipe")
+    source_key = h[4:] if h.startswith("www.") else h
+    base = f"https://{h}"
+    fe = recipe.endpoints
+    tokens = tuple(t.strip("/") for t in fe.catalog_path_tokens if t.strip("/"))
+    return ExtractionConfig(
+        source_key=source_key,
+        country=country or _country_from_tld(source_key),
+        strategy=recipe.strategy,
+        version=recipe.version,
+        endpoints=Endpoints(
+            host=h,
+            listing_url_template=f"{base}/{tokens[0]}" if tokens else "",
+            sitemap_url=f"{base}{_abs_path(fe.sitemap_hint)}" if fe.sitemap_hint else "",
+            detail_url_re=fe.detail_url_re,
+            api_url=f"{base}{_abs_path(fe.api_path_hint)}" if fe.api_path_hint else "",
+        ),
+        extraction=recipe.extraction,
+        drift_baseline=recipe.drift_baseline,
+    )
+
+
+def load(
+    source_key: str, *, cms: str | None = None, country: str = ""
+) -> ExtractionConfig | None:
     """
     Load a source's versioned config, or None when no config file exists.
 
-    Searches the curated portal store FIRST, then the auto-generated dealer store,
-    so a hand-tuned portal recipe always wins over a detector-generated one and the
-    seam (``enrich_worker``) has a single routing lookup for portals and dealers alike.
+    Resolution order: curated portal store FIRST, then the auto-generated dealer
+    store — a hand-tuned portal recipe always wins over a detector-generated one
+    and the seam (``enrich_worker``) has a single routing lookup for portals and
+    dealers alike. When ``cms`` is given (the dealer's known platform family from
+    ``cms_fingerprint``) and neither per-source store has a recipe, the family
+    recipe for that CMS is instantiated with ``source_key`` as the host —
+    the "1 recipe = N dealers" multiplier. ``cms=None`` (the default) keeps the
+    behaviour identical to the pre-family resolver. ``country`` only feeds the
+    family instantiation (per-source recipes already carry their country).
     """
     for path in (_config_path(source_key), _dealer_path(source_key)):
         if path.exists():
             return from_dict(json.loads(path.read_text(encoding="utf-8")))
+    if cms:
+        recipe = load_family(cms)
+        if recipe is not None:
+            return instantiate_family(recipe, source_key, country=country)
     return None
 
 
@@ -246,11 +472,15 @@ def list_configs(kind: str = "portal") -> list[str]:
     Every source_key with a versioned config (sorted).
 
     ``kind`` selects the store: ``"portal"`` (default, curated), ``"dealer"``
-    (auto-generated), or ``"all"`` (union of both, deduplicated).
+    (auto-generated), ``"family"`` (per-CMS parametric recipes — note these keys
+    are CMS family names, NOT source_keys), or ``"all"`` (union of the two
+    per-source stores, deduplicated; families are a different key namespace and
+    are deliberately excluded).
     """
     dirs = {
         "portal": (_CONFIG_DIR,),
         "dealer": (_DEALER_DIR,),
+        "family": (_FAMILY_DIR,),
         "all": (_CONFIG_DIR, _DEALER_DIR),
     }.get(kind, (_CONFIG_DIR,))
     keys: set[str] = set()

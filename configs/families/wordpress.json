@@ -1,0 +1,33 @@
+{
+  "family_key": "wordpress",
+  "kind": "family",
+  "version": 1,
+  "matches": {
+    "cms": "wordpress",
+    "min_confidence": "medium"
+  },
+  "strategy": "wp_rest",
+  "endpoints": {
+    "note": "wp-sitemap.xml is WordPress core (>=5.5) and /wp-json/wp/v2 is the core REST root; catalog tokens and detail_url_re vary per theme, so they stay empty until verified on real dealers.",
+    "sitemap_hint": "/wp-sitemap.xml",
+    "catalog_path_tokens": [],
+    "detail_url_re": "",
+    "api_path_hint": "/wp-json/wp/v2"
+  },
+  "extraction": {
+    "method": "jsonld",
+    "field_map": {}
+  },
+  "drift_baseline": {
+    "extraction_method": "jsonld",
+    "expected_min_volume": 1,
+    "required_fields": ["make", "model", "year", "price"],
+    "min_nonnull_ratio": 0.7
+  },
+  "provenance": {
+    "verified_on_dealers": [],
+    "verified_count": 0,
+    "verified_date": null,
+    "tool": ""
+  }
+}

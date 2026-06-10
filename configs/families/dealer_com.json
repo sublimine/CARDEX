@@ -1,0 +1,32 @@
+{
+  "family_key": "dealer_com",
+  "kind": "family",
+  "version": 1,
+  "matches": {
+    "cms": "dealer_com",
+    "min_confidence": "high"
+  },
+  "strategy": "jsonld_detail",
+  "endpoints": {
+    "sitemap_hint": "/sitemap-inventory.xml",
+    "catalog_path_tokens": ["used-inventory", "inventory"],
+    "detail_url_re": "/used-[\\w-]+/vehicle/\\d+",
+    "api_path_hint": ""
+  },
+  "extraction": {
+    "method": "jsonld",
+    "field_map": {}
+  },
+  "drift_baseline": {
+    "extraction_method": "jsonld",
+    "expected_min_volume": 1,
+    "required_fields": ["make", "model", "year", "price"],
+    "min_nonnull_ratio": 0.7
+  },
+  "provenance": {
+    "verified_on_dealers": [],
+    "verified_count": 0,
+    "verified_date": null,
+    "tool": ""
+  }
+}
