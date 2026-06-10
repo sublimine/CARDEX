@@ -1,14 +1,16 @@
 # CARDEX — CLAUDE.md
 <!-- Deltas de repo. Hereda la doctrina global (~/.claude/CLAUDE.md). -->
-<!-- Comportamiento: estándares operativos abajo; el resto lo dicta el global. Arquitectura: el código, STATUS.md y goal/GOAL.md. -->
+<!-- Comportamiento: estándares operativos abajo; el resto lo dicta el global. -->
 
 ## Autoridad
-- **Arquitectura y qué existe**: el código es la fuente de verdad — léelo antes
-  de tocar nada. Estado y objetivo vivos en `STATUS.md` y `goal/GOAL.md`; apóyate
-  además en `deploy/`, `planning/` y `SPEC.md` (visión original, parcialmente
-  superada).
-- Este archivo **no describe arquitectura**. Si alguna vez lo hiciera, gana el
-  código observado. No hay precedencia invertida.
+- **Arquitectura y qué existe**: el código en `main` es la fuente de verdad —
+  léelo antes de tocar nada.
+- **Estado y objetivo vivos**: `~/CARDEX-COMMAND/GOAL.md` (mandato),
+  `~/CARDEX-COMMAND/PROGRESO.md` (bitácora, leer la cola),
+  `docs/master-plan/MASTER_PLAN_AZ.md` + `docs/master-plan/HANDOFF.md` (plan y traspaso).
+- **Docs stale del repo — NO codear contra ellos**: `STATUS.md`, `README.md`,
+  `SECURITY.md`, `goal/GOAL.md`, `SPEC.md` (visión original, superada). Si algún
+  doc contradice al código observado, gana el código. No hay precedencia invertida.
 
 ## Estándares y forma de trabajar
 
@@ -27,12 +29,12 @@ Comunicación: español formal, autoridad técnica, máxima precisión y profund
 ## Entorno — no negociable
 - **Windows + Application Control**: nunca compiles a `.exe`. Ejecuta con
   `go run ./cmd/<módulo>/`.
-- **Build/test de los módulos core** (`discovery`, `extraction`, `quality`):
+- **Build/test de los módulos core Go** (`discovery`, `extraction`, `quality`):
   siempre `GOWORK=off`. Nunca dependas de la resolución del workspace.
-- **Constraints operativas** (UA por capa, robots.txt, rate limit, integridad
-  SQLite, secretos fuera de git): enforced en el código de `scrapers/` y
-  auditadas en `docs/PYTHON_SCRAPER_AUDIT_2026-06.md`. No se duplican aquí.
-
-## Estado vivo
-Bugs activos, bloqueadores y deuda priorizada: `STATUS.md`. Léelo en el
-handshake de inicio de sesión.
+- **Verificación = VAM**: quórum ≥2 vías ortogonales o no es TRUSTWORTHY.
+  Números solo con re-derivación adversarial.
+- **PG doctrine**: INSERT new + DELETE stale; jamás UPDATE de filas no mutadas.
+  Redis = transporte Streams, nunca estado de inventario.
+- **Constraints de scraping** (UA por capa, robots.txt, rate limit, JA3 coherente
+  sesión completa, stack aprobado curl_cffi+camoufox+playwright): enforced en
+  `scrapers/`; detalle operativo en la skill `cardex-pipeline`.
