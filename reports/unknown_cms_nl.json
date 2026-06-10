@@ -1,0 +1,1868 @@
+{
+  "scope": {
+    "country": "NL",
+    "tiers": [
+      "T1",
+      "T2",
+      "T3"
+    ],
+    "selected": 122,
+    "fetched_ok": 113,
+    "min_domains": 2
+  },
+  "refingerprinted": {
+    "total": 14,
+    "by_cms": {
+      "wordpress": 2,
+      "datamotive": 12
+    },
+    "db_updated": true,
+    "domains": [
+      {
+        "domain": "abdrenault.nl",
+        "country": "NL",
+        "cms": "datamotive"
+      },
+      {
+        "domain": "autobedrijf-de-groen.nl",
+        "country": "NL",
+        "cms": "wordpress"
+      },
+      {
+        "domain": "autohoogenboom.nl",
+        "country": "NL",
+        "cms": "datamotive"
+      },
+      {
+        "domain": "automotive.fource.nl",
+        "country": "NL",
+        "cms": "wordpress"
+      },
+      {
+        "domain": "autovdheide.nl",
+        "country": "NL",
+        "cms": "datamotive"
+      },
+      {
+        "domain": "century.nl",
+        "country": "NL",
+        "cms": "datamotive"
+      },
+      {
+        "domain": "dewaalautogroep.nl",
+        "country": "NL",
+        "cms": "datamotive"
+      },
+      {
+        "domain": "huiskes-kokkeler.nl",
+        "country": "NL",
+        "cms": "datamotive"
+      },
+      {
+        "domain": "muntstad.nl",
+        "country": "NL",
+        "cms": "datamotive"
+      },
+      {
+        "domain": "poncenter.nl",
+        "country": "NL",
+        "cms": "datamotive"
+      },
+      {
+        "domain": "pouw.nl",
+        "country": "NL",
+        "cms": "datamotive"
+      },
+      {
+        "domain": "terwolderenault.nl",
+        "country": "NL",
+        "cms": "datamotive"
+      },
+      {
+        "domain": "vandenbrug.nl",
+        "country": "NL",
+        "cms": "datamotive"
+      },
+      {
+        "domain": "wealer.nl",
+        "country": "NL",
+        "cms": "datamotive"
+      }
+    ]
+  },
+  "markers": [
+    {
+      "kind": "path_token",
+      "value": "contact",
+      "domains": 46,
+      "sample": [
+        "a-point.nl",
+        "asp-autoschade.nl",
+        "autodebruijn.nl",
+        "autovermeulen.nl",
+        "garagehoogesteger.nl",
+        "motortotaal.com",
+        "udenhout.nl",
+        "vankesterenrenault.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "over-ons",
+      "domains": 23,
+      "sample": [
+        "a-point.nl",
+        "auto-koese.nl",
+        "autodebruijn.nl",
+        "autoservicedebraal.nl",
+        "autovermeulen.nl",
+        "dahabautos.nl",
+        "garageverbrugge.nl",
+        "harmmoerland.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "amazonaws.com",
+      "domains": 21,
+      "sample": [
+        "autovermeulen.nl",
+        "century.nl",
+        "garagehoogesteger.nl",
+        "harmmoerland.nl",
+        "louwman.nl",
+        "motortotaal.com",
+        "pouw.nl",
+        "vandenbrug.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "occasions",
+      "domains": 20,
+      "sample": [
+        "autofirst-lokerse.nl",
+        "autofirst-rodam.nl",
+        "autosinke.nl",
+        "garagehoogesteger.nl",
+        "garageverbrugge.nl",
+        "vanhalst.nl",
+        "vankesterenrenault.nl",
+        "veersedamauto.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "werkplaats",
+      "domains": 18,
+      "sample": [
+        "ames.nl",
+        "autodebruijn.nl",
+        "autoservicedebraal.nl",
+        "autotoonder.nl",
+        "autovermeulen.nl",
+        "dahabautos.nl",
+        "motortotaal.com",
+        "sterdome.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "site.webmanifest",
+      "domains": 18,
+      "sample": [
+        "a-point.nl",
+        "autozeeland.nl",
+        "autozenter.nl",
+        "century.nl",
+        "garageverbrugge.nl",
+        "motortotaal.com",
+        "pouw.nl",
+        "vandenbrug.nl"
+      ]
+    },
+    {
+      "kind": "js_marker",
+      "value": "drupal",
+      "domains": 16,
+      "sample": [
+        "asp-autoschade.nl",
+        "auto-koese.nl",
+        "autohopper.nl",
+        "garagehoogesteger.nl",
+        "harmmoerland.nl",
+        "thur.nl",
+        "vanhalst.nl",
+        "veersedamauto.nl"
+      ]
+    },
+    {
+      "kind": "js_marker",
+      "value": "divi-theme",
+      "domains": 15,
+      "sample": [
+        "autobedrijfmilhous.nl",
+        "autodebruijn.nl",
+        "autofirst-lokerse.nl",
+        "autofirst-rodam.nl",
+        "autofitgroup.nl",
+        "century.nl",
+        "defeijterautoschade.nl",
+        "vandenbrug.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "acties",
+      "domains": 15,
+      "sample": [
+        "a-point.nl",
+        "garagehoogesteger.nl",
+        "harmmoerland.nl",
+        "louwman.nl",
+        "udenhout.nl",
+        "vanhalst.nl",
+        "vankesterenrenault.nl",
+        "veersedamauto.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "aanbod",
+      "domains": 14,
+      "sample": [
+        "autodebruijn.nl",
+        "autohopper.nl",
+        "autoservicedebraal.nl",
+        "autotoonder.nl",
+        "autozeeland.nl",
+        "dahabautos.nl",
+        "harmmoerland.nl",
+        "hoczeeland.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "wa.me",
+      "domains": 14,
+      "sample": [
+        "autobedrijfbramvangurp.nl",
+        "autodebruijn.nl",
+        "autofirst-lokerse.nl",
+        "autoservicedebraal.nl",
+        "autotoonder.nl",
+        "autovermeulen.nl",
+        "wvoautos.nl",
+        "zeelandaanhangwagens.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "sites",
+      "domains": 14,
+      "sample": [
+        "asp-autoschade.nl",
+        "auto-koese.nl",
+        "autohopper.nl",
+        "garagehoogesteger.nl",
+        "harmmoerland.nl",
+        "thur.nl",
+        "vanhalst.nl",
+        "veersedamauto.nl"
+      ]
+    },
+    {
+      "kind": "generator",
+      "value": "drupal httpswww.drupal.org",
+      "domains": 14,
+      "sample": [
+        "asp-autoschade.nl",
+        "auto-koese.nl",
+        "autohopper.nl",
+        "garagehoogesteger.nl",
+        "harmmoerland.nl",
+        "thur.nl",
+        "vanhalst.nl",
+        "veersedamauto.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "diensten",
+      "domains": 13,
+      "sample": [
+        "autodebruijn.nl",
+        "autoglas-vof.com",
+        "autoservicedebraal.nl",
+        "autotoonder.nl",
+        "dahabautos.nl",
+        "hoczeeland.nl",
+        "mattermeppel.nl",
+        "udenhout.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "nieuws",
+      "domains": 13,
+      "sample": [
+        "a-point.nl",
+        "auto-koese.nl",
+        "autohopper.nl",
+        "autovakmeester.nl",
+        "autovermeulen.nl",
+        "autozeeland.nl",
+        "kwik-fit.nl",
+        "motortotaal.com"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "vacatures",
+      "domains": 13,
+      "sample": [
+        "a-point.nl",
+        "auto-koese.nl",
+        "autohopper.nl",
+        "autoservicedebraal.nl",
+        "autovermeulen.nl",
+        "dahabautos.nl",
+        "louwman.nl",
+        "udenhout.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "favicon-16x16.png",
+      "domains": 13,
+      "sample": [
+        "autohopper.nl",
+        "autosinke.nl",
+        "autozeeland.nl",
+        "autozenter.nl",
+        "garageverbrugge.nl",
+        "kwik-fit.nl",
+        "motortotaal.com",
+        "paknbak.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "favicon-32x32.png",
+      "domains": 13,
+      "sample": [
+        "autohopper.nl",
+        "autosinke.nl",
+        "autozeeland.nl",
+        "autozenter.nl",
+        "garageverbrugge.nl",
+        "kwik-fit.nl",
+        "motortotaal.com",
+        "paknbak.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "apple-touch-icon.png",
+      "domains": 13,
+      "sample": [
+        "a-point.nl",
+        "autohopper.nl",
+        "autozeeland.nl",
+        "autozenter.nl",
+        "garageverbrugge.nl",
+        "motortotaal.com",
+        "paknbak.nl",
+        "sakocars.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "vestigingen",
+      "domains": 12,
+      "sample": [
+        "a-point.nl",
+        "ames.nl",
+        "auto-koese.nl",
+        "autovakmeester.nl",
+        "herwers.nl",
+        "kwik-fit.nl",
+        "motoport.nl",
+        "udenhout.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "afspraak-maken",
+      "domains": 11,
+      "sample": [
+        "autobedrijf-heinkenszand.nl",
+        "autobedrijfvanweele.nl",
+        "garagehoogesteger.nl",
+        "harmmoerland.nl",
+        "nijskensautomotive.nl",
+        "pageebanden.nl",
+        "vanhalst.nl",
+        "veersedamauto.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "safari-pinned-tab.svg",
+      "domains": 11,
+      "sample": [
+        "autoglas-vof.com",
+        "autohopper.nl",
+        "autozeeland.nl",
+        "autozenter.nl",
+        "garageverbrugge.nl",
+        "motortotaal.com",
+        "paknbak.nl",
+        "trampergoes.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "cloudimg.io",
+      "domains": 11,
+      "sample": [
+        "abdrenault.nl",
+        "autohoogenboom.nl",
+        "autovdheide.nl",
+        "century.nl",
+        "huiskes-kokkeler.nl",
+        "poncenter.nl",
+        "pouw.nl",
+        "vandenbrug.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "klantenvertellen.nl",
+      "domains": 11,
+      "sample": [
+        "autobedrijf-heinkenszand.nl",
+        "autohopper.nl",
+        "autosinke.nl",
+        "autotoonder.nl",
+        "autovakmeester.nl",
+        "autozenter.nl",
+        "dahabautos.nl",
+        "motoport.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "voorraad",
+      "domains": 10,
+      "sample": [
+        "a-point.nl",
+        "ames.nl",
+        "auto-koese.nl",
+        "mdekoning.nl",
+        "sterdome.nl",
+        "thur.nl",
+        "vankesterenrenault.nl",
+        "wealer.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "privacy",
+      "domains": 9,
+      "sample": [
+        "asp-autoschade.nl",
+        "autodebruijn.nl",
+        "autoservicedebraal.nl",
+        "autotoonder.nl",
+        "boontrucks.nl",
+        "garagevervaet.nl",
+        "vankesterenrenault.nl",
+        "veldeautos.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "bundles",
+      "domains": 9,
+      "sample": [
+        "autoglas-vof.com",
+        "autosinke.nl",
+        "autozeeland.nl",
+        "autozenter.nl",
+        "garageverbrugge.nl",
+        "motortotaal.com",
+        "poncenter.nl",
+        "trampergoes.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "source",
+      "domains": 8,
+      "sample": [
+        "autobedrijfrobdees.nl",
+        "autodebruijn.nl",
+        "autoservicedebraal.nl",
+        "autotoonder.nl",
+        "garagevervaet.nl",
+        "mattermeppel.nl",
+        "sterdome.nl",
+        "veldeautos.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "admin",
+      "domains": 8,
+      "sample": [
+        "autobedrijfrobdees.nl",
+        "autodebruijn.nl",
+        "autoservicedebraal.nl",
+        "autotoonder.nl",
+        "garagevervaet.nl",
+        "mattermeppel.nl",
+        "sterdome.nl",
+        "veldeautos.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "disclaimer",
+      "domains": 8,
+      "sample": [
+        "a-point.nl",
+        "asp-autoschade.nl",
+        "autokievit.nl",
+        "autozeeland.nl",
+        "garageverbrugge.nl",
+        "herwers.nl",
+        "hoczeeland.nl",
+        "vankesterenrenault.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "modules",
+      "domains": 8,
+      "sample": [
+        "asp-autoschade.nl",
+        "auto-koese.nl",
+        "autohopper.nl",
+        "autokievit.nl",
+        "autosturm.nl",
+        "carglass.nl",
+        "herwers.nl",
+        "thur.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "_next",
+      "domains": 8,
+      "sample": [
+        "abdrenault.nl",
+        "autohoogenboom.nl",
+        "autovakmeester.nl",
+        "autovdheide.nl",
+        "century.nl",
+        "pouw.nl",
+        "terwolderenault.nl",
+        "vandenbrug.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "occasions-kopen",
+      "domains": 7,
+      "sample": [
+        "autobedrijfrobdees.nl",
+        "autodebruijn.nl",
+        "autoservicedebraal.nl",
+        "autotoonder.nl",
+        "garagevervaet.nl",
+        "mattermeppel.nl",
+        "veldeautos.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "webservices",
+      "domains": 7,
+      "sample": [
+        "autobedrijfrobdees.nl",
+        "autodebruijn.nl",
+        "autoservicedebraal.nl",
+        "autotoonder.nl",
+        "garagevervaet.nl",
+        "mattermeppel.nl",
+        "veldeautos.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "verkocht",
+      "domains": 7,
+      "sample": [
+        "autobedrijfrobdees.nl",
+        "autodebruijn.nl",
+        "autoservicedebraal.nl",
+        "autotoonder.nl",
+        "mattermeppel.nl",
+        "veldeautos.nl",
+        "wvoautos.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "zakelijk",
+      "domains": 7,
+      "sample": [
+        "a-point.nl",
+        "autohopper.nl",
+        "herwers.nl",
+        "kwik-fit.nl",
+        "paknbak.nl",
+        "udenhout.nl",
+        "vankesterenrenault.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "onderhoud",
+      "domains": 7,
+      "sample": [
+        "auto-koese.nl",
+        "autobedrijfrobdees.nl",
+        "autobedrijfvanweele.nl",
+        "autonoorddijk.nl",
+        "autosinke.nl",
+        "herwers.nl",
+        "toyota-goes.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "verhuur",
+      "domains": 7,
+      "sample": [
+        "autonoorddijk.nl",
+        "autozeeland.nl",
+        "avh-autos.nl",
+        "garageverbrugge.nl",
+        "motortotaal.com",
+        "niemantsverdrietauto.nl",
+        "udenhout.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "autosociaal.nl",
+      "domains": 7,
+      "sample": [
+        "autobedrijf-heinkenszand.nl",
+        "autobedrijfbramvangurp.nl",
+        "autobedrijfvanweele.nl",
+        "autonoorddijk.nl",
+        "autovermeulen.nl",
+        "avh-autos.nl",
+        "pageebanden.nl"
+      ]
+    },
+    {
+      "kind": "js_marker",
+      "value": "sulu",
+      "domains": 7,
+      "sample": [
+        "abdrenault.nl",
+        "autohoogenboom.nl",
+        "century.nl",
+        "pouw.nl",
+        "stern.nl",
+        "terwolderenault.nl",
+        "vandenbrug.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "privacyverklaring",
+      "domains": 6,
+      "sample": [
+        "a-point.nl",
+        "autosinke.nl",
+        "autozeeland.nl",
+        "garageverbrugge.nl",
+        "motortotaal.com",
+        "trampergoes.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "tidi.nl",
+      "domains": 6,
+      "sample": [
+        "autoglas-vof.com",
+        "autosinke.nl",
+        "autozeeland.nl",
+        "garageverbrugge.nl",
+        "motortotaal.com",
+        "trampergoes.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "seat",
+      "domains": 6,
+      "sample": [
+        "a-point.nl",
+        "ames.nl",
+        "muntstad.nl",
+        "poncenter.nl",
+        "thur.nl",
+        "udenhout.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "cupra",
+      "domains": 6,
+      "sample": [
+        "a-point.nl",
+        "ames.nl",
+        "muntstad.nl",
+        "poncenter.nl",
+        "thur.nl",
+        "udenhout.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "volkswagen",
+      "domains": 6,
+      "sample": [
+        "a-point.nl",
+        "ames.nl",
+        "autonoorddijk.nl",
+        "muntstad.nl",
+        "poncenter.nl",
+        "udenhout.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "templates",
+      "domains": 6,
+      "sample": [
+        "autoservicevanleuven.nl",
+        "boontrucks.nl",
+        "garage-bogaert.nl",
+        "heinauto.nl",
+        "kelgincampers.nl",
+        "wagenhuiswemeldinge.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "morgeninternet.nl",
+      "domains": 5,
+      "sample": [
+        "autodebruijn.nl",
+        "autoservicedebraal.nl",
+        "autotoonder.nl",
+        "garagevervaet.nl",
+        "veldeautos.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "schadeherstel",
+      "domains": 5,
+      "sample": [
+        "asp-autoschade.nl",
+        "autobedrijfbramvangurp.nl",
+        "autobedrijfrobdees.nl",
+        "autodebruijn.nl",
+        "autonoorddijk.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "bandenservice",
+      "domains": 5,
+      "sample": [
+        "autobedrijfbramvangurp.nl",
+        "autobedrijfrobdees.nl",
+        "autobedrijfvanweele.nl",
+        "autodebruijn.nl",
+        "autonoorddijk.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "service",
+      "domains": 5,
+      "sample": [
+        "auto-koese.nl",
+        "autobedrijf-heinkenszand.nl",
+        "motoport.nl",
+        "udenhout.nl",
+        "wealer.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "onderhoud-en-service-overzicht",
+      "domains": 5,
+      "sample": [
+        "garagehoogesteger.nl",
+        "harmmoerland.nl",
+        "nijskensautomotive.nl",
+        "vanhalst.nl",
+        "veersedamauto.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "dienst",
+      "domains": 5,
+      "sample": [
+        "garagehoogesteger.nl",
+        "harmmoerland.nl",
+        "nijskensautomotive.nl",
+        "vanhalst.nl",
+        "veersedamauto.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "cookiebeleid",
+      "domains": 5,
+      "sample": [
+        "autoglas-vof.com",
+        "autozeeland.nl",
+        "garageverbrugge.nl",
+        "motortotaal.com",
+        "trampergoes.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "sitemap",
+      "domains": 5,
+      "sample": [
+        "autoglas-vof.com",
+        "autozeeland.nl",
+        "carglass.nl",
+        "motortotaal.com",
+        "trampergoes.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "audi",
+      "domains": 5,
+      "sample": [
+        "a-point.nl",
+        "ames.nl",
+        "muntstad.nl",
+        "poncenter.nl",
+        "udenhout.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "volkswagen-bedrijfswagens",
+      "domains": 5,
+      "sample": [
+        "a-point.nl",
+        "ames.nl",
+        "muntstad.nl",
+        "poncenter.nl",
+        "udenhout.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "skoda",
+      "domains": 5,
+      "sample": [
+        "a-point.nl",
+        "ames.nl",
+        "muntstad.nl",
+        "poncenter.nl",
+        "udenhout.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "algemene-voorwaarden",
+      "domains": 5,
+      "sample": [
+        "asp-autoschade.nl",
+        "bluekenstruckenbus.nl",
+        "carglass.nl",
+        "hoczeeland.nl",
+        "paknbak.nl"
+      ]
+    },
+    {
+      "kind": "js_marker",
+      "value": "joomla",
+      "domains": 5,
+      "sample": [
+        "autoservicevanleuven.nl",
+        "boontrucks.nl",
+        "garage-bogaert.nl",
+        "kelgincampers.nl",
+        "wagenhuiswemeldinge.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "werkplaatsafspraak",
+      "domains": 4,
+      "sample": [
+        "autodebruijn.nl",
+        "autokievit.nl",
+        "autosturm.nl",
+        "herwers.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "apk-keuring",
+      "domains": 4,
+      "sample": [
+        "autobedrijfmilhous.nl",
+        "autobedrijfrobdees.nl",
+        "autodebruijn.nl",
+        "kwik-fit.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "sourcebuster-js",
+      "domains": 4,
+      "sample": [
+        "autobedrijfrobdees.nl",
+        "autodebruijn.nl",
+        "autoservicedebraal.nl",
+        "garagevervaet.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "private-lease",
+      "domains": 4,
+      "sample": [
+        "ames.nl",
+        "autosturm.nl",
+        "trampergoes.nl",
+        "vankesterenrenault.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "bovag",
+      "domains": 4,
+      "sample": [
+        "garagehoogesteger.nl",
+        "harmmoerland.nl",
+        "vanhalst.nl",
+        "veersedamauto.nl"
+      ]
+    },
+    {
+      "kind": "generator",
+      "value": "gerente cms by tidi media see httpwww.tidi.nl",
+      "domains": 4,
+      "sample": [
+        "autoglas-vof.com",
+        "autozeeland.nl",
+        "motortotaal.com",
+        "trampergoes.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "kennisbank",
+      "domains": 4,
+      "sample": [
+        "a-point.nl",
+        "autosturm.nl",
+        "kwik-fit.nl",
+        "partspoint.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "livewire",
+      "domains": 4,
+      "sample": [
+        "a-point.nl",
+        "autobedrijf-heinkenszand.nl",
+        "autonoorddijk.nl",
+        "autovermeulen.nl"
+      ]
+    },
+    {
+      "kind": "js_marker",
+      "value": "livewire",
+      "domains": 4,
+      "sample": [
+        "a-point.nl",
+        "autobedrijf-heinkenszand.nl",
+        "autonoorddijk.nl",
+        "autovermeulen.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "aircoservice",
+      "domains": 4,
+      "sample": [
+        "autobedrijfvanweele.nl",
+        "autonoorddijk.nl",
+        "autovermeulen.nl",
+        "pageebanden.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "veelgestelde-vragen",
+      "domains": 4,
+      "sample": [
+        "autosturm.nl",
+        "boedelbak.nl",
+        "kwik-fit.nl",
+        "paknbak.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "reviews",
+      "domains": 4,
+      "sample": [
+        "autofirst-lokerse.nl",
+        "autofirst-rodam.nl",
+        "autofirst-vanhoepen.nl",
+        "herwers.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "plugins",
+      "domains": 4,
+      "sample": [
+        "boontrucks.nl",
+        "garage-bogaert.nl",
+        "kelgincampers.nl",
+        "wagenhuiswemeldinge.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "apk",
+      "domains": 4,
+      "sample": [
+        "autobedrijfbramvangurp.nl",
+        "autobedrijfvanweele.nl",
+        "autonoorddijk.nl",
+        "herwers.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "goo.gl",
+      "domains": 3,
+      "sample": [
+        "autodebruijn.nl",
+        "autotoonder.nl",
+        "vankesterenrenault.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "whatsapp.com",
+      "domains": 3,
+      "sample": [
+        "autodebruijn.nl",
+        "dahabautos.nl",
+        "trampergoes.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "weply.chat",
+      "domains": 3,
+      "sample": [
+        "autobedrijf-heinkenszand.nl",
+        "autodebruijn.nl",
+        "trampergoes.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "renault",
+      "domains": 3,
+      "sample": [
+        "autokievit.nl",
+        "herwers.nl",
+        "vankesterenrenault.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "cookielaw.org",
+      "domains": 3,
+      "sample": [
+        "automotive.fource.nl",
+        "louwman.nl",
+        "partspoint.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "dbupload",
+      "domains": 3,
+      "sample": [
+        "garageverbrugge.nl",
+        "motortotaal.com",
+        "trampergoes.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "favorieten",
+      "domains": 3,
+      "sample": [
+        "dahabautos.nl",
+        "huiskes-kokkeler.nl",
+        "udenhout.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "onderhoud-service",
+      "domains": 3,
+      "sample": [
+        "a-point.nl",
+        "autokievit.nl",
+        "autosturm.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "cookies",
+      "domains": 3,
+      "sample": [
+        "a-point.nl",
+        "asp-autoschade.nl",
+        "dahabautos.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "home",
+      "domains": 3,
+      "sample": [
+        "asp-autoschade.nl",
+        "autosinke.nl",
+        "sterdome.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "googlecode.com",
+      "domains": 3,
+      "sample": [
+        "autobandenhulst.nl",
+        "autoservicevanleuven.nl",
+        "niemantsverdrietauto.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "werkenbijemilfrey.nl",
+      "domains": 3,
+      "sample": [
+        "abdrenault.nl",
+        "pouw.nl",
+        "terwolderenault.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "hyundai",
+      "domains": 3,
+      "sample": [
+        "autosturm.nl",
+        "garageverbrugge.nl",
+        "herwers.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "dbfotos",
+      "domains": 3,
+      "sample": [
+        "autosinke.nl",
+        "garageverbrugge.nl",
+        "trampergoes.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "maxcdn.com",
+      "domains": 3,
+      "sample": [
+        "autosinke.nl",
+        "garageverbrugge.nl",
+        "hoczeeland.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "blog",
+      "domains": 3,
+      "sample": [
+        "autohopper.nl",
+        "autokievit.nl",
+        "autozeeland.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "uname-it.nl",
+      "domains": 3,
+      "sample": [
+        "autokievit.nl",
+        "autosturm.nl",
+        "herwers.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "financiering",
+      "domains": 3,
+      "sample": [
+        "avh-autos.nl",
+        "veldeautos.nl",
+        "wvoautos.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "over",
+      "domains": 3,
+      "sample": [
+        "alfaserviceterneuzen.nl",
+        "trampergoes.nl",
+        "wvoautos.nl"
+      ]
+    },
+    {
+      "kind": "js_marker",
+      "value": "wordpress",
+      "domains": 2,
+      "sample": [
+        "autobedrijf-de-groen.nl",
+        "automotive.fource.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "elfsight.com",
+      "domains": 2,
+      "sample": [
+        "autodebruijn.nl",
+        "garagevervaet.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "bootstrap",
+      "domains": 2,
+      "sample": [
+        "autobedrijfrobdees.nl",
+        "autodebruijn.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "volkswagen.nl",
+      "domains": 2,
+      "sample": [
+        "autodebruijn.nl",
+        "autonoorddijk.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "onderhoud-reparatie",
+      "domains": 2,
+      "sample": [
+        "autobedrijfmilhous.nl",
+        "autodebruijn.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "airco-service",
+      "domains": 2,
+      "sample": [
+        "autobedrijfrobdees.nl",
+        "autodebruijn.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "mobiliteitsgarantie",
+      "domains": 2,
+      "sample": [
+        "autodebruijn.nl",
+        "kwik-fit.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "mijnklantensite.nl",
+      "domains": 2,
+      "sample": [
+        "autozenter.nl",
+        "vankesterenrenault.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "service-en-onderhoud",
+      "domains": 2,
+      "sample": [
+        "autozenter.nl",
+        "vankesterenrenault.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "cartel.nl",
+      "domains": 2,
+      "sample": [
+        "auto-koese.nl",
+        "thur.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "googleoptimize.com",
+      "domains": 2,
+      "sample": [
+        "profile.nl",
+        "zeelandaanhangwagens.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "motoren",
+      "domains": 2,
+      "sample": [
+        "motoport.nl",
+        "motortotaal.com"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "leasen",
+      "domains": 2,
+      "sample": [
+        "a-point.nl",
+        "udenhout.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "elektrisch-rijden",
+      "domains": 2,
+      "sample": [
+        "a-point.nl",
+        "ames.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "onze-merken",
+      "domains": 2,
+      "sample": [
+        "autovermeulen.nl",
+        "wealer.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "historie",
+      "domains": 2,
+      "sample": [
+        "autovermeulen.nl",
+        "herwers.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "pechhulp",
+      "domains": 2,
+      "sample": [
+        "autobedrijfbramvangurp.nl",
+        "autovermeulen.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "onze-voorraad",
+      "domains": 2,
+      "sample": [
+        "autovermeulen.nl",
+        "herwers.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "hostnet.nl",
+      "domains": 2,
+      "sample": [
+        "sakocars.nl",
+        "wendeldejoodeautotechniek.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "cdn-cgi",
+      "domains": 2,
+      "sample": [
+        "jacareautobedrijf.com",
+        "jdautos.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "mazda.nl",
+      "domains": 2,
+      "sample": [
+        "louwman.nl",
+        "trampergoes.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "elfsightcdn.com",
+      "domains": 2,
+      "sample": [
+        "autoservicedebraal.nl",
+        "autotoonder.nl"
+      ]
+    },
+    {
+      "kind": "generator",
+      "value": "joomla - open source content management",
+      "domains": 2,
+      "sample": [
+        "autoservicevanleuven.nl",
+        "wagenhuiswemeldinge.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "favicon-96x96.png",
+      "domains": 2,
+      "sample": [
+        "autosinke.nl",
+        "kwik-fit.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "airco-onderhoud",
+      "domains": 2,
+      "sample": [
+        "herwers.nl",
+        "kwik-fit.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "trekhaken",
+      "domains": 2,
+      "sample": [
+        "kwik-fit.nl",
+        "pageebanden.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "webshop",
+      "domains": 2,
+      "sample": [
+        "kwik-fit.nl",
+        "motoport.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "anwb",
+      "domains": 2,
+      "sample": [
+        "kwik-fit.nl",
+        "vanhalst.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "trustpilot.com",
+      "domains": 2,
+      "sample": [
+        "dahabautos.nl",
+        "profile.nl"
+      ]
+    },
+    {
+      "kind": "generator",
+      "value": "gerente cms by tidi medimediaa see httpwww.tidi.nl",
+      "domains": 2,
+      "sample": [
+        "autosinke.nl",
+        "garageverbrugge.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "autofirst-nederland.nl",
+      "domains": 2,
+      "sample": [
+        "autofirst-lokerse.nl",
+        "autofirst-rodam.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "autochat.ai",
+      "domains": 2,
+      "sample": [
+        "van-mossel.nl",
+        "vanmossel.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "stichting-avg.nl",
+      "domains": 2,
+      "sample": [
+        "autozenter.nl",
+        "bluekenstruckenbus.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "over-bcsaccompanyname",
+      "domains": 2,
+      "sample": [
+        "vanhalst.nl",
+        "veersedamauto.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "manifest.json",
+      "domains": 2,
+      "sample": [
+        "autohopper.nl",
+        "autosinke.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "werkenbijponcenter.nl",
+      "domains": 2,
+      "sample": [
+        "muntstad.nl",
+        "poncenter.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "locaties",
+      "domains": 2,
+      "sample": [
+        "autohopper.nl",
+        "autotoonder.nl"
+      ]
+    },
+    {
+      "kind": "generator",
+      "value": "one.com web editor",
+      "domains": 2,
+      "sample": [
+        "alfaserviceterneuzen.nl",
+        "autobedrijfmilhous.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "services",
+      "domains": 2,
+      "sample": [
+        "alfaserviceterneuzen.nl",
+        "autobedrijfmilhous.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "onewebstatic",
+      "domains": 2,
+      "sample": [
+        "alfaserviceterneuzen.nl",
+        "autobedrijfmilhous.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "usercontent.one",
+      "domains": 2,
+      "sample": [
+        "alfaserviceterneuzen.nl",
+        "autobedrijfmilhous.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "laveto.nl",
+      "domains": 2,
+      "sample": [
+        "defeijterautoschade.nl",
+        "hoczeeland.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "pechservice",
+      "domains": 2,
+      "sample": [
+        "autohopper.nl",
+        "pageebanden.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "cookie-statement",
+      "domains": 2,
+      "sample": [
+        "bluekenstruckenbus.nl",
+        "paknbak.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "praktische-informatie",
+      "domains": 2,
+      "sample": [
+        "boedelbak.nl",
+        "paknbak.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "statics",
+      "domains": 2,
+      "sample": [
+        "boedelbak.nl",
+        "paknbak.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "aanhangwagens",
+      "domains": 2,
+      "sample": [
+        "boedelbak.nl",
+        "paknbak.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "portal",
+      "domains": 2,
+      "sample": [
+        "autohoogenboom.nl",
+        "terwolderenault.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "dtcmediainternet.nl",
+      "domains": 2,
+      "sample": [
+        "maasdekoning.nl",
+        "mdekoning.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "powerkraut.tech",
+      "domains": 2,
+      "sample": [
+        "maasdekoning.nl",
+        "mdekoning.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "service-onderhoud",
+      "domains": 2,
+      "sample": [
+        "herwers.nl",
+        "thur.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "multiscreensite.com",
+      "domains": 2,
+      "sample": [
+        "albertsgarage.nl",
+        "avauto.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "cdn-website.com",
+      "domains": 2,
+      "sample": [
+        "albertsgarage.nl",
+        "avauto.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "index.php",
+      "domains": 2,
+      "sample": [
+        "garage-bogaert.nl",
+        "wagenhuiswemeldinge.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "nissan",
+      "domains": 2,
+      "sample": [
+        "autosturm.nl",
+        "herwers.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "lease",
+      "domains": 2,
+      "sample": [
+        "autosturm.nl",
+        "mattermeppel.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "verzekeringen",
+      "domains": 2,
+      "sample": [
+        "autosturm.nl",
+        "herwers.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "bedrijfswagens",
+      "domains": 2,
+      "sample": [
+        "autonoorddijk.nl",
+        "avh-autos.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "ons-bedrijf",
+      "domains": 2,
+      "sample": [
+        "autobedrijf-heinkenszand.nl",
+        "autonoorddijk.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "trekhaak-monteren",
+      "domains": 2,
+      "sample": [
+        "autobedrijfrobdees.nl",
+        "autobedrijfvanweele.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "storingsdiagnose",
+      "domains": 2,
+      "sample": [
+        "autobedrijfrobdees.nl",
+        "autobedrijfvanweele.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "dacia",
+      "domains": 2,
+      "sample": [
+        "autokievit.nl",
+        "herwers.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "klantenpagina",
+      "domains": 2,
+      "sample": [
+        "autokievit.nl",
+        "herwers.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "node",
+      "domains": 2,
+      "sample": [
+        "niemantsverdrietauto.nl",
+        "partspoint.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "garantie",
+      "domains": 2,
+      "sample": [
+        "autobedrijfrobdees.nl",
+        "herwers.nl"
+      ]
+    },
+    {
+      "kind": "path_token",
+      "value": "uitlijnen",
+      "domains": 2,
+      "sample": [
+        "autobedrijfrobdees.nl",
+        "autonoorddijk.nl"
+      ]
+    },
+    {
+      "kind": "ext_host",
+      "value": "visualwebsiteoptimizer.com",
+      "domains": 2,
+      "sample": [
+        "broekhuis.nl",
+        "terwolderenault.nl"
+      ]
+    }
+  ]
+}

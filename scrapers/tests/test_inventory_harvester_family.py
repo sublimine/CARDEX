@@ -202,6 +202,35 @@ def test_no_cms_keeps_generic_route(isolated_stores, recording_cage, monkeypatch
     assert (dealer_dir / "plain.example.json").exists()
 
 
+# ── 4b. a MINIMAL auto-generated recipe never shadows an accepting family ─────────
+@pytest.mark.unit
+def test_minimal_auto_recipe_is_outranked_by_family(
+        isolated_stores, recording_cage, monkeypatch):
+    # Arrange — the blind-cascade stub a previous cage run materialized (no
+    # detail_url_re / field_map / api_url, floor 4 — pouw.nl's real 2026-06-10 state)
+    # PLUS an accepting datamotive family. The family walk must win.
+    _, dealer_dir, _ = isolated_stores
+    cfgmod.save_family(_datamotive_family())
+    stub = ExtractionConfig(
+        source_key="pouw.example", country="NL", strategy="jsonld_detail", version=1,
+        endpoints=Endpoints(host="www.pouw.example"),
+        drift_baseline=DriftBaseline(expected_min_volume=4))
+    cfgmod.save(stub, kind="dealer")
+    _patch_fetcher(monkeypatch, _datamotive_pages("pouw.example", n=5))
+
+    # Act
+    r = _run(ih.harvest_t2_dealer(None, None, "pouw.example", "NL",
+                                  cms="datamotive", cms_confidence="high"))
+
+    # Assert — family route, full set, family provenance; the stub stays on disk
+    # untouched (the family view is never persisted over it).
+    assert r["method"] == "recipe:sitemap_listing"
+    assert r["discovered"] == 5
+    assert recording_cage[0]["config_ref"] == "configs/families/datamotive.json"
+    assert json.loads((dealer_dir / "pouw.example.json").read_text(encoding="utf-8"))[
+        "strategy"] == "jsonld_detail"
+
+
 # ── 4. saved per-dealer recipe wins and is never clobbered ────────────────────────
 @pytest.mark.unit
 def test_saved_dealer_recipe_wins_and_is_not_clobbered(

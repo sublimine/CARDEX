@@ -423,6 +423,19 @@ def load(
     return None
 
 
+def is_minimal_auto(cfg: ExtractionConfig) -> bool:
+    """True for a detector/cage-built MINIMAL recipe — one carrying no operator tuning.
+
+    Minimal = no ``detail_url_re``, no ``field_map``, no ``api_url``: exactly what the
+    generic-cascade save materializes. A family recipe accepted by a live CMS verdict
+    may outrank these (the platform walk beats a blind cascade); a recipe with ANY of
+    those fields is treated as tuned and always wins (never clobber a human's repair).
+    """
+    return (not (cfg.endpoints.detail_url_re or "").strip()
+            and not cfg.extraction.field_map
+            and not (cfg.endpoints.api_url or "").strip())
+
+
 def save(cfg: ExtractionConfig, *, kind: str = "portal") -> Path:
     """
     Persist a config to the versioned store (creates the dir on first write).

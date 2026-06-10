@@ -292,3 +292,94 @@ def test_verdict_is_frozen_and_hashable():
     with pytest.raises(Exception):
         verdict.cms = "other"  # type: ignore[misc]
     assert hash(verdict) == hash(CmsVerdict("dealer_com", "medium", ("ddc-class",)))
+
+
+# == families mined from the NL unknown cluster (2026-06-10) ======================
+@pytest.mark.unit
+def test_detects_autosociaal_from_cdn_bundle():
+    # Arrange - the whole frontend ships from cdn.autosociaal.nl/dtweb/ (verified
+    # live on autobedrijfvanweele.nl 2026-06-10).
+    html = (
+        "<link rel=\"preload\" as=\"style\" "
+        "href=\"https://cdn.autosociaal.nl/dtweb/build/assets/app-0bc8cbba.css\">"
+    )
+
+    # Act
+    verdict = fingerprint_cms(html)
+
+    # Assert - cdn host + dtweb path = 2 distinct signals
+    assert verdict.cms == "autosociaal"
+    assert verdict.confidence == "high"
+
+
+@pytest.mark.unit
+def test_detects_gerente_tidi_from_generator():
+    # Arrange
+    html = (
+        "<meta name=\"generator\" content=\"Gerente CMS by TIDI Media see http://www.tidi.nl\">"
+    )
+
+    # Act
+    verdict = fingerprint_cms(html)
+
+    # Assert
+    assert verdict.cms == "gerente_tidi"
+    assert verdict.confidence == "high"  # generator mentions tidi.nl too
+
+
+@pytest.mark.unit
+def test_detects_drupal_from_core_markers():
+    # Arrange
+    html = (
+        "<meta name=\"generator\" content=\"Drupal 10 (https://www.drupal.org)\">"
+        "<img src=\"/sites/default/files/2024-01/showroom.jpg\">"
+        "<form data-drupal-selector=\"edit-search\"></form>"
+    )
+
+    # Act
+    verdict = fingerprint_cms(html)
+
+    # Assert
+    assert verdict.cms == "drupal"
+    assert verdict.confidence == "high"
+    assert "data-drupal-selector" in verdict.signals
+
+
+@pytest.mark.unit
+def test_drupal_does_not_fire_on_agency_credit_literal():
+    # Arrange - a bare "drupal" word (agency credit / blog mention) must NOT classify.
+    html = "<footer>Website door bureau X - wij bouwen ook met Drupal</footer>"
+
+    # Act
+    verdict = fingerprint_cms(html)
+
+    # Assert
+    assert verdict.cms != "drupal"
+
+
+@pytest.mark.unit
+def test_detects_joomla_from_component_path():
+    # Arrange
+    html = "<a href=\"/index.php?option=com_content&view=article&id=12\">Aanbod</a>"
+
+    # Act
+    verdict = fingerprint_cms(html)
+
+    # Assert
+    assert verdict.cms == "joomla"
+
+
+@pytest.mark.unit
+def test_drupal_beats_generic_wordpress_order_but_loses_to_specific_saas():
+    # Arrange - autosociaal frontend on a site that ALSO carries a drupal trace
+    # (e.g. a migrated blog path): the specific SaaS must win the routing.
+    html = (
+        "<link href=\"https://cdn.autosociaal.nl/dtweb/build/app.css\">"
+        "<img src=\"/sites/default/files/old/banner.jpg\">"
+    )
+
+    # Act
+    verdict = fingerprint_cms(html)
+
+    # Assert
+    assert verdict.cms == "autosociaal"

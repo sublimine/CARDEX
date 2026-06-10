@@ -27,11 +27,19 @@ widget's recipe, not the shell's):
   5.  planetvo     'planetvo' | 'autralis' host (via detect_embedded_dms or literal)
   6.  incadea      'incadea' host (via detect_embedded_dms or literal; covers
                    'dms.incadea' — a subset token is not independent evidence)
-  7.  next_dealer  Next.js marker (via detect_spa_markers) AND a vehicle signal
+  7.  autosociaal  'cdn.autosociaal.nl' host | '/dtweb/' bundle path + autosociaal
+                   (NL dealer-site SaaS — the WHOLE frontend ships from its CDN;
+                   verified live 2026-06-10 on autobedrijfvanweele.nl)
+  8.  gerente_tidi <meta generator "Gerente CMS"> | 'tidi.nl' host (NL niche
+                   dealer-site vendor, mined 2026-06-10)
+  9.  next_dealer  Next.js marker (via detect_spa_markers) AND a vehicle signal
                    (JSON-LD Car/Vehicle, or 'vehicle' in the detail sample)
-  8.  nuxt_dealer  Nuxt marker (via detect_spa_markers)
-  9.  wordpress    '/wp-content/' | '/wp-json/' | <meta name="generator" WordPress>
-  10. symfony      'X-Debug-Token*' response header | 'sf-' cookie (headers only)
+  10. nuxt_dealer  Nuxt marker (via detect_spa_markers)
+  11. drupal       data-drupal-selector | drupal-settings-json | /sites/default/files
+                   | <meta name="generator" Drupal> (16/122 NL unknowns, 2026-06-10)
+  12. joomla       'joomla' literal | option=com_ / /components/com_ | /media/jui/
+  13. wordpress    '/wp-content/' | '/wp-json/' | <meta name="generator" WordPress>
+  14. symfony      'X-Debug-Token*' response header | 'sf-' cookie (headers only)
 
 Confidence: 'high' when the winning family fired >=2 DISTINCT signals, 'medium' on
 exactly 1, and ('unknown', cms='unknown') when no family fired at all.
@@ -54,6 +62,14 @@ _DDC_CLASS_RE = re.compile(r'class\s*=\s*["\'][^"\']*\bddc-', re.I)
 # <meta name="generator" content="WordPress ..."> in either attribute order.
 _WP_GENERATOR_RE = re.compile(
     r"<meta\b(?=[^>]*\bname\s*=\s*[\"']generator[\"'])(?=[^>]*wordpress)[^>]*>", re.I
+)
+# <meta name="generator" content="Drupal ..."> in either attribute order.
+_DRUPAL_GENERATOR_RE = re.compile(
+    r"<meta\b(?=[^>]*\bname\s*=\s*[\"']generator[\"'])(?=[^>]*drupal)[^>]*>", re.I
+)
+# <meta name="generator" content="Gerente CMS by TIDI Media ...">.
+_GERENTE_GENERATOR_RE = re.compile(
+    r"<meta\b(?=[^>]*\bname\s*=\s*[\"']generator[\"'])(?=[^>]*gerente)[^>]*>", re.I
 )
 # JSON-LD vehicle entity ("@type": "Car" / "Vehicle") — the strong vehicle signal.
 _JSONLD_VEHICLE_RE = re.compile(r'"@type"\s*:\s*"(?:Car|Vehicle)"', re.I)
@@ -143,12 +159,39 @@ def fingerprint_cms(
         ("incadea", (
             ("incadea-host", dms == "incadea" or "incadea" in low),
         )),
+        # Autosociaal — NL dealer-site SaaS: the whole frontend (CSS/JS/images) ships
+        # from cdn.autosociaal.nl/dtweb/. 7/122 NL unknowns shared it (mining
+        # 2026-06-10); verified live on autobedrijfvanweele.nl.
+        ("autosociaal", (
+            ("autosociaal-cdn", "cdn.autosociaal.nl" in low),
+            ("dtweb-bundle", "/dtweb/" in low and "autosociaal" in low),
+        )),
+        # Gerente CMS (TIDI Media) — NL niche dealer-site vendor; generator tag plus
+        # tidi.nl asset host (4-6/122 NL unknowns, mining 2026-06-10).
+        ("gerente_tidi", (
+            ("gerente-generator", bool(_GERENTE_GENERATOR_RE.search(html))),
+            ("tidi-host", "tidi.nl" in low),
+        )),
         ("next_dealer", (
             ("spa:next", "next" in spa and vehicle is not None),
             (f"vehicle:{vehicle}", "next" in spa and vehicle is not None),
         )),
         ("nuxt_dealer", (
             ("spa:nuxt", "nuxt" in spa),
+        )),
+        # Drupal — dominant platform of the NL unknown cluster (16/122 with a literal
+        # generator tag, mining 2026-06-10). Strict core markers only — a bare
+        # 'drupal' literal would substring-fire on agency credits.
+        ("drupal", (
+            ("data-drupal-selector", "data-drupal-selector" in low),
+            ("drupal-settings-json", "drupal-settings-json" in low),
+            ("sites-default-files", "/sites/default/files" in low),
+            ("meta-generator-drupal", bool(_DRUPAL_GENERATOR_RE.search(html))),
+        )),
+        ("joomla", (
+            ("joomla-literal", "joomla" in low),
+            ("com-component", "option=com_" in low or "/components/com_" in low),
+            ("media-jui", "/media/jui/" in low),
         )),
         ("wordpress", (
             ("wp-content", "/wp-content/" in low),

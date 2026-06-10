@@ -134,20 +134,26 @@ def _resolve_recipe(domain: str, country: str, cms: str,
                     cms_confidence: str) -> tuple[ExtractionConfig | None, str | None]:
     """Recipe routing for the cage path: ``(config, config_ref)`` or ``(None, None)``.
 
-    A saved per-dealer/curated recipe wins (no re-probe). Otherwise the probe's CMS
-    verdict routes through an ACCEPTING family recipe — instantiated as a resolve-time
-    view, never persisted, so the family file stays the single point of repair for the
-    whole platform (``config_ref`` carries that provenance on the entity row). When
-    neither fires the caller keeps today's generic cascade, byte-identical.
+    A TUNED saved recipe (curated, or carrying detail_url_re/field_map/api_url) wins.
+    An accepting family recipe outranks a MINIMAL auto-generated one — the cage path
+    itself materializes those blind-cascade stubs, and letting them shadow the family
+    walk forever caged ~4 URLs on platforms holding thousands (pouw.nl, 2026-06-10).
+    The family config is a resolve-time view, never persisted, so the family file
+    stays the single point of repair for the whole platform (``config_ref`` carries
+    that provenance on the entity row). When neither fires the caller keeps today's
+    generic cascade, byte-identical.
     """
-    cfg = portal_config.load(domain)
-    if cfg is not None:
-        return cfg, f"configs/dealers/{domain}.json"
+    saved = portal_config.load(domain)
+    family = None
     if cms:
         recipe = portal_config.load_family(cms)
         if recipe is not None and recipe.accepts(cms, cms_confidence or "medium"):
-            cfg = portal_config.instantiate_family(recipe, domain, country=country)
-            return cfg, f"configs/families/{recipe.family_key}.json"
+            family = recipe
+    if saved is not None and (family is None or not portal_config.is_minimal_auto(saved)):
+        return saved, f"configs/dealers/{domain}.json"
+    if family is not None:
+        cfg = portal_config.instantiate_family(family, domain, country=country)
+        return cfg, f"configs/families/{family.family_key}.json"
     return None, None
 
 
