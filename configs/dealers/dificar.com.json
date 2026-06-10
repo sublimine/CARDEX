@@ -1,0 +1,40 @@
+{
+  "source_key": "dificar.com",
+  "country": "ES",
+  "strategy": "sitemap_listing",
+  "version": 2,
+  "endpoints": {
+    "host": "www.dificar.com",
+    "listing_url_template": "https://www.dificar.com/coches-segunda-mano",
+    "sitemap_url": "https://www.dificar.com/sitemap.xml",
+    "detail_url_re": "^https?://www\\.dificar\\.com/coches-segunda-mano/(?:[^/?]+/)?[^/?]+-\\d+$",
+    "api_url": ""
+  },
+  "pagination": {
+    "page_size": 0,
+    "max_pages": 0,
+    "page_param": "page",
+    "cap_results": 0
+  },
+  "extraction": {
+    "method": "jsonld",
+    "field_map": {}
+  },
+  "drift_baseline": {
+    "extraction_method": "jsonld",
+    "expected_min_volume": 234,
+    "required_fields": [
+      "make",
+      "model",
+      "year",
+      "price"
+    ],
+    "min_nonnull_ratio": 0.7
+  },
+  "provenance": {
+    "verified_on": "dificar.com",
+    "verified_date": "2026-06-10",
+    "tool": "W2 recipe hunt - sitemap walk, V3 independent count = 234 ES PDPs",
+    "note": "detail_url_re pinned to ES-language PDPs; the /ca/ Catalan mirror is the SAME cars (dedup at W3, not a second recipe)."
+  }
+}
