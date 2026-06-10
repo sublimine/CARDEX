@@ -261,6 +261,16 @@ async def write_results(pg, results: list[ProbeResult]) -> None:
             "WHERE domain=$4 AND country=$5", payload)
 
 
+# DEAD-confirmation pass: a domain is only sentenced DEAD after failing TWICE, with a
+# drain pause and a gentle concurrency in between. Concurrent probe runs saturated the
+# local network (resolver/NAT) on 2026-06-10 and a single-attempt probe wrote hundreds
+# of FALSE DEADs (sampled 5/5 alive on re-check, both aiohttp and curl_cffi). Parked
+# domains are exempt — that verdict carries content evidence, not a timeout.
+DEAD_RECHECK_PAUSE_S = 8.0
+DEAD_RECHECK_CONCURRENCY = 4
+DEAD_REVIVAL_ALARM = 0.30   # >30% of first-pass DEADs reviving ⇒ the NETWORK was sick
+
+
 async def run_probes(session, rows: list[dict], concurrency: int, timeout: int) -> list[ProbeResult]:
     sem = asyncio.Semaphore(concurrency)
 
@@ -268,4 +278,27 @@ async def run_probes(session, rows: list[dict], concurrency: int, timeout: int) 
         async with sem:
             return await probe(session, row["domain"], row["country"], timeout=timeout)
 
-    return list(await asyncio.gather(*(one(r) for r in rows)))
+    results = list(await asyncio.gather(*(one(r) for r in rows)))
+
+    suspect = [i for i, r in enumerate(results) if r.tier == "DEAD" and not r.parked]
+    if not suspect:
+        return results
+    await asyncio.sleep(DEAD_RECHECK_PAUSE_S)
+    re_sem = asyncio.Semaphore(min(DEAD_RECHECK_CONCURRENCY, concurrency))
+
+    async def re_one(idx: int):
+        async with re_sem:
+            row = rows[idx]
+            return idx, await probe(session, row["domain"], row["country"], timeout=timeout)
+
+    revived = 0
+    for idx, second in await asyncio.gather(*(re_one(i) for i in suspect)):
+        if second.tier != "DEAD":
+            results[idx] = second
+            revived += 1
+    if revived and revived / len(suspect) > DEAD_REVIVAL_ALARM:
+        import logging
+        logging.getLogger(__name__).warning(
+            "DEAD-confirmation revived %d/%d first-pass DEADs — local network saturation "
+            "suspected; never run concurrent probe sweeps", revived, len(suspect))
+    return results

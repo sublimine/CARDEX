@@ -154,3 +154,60 @@ def test_legacy_jsonb_contract_unchanged(monkeypatch):
     assert result.vehicle_count_est == 12
     assert (row[0], row[2]) == ("T2", "found")          # tier + status mapping intact
     assert (row[3], row[4]) == ("dealer.example", "DE")  # WHERE-clause params intact
+
+
+# == DEAD-confirmation pass (anti false-DEAD, 2026-06-10) =========================
+class _FlakySession:
+    """Fails every request on the FIRST pass, answers normally afterwards -
+    models the transient local-network saturation that minted false DEADs."""
+
+    def __init__(self, fail_first_n: int = 2):
+        self.calls = 0
+        self.fail_first_n = fail_first_n
+
+    async def head(self, url: str, **kwargs) -> FakeResponse:
+        self.calls += 1
+        if self.calls <= self.fail_first_n:
+            raise OSError("simulated saturation")
+        return FakeResponse(status=200, url=url)
+
+    async def get(self, url: str, **kwargs) -> FakeResponse:
+        if url.endswith("/sitemap.xml"):
+            return FakeResponse(status=404, url=url)
+        return FakeResponse(status=200, url=url, body=b"<html>plain dealer home</html>")
+
+
+class _AlwaysDownSession:
+    async def head(self, url: str, **kwargs) -> FakeResponse:
+        raise OSError("really down")
+
+    async def get(self, url: str, **kwargs) -> FakeResponse:
+        raise OSError("really down")
+
+
+def test_dead_confirmation_revives_transient_failure(monkeypatch):
+    # Arrange - both schemes fail on pass 1 (2 head calls), revive on pass 2.
+    monkeypatch.setattr(ip, "is_safe_public_url", lambda url, resolve=True: True)
+    monkeypatch.setattr(ip, "DEAD_RECHECK_PAUSE_S", 0.0)
+    rows = [{"domain": "flaky.nl", "country": "NL"}]
+
+    # Act
+    results = asyncio.run(ip.run_probes(_FlakySession(fail_first_n=2), rows,
+                                        concurrency=2, timeout=1))
+
+    # Assert - the transient failure never reaches the DEAD verdict.
+    assert results[0].alive is True
+    assert results[0].tier != "DEAD"
+
+
+def test_dead_confirmation_keeps_truly_dead(monkeypatch):
+    # Arrange
+    monkeypatch.setattr(ip, "is_safe_public_url", lambda url, resolve=True: True)
+    monkeypatch.setattr(ip, "DEAD_RECHECK_PAUSE_S", 0.0)
+    rows = [{"domain": "gone.nl", "country": "NL"}]
+
+    # Act
+    results = asyncio.run(ip.run_probes(_AlwaysDownSession(), rows, concurrency=2, timeout=1))
+
+    # Assert - failing BOTH passes is what DEAD means.
+    assert results[0].tier == "DEAD"
