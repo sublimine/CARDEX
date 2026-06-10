@@ -1,0 +1,32 @@
+{
+  "family_key": "datamotive",
+  "kind": "family",
+  "version": 1,
+  "matches": {
+    "cms": "datamotive",
+    "min_confidence": "medium"
+  },
+  "strategy": "sitemap_listing",
+  "endpoints": {
+    "note": "Datamotive (Sulu) NL automotive SaaS. /sitemap.xml is a sitemapindex pointing to sitemaps/vehicle-N.xml (flat lists of vehicle detail URLs) + pages-1.xml. detail_url_re keeps only the /p/<slug>-<id> vehicle pages (optionally prefixed by /<brand>/<section>/) and drops the pages sitemap. Vehicle detail is static HTML with a single application/ld+json @graph whose Car node carries name/brand/VIN/mileageFromOdometer/modelDate + offers.price/priceCurrency. No JS/Playwright needed. Verified live 2026-06-10 on pouw.nl (extract_listing -> SEAT Arona VIN VSSZZZKJ0TR565306 33950 EUR).",
+    "sitemap_hint": "/sitemap.xml",
+    "catalog_path_tokens": [],
+    "detail_url_re": "^https?://[^/]+/(?:[^/]+/[^/]+/)?p/.+-\\d+(?:-\\d+)?$"
+  },
+  "extraction": {
+    "method": "jsonld",
+    "field_map": {}
+  },
+  "drift_baseline": {
+    "extraction_method": "jsonld",
+    "expected_min_volume": 1,
+    "required_fields": ["make", "model", "price"],
+    "min_nonnull_ratio": 0.7
+  },
+  "provenance": {
+    "verified_on_dealers": ["pouw.nl", "autohoogenboom.nl", "dewaalautogroep.nl", "huiskes-kokkeler.nl", "muntstad.nl"],
+    "verified_count": 5,
+    "verified_date": "2026-06-10",
+    "tool": "orchestrator live verify (curl_cffi chrome + extract_listing)"
+  }
+}

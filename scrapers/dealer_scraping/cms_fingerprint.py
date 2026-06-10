@@ -16,6 +16,8 @@ platforms are evaluated BEFORE the generic ``wordpress``/``symfony`` stacks, bec
 WordPress shell that embeds e.g. an izmocars or Modix widget must route to the
 widget's recipe, not the shell's):
 
+  0.  datamotive   'datamotive'/'sulu' literal | cloudimg.io + s3.eu-central-1 infra pair
+                   (NL dealer-group SaaS; sitemap vehicle-N.xml -> static JSON-LD @graph Car)
   1.  izmocars     'izmostatic' | 'data-izmo' | 'cdn.izmocars' in the HTML
   2.  dealer_com   'static.dealer.com' host (via detect_embedded_dms or literal) |
                    'data-dealer-com' attribute | 'ddc-'-prefixed CSS class
@@ -106,6 +108,16 @@ def fingerprint_cms(
     # Each family probe merges the reused helper verdict with the literal token so
     # one real-world marker never double-counts into a fake 'high'.
     families: tuple[tuple[str, tuple[tuple[str, bool], ...]], ...] = (
+        # Datamotive — Sulu-based automotive SaaS used by large NL dealer groups
+        # (Pon/Pouw, De Waal, Huiskes-Kokkeler...). Verified live 2026-06-10: home carries
+        # 'datamotive'/'sulu' literals and/or the cloudimg.io + s3.eu-central-1 infra pair;
+        # inventory is sitemaps/vehicle-N.xml -> static JSON-LD @graph Car. Requires a
+        # specific marker (literal OR the infra pair) so generic CDN sites don't false-fire.
+        ("datamotive", (
+            ("datamotive-literal", "datamotive" in low),
+            ("cloudimg-s3", "cloudimg.io" in low and "s3.eu-central-1" in low),
+            ("build-app-bundle", "/build/app" in low and ("cloudimg.io" in low or "datamotive" in low)),
+        )),
         ("izmocars", (
             ("izmostatic", "izmostatic" in low),
             ("data-izmo", "data-izmo" in low),

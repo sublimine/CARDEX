@@ -41,6 +41,38 @@ def test_detects_dealer_com_from_static_host_via_embedded_dms():
 
 
 @pytest.mark.unit
+def test_detects_datamotive_from_literal_plus_infra_pair():
+    # Arrange — a real Datamotive home carries the 'datamotive' literal AND the
+    # cloudimg.io + s3.eu-central-1 infra pair (verified live on pouw.nl 2026-06-10).
+    html = (
+        '<html><head><link href="/build/app/main.css"></head><body>'
+        '<img src="https://abcdefghij.cloudimg.io/v7/_datamotive-sulu-assets_/car.jpg">'
+        '<script src="https://s3.eu-central-1.amazonaws.com/datamotive-bundle.js"></script>'
+        "</body></html>"
+    )
+
+    # Act
+    verdict = fingerprint_cms(html)
+
+    # Assert
+    assert verdict.cms == "datamotive"
+    assert verdict.confidence == "high"  # literal + infra pair => >=2 signals
+
+
+@pytest.mark.unit
+def test_datamotive_does_not_fire_on_generic_cloudimg_cdn():
+    # Arrange — cloudimg.io alone (no s3 pair, no literal) is a generic image CDN and
+    # must NOT be misclassified as Datamotive (precision guard against false families).
+    html = '<img src="https://x.cloudimg.io/v7/pic.jpg">'
+
+    # Act
+    verdict = fingerprint_cms(html)
+
+    # Assert
+    assert verdict.cms != "datamotive"
+
+
+@pytest.mark.unit
 def test_detects_dealer_com_from_ddc_class_prefix():
     # Arrange
     html = '<div class="ddc-content ddc-wrapper">inventory</div>'
