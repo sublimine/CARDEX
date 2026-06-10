@@ -111,13 +111,14 @@ async def run(*, batches: int, size: int, conc: int, timeout: int, harvest: bool
             caged_new = 0; harvested = 0
             if harvest and t2:
                 hsem = asyncio.Semaphore(min(6, cur_conc))
-                async def _h(d, c):
+                async def _h(d, c, cms, conf):
                     nonlocal caged_new, harvested
                     async with hsem:
-                        hr = await harvest_t2_dealer(pg, rdb, d, c)
+                        hr = await harvest_t2_dealer(pg, rdb, d, c, cms=cms, cms_confidence=conf)
                         harvested += 1
                         caged_new += hr.get("new", 0)
-                await asyncio.gather(*(_h(r.domain, r.country) for r in t2))
+                await asyncio.gather(*(_h(r.domain, r.country, r.cms, r.cms_confidence)
+                                       for r in t2))
                 cum["harvested"] += harvested; cum["caged_new"] += caged_new
 
             f = await _funnel(pg)

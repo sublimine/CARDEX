@@ -1,10 +1,13 @@
 """T2 dealer inventory harvester — cage discovered dealer inventory as LIVE API pointers.
 
 For dealers the P2 probe flagged ``inventory_tier='T2'`` (real inventory, no deep defense),
-this enumerates their vehicle DETAIL URLs (sitemap-first via the existing
-``discover_detail_urls``), enriches a bounded sample with JSON-LD (``parse_listing``), and
-writes them to ``vehicle_index`` as rich pointers under a ``kind='dealer'`` source_entity —
-so each dealer shows up LIVE in ``/v1/entities/{ulid}/inventory`` with real price/year.
+this enumerates their vehicle DETAIL URLs (recipe-aware: a saved per-dealer recipe or an
+accepting FAMILY recipe routes through ``discover_dealer_urls`` — the CMS multiplier, which
+walks the recipe-pinned sitemap platforms like datamotive need; everything else keeps the
+generic ``discover_detail_urls`` cascade), enriches a bounded sample with JSON-LD
+(``parse_listing``), and writes them to ``vehicle_index`` as rich pointers under a
+``kind='dealer'`` source_entity — so each dealer shows up LIVE in
+``/v1/entities/{ulid}/inventory`` with real price/year.
 
 HTTP-only (curl_cffi, no browser), RAM-light (per-domain session reused then dropped). The
 fetch path is SSRF-guarded: ``discover_detail_urls`` runs same-site through ``net_guard``,
@@ -23,7 +26,7 @@ import time
 
 from scrapers.common.indexer import _ENRICH_STREAM, _hash_urls, country_currency
 from scrapers.dealer_scraping.discovery import discover_detail_urls
-from scrapers.dealer_scraping.harvester import make_dealer_fetcher
+from scrapers.dealer_scraping.harvester import discover_dealer_urls, make_dealer_fetcher
 from scrapers.pipeline.parse import parse_listing
 from scrapers.portals import config as portal_config
 from scrapers.portals.config import DriftBaseline, Endpoints, ExtractionConfig
@@ -127,14 +130,48 @@ def _strategy_for(method: str) -> str:
     return "jsonld_detail"   # catalog / catalog_follow / homepage links → JSON-LD on detail
 
 
+def _resolve_recipe(domain: str, country: str, cms: str,
+                    cms_confidence: str) -> tuple[ExtractionConfig | None, str | None]:
+    """Recipe routing for the cage path: ``(config, config_ref)`` or ``(None, None)``.
+
+    A saved per-dealer/curated recipe wins (no re-probe). Otherwise the probe's CMS
+    verdict routes through an ACCEPTING family recipe — instantiated as a resolve-time
+    view, never persisted, so the family file stays the single point of repair for the
+    whole platform (``config_ref`` carries that provenance on the entity row). When
+    neither fires the caller keeps today's generic cascade, byte-identical.
+    """
+    cfg = portal_config.load(domain)
+    if cfg is not None:
+        return cfg, f"configs/dealers/{domain}.json"
+    if cms:
+        recipe = portal_config.load_family(cms)
+        if recipe is not None and recipe.accepts(cms, cms_confidence or "medium"):
+            cfg = portal_config.instantiate_family(recipe, domain, country=country)
+            return cfg, f"configs/families/{recipe.family_key}.json"
+    return None, None
+
+
 async def harvest_t2_dealer(pg, rdb, domain: str, country: str, *,
+                            cms: str = "", cms_confidence: str = "",
                             sample_limit: int = ENRICH_SAMPLE, cap: int = DISCOVERY_CAP) -> dict:
-    """Detect→discover→enrich-sample→cage→save-config for one T2 dealer. Never raises."""
+    """Resolve-recipe→discover→enrich-sample→cage→save-config for one T2 dealer. Never raises.
+
+    ``cms``/``cms_confidence`` is the probe's stored platform verdict (from
+    ``discovery_candidates.inventory_signals``); it activates the family-recipe walk for
+    platforms the generic cascade under-discovers (e.g. datamotive ``/p/<slug>-<id>``
+    detail pages carry no vehicle path token → the generic sitemap layer keeps ~0).
+    """
     fetcher = make_dealer_fetcher()
     t0 = time.monotonic()
     try:
-        details, method, _home, _catalog = await discover_detail_urls(
-            domain, static_fetcher=fetcher, e07_fetcher=None, cap=cap)
+        cfg, config_ref = _resolve_recipe(domain, country, cms, cms_confidence)
+        if cfg is not None:
+            details = await discover_dealer_urls(
+                domain, cfg, static_fetcher=fetcher, e07_fetcher=None, cap=cap)
+            method = f"recipe:{cfg.strategy}"
+        else:
+            details, method, _home, _catalog = await discover_detail_urls(
+                domain, static_fetcher=fetcher, e07_fetcher=None, cap=cap)
         if not details:
             return {"domain": domain, "country": country, "method": method or "none",
                     "discovered": 0, "new": 0, "enriched": 0, "yields": False,
@@ -157,12 +194,16 @@ async def harvest_t2_dealer(pg, rdb, domain: str, country: str, *,
             except Exception:  # noqa: BLE001 — one bad page never aborts the dealer
                 pass
 
-        cfg = ExtractionConfig(
-            source_key=domain, country=(country or "")[:2], strategy=_strategy_for(method),
-            version=1, endpoints=Endpoints(host="www." + domain),
-            drift_baseline=DriftBaseline(expected_min_volume=max(1, len(details))))
-        portal_config.save(cfg, kind="dealer")
-        config_ref = f"configs/dealers/{domain}.json"
+        if config_ref is None:
+            # Generic-cascade dealer: materialize the minimal per-dealer recipe, as today.
+            # Resolved dealers never reach here — re-saving would clobber a richer saved
+            # recipe, and a family stays repaired in ONE file for the whole platform.
+            built = ExtractionConfig(
+                source_key=domain, country=(country or "")[:2], strategy=_strategy_for(method),
+                version=1, endpoints=Endpoints(host="www." + domain),
+                drift_baseline=DriftBaseline(expected_min_volume=max(1, len(details))))
+            portal_config.save(built, kind="dealer")
+            config_ref = f"configs/dealers/{domain}.json"
 
         caged = await cage_inventory(pg, rdb, domain, country, listings, config_ref=config_ref)
         return {"domain": domain, "country": country, "method": method,
