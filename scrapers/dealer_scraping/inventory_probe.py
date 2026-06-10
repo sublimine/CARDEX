@@ -267,7 +267,10 @@ async def write_results(pg, results: list[ProbeResult]) -> None:
 # of FALSE DEADs (sampled 5/5 alive on re-check, both aiohttp and curl_cffi). Parked
 # domains are exempt — that verdict carries content evidence, not a timeout.
 DEAD_RECHECK_PAUSE_S = 8.0
-DEAD_RECHECK_CONCURRENCY = 4
+DEAD_RECHECK_CONCURRENCY = 8    # gentle vs the 28+ that saturated; 4 made a dead-heavy
+                                # batch pay ~75min of re-check wall-clock (2026-06-10)
+DEAD_RECHECK_TIMEOUT_S = 8      # a LIVE host answers HEAD well under 8s; the first pass
+                                # already spent the full budget on these
 DEAD_REVIVAL_ALARM = 0.30   # >30% of first-pass DEADs reviving ⇒ the NETWORK was sick
 
 
@@ -289,7 +292,8 @@ async def run_probes(session, rows: list[dict], concurrency: int, timeout: int) 
     async def re_one(idx: int):
         async with re_sem:
             row = rows[idx]
-            return idx, await probe(session, row["domain"], row["country"], timeout=timeout)
+            return idx, await probe(session, row["domain"], row["country"],
+                                    timeout=min(timeout, DEAD_RECHECK_TIMEOUT_S))
 
     revived = 0
     for idx, second in await asyncio.gather(*(re_one(i) for i in suspect)):
