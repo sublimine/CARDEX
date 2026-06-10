@@ -153,7 +153,63 @@ def _parse_sitemap(sm_raw: str, signals: list, result: ProbeResult) -> None:
         signals.append(f"sitemap_urls:{url_count}")
 
 
-async def probe(session: aiohttp.ClientSession, domain: str, country: str,
+class _CurlBody:
+    def __init__(self, body: bytes):
+        self._body = body
+
+    async def iter_chunked(self, size: int):
+        for i in range(0, len(self._body), size):
+            yield self._body[i:i + size]
+
+
+class _CurlResponse:
+    def __init__(self, resp):
+        self.status = int(resp.status_code)
+        self.url = str(getattr(resp, "url", ""))
+        self.headers = dict(resp.headers)
+        self.content = _CurlBody(resp.content or b"")
+
+
+def _timeout_total(timeout) -> float:
+    total = getattr(timeout, "total", None)
+    if total:
+        return float(total)
+    try:
+        return float(timeout)
+    except (TypeError, ValueError):
+        return 15.0
+
+
+class CurlProbeSession:
+    """aiohttp-shaped probe transport over curl_cffi — the approved stack.
+
+    Long-lived aiohttp sessions degraded into false-DEAD epidemics on this host
+    (every process: batch 1 fine, batch 2+ rotten — survived public DNS, NAT-drain
+    pauses, small batches) while curl_cffi harvest processes ran clean ALL DAY on
+    the same network. The probe rides curl: one Chrome-impersonated AsyncSession
+    (session-level JA3, the fleet invariant). ``verify=False`` is deliberate for
+    CLASSIFICATION (long-tail dealers carry expired/self-signed certs; the real
+    harvest applies its own transport policy)."""
+
+    def __init__(self, *, impersonate: str = "chrome131"):
+        from curl_cffi.requests import AsyncSession
+        self._s = AsyncSession(impersonate=impersonate, verify=False)
+
+    async def head(self, url, *, timeout=None, ssl=None, allow_redirects=True, headers=None):
+        resp = await self._s.head(url, timeout=_timeout_total(timeout),
+                                  allow_redirects=allow_redirects, headers=headers)
+        return _CurlResponse(resp)
+
+    async def get(self, url, *, timeout=None, ssl=None, allow_redirects=True, headers=None):
+        resp = await self._s.get(url, timeout=_timeout_total(timeout),
+                                 allow_redirects=allow_redirects, headers=headers)
+        return _CurlResponse(resp)
+
+    async def close(self):
+        await self._s.close()
+
+
+async def probe(session, domain: str, country: str,
                 timeout: int = 15) -> ProbeResult:
     t0 = time.monotonic()
     result = ProbeResult(domain=domain, country=country)
