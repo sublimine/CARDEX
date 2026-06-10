@@ -20,6 +20,7 @@ from typing import Optional
 import aiohttp
 
 from scrapers.common.net_guard import is_safe_public_url
+from scrapers.dealer_scraping.cms_fingerprint import fingerprint_cms
 
 # ── signals & patterns (ported verbatim) ────────────────────────────────────────
 VEHICLE_URL_RE = re.compile(
@@ -69,6 +70,12 @@ class ProbeResult:
     tier: str = "DEAD"
     error: Optional[str] = None
     probe_ms: int = 0
+    # CMS-multiplier signal (additive): platform family fingerprinted from the SAME
+    # homepage body the probe already fetched (see detector.py for the pattern).
+    # Falsy defaults ("" / []) mean "no homepage HTML reached the fingerprint".
+    cms: str = ""                                    # family key ("" = none fired)
+    cms_confidence: str = ""                         # 'high' | 'medium' | 'unknown'
+    cms_signals: list = field(default_factory=list)  # concrete markers that fired
 
 
 async def _read_limited(resp: aiohttp.ClientResponse, max_bytes: int) -> bytes:
@@ -184,6 +191,14 @@ async def probe(session: aiohttp.ClientSession, domain: str, country: str,
                                                  "Accept-Language": "de,fr,es,nl,en;q=0.5"})
                 text = (await _read_limited(get, 30_720)).decode("utf-8", errors="replace")
                 _parse_homepage(text, signals, result)
+                # CMS-multiplier signal (additive, pure, zero extra I/O): fingerprint
+                # the platform family from the 30KB homepage body + response headers
+                # already in hand. 'unknown' maps to "" so cms stays falsy unless a
+                # real family fired. Tier classification below is NOT influenced.
+                cms_verdict = fingerprint_cms(text, headers=dict(get.headers))
+                result.cms = cms_verdict.cms if cms_verdict.cms != "unknown" else ""
+                result.cms_confidence = cms_verdict.confidence
+                result.cms_signals = list(cms_verdict.signals)
             except Exception:
                 pass
             if not result.parked:
@@ -234,7 +249,9 @@ async def write_results(pg, results: list[ProbeResult]) -> None:
     payload = [
         (r.tier, json.dumps({"signals": r.signals, "waf": r.waf, "http_status": r.http_status,
                              "vehicle_count_est": r.vehicle_count_est, "parked": r.parked,
-                             "final_url": r.final_url, "probe_ms": r.probe_ms, "error": r.error}),
+                             "final_url": r.final_url, "probe_ms": r.probe_ms, "error": r.error,
+                             "cms": r.cms, "cms_confidence": r.cms_confidence,
+                             "cms_signals": r.cms_signals}),
          _sitemap_status(r), r.domain, r.country)
         for r in results]
     async with pg.acquire() as conn:
