@@ -50,6 +50,10 @@ def make_live_seam(rdb, static_fetcher, e07_fetcher, *, redis_url: str, db_url: 
         s7 = await a7.run(
             database_url=db_url, redis_url=redis_url,
             limit=len(urls), batch_size=len(urls), block_ms=1500,
+            # Dealer cage path: register the dealer's source_entities row (idempotent)
+            # and set vehicles.entity_ulid in the INSERT, so the per-entity inventory
+            # API (entity_inventory view) serves the caged rows immediately.
+            entity_kind="dealer",
         )
         return s7.persisted
     return run

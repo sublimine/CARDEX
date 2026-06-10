@@ -11,6 +11,7 @@ Coverage:
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 from decimal import Decimal
 
@@ -310,3 +311,163 @@ def test_process_message_bad_json_acks_and_rejects():
 
     assert stats.rejected == 1
     assert rdb.acked == ["4-0"]
+
+
+# ── entity linking (dealer cage → source_entities + vehicles.entity_ulid) ────────
+def _se_ulid(key: str) -> str:
+    return "se_" + hashlib.md5(key.encode()).hexdigest()
+
+
+class EntityFakePool:
+    """asyncpg pool double that also answers ``fetchval`` — exercises entity linking.
+
+    ``schema``            → the to_regclass('source_entities') probe result.
+    ``entity_row_exists`` → whether the post-upsert SELECT resolves a ulid (False
+                            simulates the country-scope guard silently rejecting).
+    """
+
+    def __init__(self, *, schema: bool = True, entity_row_exists: bool = True):
+        self.executed: list = []        # ("fetchrow"|"execute", sql, args)
+        self.entity_upserts: list = []  # args of every source_entities INSERT
+        self._schema = schema
+        self._entity_row_exists = entity_row_exists
+
+    def acquire(self):
+        pool = self
+
+        class _Ctx:
+            async def __aenter__(self_inner):
+                return _EntityConn(pool)
+
+            async def __aexit__(self_inner, *a):
+                return False
+
+        return _Ctx()
+
+
+class _EntityConn:
+    def __init__(self, pool):
+        self._pool = pool
+
+    async def fetchval(self, sql, *args):
+        if "to_regclass" in sql:
+            return "source_entities" if self._pool._schema else None
+        # SELECT entity_ulid FROM source_entities WHERE source_key = $1
+        return _se_ulid(args[0]) if self._pool._entity_row_exists else None
+
+    async def fetchrow(self, sql, *args):
+        self._pool.executed.append(("fetchrow", sql, args))
+        return {
+            "vehicle_ulid": args[0], "thumb_url": None, "is_insert": True,
+            "price_dropped": False, "price_changed": False, "prev_price_eur": None,
+        }
+
+    async def execute(self, sql, *args):
+        if "source_entities" in sql:
+            self._pool.entity_upserts.append(args)
+        self._pool.executed.append(("execute", sql, args))
+
+
+@pytest.fixture
+def _fresh_entity_caches(monkeypatch):
+    """Isolate the process-local entity caches per test."""
+    monkeypatch.setattr(rc, "_entity_schema", None)
+    monkeypatch.setattr(rc, "_entity_cache", {})
+
+
+@pytest.mark.unit
+def test_entity_sql_derivation_and_portal_sql_untouched():
+    # Derived variant carries the link; the portal statement has ZERO entity surface.
+    assert "$31" in rc._INSERT_VEHICLE_ENTITY_SQL
+    assert "COALESCE(vehicles.entity_ulid, EXCLUDED.entity_ulid)" in rc._INSERT_VEHICLE_ENTITY_SQL
+    assert "entity_ulid" not in rc._INSERT_VEHICLE_SQL
+
+
+@pytest.mark.unit
+def test_persist_one_dealer_registers_entity_and_links(_fresh_entity_caches):
+    pool = EntityFakePool()
+    result, reason = _run(rc.persist_one(
+        pool, _payload(), source="pouwtest.nl", channel="SCRAPER",
+        rates={"EUR": Decimal(1)}, entity_kind="dealer",
+    ))
+    assert reason == "ok" and result is not None
+    # (a) the dealer entity was upserted (kind='dealer', country from the payload)
+    assert pool.entity_upserts == [("pouwtest.nl", "dealer", "NL")]
+    # (b) the vehicles INSERT used the entity variant with $31 = 'se_'||md5(source)
+    kind, sql, args = pool.executed[-1]
+    assert kind == "fetchrow" and sql is rc._INSERT_VEHICLE_ENTITY_SQL
+    assert len(args) == 31 and args[30] == _se_ulid("pouwtest.nl")
+
+
+@pytest.mark.unit
+def test_persist_one_default_keeps_portal_contract(_fresh_entity_caches):
+    # No entity_kind (every existing portal/script caller) → byte-identical behavior.
+    pool = EntityFakePool()
+    result, reason = _run(rc.persist_one(
+        pool, _payload(), source="gaspedaal.nl", channel="SCRAPER", rates={"EUR": Decimal(1)},
+    ))
+    assert reason == "ok" and result is not None
+    assert pool.entity_upserts == []
+    kind, sql, args = pool.executed[-1]
+    assert sql is rc._INSERT_VEHICLE_SQL and len(args) == 30
+
+
+@pytest.mark.unit
+def test_persist_one_dealer_unlinked_when_scope_guard_rejects(_fresh_entity_caches):
+    # Trigger silently skipped the entity row → fall back to the unlinked INSERT (FK-safe).
+    pool = EntityFakePool(entity_row_exists=False)
+    result, reason = _run(rc.persist_one(
+        pool, _payload(source_country="IT"), source="fuoriscope.it", channel="SCRAPER",
+        rates={"EUR": Decimal(1)}, entity_kind="dealer",
+    ))
+    assert reason == "ok" and result is not None
+    assert len(pool.entity_upserts) == 1          # upsert attempted (idempotent no-op)
+    kind, sql, args = pool.executed[-1]
+    assert sql is rc._INSERT_VEHICLE_SQL and len(args) == 30
+
+
+@pytest.mark.unit
+def test_persist_one_dealer_degrades_without_entity_schema(_fresh_entity_caches):
+    # Pre-migration envs: source_entities absent → no upsert, legacy SQL.
+    pool = EntityFakePool(schema=False)
+    result, reason = _run(rc.persist_one(
+        pool, _payload(), source="dealer.nl", channel="SCRAPER",
+        rates={"EUR": Decimal(1)}, entity_kind="dealer",
+    ))
+    assert reason == "ok" and result is not None
+    assert pool.entity_upserts == []
+    kind, sql, args = pool.executed[-1]
+    assert sql is rc._INSERT_VEHICLE_SQL and len(args) == 30
+
+
+@pytest.mark.unit
+def test_entity_upserted_once_per_source_per_process(_fresh_entity_caches):
+    # Steady state: the process cache keeps it at ONE upsert per source_key (MVCC-light).
+    pool = EntityFakePool()
+    for i in (1, 2, 3):
+        _run(rc.persist_one(
+            pool, _payload(source_url=f"https://dealer.nl/car/{i}"),
+            source="dealer.nl", channel="SCRAPER",
+            rates={"EUR": Decimal(1)}, entity_kind="dealer",
+        ))
+    assert len(pool.entity_upserts) == 1
+    assert all(a[30] == _se_ulid("dealer.nl") for k, s, a in pool.executed if k == "fetchrow")
+
+
+@pytest.mark.unit
+def test_unknown_source_never_registers_an_entity(_fresh_entity_caches):
+    pool = EntityFakePool()
+    result, reason = _run(rc.persist_one(
+        pool, _payload(), source="UNKNOWN", channel="SCRAPER",
+        rates={"EUR": Decimal(1)}, entity_kind="dealer",
+    ))
+    assert reason == "ok" and result is not None
+    assert pool.entity_upserts == []
+    kind, sql, args = pool.executed[-1]
+    assert sql is rc._INSERT_VEHICLE_SQL and len(args) == 30
+
+
+@pytest.mark.unit
+def test_run_rejects_invalid_entity_kind():
+    with pytest.raises(ValueError):
+        _run(rc.run(entity_kind="bogus"))   # fails fast, before any PG/Redis connect

@@ -23,6 +23,12 @@ Two deliberate, documented divergences from main.go:
     correctness without the extra dependency; RedisBloom stays a future fast-path.
   * Unknown-FX rows are stored with NULL ``gross_physical_cost_eur`` rather than
     dropped (main.go fails-closed). EUR markets — the bulk — are identical.
+
+One addition beyond main.go (per-entity inventory API): with ``entity_kind`` set
+(the dealer cage seam passes ``'dealer'``), each persisted row registers its
+``source_entities`` row idempotently and carries ``entity_ulid`` in the INSERT —
+the L2 mirror of what ``indexer.insert_batch`` already does for L1. Default
+``entity_kind=None`` keeps the portal contract byte-identical (rows unlinked).
 """
 from __future__ import annotations
 
@@ -101,6 +107,32 @@ RETURNING vehicle_ulid, thumb_url,
                      AND gross_physical_cost_eur <> (SELECT prev FROM prior)) AS price_changed,
           (SELECT prev FROM prior) AS prev_price_eur
 """
+
+# Entity-linking variant of the INSERT (per-entity inventory API, mirrors what
+# `indexer.insert_batch` does for vehicle_index/L1): same statement plus an
+# ``entity_ulid`` column bound as $31. Derived surgically from the base SQL so the
+# price/conflict logic can NEVER drift between the two variants. Used only when the
+# caller passed an ``entity_kind`` AND the entity row resolved (see ``_ensure_entity``);
+# the portal path keeps executing ``_INSERT_VEHICLE_SQL`` byte-identical.
+# On conflict the link only fills a NULL — an existing link is never stolen (a VIN
+# fingerprint can collide across platforms; first registered entity wins).
+_INSERT_VEHICLE_ENTITY_SQL = (
+    _INSERT_VEHICLE_SQL
+    .replace("    last_price_eur, price_drop_count\n",
+             "    last_price_eur, price_drop_count, entity_ulid\n", 1)
+    .replace("    $23, 0\n", "    $23, 0, $31\n", 1)
+    .replace(
+        "ON CONFLICT (fingerprint_sha256) DO UPDATE SET",
+        "ON CONFLICT (fingerprint_sha256) DO UPDATE SET\n"
+        "    entity_ulid             = COALESCE(vehicles.entity_ulid, EXCLUDED.entity_ulid),",
+        1,
+    )
+)
+if ("$31" not in _INSERT_VEHICLE_ENTITY_SQL
+        or "COALESCE(vehicles.entity_ulid, EXCLUDED.entity_ulid)" not in _INSERT_VEHICLE_ENTITY_SQL):
+    raise RuntimeError("_INSERT_VEHICLE_ENTITY_SQL derivation drifted from _INSERT_VEHICLE_SQL")
+
+_ENTITY_KINDS = ("platform", "dealer")
 
 
 # ── pure helpers ───────────────────────────────────────────────────────────────
@@ -233,6 +265,49 @@ def build_insert_args(
     return args, eur, fingerprint
 
 
+# ── entity linking (per-entity inventory API) ──────────────────────────────────
+# Process-local caches, same pattern as ``indexer._ensure_entity`` (L1): the entity
+# schema is probed once per process, and each source_key is ensured at most once —
+# the upsert is ON CONFLICT DO NOTHING, so re-running is a no-op anyway, but the
+# cache keeps the steady-state path at ZERO extra DB round-trips per message.
+_entity_schema: bool | None = None
+_entity_cache: dict[str, str | None] = {}
+
+
+async def _ensure_entity(conn, source_key: str, kind: str, country: str | None) -> str | None:
+    """Idempotently register the source entity; return its ulid, or None when unlinkable.
+
+    Port of ``indexer._ensure_entity`` (vehicle_index/L1) to the vehicles/L2 path, with
+    ``kind`` parameterized ('dealer' for the dealer cage seam, 'platform' otherwise).
+    The upsert is ON CONFLICT (source_key) DO NOTHING — an entity already registered
+    (e.g. by the L1 indexer or ``inventory_harvester``) is never mutated (MVCC doctrine).
+    Returns None — and the caller leaves ``vehicles.entity_ulid`` NULL — when the entity
+    schema is absent (pre-migration envs) or the country-scope guard trigger silently
+    rejected the row (out-of-scope country / banned TLD), so the FK always resolves.
+    """
+    global _entity_schema
+    if not source_key or source_key == "UNKNOWN":
+        return None
+    if source_key in _entity_cache:
+        return _entity_cache[source_key]
+    if _entity_schema is None:
+        _entity_schema = bool(await conn.fetchval("SELECT to_regclass('public.source_entities')"))
+    if not _entity_schema:
+        return None
+    await conn.execute(
+        "INSERT INTO source_entities (entity_ulid, source_key, kind, domain, country) "
+        "VALUES ('se_'||md5($1), $1, $2, $1, $3) ON CONFLICT (source_key) DO NOTHING",
+        source_key, kind, (country[:2] if country else None),
+    )
+    # Read back instead of assuming 'se_'||md5: the scope-guard trigger may have
+    # silently skipped the insert, and a pre-existing row is the link target anyway.
+    ulid = await conn.fetchval(
+        "SELECT entity_ulid FROM source_entities WHERE source_key = $1", source_key
+    )
+    _entity_cache[source_key] = ulid
+    return ulid
+
+
 class PersistResult:
     __slots__ = ("ulid", "fingerprint", "is_insert", "price_dropped", "price_changed", "prev_price_eur", "eur")
 
@@ -253,8 +328,16 @@ async def persist_one(
     source: str,
     channel: str,
     rates: dict[str, Decimal] | None = None,
+    entity_kind: str | None = None,
 ) -> tuple[PersistResult | None, str]:
-    """Validate, FX-gate, and upsert one vehicle. Returns (result, reason)."""
+    """Validate, FX-gate, and upsert one vehicle. Returns (result, reason).
+
+    ``entity_kind`` (None | 'platform' | 'dealer'): when set, the source entity is
+    registered idempotently BEFORE the vehicles upsert and ``vehicles.entity_ulid``
+    is set in the INSERT itself (no post-hoc UPDATE of non-mutated rows), so the
+    per-entity inventory API (``entity_inventory`` view) serves the rows immediately.
+    Default None keeps the historical portal contract byte-identical.
+    """
     reason = validate_payload(p)
     if reason:
         return None, reason
@@ -266,7 +349,14 @@ async def persist_one(
         return None, "outlier_price"
 
     async with pool.acquire() as conn:
-        row = await conn.fetchrow(_INSERT_VEHICLE_SQL, *args)
+        entity_ulid: str | None = None
+        if entity_kind is not None:
+            # args[7] is the normalized source_country ($8) — reuse it for the entity row.
+            entity_ulid = await _ensure_entity(conn, source, entity_kind, args[7])
+        if entity_ulid is not None:
+            row = await conn.fetchrow(_INSERT_VEHICLE_ENTITY_SQL, *args, entity_ulid)
+        else:
+            row = await conn.fetchrow(_INSERT_VEHICLE_SQL, *args)
         if row is None:
             return None, "insert_no_row"
         result = PersistResult(
@@ -377,7 +467,7 @@ def _decode(fields: dict) -> dict[str, str]:
 
 async def process_message(
     pool, rdb, msg_id: str, fields: dict, stats: RichStats,
-    *, rates: dict[str, Decimal] | None = None,
+    *, rates: dict[str, Decimal] | None = None, entity_kind: str | None = None,
 ) -> None:
     """Parse the C7 envelope, persist, emit downstream, ACK (at-least-once)."""
     f = _decode(fields)
@@ -395,7 +485,9 @@ async def process_message(
         stats.rejected += 1
         return
 
-    result, reason = await persist_one(pool, payload, source=source, channel=channel, rates=rates)
+    result, reason = await persist_one(
+        pool, payload, source=source, channel=channel, rates=rates, entity_kind=entity_kind,
+    )
     if result is None:
         await rdb.xack(INGESTION_STREAM, CONSUMER_GROUP, msg_id)
         stats.rejected += 1
@@ -418,7 +510,7 @@ async def ensure_group(rdb, stream: str, group: str) -> None:
 
 async def reclaim_pending(
     pool, rdb, stats: RichStats, *, consumer: str, idle_ms: int, count: int,
-    rates: dict[str, Decimal] | None = None,
+    rates: dict[str, Decimal] | None = None, entity_kind: str | None = None,
 ) -> int:
     """
     XAUTOCLAIM one batch of PEL entries idle > ``idle_ms`` and reprocess them.
@@ -443,7 +535,7 @@ async def reclaim_pending(
             await rdb.xack(INGESTION_STREAM, CONSUMER_GROUP, mid)
             continue
         try:
-            await process_message(pool, rdb, mid, flds, stats, rates=rates)
+            await process_message(pool, rdb, mid, flds, stats, rates=rates, entity_kind=entity_kind)
         except Exception:  # noqa: BLE001 — a still-bad reclaimed row must not kill the loop
             stats.errors += 1
             log.exception("rich_consumer reclaimed message failed id=%s", mid)
@@ -461,8 +553,17 @@ async def run(
     block_ms: int = 5_000,
     limit: int = 0,
     reclaim_idle_ms: int = RECLAIM_IDLE_MS,
+    entity_kind: str | None = None,
 ) -> RichStats:
-    """Consume ``stream:ingestion_raw`` and persist rich vehicle records to PG."""
+    """Consume ``stream:ingestion_raw`` and persist rich vehicle records to PG.
+
+    ``entity_kind``: None (default — historical portal contract, rows stay unlinked)
+    or one of ``_ENTITY_KINDS`` — then every persisted row registers its source entity
+    and carries ``entity_ulid`` (see ``persist_one``). The dealer cage seam passes
+    ``'dealer'``.
+    """
+    if entity_kind is not None and entity_kind not in _ENTITY_KINDS:
+        raise ValueError(f"entity_kind must be None or one of {_ENTITY_KINDS}, got {entity_kind!r}")
     pool = await indexer.make_pg(database_url)
     rdb = aioredis.from_url(redis_url or _REDIS_URL, decode_responses=True)
     rates = fx_eur.load_rates_from_env()
@@ -477,6 +578,7 @@ async def run(
             await reclaim_pending(
                 pool, rdb, stats, consumer=consumer,
                 idle_ms=reclaim_idle_ms, count=batch_size, rates=rates,
+                entity_kind=entity_kind,
             )
             if limit and stats.persisted >= limit:
                 break
@@ -491,7 +593,9 @@ async def run(
             for _stream, messages in resp:
                 for msg_id, fields in messages:
                     try:
-                        await process_message(pool, rdb, msg_id, fields, stats, rates=rates)
+                        await process_message(
+                            pool, rdb, msg_id, fields, stats, rates=rates, entity_kind=entity_kind,
+                        )
                     except Exception:  # noqa: BLE001 — one bad row must not kill the loop
                         stats.errors += 1
                         log.exception("rich_consumer message failed id=%s", msg_id)
