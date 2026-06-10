@@ -400,3 +400,33 @@ def test_craft_site_embedding_datamotive_forms_is_craftcms_not_datamotive():
     # Assert
     assert verdict.cms == "craftcms"
     assert "craft-cloud-cdn" in verdict.signals
+
+
+@pytest.mark.unit
+def test_detects_audi_partner_from_pss_and_one_audi():
+    # Arrange - Audi Partner SPA: PSS GraphQL host + one.audi asset host (verified
+    # live 2026-06-10 on bhg-buehl.audi). Stock is API-only; classification groups it.
+    html = (
+        "<script>window.cfg={scs:\"https://graphql.pss.audi.com/api/v1/dealers/DEUA26159/vcard\"}</script>"
+        "<link href=\"https://assets.one.audi/fa-nemo/x.css\">"
+    )
+
+    # Act
+    verdict = fingerprint_cms(html)
+
+    # Assert
+    assert verdict.cms == "audi_partner"
+    assert "pss-graphql" in verdict.signals
+    assert verdict.confidence == "high"  # pss host + one.audi assets = 2 signals
+
+
+@pytest.mark.unit
+def test_audi_partner_does_not_fire_on_plain_audi_mention():
+    # Arrange - a generic page mentioning Audi as a brand, no platform hosts.
+    html = "<h1>Wir verkaufen Audi, VW und Skoda Gebrauchtwagen</h1>"
+
+    # Act
+    verdict = fingerprint_cms(html)
+
+    # Assert
+    assert verdict.cms != "audi_partner"

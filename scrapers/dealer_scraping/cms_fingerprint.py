@@ -30,6 +30,9 @@ widget's recipe, not the shell's):
   5.  planetvo     'planetvo' | 'autralis' host (via detect_embedded_dms or literal)
   6.  incadea      'incadea' host (via detect_embedded_dms or literal; covers
                    'dms.incadea' — a subset token is not independent evidence)
+  6b. audi_partner 'graphql.pss.audi.com' | 'assets.one.audi'/'env-config.one.audi'
+                   (Audi OEM dealer-site platform; stock via PSS GraphQL API, NOT
+                   sitemap — classification only, harvest is an API frente)
   7.  autosociaal  'cdn.autosociaal.nl' host | '/dtweb/' bundle path + autosociaal
                    (NL dealer-site SaaS — the WHOLE frontend ships from its CDN;
                    verified live 2026-06-10 on autobedrijfvanweele.nl)
@@ -169,6 +172,16 @@ def fingerprint_cms(
         )),
         ("incadea", (
             ("incadea-host", dms == "incadea" or "incadea" in low),
+        )),
+        # Audi Partner (one.audi / PSS) — the OEM's dealer-site platform: hundreds of
+        # German+EU Audi dealers on a byte-identical SPA. Stock is NOT in the sitemap
+        # (service pages only); it loads from the PSS GraphQL API keyed by a dealer id
+        # extractable from the home HTML (e.g. graphql.pss.audi.com/api/v1/dealers/
+        # DEUA26159/...). Classification-only here — the harvest is an API frente
+        # (E-DMS, see recipes/RESEARCH_audi_partner.md), not a sitemap recipe.
+        ("audi_partner", (
+            ("pss-graphql", "graphql.pss.audi.com" in low),
+            ("one-audi-assets", "assets.one.audi" in low or "env-config.one.audi" in low),
         )),
         # Autosociaal — NL dealer-site SaaS: the whole frontend (CSS/JS/images) ships
         # from cdn.autosociaal.nl/dtweb/. 7/122 NL unknowns shared it (mining
