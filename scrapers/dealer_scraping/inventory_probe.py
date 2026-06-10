@@ -273,6 +273,16 @@ DEAD_RECHECK_TIMEOUT_S = 8      # a LIVE host answers HEAD well under 8s; the fi
                                 # already spent the full budget on these
 DEAD_REVIVAL_ALARM = 0.30   # >30% of first-pass DEADs reviving ⇒ the NETWORK was sick
 
+# Window circuit-breaker: per-domain re-confirmation cannot detect a SICK WINDOW (the
+# re-check runs inside the same sick minutes — CH 2026-06-10 wrote 1.430 DEADs at 97%
+# rate and 26/30 sampled ALIVE right after). When a batch is overwhelmingly DEAD,
+# re-probe a small sample after a pause: if even the sample revives, the WINDOW — not
+# the domains — was sick, so the DEAD verdicts must not be written at all.
+WINDOW_SICK_DEAD_RATE = 0.85
+WINDOW_SICK_SAMPLE = 20
+WINDOW_SICK_MIN_BATCH = 100
+WINDOW_SICK_REVIVAL = 0.30
+
 
 async def run_probes(session, rows: list[dict], concurrency: int, timeout: int) -> list[ProbeResult]:
     sem = asyncio.Semaphore(concurrency)
@@ -306,3 +316,46 @@ async def run_probes(session, rows: list[dict], concurrency: int, timeout: int) 
             "DEAD-confirmation revived %d/%d first-pass DEADs — local network saturation "
             "suspected; never run concurrent probe sweeps", revived, len(suspect))
     return results
+
+
+async def quarantine_sick_window(
+    session, rows: list[dict], results: list[ProbeResult], *,
+    timeout: int = DEAD_RECHECK_TIMEOUT_S,
+) -> tuple[list[ProbeResult], bool]:
+    """Window circuit-breaker — returns ``(results_to_write, window_sick)``.
+
+    On an overwhelmingly-DEAD batch, re-probes a sample of the DEADs after a drain
+    pause (gentle conc 2). If the sample revives beyond ``WINDOW_SICK_REVIVAL`` the
+    whole window is condemned: every unrevived non-parked DEAD is DROPPED from the
+    write set (the rows stay ``pending`` for a healthy window) and the caller must
+    stop probing. Healthy-but-truly-dead universes (a registry of defunct companies)
+    fail the revival test and keep today's behavior.
+    """
+    import logging
+    log = logging.getLogger(__name__)
+    dead_idx = [i for i, r in enumerate(results) if r.tier == "DEAD" and not r.parked]
+    if len(results) < WINDOW_SICK_MIN_BATCH or \
+            len(dead_idx) / len(results) <= WINDOW_SICK_DEAD_RATE:
+        return results, False
+    await asyncio.sleep(DEAD_RECHECK_PAUSE_S)
+    sample = dead_idx[:WINDOW_SICK_SAMPLE]   # claim order is md5-spread ⇒ unbiased
+    sem = asyncio.Semaphore(2)
+
+    async def one(i: int):
+        async with sem:
+            row = rows[i]
+            return i, await probe(session, row["domain"], row["country"], timeout=timeout)
+
+    revived = 0
+    for i, second in await asyncio.gather(*(one(i) for i in sample)):
+        if second.tier != "DEAD":
+            results[i] = second
+            revived += 1
+    if revived / len(sample) <= WINDOW_SICK_REVIVAL:
+        return results, False
+    keep = [r for r in results if r.tier != "DEAD" or r.parked]
+    log.error(
+        "SICK WINDOW: batch DEAD-rate %.0f%% but %d/%d sampled DEADs revived — "
+        "dropping %d unwritten DEAD verdicts (rows stay pending) and signaling abort",
+        100 * len(dead_idx) / len(results), revived, len(sample), len(results) - len(keep))
+    return keep, True

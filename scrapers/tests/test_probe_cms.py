@@ -211,3 +211,89 @@ def test_dead_confirmation_keeps_truly_dead(monkeypatch):
 
     # Assert - failing BOTH passes is what DEAD means.
     assert results[0].tier == "DEAD"
+
+
+# == window circuit-breaker (sick-network quarantine, 2026-06-10) =================
+class _SickThenHealthySession:
+    """Every domain fails during the 'sick window' (first 2 passes per domain =
+    4 head calls each via run_probes) but answers on the breaker's sample re-probe.
+    Modeled by a global call budget: first N head calls fail, later ones succeed."""
+
+    def __init__(self, sick_calls: int):
+        self.calls = 0
+        self.sick_calls = sick_calls
+
+    async def head(self, url: str, **kwargs) -> FakeResponse:
+        self.calls += 1
+        if self.calls <= self.sick_calls:
+            raise OSError("sick window")
+        return FakeResponse(status=200, url=url)
+
+    async def get(self, url: str, **kwargs) -> FakeResponse:
+        if url.endswith("/sitemap.xml"):
+            return FakeResponse(status=404, url=url)
+        return FakeResponse(status=200, url=url, body=b"<html>home</html>")
+
+
+def _mkrows(n: int) -> list[dict]:
+    return [{"id": i, "domain": f"d{i}.ch", "country": "CH"} for i in range(n)]
+
+
+def test_sick_window_quarantines_dead_verdicts(monkeypatch):
+    # Arrange - 120 domains, ALL fail both probe passes (sick window), then the
+    # network heals exactly when the breaker samples.
+    monkeypatch.setattr(ip, "is_safe_public_url", lambda url, resolve=True: True)
+    monkeypatch.setattr(ip, "DEAD_RECHECK_PAUSE_S", 0.0)
+    rows = _mkrows(120)
+    session = _SickThenHealthySession(sick_calls=120 * 4)
+
+    async def scenario():
+        results = await ip.run_probes(session, rows, concurrency=10, timeout=1)
+        assert all(r.tier == "DEAD" for r in results)  # the sick window wrote-to-be
+        return await ip.quarantine_sick_window(session, rows, results, timeout=1)
+
+    # Act
+    keep, sick = asyncio.run(scenario())
+
+    # Assert - window condemned: unrevived DEADs dropped from the write set.
+    assert sick is True
+    assert all(r.tier != "DEAD" for r in keep)
+    assert len(keep) < 120
+
+
+def test_truly_dead_universe_passes_breaker(monkeypatch):
+    # Arrange - a registry of defunct companies: dead in BOTH passes AND in the
+    # breaker sample. The breaker must not block honest DEAD verdicts.
+    monkeypatch.setattr(ip, "is_safe_public_url", lambda url, resolve=True: True)
+    monkeypatch.setattr(ip, "DEAD_RECHECK_PAUSE_S", 0.0)
+    rows = _mkrows(120)
+    session = _AlwaysDownSession()
+
+    async def scenario():
+        results = await ip.run_probes(session, rows, concurrency=10, timeout=1)
+        return await ip.quarantine_sick_window(session, rows, results, timeout=1)
+
+    # Act
+    keep, sick = asyncio.run(scenario())
+
+    # Assert
+    assert sick is False
+    assert len(keep) == 120 and all(r.tier == "DEAD" for r in keep)
+
+
+def test_healthy_mixed_batch_never_triggers_breaker(monkeypatch):
+    # Arrange - DEAD-rate far under the threshold: breaker is a no-op.
+    monkeypatch.setattr(ip, "is_safe_public_url", lambda url, resolve=True: True)
+    monkeypatch.setattr(ip, "DEAD_RECHECK_PAUSE_S", 0.0)
+    rows = _mkrows(120)
+    session = _SickThenHealthySession(sick_calls=0)   # everything alive
+
+    async def scenario():
+        results = await ip.run_probes(session, rows, concurrency=10, timeout=1)
+        return await ip.quarantine_sick_window(session, rows, results, timeout=1)
+
+    # Act
+    keep, sick = asyncio.run(scenario())
+
+    # Assert
+    assert sick is False and len(keep) == 120

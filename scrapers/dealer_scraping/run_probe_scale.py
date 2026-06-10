@@ -26,7 +26,8 @@ import redis.asyncio as aioredis
 
 from scrapers.dealer_scraping.inventory_harvester import harvest_t2_dealer
 from scrapers.dealer_scraping.inventory_probe import (IN_SCOPE_SQL, claim_pending_batch,
-                                                      run_probes, write_results)
+                                                      quarantine_sick_window, run_probes,
+                                                      write_results)
 
 _SCOPE_COUNTRIES = "('ES','FR','DE','BE','NL','CH')"
 
@@ -99,7 +100,12 @@ async def run(*, batches: int, size: int, conc: int, timeout: int, harvest: bool
 
             t_b = time.monotonic()
             results = await run_probes(session, rows, cur_conc, timeout)
+            results, window_sick = await quarantine_sick_window(session, rows, results)
             await write_results(pg, results)
+            if window_sick:
+                log.error("aborting sweep — sick network window; unwritten rows stay "
+                          "pending for a healthy retry")
+                break
             t1 = [r for r in results if r.tier == "T1"]
             t2 = [r for r in results if r.tier == "T2"]
             t3 = [r for r in results if r.tier == "T3"]
