@@ -16,6 +16,9 @@ platforms are evaluated BEFORE the generic ``wordpress``/``symfony`` stacks, bec
 WordPress shell that embeds e.g. an izmocars or Modix widget must route to the
 widget's recipe, not the shell's):
 
+  -1. craftcms     'cdn.craft.cloud' host | 'data-craft' attribute — before datamotive
+                   because a Craft site embedding datamotive FORMS false-fires the
+                   datamotive literal (wealer.nl, caught live 2026-06-10)
   0.  datamotive   'datamotive'/'sulu' literal | cloudimg.io + s3.eu-central-1 infra pair
                    (NL dealer-group SaaS; sitemap vehicle-N.xml -> static JSON-LD @graph Car)
   1.  izmocars     'izmostatic' | 'data-izmo' | 'cdn.izmocars' in the HTML
@@ -124,6 +127,14 @@ def fingerprint_cms(
     # Each family probe merges the reused helper verdict with the literal token so
     # one real-world marker never double-counts into a fake 'high'.
     families: tuple[tuple[str, tuple[tuple[str, bool], ...]], ...] = (
+        # Craft CMS — evaluated BEFORE datamotive: wealer.nl (Craft on craft.cloud)
+        # embeds a "datamotive-forms-*.js" asset whose filename literal false-fired
+        # the datamotive probe (caught live 2026-06-10). cdn.craft.cloud is Craft's
+        # official hosting — unambiguous.
+        ("craftcms", (
+            ("craft-cloud-cdn", "cdn.craft.cloud" in low),
+            ("data-craft", "data-craft" in low),
+        )),
         # Datamotive — Sulu-based automotive SaaS used by large NL dealer groups
         # (Pon/Pouw, De Waal, Huiskes-Kokkeler...). Verified live 2026-06-10: home carries
         # 'datamotive'/'sulu' literals and/or the cloudimg.io + s3.eu-central-1 infra pair;

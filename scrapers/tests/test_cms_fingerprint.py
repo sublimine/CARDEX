@@ -383,3 +383,20 @@ def test_drupal_beats_generic_wordpress_order_but_loses_to_specific_saas():
 
     # Assert
     assert verdict.cms == "autosociaal"
+
+
+@pytest.mark.unit
+def test_craft_site_embedding_datamotive_forms_is_craftcms_not_datamotive():
+    # Arrange - wealer.nl (live 2026-06-10): Craft CMS on craft.cloud loading a
+    # "datamotive-forms-*.js" asset; the filename literal must not steal the verdict.
+    html = (
+        "<link href=\"https://cdn.craft.cloud/9176/builds/a1eb/artifacts/dist/assets/"
+        "datamotive-forms-D_i6ap0L.js\" rel=\"modulepreload\">"
+    )
+
+    # Act
+    verdict = fingerprint_cms(html)
+
+    # Assert
+    assert verdict.cms == "craftcms"
+    assert "craft-cloud-cdn" in verdict.signals
