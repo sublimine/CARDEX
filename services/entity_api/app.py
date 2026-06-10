@@ -78,11 +78,10 @@ async def list_entities(
              "($4::text IS NULL OR source_key > $4)"]
     sql = f"""
       WITH cnt AS (
-        SELECT entity_ulid, count(*) AS n FROM (
-          SELECT entity_ulid FROM vehicle_index WHERE entity_ulid IS NOT NULL
-          UNION ALL
-          SELECT entity_ulid FROM vehicles WHERE entity_ulid IS NOT NULL
-        ) z GROUP BY entity_ulid
+        -- entity_inventory is THE served truth (0007 dedups pointer/rich): the catalog
+        -- count must match what /entities/{{ulid}}/inventory actually serves, never a
+        -- parallel raw-union count that double-serves enriched cars.
+        SELECT entity_ulid, count(*) AS n FROM entity_inventory GROUP BY entity_ulid
       )
       SELECT se.entity_ulid, se.source_key, se.kind, se.domain, se.country,
              se.defense_tier, se.waf, se.config_ref, COALESCE(c.n, 0) AS inventory_count
