@@ -148,6 +148,14 @@ async def run(*, batches: int, size: int, conc: int, timeout: int, harvest: bool
 
 
 if __name__ == "__main__":
+    # Windows default stdout is cp1252, which cannot encode the unicode arrows used
+    # in the session summary -> force utf-8 so the run never crashes on its own output.
+    import sys
+    for _stream in (sys.stdout, sys.stderr):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
     ap = argparse.ArgumentParser()
     ap.add_argument("--batches", type=int, default=3)
     ap.add_argument("--size", type=int, default=1000)
