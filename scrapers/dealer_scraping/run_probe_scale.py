@@ -67,7 +67,7 @@ async def _funnel(pg) -> dict:
 
 
 async def run(*, batches: int, size: int, conc: int, timeout: int, harvest: bool,
-              country: str | None = None,
+              country: str | None = None, batch_pause_s: float = 45.0,
               ram_soft: int = RAM_SOFT_MB, ram_hard: int = RAM_HARD_MB) -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     pg = await asyncpg.create_pool(PG_DSN, min_size=2, max_size=8)
@@ -141,6 +141,12 @@ async def run(*, batches: int, size: int, conc: int, timeout: int, harvest: bool
             log.info("FUNNEL acc | with_web=%(with_web)d → classified=%(classified)d → "
                      "T2=%(t2)d (+T1=%(t1)d) → caged_pointers=%(caged_pointers)d "
                      "(dealer_entities=%(dealer_entities)d) | pending=%(pending)d", f)
+            # NAT-drain pause: dead-dense batches park hundreds of SYN_SENT entries in
+            # the consumer router's NAT table (timeouts × retries); back-to-back batches
+            # compound until EVERY connect fails and the batch writes false DEADs (the
+            # 2026-06-10 epidemics survived even public DNS). Let the table drain.
+            if b < batches and batch_pause_s > 0:
+                await asyncio.sleep(batch_pause_s)
 
         # final projection
         f = await _funnel(pg)
@@ -179,7 +185,9 @@ if __name__ == "__main__":
     ap.add_argument("--country", default=None, help="scope probe to one country (e.g. NL, CH)")
     ap.add_argument("--ram-soft", type=int, default=RAM_SOFT_MB, help="MB free below which conc drops")
     ap.add_argument("--ram-hard", type=int, default=RAM_HARD_MB, help="MB free below which it pauses/aborts")
+    ap.add_argument("--batch-pause", type=float, default=45.0,
+                    help="seconds of NAT-drain pause between batches (0 disables)")
     a = ap.parse_args()
     asyncio.run(run(batches=a.batches, size=a.size, conc=a.conc, timeout=a.timeout, country=a.country,
-                    ram_soft=a.ram_soft, ram_hard=a.ram_hard,
+                    ram_soft=a.ram_soft, ram_hard=a.ram_hard, batch_pause_s=a.batch_pause,
                     harvest=not a.no_harvest))
