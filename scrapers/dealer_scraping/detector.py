@@ -24,6 +24,7 @@ import logging
 from dataclasses import dataclass, field
 
 from scrapers.common.net_guard import is_safe_public_url
+from scrapers.dealer_scraping.cms_fingerprint import fingerprint_cms
 from scrapers.dealer_scraping.detector_helpers import (  # re-exported for callers/tests
     classify_non_yield,
     detect_embedded_dms,
@@ -71,6 +72,11 @@ class DetectionResult:
     proof: dict | None = None           # extracted sample fields, evidence it yields
     notes: tuple[str, ...] = field(default_factory=tuple)
     classification: str = ""            # strategy when ok, else by-cause label (report)
+    # CMS-multiplier signal (additive): the platform family fingerprinted from the
+    # SAME homepage fetch the probe already does. Appended LAST with "" defaults so
+    # every existing positional/keyword constructor keeps working unchanged.
+    cms: str = ""                       # cms_fingerprint family key ("" = none fired)
+    cms_confidence: str = ""            # 'high' | 'medium' ("" when cms is empty)
 
     @property
     def ok(self) -> bool:
@@ -157,6 +163,14 @@ async def detect_web_type(
     spa = detect_spa_markers(home_html)
     probe_urls = detail_urls[:sample_n]
 
+    # CMS-multiplier signal (additive, pure, zero extra I/O): fingerprint the platform
+    # family from the homepage HTML already in hand. 'unknown' maps to "" so the new
+    # fields stay falsy unless a real family fired. The detection verdict below is
+    # NOT influenced by this — the signal only rides along on the result.
+    verdict = fingerprint_cms(home_html) if home_html else None
+    cms = verdict.cms if verdict is not None and verdict.cms != "unknown" else ""
+    cms_confidence = verdict.confidence if cms and verdict is not None else ""
+
     # STATIC extraction verdict
     for u in probe_urls:
         rec, reason = await extract_listing(u, static_fetcher, country=country, source_domain=domain)
@@ -167,6 +181,7 @@ async def detect_web_type(
                 catalog_url=catalog_url, spa_markers=spa, sample_urls=tuple(probe_urls),
                 proof=_record_proof(rec), notes=tuple(notes),
                 classification=_strategy_for_static(method),
+                cms=cms, cms_confidence=cms_confidence,
             )
         notes.append(f"static:{reason}")
 
@@ -183,6 +198,7 @@ async def detect_web_type(
                     catalog_url=catalog_url, spa_markers=spa, sample_urls=tuple(probe_urls),
                     proof=_record_proof(rec), notes=tuple(notes),
                     classification="playwright_meta",
+                    cms=cms, cms_confidence=cms_confidence,
                 )
             notes.append(f"e07:{reason}")
 
@@ -192,4 +208,5 @@ async def detect_web_type(
         spa_markers=spa, sample_urls=tuple(probe_urls), proof=None,
         notes=tuple(notes) or ("no_listing_urls",),
         classification=classify_non_yield(home_html, detail_urls, spa),
+        cms=cms, cms_confidence=cms_confidence,
     )

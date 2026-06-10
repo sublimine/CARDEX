@@ -145,6 +145,34 @@ def make_dealer_fetcher(*, impersonate: str = "chrome131", timeout: float = 20.0
 
 
 # ── config resolution (point 1+2): load curated/dealer recipe, else detect+save ───
+def _family_config(
+    detection: DetectionResult, domain: str, country: str
+) -> ExtractionConfig | None:
+    """
+    The CMS-multiplier shortcut: when the probe fingerprinted a known platform family
+    AND a family recipe accepts that ``(cms, cms_confidence)`` verdict, instantiate
+    the recipe with THIS dealer's host — skipping the per-dealer ``build_config``.
+
+    Returns None whenever no cms fired, no family file exists, or the recipe's
+    confidence floor rejects the verdict — so the caller's behavior stays IDENTICAL
+    to the pre-family flow (opt-in by the mere existence of an accepting family).
+    The instantiated config is a resolve-time view and is NOT persisted: the family
+    file stays the single point of repair for the whole platform.
+    """
+    if not detection.cms:
+        return None
+    recipe = portal_config.load_family(detection.cms)
+    if recipe is None or not recipe.accepts(detection.cms, detection.cms_confidence):
+        return None
+    cfg = portal_config.instantiate_family(recipe, domain, country=country)
+    log.info(
+        "family recipe %s v%d accepted for %s (cms=%s, confidence=%s) — "
+        "using instantiated family config, per-dealer build_config skipped",
+        recipe.family_key, recipe.version, domain, detection.cms, detection.cms_confidence,
+    )
+    return cfg
+
+
 async def resolve_or_detect_config(
     domain: str,
     country: str,
@@ -157,15 +185,30 @@ async def resolve_or_detect_config(
     Return ``(config, detection, newly_detected)`` for a dealer.
 
     A curated portal recipe or a previously-saved dealer recipe wins (no re-probe).
-    Otherwise probe STATIC first (cheap); only if that yields nothing AND a browser
-    is available do we re-probe with render — so detection pays for E07 only when it
-    must. A proven config is persisted to the versioned dealer store (point 2).
+    Otherwise probe STATIC first (cheap); when the probe fingerprints a known CMS and
+    an accepting family recipe exists, the instantiated family config is used directly
+    (the CMS multiplier — skips both the E07 re-probe and ``build_config``; it is a
+    resolve-time view, never persisted, so ``newly`` stays False). Failing that, only
+    if static yields nothing AND a browser is available do we re-probe with render —
+    so detection pays for E07 only when it must. A proven per-dealer config is
+    persisted to the versioned dealer store (point 2).
     """
     cfg = portal_config.load(domain)
     if cfg is not None:
         return cfg, None, False
 
     detection = await detect_web_type(domain, country=country, static_fetcher=static_fetcher, e07_fetcher=None)
+
+    # Family shortcut (additive, opt-in): the cms verdict comes from the homepage HTML,
+    # so it is already final after the static probe — an accepting family resolves here
+    # and the expensive E07 re-probe + per-dealer build_config are skipped entirely.
+    family_cfg = _family_config(detection, domain, country)
+    if family_cfg is not None:
+        detection = dataclasses.replace(
+            detection, notes=detection.notes + (f"family:{detection.cms}",)
+        )
+        return family_cfg, detection, False
+
     if not detection.ok and e07_fetcher is not None:
         detection = await detect_web_type(
             domain, country=country, static_fetcher=static_fetcher, e07_fetcher=e07_fetcher
