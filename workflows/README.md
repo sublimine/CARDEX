@@ -60,6 +60,19 @@ Cada dealer es una unidad independiente. Un Tier-1 atascado o un dominio sin
 resolver se marca (`ddg_error`, `inventory_tier`, cuarentena en `state/SOURCES.md`)
 y la línea sigue. Paralelo sin dependencia, cascada con ella.
 
+### D5 — El sitemap DESCUBRE; el listado/total-declarado dice qué está DISPONIBLE
+**Hallazgo de la Inquisición, 2026-06-10 (dificar.com):** el sitemap listaba 235
+PDPs pero el catálogo paginado y el total declarado por el portal coincidían en
+**123**. Los 112 de más eran coches **VENDIDOS/RESERVADOS** cuya página seguía
+devolviendo 200. Consecuencia: contar el stock por el sitemap **sobrecuenta** —
+mezcla vendidos con disponibles. Por tanto:
+- el **sitemap** es superficie de DESCUBRIMIENTO de URLs (enumera todo),
+- la **verdad del stock disponible** es el LISTADO paginado / total declarado,
+- **V3 sólo PASA si las dos vías concuerdan**; si divergen, el dealer NO PASA y
+  entra a filtrado-de-disponibilidad. CARDEX no sirve un coche vendido como vivo.
+Esto invalida como "disponible" parte del inventario cageado hoy por sitemap (ver
+`state/GAPS.md` H6) — la Inquisición existe precisamente para cazar esto.
+
 ## Modelo de orquestación (jerarquía militar)
 
 ```

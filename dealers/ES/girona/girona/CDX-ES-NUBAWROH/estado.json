@@ -2,11 +2,11 @@
   "gates": {
     "W1": "PASA",
     "W2": "PASA",
-    "W3": "PASA",
+    "W3": "NO_PASA",
     "W4": "PASA"
   },
   "served": 235,
-  "visible_independiente": 235,
+  "visible_independiente": 123,
   "structured_checksum_sha256": "236eb759d24ea0e60f5601f19567b2c375c75c9db580343b95edc2ae04895ee4",
   "verified_date": "2026-06-10"
 }

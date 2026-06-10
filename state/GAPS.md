@@ -41,6 +41,22 @@
   registrada en `recipes/RESEARCH_{portal}.md`. Gate de gasto (proxies) = decisión owner.
 - **Fecha objetivo:** tras consolidar el long-tail (mayor ROI inmediato en discovery).
 
+## H6 — El stock cageado por sitemap incluye coches VENDIDOS (CRÍTICO, cazado por la Inquisición)
+- **Qué:** el sitemap de un dealer lista PDPs de coches vendidos/reservados cuya
+  página sigue dando 200. Contar por sitemap **sobrecuenta el stock disponible**.
+  Caso probado: dificar.com → sitemap 235, disponible real 123 (total declarado +
+  listado paginado coinciden); 4/4 PDPs solo-en-sitemap muestreados = "vendido".
+  **Implicación:** los ~66.594 punteros "servidos" hoy (cageados por sitemap)
+  incluyen una fracción de vendidos — el inventario DISPONIBLE real es menor.
+- **Detección:** ya enforced — `pipeline` V3 exige que sitemap y listado concuerden;
+  divergencia → W3 NO PASA. La Inquisición refuta el número (verdict REFUTED).
+- **Plan de fix (W3 availability filter):** cosechar desde el LISTADO paginado (set
+  vivo) en vez del sitemap cuando divergen; o marcar GONE los PDPs "vendido/
+  reservado". Re-cosechar el inventario ya cageado con el filtro → corregir el conteo
+  servido a sólo-disponible. Re-derivar `state/COVERAGE.md` tras el barrido de fix.
+- **Fecha objetivo:** inmediato — es el siguiente bloque de código (precede a escalar
+  el ejército, para no multiplicar inventario inflado).
+
 ## Método — fallo reconocido del Director (2026-06-10)
 Se trabajó como operario secuencial en vez de desplegar el ejército de agentes, y
 se priorizó cosechar lo descubierto sobre AMPLIAR el descubrimiento (el cuello real).
