@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SYNTHETIC fixture (NOT a live capture - 3-request budget spent on p1/p2/gvt).
+     <loc> URLs are the 27 REAL PDP deep-links from the real p2 capture
+     (2026-06-11) plus the real nav static pages. Flat urlset format per
+     lieutenant live verification 2026-06-10: sitemap.xml == live listing. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://janvandijk.nl/</loc></url>
+  <url><loc>https://janvandijk.nl/occasions</loc></url>
+  <url><loc>https://janvandijk.nl/diensten</loc></url>
+  <url><loc>https://janvandijk.nl/financiering</loc></url>
+  <url><loc>https://janvandijk.nl/contact</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/bmw/1-serie-f20/7369781</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/bmw/z4/7376822</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/fiat/500x/7310158</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/honda/civic/7336102</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/honda/civic/7377658</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/honda/cr-v/7354063</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/honda/cr-v/7377662</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/honda/cr-v/7382393</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/honda/e/7377980</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/honda/hr-v/7353194</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/honda/hr-v/7378626</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/honda/hr-v/7384199</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/honda/jazz/7314013</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/honda/jazz/7332841</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/honda/jazz/7353370</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/honda/jazz/7373029</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/honda/jazz/7382396</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/nissan/qashqai/7337062</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/nissan/qashqai/7376821</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/opel/adam/7315231</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/opel/corsa/7383296</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/opel/insignia/7336650</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/peugeot/2008/7338160</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/peugeot/208/7355530</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/peugeot/408/7336831</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/toyota/aygo-x/7382438</loc></url>
+  <url><loc>https://janvandijk.nl/occasions/toyota/c-hr/7339654</loc></url>
+</urlset>

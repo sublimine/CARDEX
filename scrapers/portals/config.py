@@ -67,6 +67,7 @@ STRATEGIES = (
     "playwright_xhr",     # E07: JS/SPA — render + intercept the SPA's data XHR/JSON
     "faceted_ssr",        # T1 anti-bot SSR walked by year×price facets to beat the
                           # hard result cap (autoscout24.de, coches.net, lacentrale.fr)
+    "html_listing",       # listing-page HTML cards ARE the data (no JSON-LD on details; family module extracts — autosociaal)
 )
 
 # Strategies that require the browser renderer (E07). A source with one of these

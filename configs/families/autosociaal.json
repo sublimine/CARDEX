@@ -1,0 +1,32 @@
+{
+  "family_key": "autosociaal",
+  "kind": "family",
+  "version": 1,
+  "matches": {
+    "cms": "autosociaal",
+    "min_confidence": "medium"
+  },
+  "strategy": "html_listing",
+  "endpoints": {
+    "note": "autosociaal / Dealertemplates (Laravel+Livewire SaaS, nginx; frontend from cdn.autosociaal.nl/dtweb/, vehicle backend Hexon, ~77 NL dealers). Catalog = Livewire grid on a ONE-segment route whose slug VARIES per dealer (occasions|aanbod|voorraad; wrong slug 404s hard — garagevantreuren.nl/occasions 404, real capture 2026-06-11). Availability truth: wire:snapshot data.filteredOccasionsCount == visible 'Er zijn <N> voertuigen gevonden'; data.perPage=15. ?page=N is CUMULATIVE server-side load-more: GET <slug>?page=ceil(total/15) returns the WHOLE live set in ONE request (janvandijk p1=15, p2=27/27==count re-verified 2026-06-11; lieutenant: auto-nassau p2=29/29). Cards: div.grid-item.grid-item--link (wire:key=hexon id) > first a[href]=PDP; .grid-item-subtitle=make; .grid-item-title h3=model; .grid-item-detail-price[-primary] h4=price; .grid-item-summary-item icons ti-calendar-event/ti-road = year/km (THEME-DEPENDENT, else None). NO JSON-LD anywhere; PDP fields sit in .details-table-item with NL labels (Bouwjaar/Kilometerstand/Brandstof/Transmissie/Kenteken; VIN absent) — so the generic JSON-LD-first engine cannot extract this family: extraction lives in scrapers/dealer_scraping/family_autosociaal.py (harvest_autosociaal -> cage_inventory listings shape). 0-stock dealers are a VALID result (count=0), not drift. sitemap.xml is a flat urlset == live listing and serves as slug hint; the catalog_path_tokens + detail_url_re below keep the generic availability-first listing walk as a degraded fallback (pointers without card fields).",
+    "sitemap_hint": "/sitemap.xml",
+    "catalog_path_tokens": ["occasions", "aanbod", "voorraad"],
+    "detail_url_re": "^https?://[^/]+/[a-z0-9-]+/[^/]+/[^/]+/\\d{6,9}/?$"
+  },
+  "extraction": {
+    "method": "heuristic",
+    "field_map": {}
+  },
+  "drift_baseline": {
+    "extraction_method": "heuristic",
+    "expected_min_volume": 1,
+    "required_fields": ["make", "model", "price"],
+    "min_nonnull_ratio": 0.7
+  },
+  "provenance": {
+    "verified_on_dealers": ["janvandijk.nl", "auto-nassau.nl", "edisonauto.nl", "garagevantreuren.nl"],
+    "verified_count": 4,
+    "verified_date": "2026-06-11",
+    "tool": "lieutenant 4-way live probe 2026-06-09/10 (jvd/edisonauto/auto-nassau cumulative page=last verified) + 3-GET curl_cffi chrome fixture capture 2026-06-11 (jvd p1+p2: 27/27 cards==filteredOccasionsCount, card fields; garagevantreuren /occasions 404 -> slug-candidate fallback path)"
+  }
+}
