@@ -80,6 +80,7 @@ class Endpoints:
 
     host: str = ""
     listing_url_template: str = ""   # e.g. "https://www.autotrack.nl/aanbod?pageNumber={page}"
+    listing_url_candidates: tuple[str, ...] = ()  # locale-variant listing roots; discover tries each
     sitemap_url: str = ""
     detail_url_re: str = ""          # regex isolating a vehicle detail deep-link
     api_url: str = ""                # socrata / wp-rest / dealer DMS feed
@@ -388,6 +389,7 @@ def instantiate_family(
         endpoints=Endpoints(
             host=h,
             listing_url_template=f"{base}/{tokens[0]}" if tokens else "",
+            listing_url_candidates=tuple(f"{base}/{t}" for t in tokens),
             sitemap_url=f"{base}{_abs_path(fe.sitemap_hint)}" if fe.sitemap_hint else "",
             detail_url_re=fe.detail_url_re,
             api_url=f"{base}{_abs_path(fe.api_path_hint)}" if fe.api_path_hint else "",

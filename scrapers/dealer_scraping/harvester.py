@@ -287,19 +287,29 @@ async def discover_dealer_urls(
     # PDPs too (their page still 200s), so caging from the sitemap serves sold cars as
     # live (dificar.com: sitemap 235 vs available 123). The listing is the available
     # truth; the sitemap stays as the fallback discovery surface when the listing yields 0.
-    listing_url = (cfg.endpoints.listing_url_template or "").strip()
-    if listing_url and rx is not None:
-        live = await walk_listing_pagination(
-            static_fetcher, listing_url, detail_url_re=cfg.endpoints.detail_url_re or "", cap=cap)
-        if live:
-            log.info(
-                "discover %s: listing pagination → %d AVAILABLE detail URLs (method=listing, url=%s)",
-                domain, len(live), listing_url,
-            )
-            return live
+    listing_candidates: list[str] = []
+    primary = (cfg.endpoints.listing_url_template or "").strip()
+    if primary:
+        listing_candidates.append(primary)
+    # Locale-variant platforms (e.g. dealerk: /coches/ ES vs /voitures/ FR) declare
+    # several candidate listing roots; try each until one paginates the live stock.
+    for cand in getattr(cfg.endpoints, "listing_url_candidates", ()) or ():
+        cand = (cand or "").strip()
+        if cand and cand not in listing_candidates:
+            listing_candidates.append(cand)
+    if listing_candidates and rx is not None:
+        for listing_url in listing_candidates:
+            live = await walk_listing_pagination(
+                static_fetcher, listing_url, detail_url_re=cfg.endpoints.detail_url_re or "", cap=cap)
+            if live:
+                log.info(
+                    "discover %s: listing pagination → %d AVAILABLE detail URLs (method=listing, url=%s)",
+                    domain, len(live), listing_url,
+                )
+                return live
         log.warning(
-            "discover %s: listing pagination yielded 0 (url=%s) — falling back to sitemap/cascade",
-            domain, listing_url,
+            "discover %s: listing pagination yielded 0 across %d candidate root(s) — "
+            "falling back to sitemap/cascade", domain, len(listing_candidates),
         )
 
     if cfg.strategy in _SITEMAP_STRATEGIES and rx is not None:

@@ -1,0 +1,26 @@
+{
+  "family_key": "dealerk",
+  "kind": "family",
+  "version": 1,
+  "strategy": "jsonld_detail",
+  "matches": { "cms": "dealerk", "min_confidence": "medium" },
+  "endpoints": {
+    "sitemap_hint": "/sitemap_index.xml",
+    "catalog_path_tokens": ["coches", "voitures", "occasions", "gebrauchtwagen", "auto-usate", "autos"],
+    "detail_url_re": "^https?://[^/]+(?:/[a-z0-9-]+){7}/\\d{5,8}/$",
+    "note": "MotorK / WebSparK Revolution (ex-DealerK): WordPress multisite, sitemap names locale-invariant (auto_usate_0-sitemap.xml on ES and FR) but the LIVE listing root is locale-variant (/coches/ ES, /voitures/ FR, /occasions/, /gebrauchtwagen/) -> tried as candidate roots; discover uses the first that paginates live stock. AVAILABILITY-FIRST (H6): the live paginated listing yields only cars on sale; the sitemap diverges (priorauto.com sitemap 13 vs live 15, ids 1176660/1227436 live-only) so it is discovery-fallback only, never the availability truth. Page size varies per dealer (13-15) and a fixed cross-page carousel injects up to 12 repeated PDP hrefs -> walk_listing_pagination dedupes by clean URL; out-of-range ?page returns page-1 content (200) -> dedupe makes it harmless. PDP is static HTML carrying one Yoast application/ld+json @graph with a Vehicle node (name/model/fuelType/vehicleModelDate/mileageFromOdometer/brand.name/offers.{price,priceCurrency,availability,itemCondition}/sku=stock id; NO VIN) -> parse.py jsonld already extracts it. /wp-json is edge-blocked (MotorK 403); no public stock API. Verified live 2026-06-11 by Fable lieutenant on priorauto.com, fabianarenas.es, volkswagen-montpellier.fr (e.g. VW ID.7 sku 2469192 46900 EUR; 1067 = 82x13+1 page-exact). villenaautomocion.com is offboarded (TLS CN=web.cloud.motork.io) -> mark dead, not a recipe fault."
+  },
+  "extraction": { "method": "jsonld", "field_map": {} },
+  "drift_baseline": {
+    "extraction_method": "jsonld",
+    "expected_min_volume": 1,
+    "required_fields": ["make", "model", "price"],
+    "min_nonnull_ratio": 0.7
+  },
+  "provenance": {
+    "verified_on_dealers": ["priorauto.com", "fabianarenas.es", "volkswagen-montpellier.fr"],
+    "verified_count": 3,
+    "verified_date": "2026-06-11",
+    "tool": "Fable lieutenant live recon (curl chrome-UA: robots + sitemap_index + listing pagination + JSON-LD Vehicle PDP)"
+  }
+}
