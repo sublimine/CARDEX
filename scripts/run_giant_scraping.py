@@ -145,7 +145,8 @@ async def harvest(domain: str, country: str, *, base: str, currency: str,
                     for p in rows:
                         p["source_country"] = country
                         res, reason = await rc.persist_one(
-                            pool, p, source=platform, channel="SCRAPER", rates={"EUR": Decimal(1)})
+                            pool, p, source=platform, channel="SCRAPER", rates={"EUR": Decimal(1)},
+                            entity_kind="platform")
                         if res:
                             persisted += 1
                         else:
