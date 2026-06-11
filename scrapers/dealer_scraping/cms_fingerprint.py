@@ -45,7 +45,17 @@ widget's recipe, not the shell's):
                    | <meta name="generator" Drupal> (16/122 NL unknowns, 2026-06-10)
   12. joomla       'joomla' literal | option=com_ / /components/com_ | /media/jui/
   13. wordpress    '/wp-content/' | '/wp-json/' | <meta name="generator" WordPress>
+                   | 'woocommerce' (WooCommerce only runs on WordPress)
   14. symfony      'X-Debug-Token*' response header | 'sf-' cookie (headers only)
+
+Spoofable-generator veto: a <meta generator> is SELF-DECLARED content, and "hide my
+WP"-style security plugins deliberately serve a FAKE Drupal generator on WordPress
+sites (caught live 2026-06-11: arvlad.com = WordPress with /wp-json/ oembed +
+GlotPress claiming "Drupal 9"; vedaauto.es = WooCommerce claiming "Drupal 11").
+So a non-WordPress generator signal (drupal, gerente_tidi) scores ONLY when no hard
+WordPress evidence (``_WP_HARD_MARKERS`` / WP generator) coexists in the same HTML.
+STRUCTURAL markers (data-drupal-selector, /sites/default/files, ...) are never
+vetoed — a genuine Drupal embedding one WP-hosted asset must keep its verdict.
 
 Confidence: 'high' when the winning family fired >=2 DISTINCT signals, 'medium' on
 exactly 1, and ('unknown', cms='unknown') when no family fired at all.
@@ -80,6 +90,20 @@ _GERENTE_GENERATOR_RE = re.compile(
 # JSON-LD vehicle entity ("@type": "Car" / "Vehicle") — the strong vehicle signal.
 _JSONLD_VEHICLE_RE = re.compile(r'"@type"\s*:\s*"(?:Car|Vehicle)"', re.I)
 
+# Hard WordPress-ecosystem evidence: core asset paths, the REST/oembed base, Yoast's
+# sitemap, GlotPress locale JSON, and WooCommerce (WordPress-only plugin). Presence of
+# any of these vetoes a CONTRADICTORY spoofable generator claim (see module docstring;
+# arvlad.com + vedaauto.es caught live 2026-06-11). 'woocommerce' matters because the
+# probe fingerprints a 30KB homepage window where /wp-content/ may fall outside it.
+_WP_HARD_MARKERS = (
+    "/wp-content/",
+    "/wp-json/",
+    "wp-includes",
+    "sitemap_index.xml",   # Yoast SEO sitemap
+    "glotpress",           # WordPress.org translation system
+    "woocommerce",
+)
+
 _CONFIDENCE_HIGH_MIN_SIGNALS = 2
 
 
@@ -105,6 +129,13 @@ def _confidence(signals: tuple[str, ...]) -> str:
     return "high" if len(signals) >= _CONFIDENCE_HIGH_MIN_SIGNALS else "medium"
 
 
+def _wordpress_evidence(low: str, html: str) -> bool:
+    """Hard WordPress evidence that beats a contradictory self-declared generator."""
+    return any(marker in low for marker in _WP_HARD_MARKERS) or bool(
+        _WP_GENERATOR_RE.search(html)
+    )
+
+
 def fingerprint_cms(
     home_html: str,
     headers: dict[str, str] | None = None,
@@ -126,6 +157,9 @@ def fingerprint_cms(
     spa = detect_spa_markers(html)           # reused SPA framework signal
     vehicle = _vehicle_signal(home_html, sample_detail_html)
     cookie_blob = norm_headers.get("set-cookie", "") + norm_headers.get("cookie", "")
+    # Vetoes the spoofable non-WP generator signals below (module docstring, "Spoofable
+    # -generator veto"): structural markers are never vetoed, only generator claims.
+    wp_evidence = _wordpress_evidence(low, html)
 
     # Each family probe merges the reused helper verdict with the literal token so
     # one real-world marker never double-counts into a fake 'high'.
@@ -193,7 +227,7 @@ def fingerprint_cms(
         # Gerente CMS (TIDI Media) — NL niche dealer-site vendor; generator tag plus
         # tidi.nl asset host (4-6/122 NL unknowns, mining 2026-06-10).
         ("gerente_tidi", (
-            ("gerente-generator", bool(_GERENTE_GENERATOR_RE.search(html))),
+            ("gerente-generator", bool(_GERENTE_GENERATOR_RE.search(html)) and not wp_evidence),
             ("tidi-host", "tidi.nl" in low),
         )),
         ("next_dealer", (
@@ -210,7 +244,9 @@ def fingerprint_cms(
             ("data-drupal-selector", "data-drupal-selector" in low),
             ("drupal-settings-json", "drupal-settings-json" in low),
             ("sites-default-files", "/sites/default/files" in low),
-            ("meta-generator-drupal", bool(_DRUPAL_GENERATOR_RE.search(html))),
+            # Spoofed in the wild ("hide my WP" plugins serve a fake Drupal claim on
+            # WordPress sites) — only scores without contradictory hard WP evidence.
+            ("meta-generator-drupal", bool(_DRUPAL_GENERATOR_RE.search(html)) and not wp_evidence),
         )),
         ("joomla", (
             ("joomla-literal", "joomla" in low),
@@ -221,6 +257,9 @@ def fingerprint_cms(
             ("wp-content", "/wp-content/" in low),
             ("wp-json", "/wp-json/" in low),
             ("meta-generator-wordpress", bool(_WP_GENERATOR_RE.search(html))),
+            # WooCommerce only runs on WordPress; within the probe's 30KB homepage
+            # window it can be the ONLY visible WP marker (vedaauto.es, live 2026-06-11).
+            ("woocommerce", "woocommerce" in low),
         )),
         ("symfony", (
             ("header:x-debug-token", any(k.startswith("x-debug-token") for k in norm_headers)),

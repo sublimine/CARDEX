@@ -430,3 +430,100 @@ def test_audi_partner_does_not_fire_on_plain_audi_mention():
 
     # Assert
     assert verdict.cms != "audi_partner"
+
+
+# == spoofable generator vs hard WordPress evidence (caught live 2026-06-11) ======
+@pytest.mark.unit
+def test_fake_drupal_generator_on_wordpress_site_classifies_wordpress():
+    # Arrange - arvlad.com pattern: a WordPress site (wp-json oembed endpoint +
+    # GlotPress locale JSON; wp-content renamed away by a hide-WP security plugin)
+    # deliberately serving a fake Drupal generator tag.
+    html = (
+        '<meta name="Generator" content="Drupal 9 (https://www.drupal.org)" />'
+        '<link rel="alternate" type="application/json+oembed" '
+        'href="https://garage-example.nl/wp-json/oembed/1.0/embed?url=x" />'
+        '<script>var locale={"generator":"GlotPress/4.0.3","domain":"messages"};</script>'
+    )
+
+    # Act
+    verdict = fingerprint_cms(html)
+
+    # Assert - hard WP evidence beats the contradictory self-declared generator
+    assert verdict.cms == "wordpress"
+    assert "wp-json" in verdict.signals
+    assert "meta-generator-drupal" not in verdict.signals
+
+
+@pytest.mark.unit
+def test_fake_drupal_generator_on_woocommerce_site_classifies_wordpress():
+    # Arrange - vedaauto.es pattern: a WooCommerce store (WordPress-only plugin)
+    # claiming "Drupal 11"; inside the probe's 30KB homepage window the only WP
+    # marker present is the woocommerce token itself (wp-content falls beyond it).
+    html = (
+        '<meta name="generator" content="Drupal 11 (https://www.drupal.org)" />'
+        '<body class="archive woocommerce-page"><div class="woocommerce columns-4">'
+        "</div></body>"
+    )
+
+    # Act
+    verdict = fingerprint_cms(html)
+
+    # Assert
+    assert verdict.cms == "wordpress"
+    assert verdict.signals == ("woocommerce",)
+
+
+@pytest.mark.unit
+def test_genuine_drupal_generator_without_wp_evidence_still_classifies_drupal():
+    # Arrange - genuine Drupal 7 (vari.nl / dex.be live 2026-06-11): the generator
+    # is the ONLY tracked signal (D7 ships Drupal.settings + /sites/all/, which the
+    # signature does not list) and zero WordPress evidence coexists.
+    html = (
+        '<meta name="generator" content="Drupal 7 (http://drupal.org)" />'
+        '<script src="/sites/all/themes/garage/js/main.js"></script>'
+        '<script>jQuery.extend(Drupal.settings, {"basePath":"/"});</script>'
+    )
+
+    # Act
+    verdict = fingerprint_cms(html)
+
+    # Assert - no contradiction => the generator keeps its vote
+    assert verdict.cms == "drupal"
+    assert verdict.signals == ("meta-generator-drupal",)
+    assert verdict.confidence == "medium"
+
+
+@pytest.mark.unit
+def test_structural_drupal_markers_survive_incidental_wp_evidence():
+    # Arrange - a genuine Drupal home embedding one WP-hosted asset (e.g. a blog
+    # image): the veto silences only the spoofable generator, never the structure.
+    html = (
+        '<meta name="generator" content="Drupal 10 (https://www.drupal.org)" />'
+        '<form data-drupal-selector="edit-search"></form>'
+        '<img src="https://blog.example.com/wp-content/uploads/promo.jpg">'
+    )
+
+    # Act
+    verdict = fingerprint_cms(html)
+
+    # Assert - the family verdict holds via structure; the contradicted generator is out
+    assert verdict.cms == "drupal"
+    assert "data-drupal-selector" in verdict.signals
+    assert "meta-generator-drupal" not in verdict.signals
+
+
+@pytest.mark.unit
+def test_fake_gerente_generator_on_wordpress_site_does_not_classify_gerente():
+    # Arrange - same defensive principle for the other spoofable non-WP generator:
+    # a Gerente CMS claim contradicted by hard WP evidence must not route gerente.
+    html = (
+        '<meta name="generator" content="Gerente CMS by TIDI Media">'
+        '<link rel="stylesheet" href="/wp-content/themes/x/style.css">'
+    )
+
+    # Act
+    verdict = fingerprint_cms(html)
+
+    # Assert
+    assert verdict.cms == "wordpress"
+    assert verdict.signals == ("wp-content",)
