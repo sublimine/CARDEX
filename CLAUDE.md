@@ -8,9 +8,12 @@
 - **Estado y objetivo vivos**: `~/CARDEX-COMMAND/GOAL.md` (mandato),
   `~/CARDEX-COMMAND/PROGRESO.md` (bitácora, leer la cola),
   `docs/master-plan/MASTER_PLAN_AZ.md` + `docs/master-plan/HANDOFF.md` (plan y traspaso).
-- **Docs stale del repo — NO codear contra ellos**: `STATUS.md`, `README.md`,
-  `SECURITY.md`, `goal/GOAL.md`, `SPEC.md` (visión original, superada). Si algún
-  doc contradice al código observado, gana el código. No hay precedencia invertida.
+- **Docs corregidos a la realidad el 2026-06-12**: `STATUS.md`, `README.md`,
+  `SECURITY.md`, `.env.example` (reescritos contra el código vivo). Siguen siendo
+  fotos, no la verdad: si algún doc contradice al código observado, gana el código.
+  No hay precedencia invertida.
+- **Docs históricos marcados SUPERSEDED/STALE**: `SPEC.md` (visión original),
+  `goal/GOAL.md`. No codear contra ellos.
 
 ## Estándares y forma de trabajar
 

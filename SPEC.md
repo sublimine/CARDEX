@@ -1,5 +1,9 @@
 # CARDEX — ESPECIFICACIÓN CANÓNICA DE IMPLEMENTACIÓN
 
+> **SUPERSEDED (2026-06-12).** Historical vision document, kept for the record.
+> The system that actually runs diverged: live truth = code in `main` +
+> `docs/master-plan/` (MASTER_PLAN_AZ.md, HANDOFF.md). Do not implement from this file.
+
 **Versión:** 1.0.0-SEALED  
 **Fecha de sellado:** 2026-02-27  
 **Fuentes consolidadas:** V1 (386pp), V2 (292pp), V3 (74pp), V4 (32pp), V5 (91pp), V6 (49pp) — 924 páginas totales  

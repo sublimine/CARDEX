@@ -72,9 +72,11 @@
 
 ## BLOQUE 4 — Infraestructura y operaciones
 
-- [ ] **BUG-001**: `e2e/go.mod` replace path → ajustar a `=> ../services/alpha`
-- [ ] **BUG-002**: Import `"fmt"` sin uso en `services/pipeline/cmd/pipeline/main.go:12`
-- [ ] **BUG-003**: Drop silencioso de payloads OEM en pipeline Go — verificar y fix
+- [x] **BUG-001**: RESUELTO (verificado 2026-06-12) — `tests/e2e/go.mod` ya solo
+      requiere `discovery`/`extraction`/`quality`; el replace ambiguo a `alpha` no existe.
+- [x] **BUG-002 / BUG-003**: VOID (2026-06-12) — `services/pipeline` eliminado
+      (stub muerto: sin go.mod, imports a pkgs inexistentes); la ingesta viva es la
+      flota Python. History preservado.
 - [ ] **ADRs pendientes** (8 decisiones tomadas sin documentar) — `docs/adr/`
 - [ ] **slog audit** — `grep -r "log/slog" ./cmd ./pkg` — cada consumer sin slog es deuda
 - [ ] **go vet + golangci-lint** limpio en todos los módulos
@@ -214,7 +216,9 @@ mobile_de        DE    intercept XHR (fallback si consumer API no funciona)
 ```
 **Acción pendiente:**
 - [ ] Implementar cuando trial auto-api.com confirmado
-- [ ] Archivo: `services/pipeline/cmd/mobile_de_consumer/main.go`
+- [ ] Archivo: consumer en la flota Python (`scrapers/`) — el stub Go
+      `services/pipeline` fue eliminado 2026-06-12; patrón de consumo vivo:
+      `scrapers/rich_consumer.py`
 
 ---
 

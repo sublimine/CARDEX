@@ -1,129 +1,131 @@
 # CARDEX
 
-Pan-European vehicle intelligence platform. Discovers, extracts, and validates used-car listings from individual dealer websites across DE, ES, FR, NL, BE, and CH.
+Pan-European used-car intelligence index. The mission: discover **every platform and
+every dealer with a website** across **ES, FR, DE, NL, BE, CH**, mirror their **live**
+inventory (every listing added and removed, continuously), and encapsulate it behind
+**per-entity APIs** — individually manageable and sellable.
 
-## What is implemented (Phases 2–5)
+The thesis is the ~30% long-tail: dealers with a website and a handful of relevant
+cars who never publish on the big platforms. Tier-1 giants are covered too, but the
+reason to exist is covering 100% of the terrain.
 
-| Module | Phase | What it does | Status |
-|--------|-------|-------------|--------|
-| `discovery/` | P2 | Finds dealer URLs via 15 intelligence families (registries, OSM, OEM locators, social, etc.) | **Complete** |
-| `extraction/` | P3 | Extracts vehicle listings using 13 strategies (JSON-LD, CMS REST, Playwright, PDF, RSS, VLM Vision, etc.) | **Complete** |
-| `quality/` | P4 | Validates listings against 20 rules (VIN, NHTSA, price, photo hash, sold-check, composite score) | **Complete** |
-| `deploy/` | P5 | Single-VPS deploy infra: systemd units, Caddy, Prometheus, Grafana, encrypted backups | **Complete** |
-| `frontend/terminal/` | P5+ | Terminal buyer CLI (`cardex search/show/stats/review/search-natural/forecast/trust`) reading from the shared SQLite | **Complete** |
-| `innovation/` | R&D | GNN dealer inference (:8501), local RAG search (:8502), Chronos-2 price forecasting (:8503), Routes disposition (:8504), Trust KYB (:8505) | **Experimental** |
-| `workspace/` | P5+ | CRM workspace: syndication, documents, inbox, photo pipeline, Kanban/calendar backend, React PWA dashboard | **Complete** |
+## System reality — two layers, do not confuse them
+
+### LIVE — Python harvest fleet (the production path)
+
+| Component | What it is |
+|---|---|
+| `scrapers/` | Python scraper fleet: portal + dealer scrapers, sitemap/listing indexers, coordinator, anti-OOM supervisor, enrichment seam (`enrich_worker` → `rich_consumer`), fingerprint engines |
+| PostgreSQL 16 (Docker `cardex-pg`) | System of record. **INSERT-new + DELETE-stale only** — never UPDATE non-mutated rows (MVCC doctrine). Schema: `migrations/0001`–`0007` |
+| Redis (Streams) | **Transport only.** Holding inventory state in Redis is prohibited |
+| `services/entity_api/` | FastAPI (`127.0.0.1:8088`) — per-entity live inventory, SEEN/GONE delta, alerts. Every platform and dealer is a `source_entity` exposing its own endpoint |
+| `services/api/` | Go REST API (`cardex.eu/api`) — price intelligence; runs on demand |
+| `dashboard/` | Local control panel; live numbers straight from PG, scheduled refresh |
+| Ollama `qwen2.5:3b` (`127.0.0.1:11434`) | Fuzzy-decision layer (classification/normalization), fail-open |
+| `scrapers/engine.db` | SQLite engine state — stays SQLite **by design**; do not migrate it to PG |
+
+### DORMANT — Go scaffold (compiles, produces nothing today)
+
+`discovery/`, `extraction/`, `quality/`, `frontend/terminal/`, `innovation/`,
+`internal/shared/`, `workspace/`, `tests/e2e/` — the original Go engine
+(15 discovery families, 13 extraction strategies, 20 quality validators, terminal
+buyer CLI, CRM workspace). It builds and tests with `GOWORK=off`, writes to its own
+SQLite (`discovery.db`), and is governed by the master plan. It is **not** the
+production path. Do not "reactivate" it assuming it is prod.
+
+### Removed
+
+Earlier-era components (`gateway/`, `alpha/`, `forensics/`, `vision/`, `corporate/`,
+`b2b-dashboard/`, the `services/pipeline` stub, …) were purged with git history
+preserved. See [`docs/GRAVEYARD.md`](docs/GRAVEYARD.md) and `git log`.
+
+## Truth hierarchy
+
+1. **Code in `main`** — always wins over any document.
+2. [`docs/master-plan/`](docs/master-plan/) — `MASTER_PLAN_AZ.md` (subsystems S1–S7,
+   phases A→Z with gates) + `HANDOFF.md`.
+3. Sealed reports (root `*_REPORT.md`, `docs/audits/`) — historical records of closed
+   fronts; they describe their moment, not the present.
+
+`SPEC.md` is the original vision document — superseded, kept for the record.
+Live operational state lives in the operator's command post, outside this repo.
 
 ## Quick start
 
-**Prerequisites:** Go 1.25+
+Prerequisites: Python 3.11+, Docker. Go 1.26+ only for the dormant scaffold.
 
 ```bash
-# Test each module independently
-cd discovery  && GOWORK=off go test ./...
-cd extraction && GOWORK=off go test ./...
-cd quality    && GOWORK=off go test ./...
+# Infrastructure (PostgreSQL 16 + Redis Streams)
+docker compose up -d postgres redis
+# NOTE: docker-compose.yml still carries legacy service definitions
+# (pipeline, meili-sync, gateway, …) that are NOT buildable — pending pruning.
 
-# Build binaries
-cd discovery  && GOWORK=off go build -o discovery-service  ./cmd/discovery-service/
-cd extraction && GOWORK=off go build -o extraction-service ./cmd/extraction-service/
-cd quality    && GOWORK=off go build -o quality-service    ./cmd/quality-service/
+# Python fleet test suite (1813 tests)
+GOWORK=off python -m pytest scrapers/ -q
 
-# Local dev (Docker Compose — all three + observability):
-docker compose -f deploy/docker/docker-compose.yml up -d
-./deploy/scripts/test-deploy-local.sh
+# Per-entity inventory API
+python -m uvicorn services.entity_api.app:app --host 127.0.0.1 --port 8088
+
+# Dormant Go scaffold (each module independent)
+cd discovery && GOWORK=off go test ./...
 ```
 
-## Terminal CLI
+## Scraping policy — Strategy B (approved 2026-05-16)
 
-```bash
-# Build
-cd frontend/terminal && GOWORK=off go build -o ../../bin/cardex-cli ./cmd/cardex/
-# or: make cli
-
-# Search listings (9 filters)
-./bin/cardex-cli search --make BMW --model 320d --year-min 2018 --price-max 30000
-./bin/cardex-cli search --country DE --score 80 --limit 20
-
-# Show listing detail + validator breakdown
-./bin/cardex-cli show <listing-id>
-
-# Aggregate stats
-./bin/cardex-cli stats
-
-# AI Act Art.50(1) disclosure (review queue)
-./bin/cardex-cli review list
-./bin/cardex-cli review approve <id>
-
-# Natural-language search via local RAG (requires innovation/rag_search running)
-./bin/cardex-cli search-natural "BMW 3er diesel unter 30000 EUR"
-
-# Price forecast via Chronos-2 (requires innovation/chronos_forecasting running)
-./bin/cardex-cli forecast --make BMW --model "3er" --country DE --horizon 30 --spark
-
-# CARDEX Routes — Fleet Disposition Intelligence (requires innovation/routes running)
-./bin/cardex-cli routes spread --make BMW --model 320d --year 2021 --km 45000
-./bin/cardex-cli routes optimize --make BMW --model 320d --year 2021 --km 45000 --country FR
-./bin/cardex-cli routes batch --input fleet.csv --output plan.json
-```
-
-Set `CARDEX_DB_PATH` to point to the SQLite database (default: `./data/discovery.db`).
-
-## Deploy to production (Hetzner CX42, ~€22/month)
-
-```bash
-./deploy/scripts/secrets-generate.sh        # generate age + SSH + TLS keys
-./deploy/scripts/deploy.sh cardex@<VPS-IP>  # idempotent build + deploy
-```
-
-Full provisioning runbook: [`deploy/runbook.md`](deploy/runbook.md)
-
-## Architecture
-
-```
-Internet ─→ Caddy (TLS 1.3, auto Let's Encrypt) ─→ discovery-service  :8080
-                                                  ─→ extraction-service :8081
-                                                  ─→ quality-service    :8082
-                                                          │
-                                              /srv/cardex/db/discovery.db (SQLite WAL)
-
-Observability (loopback only):
-  Prometheus  :9090 ← scrapes :9101, :9102, :9103
-  Grafana     :3001 ← access via SSH tunnel
-  Alertmanager:9093 ← receives alerts from Prometheus
-```
-
-## Repository layout
-
-```
-discovery/           Go module — 15-family dealer discovery engine
-extraction/          Go module — 13-strategy vehicle listing extractor (E01–E12 + E13 VLM opt-in)
-quality/             Go module — 20-validator listing quality pipeline
-deploy/              VPS infrastructure (Docker + systemd + Caddy + Prometheus + scripts)
-frontend/terminal/   Terminal buyer CLI (Go) — search, show, stats, review, forecast
-innovation/          Research services — GNN :8501, RAG :8502, Chronos :8503, Routes :8504
-clients/edge-tauri/  Rust+Tauri dealer desktop client (edge push gRPC)
-planning/            All specs and architecture docs (primary reference)
-internal/shared/     Shared Go utilities
-SPEC.md              Original 924-page consolidated specification (vision doc)
-```
+- **Approved stack only:** `curl_cffi>=0.15.1` (TLS impersonation at **session**
+  level — same JA3 from page 1 to N, never per-request), `camoufox[geoip]`,
+  Playwright (strategy E07). Impersonation always targets a **current** Chrome;
+  TLS fingerprints rot in ~6 weeks and stale ones are themselves a bot signal.
+- **Two UA layers by design:** Go modules identify as
+  `CardexBot/1.0 (+https://cardex.eu/bot; indexing@cardex.eu)`; the Python fleet's
+  UA is managed by the fingerprint engine (a literal UA string would contradict the
+  TLS fingerprint).
+- **Source survival:** jittered rate limits (~1.2s/page), per-domain budgets,
+  exponential backoff on 429/503; robots.txt checker wired in the Go crawling layer.
+- **Blocked patterns:** playwright-stealth, undetected-chromedriver, fake-useragent,
+  scrapingbee/scraperapi/brightdata. Enforcement definition:
+  [`.forgejo/workflows/illegal-pattern-scan.yml`](.forgejo/workflows/illegal-pattern-scan.yml)
+  (Forgejo CI definition; not wired to GitHub Actions).
 
 ## Build rules
 
-1. **GOWORK=off** for all production builds — each module builds independently.
-2. **CardexBot/1.0 UA only** — no spoofing, no stealth, no curl_cffi. CI enforces this.
-3. **E13 VLM opt-in** — `VLM_ENABLED=true` required; requires ollama running with a vision model (default: `phi3.5-vision:latest`). Disabled by default due to CPU cost (~45 s/image on CX42).
-4. **robots.txt compliance** — `extraction/internal/robots.Checker` is wired in HTML-crawling strategies (E01, E03, E04); non-web strategies skip it by design.
-5. **SQLite + WAL** — no external database for the MVP. Backups are age-encrypted to Hetzner Storage Box.
+1. **Never compile `.exe`** on the Windows host (Application Control):
+   `go run ./cmd/<module>/`.
+2. **`GOWORK=off`** for every Go module build/test — modules stay independent.
+3. **PG doctrine:** INSERT new + DELETE stale; never UPDATE non-mutated rows.
+4. **Redis = Streams transport only;** no inventory state.
+5. Geo + identity are institutional: country → province → city hierarchy
+   (`migrations/0004`) and immutable `cdx_code` per entity (`migrations/0005`,
+   generator `scrapers/intelligence/cdx_code.py`).
+
+## Repository layout (top level)
+
+```
+scrapers/        LIVE Python fleet (engines, portals, discovery, intelligence, llm)
+services/        entity_api (FastAPI, LIVE) · api (Go price intelligence)
+configs/         Versioned extraction recipes: portals/ · dealers/ · families/
+migrations/      PostgreSQL schema 0001–0007
+dashboard/       Local live control panel
+scripts/         Harnesses (giant/dealer scraping, sealers, verifiers, scheduler)
+supervisor/      Anti-OOM process supervisor
+recipes/ reports/ state/  Working evidence of the harvest fronts
+dealers/         Institutional dealer records (country/province/city/CDX-code)
+discovery/ extraction/ quality/  DORMANT Go engine
+frontend/ workspace/ innovation/ internal/  DORMANT Go scaffold + R&D
+docs/            Master plan, ADRs, audits, research, GRAVEYARD
+deploy/ monitoring/  VPS + observability infra (not currently deployed)
+.agents/ workflows/ goal/  Orchestration governance & institutional memory
+```
 
 ## Documentation index
 
 | Document | Purpose |
 |----------|---------|
-| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Current system architecture |
-| [`GETTING_STARTED.md`](GETTING_STARTED.md) | Developer onboarding |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Contribution guidelines |
-| [`CHANGELOG.md`](CHANGELOG.md) | Phase-by-phase implementation history |
-| [`SECURITY.md`](SECURITY.md) | Security policy and reporting |
-| [`deploy/runbook.md`](deploy/runbook.md) | Step-by-step VPS provisioning |
-| [`planning/`](planning/README.md) | Full specifications and architecture |
+| [`docs/master-plan/MASTER_PLAN_AZ.md`](docs/master-plan/MASTER_PLAN_AZ.md) | Governing plan (phases, gates) |
+| [`docs/master-plan/HANDOFF.md`](docs/master-plan/HANDOFF.md) | Operational handoff |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | System architecture |
+| [`STATUS.md`](STATUS.md) | Verified system snapshot |
+| [`SECURITY.md`](SECURITY.md) | Security & crawling policy |
+| [`docs/GRAVEYARD.md`](docs/GRAVEYARD.md) | What was removed, and why |
+| [`docs/SCRAPING_ENGINE.md`](docs/SCRAPING_ENGINE.md) | Fleet internals |
+| [`CHANGELOG.md`](CHANGELOG.md) | Implementation history |

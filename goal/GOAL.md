@@ -1,5 +1,10 @@
 # CARDEX — GOAL
 
+> **STALE (2026-06-12).** Historical synthesis of an earlier era; its references
+> are outdated (`CONTEXT_FOR_AI.md` was deleted from main). Operative truth:
+> code in `main` + `docs/master-plan/`. Kept as institutional memory alongside
+> `goal/memory/`.
+
 > Documento de síntesis. Vuelca a Git el contexto que vivía solo en la memoria
 > del agente, para que la misión, el estado y los estándares viajen con el
 > repositorio. Fuente de verdad de la **arquitectura y qué existe**:
