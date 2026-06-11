@@ -28,6 +28,7 @@ from scrapers.dealer_scraping.inventory_harvester import harvest_t2_dealer
 from scrapers.dealer_scraping.inventory_probe import (IN_SCOPE_SQL, claim_pending_batch,
                                                       quarantine_sick_window, run_probes,
                                                       write_results)
+from scrapers.common import host_budget
 
 _SCOPE_COUNTRIES = "('ES','FR','DE','BE','NL','CH')"
 
@@ -104,6 +105,11 @@ async def run(*, batches: int, size: int, conc: int, timeout: int, harvest: bool
             cur_conc = conc if avail >= ram_soft else max(4, conc // 2)
             if cur_conc != conc:
                 log.warning("RAM soft %d MB — concurrency %d→%d", avail, conc, cur_conc)
+            # S-HOST disk gate: never let slice-then-purge headroom run out under the host.
+            if host_budget.disk_free_gb() < host_budget.DISK_MIN_GB:
+                log.error("S-HOST: disk < %.0f GB free — aborting to protect the host",
+                          host_budget.DISK_MIN_GB)
+                break
 
             rows = await claim_pending_batch(pg, size, country)
             if not rows:
