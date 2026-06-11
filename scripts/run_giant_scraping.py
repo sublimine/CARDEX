@@ -96,7 +96,7 @@ async def harvest(domain: str, country: str, *, base: str, currency: str,
         a, b = stack.pop()
         if b <= a:
             continue
-        c = await count_fn_async(a, b)
+        c = await count_fn_async(a, b) or 0   # tolerate a transient None count (skip the segment)
         if c <= 0:
             continue
         if c < cap or (b - a) <= 250:
