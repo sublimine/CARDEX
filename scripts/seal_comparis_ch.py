@@ -13,13 +13,18 @@ curl_cffi hit is 403 (datadome cookie, 771B block). Verified live 2026-06-12:
 So the via is Camoufox with a homepage warm-up that mints a valid DataDome cookie BEFORE
 touching the listing surface. ONE browser (host_budget BROWSER lane), <=0.5 req/s.
 
-Per-listing data: the SSR carfinder embeds a schema.org ItemList ld+json with, for each
-card, the detail `url`, the vehicle `name` (make + model + variant), and a thumbnail. That
-island is present at SSR time (no hydration needed), so it is the authoritative enumeration
-+ title source. Price/year/km are hydrated client-side and NOT reliably in the SSR DOM, so
-listings are caged as rich-title pointers (km opportunistically when the card text carries
-it); detail-level enrichment is a later pass. Count_verify reads the same page:
-  way 1: resultCount / AggregateOffer.offerCount   way 2: ItemList numberOfItems.
+Per-listing data: the SSR markup embeds a Next.js __NEXT_DATA__ island whose
+``props.pageProps.initialResultData.resultItems[]`` carries, for each card, the AdID
+(detail url), the STATED CASH price (``Price`` int + ``PriceText`` "CHF 24'900", currency
+CHF), the registration year (``Specifications.MatriculationDate`` "MM.YYYY"), the mileage
+(``Specifications.Mileage`` "102.000 km"), and make/type for a rich title. That island is in
+the markup ``page.content()`` already returns (no extra request, no detail fetch), so price +
+year + km are caged straight from the SRP walk — VERIFIED 2026-06-12 at 100% Price population
+on real listings (the only price-NULL cards are dealer new-cars priced "auf Anfrage", whose
+SRP card carries no number). ``Price`` is the cash sale price, NOT the comparis ``MarketPrice``
+estimate and NOT a leasing /Monat rate (leasing lives on the detail only). A schema.org
+ItemList ld+json (url + name only) remains the title-only fallback. Count_verify reads the
+same page: way 1 resultCount / AggregateOffer.offerCount   way 2 ItemList numberOfItems.
 
   py -m scripts.seal_comparis_ch --count-only           # 2-way count (1 warmed page)
   py -m scripts.seal_comparis_ch --sample 40            # E2E: enumerate+cage(INSERT-only)+verify
@@ -76,10 +81,16 @@ PRICE_BANDS = ((0, 5_000), (5_000, 10_000), (10_000, 15_000), (15_000, 20_000),
 _DETAIL_RE = re.compile(r"/carfinder/marktplatz/details/show/(\d+)")
 _ITEMLIST_RE = re.compile(
     r'\{"@context":"http://schema\.org/","@type":"ItemList".*?\]\}', re.S)
+# Next.js embeds the SRP state (incl. per-card price) in the __NEXT_DATA__ island; it is part
+# of the SSR markup page.content() already returns (no extra request), so it is the rich,
+# price-bearing enumeration source. See _parse_next_data for the verified field map.
+_NEXTDATA_RE = re.compile(
+    r'<script[^>]*id="__NEXT_DATA__"[^>]*>(.*?)</script>', re.S)
 _COUNT_RES = (re.compile(r'"resultCount"\s*:\s*(\d+)'),
               re.compile(r'"offerCount"\s*:\s*(\d+)'),
               re.compile(r"([\d'’.\s]{2,})\s*(?:Ergebnisse|Inserate|Treffer)", re.I))
 _NUMITEMS_RE = re.compile(r'"numberOfItems"\s*:\s*(\d+)')
+_YEAR_RE = re.compile(r"(\d{4})")
 
 
 # ----------------------------------------------------------------------------- parsing
@@ -89,12 +100,89 @@ def _clean(s: str | None) -> str | None:
     return re.sub(r"\s+", " ", s).strip() or None
 
 
+def _chf_int(v) -> int | None:
+    """Swiss-formatted integer -> int. Handles the apostrophe/dot thousands separators
+    ("24'900", "102.000 km", "1’000") and plain ints; returns None when no digits."""
+    if v is None:
+        return None
+    if isinstance(v, (int, float)):
+        return int(v) if v > 0 else None
+    digits = re.sub(r"[^0-9]", "", str(v))
+    return int(digits) if digits else None
+
+
+def _spec_year(spec: dict | None) -> int | None:
+    """resultItems[].Specifications.MatriculationDate ("MM.YYYY") -> registration year."""
+    m = _YEAR_RE.search((spec or {}).get("MatriculationDate") or "")
+    return int(m.group(1)) if m else None
+
+
+def _item_title(it: dict) -> str | None:
+    """Make + Type (falls back to Model) -> a rich, human title for the card."""
+    parts = [it.get("Make"), it.get("Type") or it.get("Model")]
+    return _clean(" ".join(str(p) for p in parts if p))
+
+
+def _parse_next_data(html: str) -> list[dict] | None:
+    """__NEXT_DATA__ initialResultData.resultItems[] -> rich cage-shape listings.
+
+    VERIFIED (2026-06-12) field map per card:
+      AdID                              -> detail id (url)
+      Price (int CHF, the STATED CASH price; PriceText "CHF 24'900")  -> price
+        * Price==0 / PriceText "auf Anfrage" (dealer new-car "on request") -> price None.
+          The SRP card carries NO OriginalPrice fallback (that lives only on the detail
+          PriceInformation), so such cards stay price-NULL here (no fabricated number).
+        * MarketPrice is comparis' OWN fair-value estimate, NOT the listing price -> never used.
+        * LeasingInformation is on the detail only; the SRP Price is cash, not a /Monat rate.
+      Specifications.MatriculationDate ("MM.YYYY")                     -> year
+      Specifications.Mileage ("102.000 km", Swiss dot-thousands)       -> km
+      Make + Type                                                      -> title
+    Returns None when the island is absent/unparseable so callers fall back to ld+json.
+    """
+    m = _NEXTDATA_RE.search(html)
+    if not m:
+        return None
+    try:
+        ird = json.loads(m.group(1))["props"]["pageProps"]["initialResultData"]
+    except (ValueError, KeyError, TypeError):
+        return None
+    items = ird.get("resultItems")
+    if not isinstance(items, list):
+        return None
+    out: list[dict] = []
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        ad_id = it.get("AdID")
+        if ad_id is None:
+            continue
+        spec = it.get("Specifications") if isinstance(it.get("Specifications"), dict) else {}
+        out.append({
+            "url": DETAIL.format(id=ad_id),
+            "title": _item_title(it),
+            "price": _chf_int(it.get("Price")),   # 0/"auf Anfrage" -> None (cash only)
+            "year": _spec_year(spec),
+            "km": _chf_int(spec.get("Mileage")),
+        })
+    return out
+
+
 def parse_listings(html: str) -> list[dict]:
-    """ItemList ld+json -> cage-shape listings (url + title from `name`). km opportunistic."""
+    """Rich cage-shape listings from the SRP.
+
+    Primary source is the __NEXT_DATA__ initialResultData.resultItems[] island, which carries
+    the per-card CASH price (CHF), registration year, and mileage in the SSR markup
+    page.content() already returns — so price/year/km are caged WITHOUT any extra detail
+    request. Falls back to the schema.org ItemList ld+json (url + name(title) only) and then
+    to raw detail ids so a page is never silently empty.
+    """
+    nd = _parse_next_data(html)
+    if nd:
+        return nd
     m = _ITEMLIST_RE.search(html)
     out: list[dict] = []
     if not m:
-        # fallback: raw detail ids (title-less pointers) so a page is never silently empty
+        # last-ditch fallback: raw detail ids (title-less pointers) so a page is never empty
         for cid in dict.fromkeys(_DETAIL_RE.findall(html)):
             out.append({"url": DETAIL.format(id=cid), "title": None,
                         "price": None, "year": None, "km": None})
@@ -103,11 +191,7 @@ def parse_listings(html: str) -> list[dict]:
         il = json.loads(m.group(0))
     except ValueError:
         return out
-    # NOTE: rendered km tokens exist in the DOM but their order is NOT guaranteed to align
-    # with the ItemList element order (top promoted cards render "100 km" placeholders), so
-    # positional mileage is unreliable -> we deliberately cage NO km here (no fabricated data).
-    # Price/year hydrate client-side. Detail-level enrichment is a separate pass on
-    # /details/show/{id}. The authoritative SSR fields are url + name(title).
+    # ItemList ld+json carries only url + name(title); price/year live in __NEXT_DATA__ (above).
     for e in il.get("itemListElement", []):
         url = e.get("url") or ""
         mid = _DETAIL_RE.search(url)
@@ -144,8 +228,12 @@ async def _warm(page) -> None:
 
 
 def _build_url(page_idx: int, yf: int | None = None, yt: int | None = None,
-               pf: int | None = None, pt: int | None = None) -> str:
-    q = ["sort=2", f"page={page_idx}", "condition=occasion"]
+               pf: int | None = None, pt: int | None = None, *, sort: int = 2) -> str:
+    # sort=2 is the default grid-sweep ordering. sort=1 (Inserierungsdatum, newest-first)
+    # surfaces priced occasions at the head, away from the dealer new-car "auf Anfrage" block
+    # that clusters under sort=2 page 0 (used by run_sample so a small sample reflects the
+    # corpus's real ~100% price population rather than the price-NULL new-car head).
+    q = [f"sort={sort}", f"page={page_idx}", "condition=occasion"]
     if yf is not None:
         q.append(f"yearfrom={yf}")
     if yt is not None:
@@ -157,13 +245,23 @@ def _build_url(page_idx: int, yf: int | None = None, yt: int | None = None,
     return f"{BASE}?{'&'.join(q)}"
 
 
-async def _load(page, url: str, *, retries: int = 3) -> str:
+def _page_ready(html: str) -> bool:
+    """A usable SRP page = no hard DataDome interstitial AND it carries the result island
+    (either the rich __NEXT_DATA__ resultItems or the ld+json ItemList fallback). Gating on
+    __NEXT_DATA__ too means a good price-bearing page is never rejected for lacking the ld+json.
+    """
+    lo = html.lower()
+    if any(m in lo for m in _HARD_DD):
+        return False
+    return bool(_parse_next_data(html)) or bool(_ITEMLIST_RE.search(html))
+
+
+async def _load(page, url: str, *, retries: int = 4) -> str:
     for attempt in range(1, retries + 1):
         await page.goto(url, wait_until="domcontentloaded", timeout=45_000)
         await page.wait_for_timeout(SRP_WAIT)
         html = await page.content()
-        lo = html.lower()
-        if not any(m in lo for m in _HARD_DD) and _ITEMLIST_RE.search(html):
+        if _page_ready(html):
             return html
         await page.wait_for_timeout(2500 * attempt)
         await _warm(page)                       # re-warm the cookie, then retry
@@ -209,15 +307,16 @@ async def run_sample(browser, sample: int) -> tuple[list[dict], int | None, int 
     page = await browser.new_page()
     try:
         await _warm(page)
-        html0 = await _load(page, _build_url(0))
+        # sort=1 (newest) so the sample draws priced occasions, not the auf-Anfrage new-car head.
+        html0 = await _load(page, _build_url(0, sort=1))
         w1, w2 = parse_counts(html0)
         listings = parse_listings(html0)
-        # keep walking unfiltered pages to reach `sample`
+        # keep walking pages to reach `sample`
         seen = {li["url"] for li in listings}
         for pg in range(1, PAGE_CAP):
             if len(listings) >= sample:
                 break
-            html = await _load(page, _build_url(pg))
+            html = await _load(page, _build_url(pg, sort=1))
             new = [li for li in parse_listings(html) if li["url"] not in seen]
             if not new:
                 break
@@ -291,8 +390,9 @@ async def main(sample: int, count_only: bool, full: bool, max_pages: int) -> Non
         ps.print_verdict("comparis.ch carfinder", declared=w1,
                          way2_label="ItemList numberOfItems", way2=w2,
                          served=res["served"], api=api,
-                         price_trap="ItemList ld+json = url+name(title)+thumb; price/year "
-                         "hydrate client-side (pointer-level cage, enrich on detail later)")
+                         price_trap="__NEXT_DATA__ resultItems[].Price = STATED CASH price (CHF), "
+                         "not MarketPrice estimate, not leasing /Monat; 'auf Anfrage' new-cars "
+                         "stay price-NULL (no fabricated number)")
         print(f"  cage: new={res['new']} served={res['served']} gone={res['gone']} "
               f"(reconcile={'ON' if complete else 'OFF (sample/bounded)'})", flush=True)
     finally:
