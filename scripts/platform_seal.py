@@ -25,20 +25,35 @@ from scrapers.dealer_scraping.inventory_harvester import _entity_ulid, cage_inve
 
 _LDJSON = re.compile(r'<script type="application/ld\+json">(.*?)</script>', re.S)
 
+# Accept the vehicle schema.org types whether @type is a scalar, a list (e.g.
+# ["Product","Vehicle"] on zoomcar), or wrapped in @graph (autotrader). "Product" is
+# included because some car-detail pages (autocasion) carry the price only under an
+# @type=Product offers block — the old scalar Car/Vehicle filter missed it and forced
+# each connector to ship its own parser. Additive: anything that matched before still does.
+_VEHICLE_LDJSON_TYPES = frozenset({"Car", "Vehicle", "Product"})
+
+
+def _types_match(o: dict) -> bool:
+    t = o.get("@type")
+    return bool((set(t) if isinstance(t, list) else {t}) & _VEHICLE_LDJSON_TYPES)
+
 
 def parse_ldjson_vehicle(html: str, url: str) -> dict:
-    """schema.org Car/Vehicle ld+json -> cage-shape dict. ``offers.price`` is the CASH price
-    (the structured-data sale price, NOT the financing /mois) — the price-trap-safe field used
-    by the French SSR platforms (L'Argus, ParuVendu) whose detail pages also show a monthly
-    simulator. Returns {url, title, price, year, km}; missing fields stay None."""
+    """schema.org Car/Vehicle/Product ld+json (scalar or list @type, incl @graph containers)
+    -> cage-shape dict. ``offers.price`` is the CASH price (the structured-data sale price,
+    NOT the financing /mois) — the price-trap-safe field used by the French SSR platforms
+    (L'Argus, ParuVendu) whose detail pages also show a monthly simulator. Returns
+    {url, title, price, year, km}; missing fields stay None."""
     make = model = name = year = km = price = None
     for m in _LDJSON.finditer(html or ""):
         try:
             d = json.loads(m.group(1))
         except (ValueError, TypeError):
             continue
-        for o in (d if isinstance(d, list) else [d]):
-            if not isinstance(o, dict) or o.get("@type") not in ("Car", "Vehicle"):
+        cands = (d["@graph"] if isinstance(d, dict) and isinstance(d.get("@graph"), list)
+                 else (d if isinstance(d, list) else [d]))
+        for o in cands:
+            if not isinstance(o, dict) or not _types_match(o):
                 continue
             name = o.get("name")
             brand = o.get("brand")
