@@ -71,22 +71,30 @@ def _entity_ulid(domain: str) -> str:
     return "se_" + hashlib.md5(domain.encode("utf-8")).hexdigest()
 
 
-async def _ensure_dealer_entity(conn, domain: str, country: str, config_ref: str | None) -> None:
+async def _ensure_dealer_entity(conn, domain: str, country: str, config_ref: str | None,
+                                *, kind: str = "dealer", tier: str = "T2") -> None:
+    """Register the source entity. ``kind`` defaults to 'dealer' (byte-identical for the dealer
+    cage callers); platform connectors pass ``kind='platform'`` so the per-entity API and the
+    ``/v1/entities?kind=platform`` filter classify them correctly. ``tier`` only seeds a NEW
+    row — an existing entity keeps its defense_tier (COALESCE), never downgraded here."""
     await conn.execute(
         "INSERT INTO source_entities(entity_ulid,source_key,kind,domain,country,defense_tier,waf,config_ref) "
-        "VALUES($1,$2,'dealer',$2,$3,'T2','none',$4) "
-        "ON CONFLICT(source_key) DO UPDATE SET kind='dealer', "
-        "  defense_tier=COALESCE(source_entities.defense_tier,'T2'), "
+        "VALUES($1,$2,$5,$2,$3,$6,'none',$4) "
+        "ON CONFLICT(source_key) DO UPDATE SET kind=$5, "
+        "  defense_tier=COALESCE(source_entities.defense_tier,$6), "
         "  config_ref=COALESCE(EXCLUDED.config_ref,source_entities.config_ref), updated_at=now()",
-        _entity_ulid(domain), domain, (country or "")[:2], config_ref,
+        _entity_ulid(domain), domain, (country or "")[:2], config_ref, kind, tier,
     )
 
 
 async def cage_inventory(pg, rdb, domain: str, country: str, listings: list[dict], *,
-                         config_ref: str | None = None) -> dict:
-    """Write rich pointers to vehicle_index under a kind='dealer' entity. Idempotent.
+                         config_ref: str | None = None, kind: str = "dealer",
+                         tier: str = "T2") -> dict:
+    """Write rich pointers to vehicle_index under a source entity. Idempotent.
 
     listings = [{"url", "title"?, "price"?, "year"?, "km"?}]. Returns {discovered, new}.
+    ``kind`` defaults to 'dealer' (the dealer cage seam); platform connectors pass
+    ``kind='platform'`` so the entity registers as a platform for the per-entity API.
     """
     urls = [li["url"] for li in listings]
     hash_to_url = _hash_urls(urls)              # drops root URLs, dedups by hash
@@ -105,7 +113,7 @@ async def cage_inventory(pg, rdb, domain: str, country: str, listings: list[dict
         years.append(r.get("year")); kms.append(r.get("km"))
 
     async with pg.acquire() as conn:
-        await _ensure_dealer_entity(conn, domain, cc, config_ref)
+        await _ensure_dealer_entity(conn, domain, cc, config_ref, kind=kind, tier=tier)
         rows = await conn.fetch(
             "INSERT INTO vehicle_index "
             "(url_hash,url_original,source_domain,country,moneda,titulo_modelo,precio,anio,kilometraje,last_seen,entity_ulid) "
