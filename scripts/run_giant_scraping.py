@@ -26,6 +26,7 @@ from decimal import Decimal
 import asyncpg
 
 from scrapers import rich_consumer as rc
+from scrapers.common import indexer
 from scrapers.dealer_scraping.harvester import make_dealer_fetcher
 from scrapers.intelligence import count_verify as cv
 from scrapers.pipeline.generic_extractor import _safe_fetch
@@ -74,6 +75,73 @@ def _lst(base: str, *, lo: int | None = None, hi: int | None = None, page: int |
     if page is not None:
         q.append(f"page={page}")
     return f"{base}/lst?" + "&".join(q)
+
+
+async def reconcile_events(pool, domain: str, country: str, harvested_urls: set[str]) -> dict[str, int]:
+    """Diff-based SEEN/GONE delta for the giant path — the living layer the bulk-fill skips.
+
+    ``run_giant_scraping`` persists rich rows to ``vehicles`` (via ``rich_consumer.persist_one``)
+    but never fired ``vehicle_events``, so the verifier's ``delta`` dimension (which reads
+    ``vehicle_events WHERE source_domain=$1`` and demands SEEN>0) failed for the giants. This
+    closes that gap with the SAME snapshot-diff every other CARDEX delta path uses
+    (``indexer`` / ``cage_platform`` / ``delta_worker``): current harvested URL set vs the prior
+    SERVED set → INSERT SEEN for the new, INSERT GONE for the vanished. PG doctrine preserved:
+    we only INSERT into the append-only event log here; the row mirror is ``persist_one``'s job.
+
+    The event ledger IS the snapshot store, exactly as ``vehicle_index`` is for the seal path's
+    ``insert_batch``/``delete_stale``: the prior served set is the ledger-live set for this
+    domain — URL-hashes whose most-recent ``vehicle_events`` row is SEEN (not yet GONE). So:
+      - first complete cycle (empty ledger): SEEN for every harvested URL, GONE for none — this
+        is the snapshot being established, nothing has "vanished" against a prior that doesn't
+        exist yet (the giant path's 540k served rows had ZERO ledger events; this seeds them).
+      - every later complete cycle: SEEN for genuinely-new URLs, GONE for ledger-live URLs absent
+        from the fresh harvest (sold/removed) — the true alta/baja.
+    A URL is hashed exactly as everywhere else (``indexer.url_hash``; root-domain URLs dropped by
+    ``_hash_urls``), so SEEN here and the indexer's/seal's SEEN are the same identity.
+
+    MUST be called only on a COMPLETE cycle (gated behind ``--keep`` by the caller): a partial
+    slice would GONE-mark live listings it simply did not reach — the exact trap
+    ``indexer.delete_stale`` / ``cage_platform(complete=...)`` guard against.
+    """
+    cc = (country or "")[:2]
+    harvested = indexer._hash_urls(list(harvested_urls))   # hash → url, drops root URLs
+    async with pool.acquire() as conn:
+        # No partition bootstrap here: the DEFAULT partition is the designed safety net (it
+        # catches any ts), so an INSERT never needs a month partition to pre-exist — exactly how
+        # ``indexer.insert_batch`` / ``cage_platform`` write events. Force-creating the month
+        # partition would in fact FAIL when rows for that month already sit in DEFAULT.
+        # Prior served set = the ledger-live set: latest event per url_hash is SEEN, not GONE.
+        live_rows = await conn.fetch(
+            "SELECT url_hash, url_original FROM ("
+            "  SELECT DISTINCT ON (url_hash) url_hash, url_original, event_type "
+            "  FROM vehicle_events WHERE source_domain=$1 "
+            "  ORDER BY url_hash, ts DESC, event_id DESC"
+            ") last WHERE event_type <> 'GONE'",
+            domain)
+    served: dict[str, str] = {r["url_hash"]: r["url_original"] for r in live_rows}
+
+    seen_hashes = [h for h in harvested if h not in served]          # new → SEEN
+    gone_hashes = [h for h in served if h not in harvested]          # vanished → GONE
+    if not seen_hashes and not gone_hashes:
+        return {"seen": 0, "gone": 0}
+
+    # CHUNKED inserts (``indexer._PG_BATCH``=500), exactly like ``insert_batch``/``delete_stale``:
+    # the giants run at 540k-class scale, where a single unnest of a 540k-element text[] stalls
+    # for minutes (PG materializes the whole array + asyncpg serializes every URL into one bind).
+    # Each chunk is its own statement; no surrounding mega-transaction so a giant seed streams in
+    # bounded, restartable steps (re-running is naturally idempotent — a re-seen URL is already
+    # ledger-live next time, so it is not re-SEEN'd).
+    async def _emit(hash_list: list[str], url_of: dict[str, str], etype: str) -> None:
+        sql = ("INSERT INTO vehicle_events (url_hash,url_original,source_domain,country,event_type) "
+               f"SELECT h,u,$3,$4,'{etype}' FROM unnest($1::text[],$2::text[]) AS t(h,u)")
+        for i in range(0, len(hash_list), indexer._PG_BATCH):
+            chunk = hash_list[i:i + indexer._PG_BATCH]
+            async with pool.acquire() as conn:
+                await conn.execute(sql, chunk, [url_of[h] for h in chunk], domain, cc)
+
+    await _emit(seen_hashes, harvested, "SEEN")
+    await _emit(gone_hashes, served, "GONE")
+    return {"seen": len(seen_hashes), "gone": len(gone_hashes)}
 
 
 async def harvest(domain: str, country: str, *, base: str, currency: str,
@@ -132,6 +200,10 @@ async def harvest(domain: str, country: str, *, base: str, currency: str,
         # bounded by the global rate limiter — makes 833k-class TLDs tractable.
         prev_in_db = 0
         in_db = 0
+        # Accumulate the COMPLETE harvested URL set across all passes/segments (the snapshot for
+        # the SEEN/GONE diff). Bounded by inventory size — a URL string per listing, only kept
+        # when keep=True (a partial slice must never feed the reconcile and GONE-mark live rows).
+        harvested_urls: set[str] = set()
         for pass_no in range(1, passes + 1):
             for (lo, hi, seg_count) in segments:
                 if not keep and limit and persisted >= limit:
@@ -144,6 +216,8 @@ async def harvest(domain: str, country: str, *, base: str, currency: str,
                         continue
                     for p in rows:
                         p["source_country"] = country
+                        if keep and p.get("source_url"):
+                            harvested_urls.add(p["source_url"])
                         res, reason = await rc.persist_one(
                             pool, p, source=platform, channel="SCRAPER", rates={"EUR": Decimal(1)},
                             entity_kind="platform")
@@ -176,6 +250,14 @@ async def harvest(domain: str, country: str, *, base: str, currency: str,
             if not verdict.trustworthy:
                 print(f"{domain}: SHORTFALL {base_total - in_db} listings ({(1 - coverage) * 100:.1f}%) — "
                       f"deep-pagination drift on a live list; needs multi-pass union + stable sort to close.")
+
+        # Living layer: on a COMPLETE (--keep) cycle, diff the harvested snapshot against the
+        # prior served set and emit SEEN (new) / GONE (vanished) into vehicle_events. Gated behind
+        # keep so a partial slice never GONE-marks; the bulk-fill path above is untouched.
+        if keep:
+            delta = await reconcile_events(pool, domain, country, harvested_urls)
+            print(f"{domain}: DELTA harvested={len(harvested_urls)} "
+                  f"SEEN={delta['seen']} GONE={delta['gone']} (vehicle_events)")
 
         if not keep:
             async with pool.acquire() as conn:
