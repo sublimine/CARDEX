@@ -367,6 +367,8 @@ Antes de evaluar cualquier entregable, la verdad operativa:
 
 **Acción:** Verificar que refleja la realidad (SQLite, no PostgreSQL). Debe estar alineado con `CONTEXT_FOR_AI.md`, no con `SPEC.md`. Si describe la visión aspiracional en vez de la realidad, necesita rewrite.
 
+> *(Corrección 2026-06-12: la premisa "la realidad = SQLite, no PostgreSQL" quedó invalidada — el almacén vivo es **PostgreSQL 16** y el pipeline vivo es la flota Python; `CONTEXT_FOR_AI.md` fue eliminado por stale. Alinear con `README.md` + `STATUS.md`.)*
+
 ---
 
 ### 17. OPENLANE Deep Ecosystem Audit

@@ -6,6 +6,14 @@
 **Applicable regulation:** Regulation (EU) 2016/679 (GDPR / RGPD)
 **Scope:** Processing of data scraped from 84+ vehicle listing portals across DE, ES, FR, NL, BE, CH
 
+> **STATUS (2026-06-12): infrastructure references are STALE.** The legal analysis
+> stands, but every procedure referencing the "SQLite database", `vehicle_index` in
+> SQLite, or the CX42/Go-services stack must target the live store instead:
+> **PostgreSQL 16** (Docker `cardex-pg`) — `vehicle_index` is a PG table. The
+> Go/SQLite stack is dormant scaffold, not deployed. The closing claim that this
+> document "reflects CARDEX's actual operational state" no longer holds for the
+> infrastructure portions. Live truth: `README.md` + `STATUS.md`.
+
 ---
 
 ## 1. Nature of the Data CARDEX Processes

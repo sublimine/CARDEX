@@ -5,6 +5,14 @@
 **Classification:** Internal — Technical
 **Authority:** This document describes what IS deployed. Not what SPEC.md envisions. Not what the roadmap plans. What is real, right now.
 
+> **STATUS (2026-06-12): SUPERSEDED — the authority claim above no longer holds.**
+> This document describes the CX42 VPS / Go-services / SQLite stack as deployed
+> reality; that stack is **dormant scaffold and is not deployed** (`deploy/` infra
+> unused). The live system runs on the operator host: **Python fleet (`scrapers/`) →
+> PostgreSQL 16 (Docker `cardex-pg`, system of record) + Redis Streams transport**.
+> The "What does NOT exist" list in §1.1 is stale: PostgreSQL and Redis **DO exist
+> and are live**. Live truth: `README.md` + `STATUS.md`.
+
 ---
 
 ## 1. Physical Infrastructure
@@ -20,9 +28,9 @@
 
 **Location:** Nürnberg (NBG1), Germany. Selected for low latency to DE/AT/CH target portals and Hetzner's Frankfurt IX peering.
 
-**What does NOT exist:**
-- No PostgreSQL server (SQLite is the database)
-- No Redis instance (no message queue, no caching layer)
+**What does NOT exist** *(STALE as of 2026-06-12 — PostgreSQL 16 and Redis Streams ARE live on the operator host; see status note at top)*:
+- No PostgreSQL server (SQLite is the database) *(stale — PG 16 is the live system of record)*
+- No Redis instance (no message queue, no caching layer) *(stale — Redis Streams is the live transport)*
 - No ClickHouse instance (no OLAP warehouse)
 - No multi-node cluster (no 3× AX102)
 - No Kubernetes, no Nomad, no orchestration beyond systemd + Docker Compose

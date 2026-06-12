@@ -1,8 +1,8 @@
 # CARDEX — ESPECIFICACIÓN CANÓNICA DE IMPLEMENTACIÓN
 
-> **SUPERSEDED (2026-06-12).** Historical vision document, kept for the record.
-> The system that actually runs diverged: live truth = code in `main` +
-> `docs/master-plan/` (MASTER_PLAN_AZ.md, HANDOFF.md). Do not implement from this file.
+> **SUPERSEDED (2026-06-12).** Historical vision document (3-node AX102 / ClickHouse / Go stack), **NOT current reality** — kept for the record; do not implement from this file.
+> Current reality: single host; **PostgreSQL 16 is the LIVE system of record** (Docker `cardex-pg`); the **LIVE pipeline is the Python fleet** (`scrapers/`) with Redis Streams as transport; the Go modules are dormant scaffold.
+> Live truth: [`README.md`](README.md) + [`STATUS.md`](STATUS.md) + `docs/master-plan/` (MASTER_PLAN_AZ.md, HANDOFF.md); code in `main` always wins.
 
 **Versión:** 1.0.0-SEALED  
 **Fecha de sellado:** 2026-02-27  
@@ -11,6 +11,8 @@
 **Régimen de verdad:** Cuando V6 contradice versiones anteriores, V6 prevalece. V2 prevalece en lógica de negocio. V5 prevalece en runbooks cuando V6 no los redefine. V4 queda purgado de elementos ilegales; solo se conservan sus contribuciones técnicas legítimas.
 
 > **NOTA DE IMPLEMENTACIÓN (2026-04-15):** Este documento describe la visión completa y ambiciosa de CARDEX (3× Hetzner AX102, PostgreSQL 16, ClickHouse, stack completo de microservicios). Las Fases 2–5 implementadas en `claude/objective-wilbur` son un **MVP deliberadamente más simple**: un único servidor CX42 (~€22/mes), SQLite, tres servicios Go (discovery/extraction/quality), sin PostgreSQL ni ClickHouse. El MVP es el punto de partida hacia la visión completa descrita aquí. Para el estado actual de implementación, ver `CONTEXT_FOR_AI.md`.
+>
+> **CORRECCIÓN (2026-06-12):** La nota anterior quedó obsoleta y se conserva solo como historia. El "MVP Go + SQLite" nunca llegó a ser la ruta de producción: el pipeline vivo es la **flota Python** (`scrapers/`) con **PostgreSQL 16** como almacén de verdad y Redis Streams como transporte; los módulos Go quedaron como andamiaje dormido (compilan, no producen nada). `CONTEXT_FOR_AI.md` fue eliminado del repo por stale. Estado actual: `README.md` + `STATUS.md`.
 
 ---
 

@@ -1,13 +1,59 @@
-# CARDEX — Architecture (Phase 2–5 MVP)
+# CARDEX — Architecture
 
-> **Note:** This document describes the current implemented architecture (Phases 2–5).
-> The original ambitious vision (3-node AX102 cluster, PostgreSQL, ClickHouse, full-stack) is documented in `SPEC.md` and `planning/06_ARCHITECTURE/`. That vision remains the long-term target; this document reflects what is actually deployed.
+> **READ THIS FIRST (reconciled 2026-06-12).** The body of this document (§1–§8)
+> describes the **Phase 2–5 Go MVP** (discovery/extraction/quality over SQLite on a
+> single CX42). That stack is **DORMANT scaffold**: it compiles and tests, produces
+> nothing, has zero production consumers, and **is not deployed**. It is NOT the
+> production path. The **LIVE system** is the **Python fleet** (`scrapers/`) writing
+> to **PostgreSQL 16** (Docker `cardex-pg`, the system of record) with **Redis
+> Streams** as transport. See [`README.md`](README.md) and [`STATUS.md`](STATUS.md);
+> code in `main` always wins over this document.
 
 ---
 
-## 1. System overview
+## 0. System reality — live vs dormant vs absent (read before §1)
 
-CARDEX is a three-stage pipeline: **Discover** dealers → **Extract** their listings → **Validate** listing quality.
+### LIVE (the production path, verified 2026-06-12)
+
+- **Python scraper fleet** (`scrapers/`) — portal + dealer scrapers, sitemap/listing
+  indexers, coordinator, anti-OOM supervisor, enrichment seam
+  (`enrich_worker` → `rich_consumer`).
+- **PostgreSQL 16** (Docker `cardex-pg`) — **the live system of record**. Schema
+  `migrations/0001`–`0007`; the `entity_inventory` view serves ~1.27M cars
+  (1,270,369 on 2026-06-12). Doctrine: INSERT-new + DELETE-stale, never UPDATE
+  non-mutated rows.
+- **Redis Streams** — transport only; holding inventory state in Redis is prohibited.
+- **`services/entity_api/`** — FastAPI per-entity live inventory API (`127.0.0.1:8088`).
+- **`services/api/`** — Go REST price-intelligence API; runs on demand.
+- **`scrapers/engine.db`** — SQLite for **engine state only**, by design (work queue,
+  identities, circuits). This is the only SQLite in the live path; do not migrate it to PG.
+- **Ollama `qwen2.5:3b`** — fuzzy-decision layer, fail-open.
+
+### DORMANT (the Go scaffold this document describes)
+
+`discovery/`, `extraction/`, `quality/` (plus `frontend/terminal/`, `innovation/`,
+`internal/shared/`, `workspace/`, `tests/e2e/`) — they build and test with
+`GOWORK=off`, write to their own SQLite (`discovery.db`), and produce nothing in
+production. Do not "reactivate" them assuming they are prod.
+
+### What does NOT exist (in either layer)
+
+- ClickHouse OLAP; multi-node cluster (3× AX102)
+- The CX42 VPS deployment described in §2 (`deploy/` infra is not currently deployed)
+- Full microservices stack (gateway, pipeline, forensics, alpha, legal) — purged; see `docs/GRAVEYARD.md`
+- Next.js marketplace frontend; Chrome extension
+- B2B webhook ingestion; financial engine (tax classification, FX, SDI)
+- MeiliSearch as a product surface (an optional mirror bridge exists,
+  `scrapers/discovery/meili_bridge.py`; container currently stopped)
+
+Everything below documents the **dormant Go scaffold as designed**, kept as design
+history for that scaffold.
+
+---
+
+## 1. System overview (dormant Go scaffold)
+
+The dormant Go engine is a three-stage pipeline: **Discover** dealers → **Extract** their listings → **Validate** listing quality.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -45,7 +91,11 @@ CARDEX is a three-stage pipeline: **Discover** dealers → **Extract** their lis
 
 ---
 
-## 2. Deployment topology (production)
+## 2. Deployment topology (designed target — not deployed)
+
+> **Reality check (2026-06-12):** this VPS topology was designed but never became
+> the production path; `deploy/` is not currently deployed. The live system runs on
+> the operator host (see §0).
 
 Single Hetzner CX42 (4 vCPU AMD EPYC, 16 GB RAM, 240 GB NVMe). ~€22/month total.
 
@@ -111,7 +161,11 @@ Edge push:
 
 ---
 
-## 4. Data model (SQLite)
+## 4. Data model (scaffold SQLite — NOT the live store)
+
+> **Reality check (2026-06-12):** `discovery.db` is the dormant Go scaffold's own
+> SQLite. **PostgreSQL 16 is the live store** (`migrations/0001`–`0007`); the only
+> SQLite in the live path is `scrapers/engine.db` (engine state, by design).
 
 Core tables in `discovery.db`:
 
@@ -191,7 +245,7 @@ Validator weights (total: 176 pts): V01=15, V02=12, V03=10, V04=10, V05=10, V06=
 
 | Decision | Choice | Reason |
 |----------|--------|--------|
-| Database | SQLite WAL (modernc.org/sqlite) | Pure Go, no CGO, distroless compatible; sufficient for MVP scale |
+| Database | SQLite WAL (modernc.org/sqlite) — *scaffold only; superseded: the live system of record is PostgreSQL 16* | Pure Go, no CGO, distroless compatible; sufficient for MVP scale |
 | Reverse proxy | Caddy | Auto TLS, zero certbot maintenance |
 | Service management | systemd | Lower overhead than Docker for core services |
 | Observability | Docker Compose | Prometheus/Grafana change often; Docker simplifies upgrades |
@@ -201,18 +255,11 @@ Validator weights (total: 176 pts): V01=15, V02=12, V03=10, V04=10, V05=10, V06=
 
 ---
 
-## 8. What is NOT in this architecture (yet)
+## 8. What is NOT in this architecture
 
-The following components from the full CARDEX vision (`SPEC.md`) are not currently implemented:
-
-- PostgreSQL 16 + ClickHouse OLAP
-- Redis streams / Bloom filters
-- MeiliSearch faceted search
-- Full microservices stack (gateway, pipeline, forensics, alpha, legal)
-- Next.js marketplace frontend
-- Chrome extension
-- B2B webhook ingestion
-- Financial engine (tax classification, FX, SDI)
-- Multi-node cluster (3× AX102)
-
-These are future phases. See `planning/07_ROADMAP/` and `planning/02_MARKET_INTELLIGENCE/06_INNOVATION_ROADMAP.md`.
+Moved to **§0 "System reality"** at the top of this document (and corrected there:
+the original list here claimed PostgreSQL 16 and Redis Streams were not implemented —
+both are **LIVE** today via the Python fleet, not via this Go architecture). For the
+remaining genuinely absent components, see §0. Historical roadmap pointers:
+`planning/07_ROADMAP/` and `planning/02_MARKET_INTELLIGENCE/06_INNOVATION_ROADMAP.md`
+(superseded vision-era planning).

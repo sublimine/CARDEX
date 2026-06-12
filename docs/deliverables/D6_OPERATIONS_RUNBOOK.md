@@ -7,6 +7,13 @@
 **Infrastructure:** 1x Hetzner CX42 (cardex-prod), Debian 12, systemd + Docker Compose
 **Complements:** `deploy/runbook.md` (VPS provisioning), `deploy/incident-runbooks/` (incident response)
 
+> **STATUS (2026-06-12): SUPERSEDED — runbook for a stack that is not deployed.**
+> The procedures below operate the CX42 VPS Go-services/SQLite deployment
+> (`cardex-prod`), which is **dormant scaffold — not the production path** and is
+> not deployed. Live operations run on the operator host: Python fleet +
+> PostgreSQL 16 (Docker `cardex-pg`) + Redis Streams. See `README.md`, `STATUS.md`
+> and the root `RUNBOOKS.md`.
+
 ---
 
 ## 1. Daily Operations Checklist

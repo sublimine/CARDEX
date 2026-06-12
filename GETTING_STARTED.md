@@ -1,5 +1,11 @@
 # Getting Started
 
+> **NOTE (2026-06-12): this guide covers the DORMANT Go scaffold only.** The modules
+> below compile and test, but they are **not the production path** — they produce
+> nothing and have zero production consumers. The LIVE system is the **Python fleet**
+> (`scrapers/`) + **PostgreSQL 16** (Docker `cardex-pg`) + Redis Streams. To get
+> started on the live system, use the Quick start in [`README.md`](README.md).
+
 ## Prerequisites
 
 - **Go 1.25+** (`go version` must show ≥1.25)

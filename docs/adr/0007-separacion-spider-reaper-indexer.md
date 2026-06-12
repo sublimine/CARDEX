@@ -1,8 +1,18 @@
 # ADR-0007 — Separación estricta Spider / Reaper / Indexer como microservicios independientes
 
 **Fecha**: 2026-04-27 (redacción retroactiva de decisión vigente)
-**Estado**: Vigente
+**Estado**: Superseded por la realidad (2026-06-12) — ver nota de estado
 **Owner**: Salman Karrouch
+
+---
+
+> **NOTA DE ESTADO (2026-06-12) — NO IMPLEMENTADO tal como se describe.** Los tres
+> binarios Go (`cmd/spider`, `cmd/reaper`, `cmd/indexer`) nunca existieron como código
+> (cf. `STATUS.md`, BUG-004: el "Reaper" jamás existió). El concepto de separación de
+> responsabilidades sobrevive dentro de la flota Python viva (ingesta del coordinator
+> y portales; purga vía harnesses slice-then-purge; enriquecimiento vía Redis Streams),
+> pero no como microservicios Go. Se conserva este ADR como registro inmutable de la
+> decisión, superado por la realidad. Verdad viva: `README.md` + `STATUS.md`.
 
 ---
 

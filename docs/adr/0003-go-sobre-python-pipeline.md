@@ -1,8 +1,18 @@
 # ADR-0003 — Go sobre Python para el pipeline de ingestión y procesamiento
 
 **Fecha**: 2026-04-27 (redacción retroactiva de decisión vigente)
-**Estado**: Vigente
+**Estado**: Superseded por la realidad (2026-06-12) — ver nota de estado
 **Owner**: Salman Karrouch
+
+---
+
+> **NOTA DE ESTADO (2026-06-12) — NO IMPLEMENTADO tal como se describe.** El pipeline
+> vivo de producción es **Python** (flota `scrapers/` → seam de enriquecimiento
+> `rich_consumer` → **PostgreSQL 16**, transporte Redis Streams). Los módulos Go
+> (`discovery/`, `extraction/`, `quality/`, …) quedaron como **andamiaje dormido**:
+> compilan y testean, no producen nada y tienen 0 consumidores en producción. Se
+> conserva este ADR como registro inmutable de la decisión, superado por la realidad.
+> Verdad viva: `README.md` + `STATUS.md`.
 
 ---
 

@@ -2,6 +2,11 @@
 
 Infrastructure-as-code for deploying CARDEX on a single Hetzner CX42 VPS (~€22/month total).
 
+> **STATUS (2026-06-12): not deployed.** This IaC targets the **dormant Go scaffold**
+> (discovery/extraction/quality over SQLite) — not the production path. The live
+> system (Python fleet + PostgreSQL 16 + Redis Streams) runs on the operator host;
+> see the root [`README.md`](../README.md).
+
 ## Quick start
 
 ```bash
